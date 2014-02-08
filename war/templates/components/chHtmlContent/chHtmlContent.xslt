@@ -13,7 +13,16 @@
             <xsl:value-of select="@style"/>
           </xsl:attribute>
         </xsl:if>
-        <xsl:value-of disable-output-escaping="yes" select="current()/text()"/>
+        
+        <xsl:choose>
+       		<xsl:when test="@disable-output-escaping = 'no'">
+       			<xsl:value-of select="current()/text()"/>
+       		</xsl:when>
+       		<xsl:otherwise>
+       			<xsl:value-of disable-output-escaping="yes" select="current()/text()"/>
+       		</xsl:otherwise>
+       	</xsl:choose>
+        
       </div>
     </xsl:for-each>
   </xsl:template>

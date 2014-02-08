@@ -8,7 +8,7 @@
   <xsl:template match="c:component[@type='chHeader']">
   	
   	<div class="chHeader" id="{@componentId}">			
-	  	<h1 style="font:1.75em 'Segoe UI Light';border-bottom:1px solid #ccc;padding-bottom:0.1em;{c:h1/@style}">
+	  	<h1 style="border-bottom:1px solid #ccc;{c:h1/@style}">
 	  		<xsl:value-of select="c:h1" />	
 	  	</h1>		
 	  	<h2 style="{c:h2/@style}">
