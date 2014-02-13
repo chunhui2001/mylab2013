@@ -13,6 +13,11 @@
             <xsl:value-of select="@style"/>
           </xsl:attribute>
         </xsl:if>
+        <xsl:if test="@class != ''">
+          <xsl:attribute name="class">
+            <xsl:value-of select="@class"/>
+          </xsl:attribute>
+        </xsl:if>
         
         <xsl:choose>
        		<xsl:when test="@disable-output-escaping = 'no'">
