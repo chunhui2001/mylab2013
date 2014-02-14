@@ -151,7 +151,8 @@
     
     <!-- Language hints can be put in XML application directive style comments. -->
     <?prettify lang=html linenums=false?>
-    <pre class="prettyprint" id="c:sourceContent/@componentId" style="border:4px solid #88c;float:left;"><xsl:value-of disable-output-escaping="no" select="c:sourceContent"/></pre>
+    <pre class="prettyprint" id="c:sourceContent/@componentId" 
+         style="overflow:hidden;border:none;float:left;background-color:rgb(238, 238, 238);width:100%;"><xsl:value-of disable-output-escaping="no" select="c:sourceContent"/></pre>
     <div class="clear"></div>
     
   </xsl:template>
