@@ -131,6 +131,24 @@
 	  ]]>
     </xsl:text>
     
+    <h3>
+      <xsl:value-of select="c:title"/>
+    </h3>
+
+    <xsl:for-each select="c:desc/*">
+      <xsl:variable name="mb">
+        <xsl:if test="position() = last()">
+          <xsl:value-of select="'1em'"/>
+        </xsl:if>
+        <xsl:if test="position() != last()">
+          <xsl:value-of select="'0em'"/>
+        </xsl:if>
+      </xsl:variable>
+      <div style="color:rgb(78, 12, 247);font-weight:bold;margin-bottom:{$mb};">
+        <xsl:value-of disable-output-escaping="yes" select="current()"/>
+      </div>
+    </xsl:for-each>
+    
     <!-- Language hints can be put in XML application directive style comments. -->
     <?prettify lang=html linenums=false?>
     <pre class="prettyprint" id="c:sourceContent/@componentId" style="border:4px solid #88c;float:left;"><xsl:value-of disable-output-escaping="no" select="c:sourceContent"/></pre>

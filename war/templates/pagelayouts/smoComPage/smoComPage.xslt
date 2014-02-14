@@ -11,13 +11,13 @@
 						<xsl:for-each select="c:row">
 							<div class="ro">
 								<xsl:for-each select="c:cell">
-									<div class="ce" style="{@style};margin:{@margin};float:{@float};">
+									<div class="ce" style="{@style};width:{@width};margin:{@margin};float:{@float};">
 										<xsl:for-each select="c:include">
 											<xsl:apply-templates select="c:component" />
 										</xsl:for-each>
 									</div>
-									<div class="clear"></div>
-								</xsl:for-each>	
+								</xsl:for-each>
+                <div class="clear"></div>
 							</div>
 						</xsl:for-each>
 				</div>
