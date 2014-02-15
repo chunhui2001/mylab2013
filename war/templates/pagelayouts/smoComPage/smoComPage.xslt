@@ -6,6 +6,10 @@
   <xsl:output method="html" indent="yes"/>
   
   <xsl:template match="c:page[@type='smoComPage']">
+    <xsl:for-each select="c:script">
+      <xsl:value-of disable-output-escaping="yes" select="current()"/>
+    </xsl:for-each>
+    
 		<xsl:for-each select="c:column">
 				<div class="col">
 						<xsl:for-each select="c:row">

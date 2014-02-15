@@ -1,0 +1,140 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:entry>
+    <c:title>com.opensymphony.xwork2.Action 接口</c:title>
+    <c:desc>
+      <c:desc1><![CDATA[  ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent id="sourceContent1">
+    <![CDATA[ 
+    // 该接口只定义了一个方法
+    String execute() throws Exception ;
+
+    // 该接口提供了一些有用的常量, 这些常量可以用作返回值来选择合适的结果。
+    public static final String ERROR = "error";
+    public static final String INPUT = "input";
+    public static final String LOGIN = "login";
+    public static final String NONE = "none";
+    public static final String SUCCESS = "success";]]>
+    </c:sourceContent>
+  </c:entry>
+  
+  <c:entry style="margin-top:1.5em;">
+    <c:title>com.opensymphony.xwork2.ActionSupport 类</c:title>
+    <c:desc>
+      <c:desc1><![CDATA[ 该类提供了 Action 接口和其它几个有用接口的默认实现, 提供了诸如数据验证、错误消息本地化等功能。 ]]></c:desc1>
+      <c:desc1>
+        <![CDATA[ 这个类的实现也提供了一个优秀的实例来研究 —— 动作如何与拦截器 (interceptor) 协作，来达成日常任务强大的可重用的解决方案。 
+                         （ 即: 拦截器控制服务的执行，动作实现接口提供被拦截器调用的方法。)]]></c:desc1>
+      <c:desc1>
+        <![CDATA[ 值得思考的是: 如何把诸如数据验证这样的横切任务通过使用拦截器和接口剥离到动作的执行逻辑之外。]]>
+      </c:desc1>
+    </c:desc>
+    <c:sourceContent id="sourceContent1">
+      <![CDATA[ 
+    public class Register extends ActionSupport {
+      public String execute () {
+        
+      }
+      
+      private String userName;
+      private String password;
+      private String portfolioName;
+      
+      public String getPortfolioName () {
+        return this.portfolioName;
+      }
+      
+      public void setPortfolioName ( String portfolioName ) {
+        this.portfolioName = portfolioName;
+      }
+      
+      public String getUserName () {
+        return this.userName;
+      }
+      
+      public void setUserName ( String userName ) {
+        this.userName = userName;
+      }
+      
+      public String getPassword () {
+        return this.password;
+      }
+      
+      public void setPassword ( String password ) {
+        this.password = password;
+      }
+      
+      public void validate () {
+        if ( getPassowrd().length == 0 ) {
+          addFieldError ("password", "Password is required!");
+        }
+        
+        if ( getUserName().length == 0 ) {
+          addFieldError ("userName", "UserName is required!");
+        }
+        
+        if ( userExists(getUserName()) ) {
+          addFieldError ("userName", "The user already exists!");
+        }
+      }
+    }]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[该动作提供了 validate () 方法。 
+        如果验证不合法会通过 ActionSupport 的超类提供的方法创建和存储错误消息。<span style="color:rgb(0, 211, 255);font-weight:bold;">( 注意: 该方法没有返回值 )</span>]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[在所有验证逻辑执行完毕之后，处理流程回到 workflow 拦截器并检查验证逻辑是否产生了错误消息。
+        如果找到了错误消息 workflow 拦截器会改变请求的工作流程。( 即: 立即终止请求处理，将用户带回到输入表单，并在表单中显示合适的错误消息。 )]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[<span style="color:red;font-weight:bold;text-decoration:underline;">com.opensymphony.xwork2.ValidationAware</span> 接口定义了存储和获取错误消息的方法。
+        如果发现错误信息，会选择名字为 input 的结果。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[虽然验证方法仍然在动作内部，但是这并没有污染最重要的关注点分离。验证逻辑与动作执行逻辑清楚的分离了。这使得我们的动作关注自身纯粹的工作单元。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[将验证逻辑从 execute() 方法中抽出成为可读性更强的辅助方法。验证的工作流程也从动作的工作流程中抽出，workflow 拦截器控制着验证逻辑的执行。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[<span style="color:red;font-weight:bold;text-decoration:underline;">动作如何与拦截器协作</span>]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1.5em;">
+    <c:title>com.opensymphony.xwork2.interceptor.DefaultWorkflowInterceptor 拦截器</c:title>
+    <c:desc>
+      <c:desc1><![CDATA[ActionSupport 实现了两个接口并与 DefaultWorkflowInterceptor 拦截器配合提供基本的验证。]]></c:desc1>
+      <c:desc1><![CDATA[该拦截器被称作工作流拦截器, 因为验证失败时候会把处理流程重定向到输入页面。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent id="sourceContent1">
+    <![CDATA[ 
+    <!-- 来自 struts-defult.xml 文件的 DefaultWorkflowInterceptor 声明 -->
+    <interceptor name="workflow" 
+                 class="com.opensymphony.xwork2.interceptor.DefaultWorkflowInterceptor" />
+                 
+    <interceptor-stack name="defaultStack">
+    
+      <!-- params 拦截器将请求数据转移到动作对象之上 -->
+      <interceptor-ref name="params" />
+      
+      <!-- workflow 拦截器必须在数据转移到动作对象之后出发 -->
+      <interceptor-ref name="workflow">
+        <param name="excludeMethons">input, back, cancel, browse</param>
+      </interceptor-ref>
+    </interceptor-stack>    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[<span style="color:red;font-weight:bold;text-decoration:underline;">workflow 拦截器致力于将横切任务从动作的执行逻辑中转移出去。</span>
+        当 workflow 拦截器触发时，它首先在动作上查找 valicate() 方法。这个方法通过 com.opensymphony.xwork2.Validateable 公开出来。]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+</c:component>
