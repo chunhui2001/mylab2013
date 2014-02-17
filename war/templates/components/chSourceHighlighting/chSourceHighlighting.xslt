@@ -70,21 +70,17 @@
     </pre>
     <div class="clear"></div>
 
-    <xsl:for-each select="$entry/c:comment/*">
-      <xsl:variable name="mt">
-        <xsl:if test="position() = 1">
-          <xsl:value-of select="'1em'"/>
-        </xsl:if>
-        <xsl:if test="position() != 1">
-          <xsl:value-of select="'0em'"/>
-        </xsl:if>
-      </xsl:variable>
-      
-      <xsl:if test="normalize-space(current()) != ''">
-        <div style="color:rgb(205, 76, 0);font-weight:bold;margin-top:{$mt};">
-          <xsl:value-of disable-output-escaping="yes" select="current()"/>
-        </div>
-      </xsl:if>
-    </xsl:for-each>
+<xsl:if test="count($entry/c:comment/*[normalize-space(text()) != '']) &gt; 0">
+    <div style="background-color:#D5D5FC;padding:2em;border-radius:4px;
+                border:1px solid #BABACE;margin-top:1em;">
+        <xsl:for-each select="$entry/c:comment/*">
+            <xsl:if test="normalize-space(current()) != ''">
+                <div style="color:rgb(205, 76, 0);font-weight:bold;">
+                    <xsl:value-of disable-output-escaping="yes" select="current()"/>
+                </div>
+            </xsl:if>
+        </xsl:for-each>
+    </div>
+</xsl:if>
   </xsl:template>
 </xsl:stylesheet>  
