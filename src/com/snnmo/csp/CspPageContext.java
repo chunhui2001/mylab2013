@@ -73,6 +73,8 @@ public class CspPageContext {
 
 	public String getPageContent() {
 		String docType = "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">";
+		docType = "<!DOCTYPE html>";
+		
 		if(CspHelper.masterType != MasterType.XML){
 			docType = "";
 		}
@@ -96,7 +98,7 @@ public class CspPageContext {
 
 	protected String transfrom(Document doc , Document xsltDocument) throws Exception{		   
 		String str = null;
-		
+				
 		
 		TransformerFactory factory = TransformerFactory.newInstance(
 				"org.apache.xalan.processor.TransformerFactoryImpl", 
@@ -107,6 +109,10 @@ public class CspPageContext {
 		
 		InputStream xsltStream = new ByteArrayInputStream(xsltDocument.asXML().getBytes("UTF8"));  
 		Transformer transformer = factory.newTransformer(new StreamSource(xsltStream)); 
+		
+		
+		
+		transformer.setParameter("language", CspHelper.getCountryCode(this.request.getLocale().getCountry()));
 		
 		
 		transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes"); 

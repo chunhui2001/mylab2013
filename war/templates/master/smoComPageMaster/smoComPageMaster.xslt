@@ -5,8 +5,10 @@
                 exclude-result-prefixes="c">
   <xsl:output method="html" indent="yes"/>
   
+  <xsl:param name="language" />
+  
   <xsl:template match="c:master[@type='smoComPageMaster']">  
-  <html>
+  <html lang="{$language}">
   	<head>
 	  	<title>
 	  		<xsl:value-of select="//c:title" />

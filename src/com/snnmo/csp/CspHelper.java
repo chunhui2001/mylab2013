@@ -1,5 +1,8 @@
 package com.snnmo.csp;
 
+
+import java.util.*;
+
 public class CspHelper {
 
 	public static final String sitePagesPath = "/sitepages";
@@ -24,5 +27,16 @@ public class CspHelper {
 	public enum MasterType {
 		JSP,
 		XML
+	}
+	
+	
+	public static String getCountryCode(String name){
+		CountryCode cc = CountryCode.getByCode("JP");
+
+		//System.out.println("Country name = " + cc.getName());                // "Japan"
+		//System.out.println("ISO 3166-1 alpha-2 code = " + cc.getAlpha2());   // "JP"
+		//System.out.println("ISO 3166-1 alpha-3 code = " + cc.getAlpha3());   // "JPN"
+		//System.out.println("ISO 3166-1 numeric code = " + cc.getNumeric());  // 392
+		return cc == null ? null : String.valueOf(cc.getNumeric());
 	}
 }

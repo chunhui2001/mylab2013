@@ -25,9 +25,6 @@ public class SnnmoServlet extends HttpServlet {
 		resp.setContentType("text/html;charset=UTF-8");
 		resp.setCharacterEncoding("UTF-8"); 
 		
-		
-		
-		
 		try {			
 			setCspPageContext(new CspPageContext(req,resp));
 			//resp.getWriter().println("csp");

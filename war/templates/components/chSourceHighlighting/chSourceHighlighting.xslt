@@ -65,7 +65,7 @@
     <!-- Language hints can be put in XML application directive style comments. -->
     <?prettify lang=html linenums=false?>
     <pre class="prettyprint" id="$entry/c:sourceContent/@componentId"
-         style="overflow:hidden;border:none;float:left;background-color:rgb(238, 238, 238);width:100%;padding:0;">
+         style="overflow:hidden;border:none;background-color:rgb(238, 238, 238);padding:1em;border:solid 1px rgb(176, 172, 172);">
       <xsl:value-of disable-output-escaping="no" select="$entry/c:sourceContent"/>
     </pre>
     <div class="clear"></div>
