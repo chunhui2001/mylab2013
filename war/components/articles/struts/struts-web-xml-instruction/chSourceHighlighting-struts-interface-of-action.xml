@@ -34,7 +34,11 @@
       <![CDATA[ 
     public class Register extends ActionSupport {
       public String execute () {
+        User user = new User();
+        user.setPassword(getPassword());
+        user.setUserName(getUserName());
         
+        return SUCCESS;
       }
       
       private String userName;
@@ -65,8 +69,11 @@
         this.password = password;
       }
       
+      // validate() 继承自 com.opensymphony.xwork2.Validateable 接口
       public void validate () {
         if ( getPassowrd().length == 0 ) {
+        
+          // addFieldError() 继承自 ActionSupport 
           addFieldError ("password", "Password is required!");
         }
         
@@ -83,25 +90,8 @@
 
     <c:comment>
       <c:comment1>
-        <![CDATA[该动作提供了 validate () 方法。 
+        <![CDATA[该动作提供了 validate () 方法， 并且被 workflow 拦截器调用。
         如果验证不合法会通过 ActionSupport 的超类提供的方法创建和存储错误消息。<span style="color:rgb(0, 211, 255);font-weight:bold;">( 注意: 该方法没有返回值 )</span>]]>
-      </c:comment1>
-      <c:comment1>
-        <![CDATA[在所有验证逻辑执行完毕之后，处理流程回到 workflow 拦截器并检查验证逻辑是否产生了错误消息。
-        如果找到了错误消息 workflow 拦截器会改变请求的工作流程。( 即: 立即终止请求处理，将用户带回到输入表单，并在表单中显示合适的错误消息。 )]]>
-      </c:comment1>
-      <c:comment1>
-        <![CDATA[<span style="color:red;font-weight:bold;text-decoration:underline;">com.opensymphony.xwork2.ValidationAware</span> 接口定义了存储和获取错误消息的方法。
-        如果发现错误信息，会选择名字为 input 的结果。]]>
-      </c:comment1>
-      <c:comment1>
-        <![CDATA[虽然验证方法仍然在动作内部，但是这并没有污染最重要的关注点分离。验证逻辑与动作执行逻辑清楚的分离了。这使得我们的动作关注自身纯粹的工作单元。]]>
-      </c:comment1>
-      <c:comment1>
-        <![CDATA[将验证逻辑从 execute() 方法中抽出成为可读性更强的辅助方法。验证的工作流程也从动作的工作流程中抽出，workflow 拦截器控制着验证逻辑的执行。]]>
-      </c:comment1>
-      <c:comment1>
-        <![CDATA[<span style="color:red;font-weight:bold;text-decoration:underline;">动作如何与拦截器协作</span>]]>
       </c:comment1>
     </c:comment>
   </c:entry>
@@ -132,8 +122,155 @@
 
     <c:comment>
       <c:comment1>
+        <![CDATA[在所有验证逻辑执行完毕之后，处理流程回到 workflow 拦截器并检查验证逻辑是否产生了错误消息。
+        如果找到了错误消息 workflow 拦截器会改变请求的工作流程。( 即: 立即终止请求处理，将用户带回到输入表单，并在表单中显示合适的错误消息。 )]]>
+      </c:comment1>
+      <c:comment1>
         <![CDATA[<span style="color:red;font-weight:bold;text-decoration:underline;">workflow 拦截器致力于将横切任务从动作的执行逻辑中转移出去。</span>
         当 workflow 拦截器触发时，它首先在动作上查找 valicate() 方法。这个方法通过 com.opensymphony.xwork2.Validateable 公开出来。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[控制流的分离使得 workflow 拦截器在进入动作的 execute() 方法之前可以终止整个请求处理并且重定向回输入页面。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[<span style="color:red;font-weight:bold;text-decoration:underline;">com.opensymphony.xwork2.ValidationAware</span> 接口定义了存储和获取错误消息的方法。
+        如果发现错误信息，会选择名字为 input 的结果。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[虽然验证方法仍然在动作内部，但是这并没有污染最重要的关注点分离。验证逻辑与动作执行逻辑清楚的分离了。这使得我们的动作关注自身纯粹的工作单元。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[将验证逻辑从 execute() 方法中抽出成为可读性更强的辅助方法。验证的工作流程也从动作的工作流程中抽出，workflow 拦截器控制着验证逻辑的执行。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[<span style="color:red;font-weight:bold;text-decoration:underline;">动作如何与拦截器协作</span>]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1.5em;">
+    <c:title>消息本地化</c:title>
+    <c:desc>
+      <c:desc1><![CDATA[ActionSupport 实现了两个接口，它们协作提供了本地化消息文本功能。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent id="sourceContent1">
+      <![CDATA[ 
+      com.opensymphony.xwork2.TextProvider    // 提供了对消息的访问
+    
+    
+      public void validate () {
+        if ( getPassowrd().length == 0 ) {        
+          addFieldError("password", getText("password.required"));
+        }
+        
+        if ( getUserName().length == 0 ) {
+          addFieldError("userName", getText("username.required"));
+        }
+        
+        if ( userExists(getUserName()) ) {
+          addFieldError("userName", getText("username.exists"));
+        }
+      }
+        
+        
+      // 与 Register 动作关联的属性文件，把它放在包含 Register 动作的 Java 包中。
+      Register.properties
+        
+      password.required=Password is required!
+      username.required=UserName is required!
+      username.exists=The user already exists!
+      
+      
+      
+      
+      com.opensymphony.xwork2.LocaleProvider    // 提供了一个基本的国际化解决方案, getLocale() 根据浏览器发来的地域设置取得用户所在的地域，并根据地域定位属性文件。
+                                                // package.properties
+                                                // package_es.properties 为当前地域提供属性文件]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1.5em;">
+    <c:title>向对象传递数据</c:title>
+    <c:desc>
+      <c:desc1><![CDATA[使用复杂对象而不是简单的 JavaBean 属性实现数据的转移，基于应用程序域对象转移、验证、绑定数据。]]></c:desc1>
+      <c:desc1><![CDATA[有两种选择实现这样深层次的数据转移：<br />
+      1. 公开一个复杂对象作为 JavaBean 属性<br />
+      2. 使用被称为 ModelDriven 的动作，这涉及到一个简单的接口和另一个默认的拦截器。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent id="sourceContent1">
+      <![CDATA[ 
+      // 将 User 作为 JavaBean 的属性
+      
+      private User user;
+      
+      public void setUser(User user) {
+        this.user = user;
+      }
+      
+      public User getUser() {
+        return this.user;
+      }
+      
+      public String execute () {
+        // The user's data already migrated successed
+        
+        return SUCCESS;
+      }
+      
+      
+      
+      // 引用数据的方式需要做的改变
+      <s:textfield name="user.userName" lable="User Name: " />
+      ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[域对象用作数据转移的一个潜在危险是: 一些敏感的数据属性被公开给客户端！]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1.5em;">
+    <c:title>文件上传</c:title>
+    <c:desc>
+      <c:desc1><![CDATA[Struts2 为文件上传提供了内建的支持]]></c:desc1>
+    </c:desc>
+    <c:sourceContent title="声明 FileUploadInterceptor 并且把它追加到默认拦截器" id="sourceContent1">
+      <![CDATA[ 
+      <package name="struts-default">
+        <interceptors>
+        
+          ...
+        
+          <interceptor name="fileUpload" class="org.apache.struts2.interceptor.FileUploadInterceptor" />
+        
+          ...
+        </interceptors>
+        
+        <interceptor-stack name="defaultStack">
+          
+          ...
+          
+          <interceptor-ref name="model-driven" />
+          <interceptor-ref name="fileUpload" />
+          <interceptor-ref name="params" />
+          
+          ...
+        </interceptor-stack>
+      </package>
+      ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
       </c:comment1>
     </c:comment>
   </c:entry>

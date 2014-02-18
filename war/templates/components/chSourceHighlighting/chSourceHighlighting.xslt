@@ -55,6 +55,13 @@
       </xsl:if>
     </xsl:for-each>
 
+
+    <xsl:if test="$entry/c:sourceContent/@title and normalize-space($entry/c:sourceContent/@title) != ''">
+      <h6 style="margin:0; background-color:gray;color:white;padding:.2em .5em;font-weight:bold;">
+        <xsl:value-of select="$entry/c:sourceContent/@title"/>
+      </h6>
+    </xsl:if>
+    
     <!-- Language hints can be put in XML application directive style comments. -->
     <?prettify lang=html linenums=false?>
     <pre class="prettyprint" id="$entry/c:sourceContent/@componentId"
