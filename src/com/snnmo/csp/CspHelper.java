@@ -30,13 +30,13 @@ public class CspHelper {
 	}
 	
 	
-	public static String getCountryCode(String name){
-		CountryCode cc = CountryCode.getByCode("JP");
+	public static CountryCode getCountryCode(String name) {
+		CountryCode cc = CountryCode.getByCode(name);
 
 		//System.out.println("Country name = " + cc.getName());                // "Japan"
 		//System.out.println("ISO 3166-1 alpha-2 code = " + cc.getAlpha2());   // "JP"
 		//System.out.println("ISO 3166-1 alpha-3 code = " + cc.getAlpha3());   // "JPN"
 		//System.out.println("ISO 3166-1 numeric code = " + cc.getNumeric());  // 392
-		return cc == null ? null : String.valueOf(cc.getNumeric());
+		return cc; //== null ? null : String.valueOf(cc.getNumeric());
 	}
 }

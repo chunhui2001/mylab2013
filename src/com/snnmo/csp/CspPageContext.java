@@ -111,8 +111,10 @@ public class CspPageContext {
 		Transformer transformer = factory.newTransformer(new StreamSource(xsltStream)); 
 		
 		
-		
-		transformer.setParameter("language", CspHelper.getCountryCode(this.request.getLocale().getCountry()));
+		CountryCode cc = CspHelper.getCountryCode(this.request.getLocale().getCountry());
+		transformer.setParameter("language", cc.getNumeric());
+		transformer.setParameter("country", cc.getName());
+		transformer.setParameter("countryCode", this.request.getLocale().getCountry());
 		
 		
 		transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes"); 
