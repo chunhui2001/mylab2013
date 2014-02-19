@@ -6,14 +6,22 @@
   <xsl:output method="html" indent="yes"/>
   
   <xsl:param name="language" />
+  <xsl:param name="country" />
+  <xsl:param name="countryCode" />
   
   <xsl:template match="c:master[@type='smoComPageMaster']">  
   <html lang="{$language}">
   	<head>
 	  	<title>
 	  		<xsl:value-of select="//c:title" />
-	  	</title>	
-	  	
+	  	</title>
+      <xsl:if test="normalize-space($country) != ''">
+        <meta property="country" content="{$country}" />
+      </xsl:if>
+      <xsl:if test="normalize-space($countryCode) != ''">
+        <meta property="countryCode" content="{$countryCode}" />
+      </xsl:if>
+        
 	  	<link rel="stylesheet" type="text/css" href="/RenderingAssets/css/reset.css" />
 	  	<link rel="stylesheet" type="text/css" href="/RenderingAssets/lib/bootstrap/bootstrap.min.css" />
 	  	<link rel="stylesheet" type="text/css" href="/RenderingAssets/css/global.css" />

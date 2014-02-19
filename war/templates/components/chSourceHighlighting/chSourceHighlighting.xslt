@@ -30,15 +30,17 @@
   <xsl:template name="buildContent">
     <xsl:param name="entry" />
 
-    <h3>
-      <xsl:if test="$entry/@style != ''">
-        <xsl:attribute name="style">
-          <xsl:value-of select="$entry/@style"/>
-        </xsl:attribute>
-      </xsl:if>
-      <xsl:value-of select="$entry/c:title"/>
-    </h3>
-
+    <xsl:if test="normalize-space($entry/c:title) != ''">
+      <h3>
+        <xsl:if test="$entry/@style != ''">
+          <xsl:attribute name="style">
+            <xsl:value-of select="$entry/@style"/>
+          </xsl:attribute>
+        </xsl:if>
+        <xsl:value-of select="$entry/c:title"/>
+      </h3>
+    </xsl:if>
+    
     <xsl:for-each select="$entry/c:desc/*">
       <xsl:if test="normalize-space(current()) != ''">
         <xsl:variable name="mb">
@@ -61,26 +63,35 @@
         <xsl:value-of select="$entry/c:sourceContent/@title"/>
       </h6>
     </xsl:if>
-    
-    <!-- Language hints can be put in XML application directive style comments. -->
-    <?prettify lang=html linenums=false?>
-    <pre class="prettyprint" id="$entry/c:sourceContent/@componentId"
-         style="overflow:hidden;border:none;background-color:rgb(238, 238, 238);padding:1em;border:solid 1px rgb(176, 172, 172);">
-      <xsl:value-of disable-output-escaping="no" select="$entry/c:sourceContent"/>
-    </pre>
-    <div class="clear"></div>
 
-<xsl:if test="count($entry/c:comment/*[normalize-space(text()) != '']) &gt; 0">
-    <div style="background-color:#D5D5FC;padding:2em;border-radius:4px;
-                border:1px solid #BABACE;margin-top:1em;">
-        <xsl:for-each select="$entry/c:comment/*">
-            <xsl:if test="normalize-space(current()) != ''">
-                <div style="color:rgb(205, 76, 0);font-weight:bold;">
-                    <xsl:value-of disable-output-escaping="yes" select="current()"/>
-                </div>
-            </xsl:if>
-        </xsl:for-each>
-    </div>
-</xsl:if>
+    <xsl:variable name="style" select="'overflow:hidden;border:none;background-color:rgb(238, 238, 238);padding:1em;border:solid 1px rgb(176, 172, 172);'" />
+    <xsl:choose>
+      <xsl:when test="$entry/c:sourceContent/@type = 'html'">
+        <div style="{$style}">
+          <xsl:value-of disable-output-escaping="yes" select="$entry/c:sourceContent"/>
+        </div>
+      </xsl:when>
+      <xsl:otherwise>
+        <!-- Language hints can be put in XML application directive style comments. -->
+        <?prettify lang=html linenums=false?>
+        <pre class="prettyprint" id="$entry/c:sourceContent/@componentId"
+             style="{$style}">
+          <xsl:value-of disable-output-escaping="no" select="$entry/c:sourceContent"/>
+        </pre>
+      </xsl:otherwise>
+    </xsl:choose>
+
+    <xsl:if test="count($entry/c:comment/*[normalize-space(text()) != '']) &gt; 0">
+        <div style="background-color:#D5D5FC;padding:2em;border-radius:4px;
+                    border:1px solid #BABACE;margin-top:1em;">
+            <xsl:for-each select="$entry/c:comment/*">
+                <xsl:if test="normalize-space(current()) != ''">
+                    <div style="color:rgb(205, 76, 0);font-weight:bold;">
+                        <xsl:value-of disable-output-escaping="yes" select="current()"/>
+                    </div>
+                </xsl:if>
+            </xsl:for-each>
+        </div>
+    </xsl:if>
   </xsl:template>
 </xsl:stylesheet>  
