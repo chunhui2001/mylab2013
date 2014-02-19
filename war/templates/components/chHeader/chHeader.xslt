@@ -10,11 +10,13 @@
   	<div class="chHeader" id="{@componentId}">			
 	  	<h1 style="border-bottom:1px solid #ccc;{c:h1/@style}">
 	  		<xsl:value-of select="c:h1" />	
-	  	</h1>		
-	  	<h2 style="{c:h2/@style}">
-	  		<xsl:value-of disable-output-escaping="yes" select="c:h2" />	
-	  	</h2>
-	  	
+	  	</h1>
+
+      <xsl:if test="normalize-space(c:h2) != ''">
+	  	  <h2 style="{c:h2/@style}">
+	  		  <xsl:value-of disable-output-escaping="yes" select="c:h2" />	
+	  	  </h2>
+      </xsl:if>
 	  	
   	 <!--xsl:text disable-output-escaping="yes"><![CDATA[ 
   	 <jsp:include page="/templates/components/smoJspTest/smoJspTest.jsp" flush="true" />

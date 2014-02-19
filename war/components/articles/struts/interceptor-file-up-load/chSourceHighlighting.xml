@@ -95,4 +95,109 @@
       </c:comment1>
     </c:comment>
   </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>ImageUploadForm.jsp</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[]]>
+      </c:desc1>
+    </c:desc>
+    <c:sourceContent title="" id="sourceContent1">
+<![CDATA[<!-- multipart/form-data 属性告诉框架这个请求需要被当作文件上传处理 -->
+<s:form action="ImageUpload" method="post" enctype="multipart/form-data">
+    <s:file name="pic" lable="Picture" />
+    <s:submit />
+</s:form>]]></c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[注意: 在构建这个表单时需要使用 Struts2 标签。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[用 file 标签的 name 属性构建构建用来接收上传数据的 Action 的 JavaBean 属性。]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>FileUpload.xml</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[确保动作所属的包扩展自 struts-default，以便继承默认的拦截器栈以及 fileUpload 拦截器。]]>
+      </c:desc1>
+    </c:desc>
+    <c:sourceContent title="扩展 struts-default 包继承文件上传处理" id="sourceContent1">
+<![CDATA[<package name="fileUpload" namespace="/fileupload/upload" extends="struts-default">
+      <action name="AddImage">
+          <result>ImageUploadForm.jsp</result>
+      </action>
+      
+      <action name="ImageUpload" class="fileupload.ImageUpload">
+          <result>ImageAdded.jsp</result>
+          <result name="input">ImageUploadForm.jsp</result>
+      </action>
+</package>]]></c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[文件上传动作需要某种类型的安全措施，因此把这种类型的动作放到单独的包中，以便追加安全措施。]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>实现文件上传的 JavaBean 属性</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[]]>
+      </c:desc1>
+    </c:desc>
+    <c:sourceContent title="接收上传文件和元数据的 JavaBean 属性" id="sourceContent1">
+    <![CDATA[File pic;    // 与 From 表单的 file 标签的 name 属性一致
+    String picContentType;
+    String picFileName;     
+    
+    public File getPic() {
+      return this.pic;
+    }
+    
+    public void setPic(File pic) {
+      this.pic = pic;
+    }
+    
+    public String getPicContentType() {
+      return this.picContentType;
+    }
+    
+    public void setPicContentType(String picContentType) {
+      this.picContentType = picContentType;
+    }
+    
+    public String getPicFileName() {
+      return this.picFileName;
+    }
+    
+    public void setPicFileName(String picFileName) {
+      this.picFileName = picFileName;
+    }
+    
+    
+    // 由于上传文件的分离，动作只需关注手头工作。
+    public String execute() {
+      // getPic();
+      save(getPic());
+      
+      return SUCCESS;
+    }]]></c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[框架也支持相同的参数名上传多个文件。所需要做的仅是把动作的 JavaBean 属性改为数组。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[fileUpload 拦截器还有很多其它的参数设置，从文件大小的最大值到用来处理请求的多重请求解析器的实现。]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 </c:component>
