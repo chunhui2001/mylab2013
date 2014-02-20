@@ -6,6 +6,7 @@
   <xsl:output method="html" indent="yes"/>
 
   <xsl:param name="photoset_id" />
+  <xsl:param name="photoset_name" />
   
   <xsl:template match="c:component[@type='chFlickrFeeds']">
   	<!-- http://api.flickr.com/services/rest/?method=flickr.photosets.getList&api_key=5e1428ad1828de40e0969cae48143af8&user_id=105589116@N06 -->
@@ -13,7 +14,7 @@
     <link href="/RenderingAssets/components/chFlickrFeeds/chFlickrFeeds.css" type="text/css" rel="stylesheet" />
 
     <span>
-      <xsl:value-of select="concat('photoset_id:', $photoset_id)"/>
+      <xsl:value-of select="concat('photoset_id:', $photoset_name)"/>
     </span>
   	<div class="chFlickrFeeds" id="{@componentId}">
       <xsl:variable name="flickrFeeds" select="document(c:feeds)" />
@@ -24,7 +25,7 @@
             <!--http://farm4.staticflickr.com/3800/12605839173_7632607f5a.jpg-->
             <!-- concat('http://farm',@farm,'.staticflickr.com/',@server,'/',@primary,'_',@secret,'_m.jpg') -->
             <xsl:variable name="imageUrl" select="concat('http://farm',@farm,'.staticflickr.com/',@server,'/',@primary,'_',@secret,'_m.jpg')" />
-            <a style="display:block;height:100%;" href="/mockup/index.shtml?photoset_id={@id}">
+            <a style="display:block;height:100%;" href="/mockup/index.shtml?photoset_id={@id}&amp;photoset_name={normalize-space(description)}">
               <div class="mockup" style="background-image:url({$imageUrl});">
             
               </div>
