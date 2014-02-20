@@ -14,6 +14,7 @@ import org.dom4j.io.*;
 
 import com.snnmo.csp.CspHelper.MasterType;
 import com.snnmo.web.SnnmoServlet;
+import java.util.Enumeration;
 
 import java.io.*;
 
@@ -116,6 +117,14 @@ public class CspPageContext {
 		transformer.setParameter("country", cc.getName());
 		transformer.setParameter("countryCode", this.request.getLocale().getCountry());
 		
+		
+		 
+		Enumeration enumeration = this.request.getParameterNames();
+		String parameterName = "";
+        while (enumeration.hasMoreElements()) {
+            parameterName = (String) enumeration.nextElement();
+    		transformer.setParameter(parameterName, this.request.getParameterValues(parameterName)[0]);
+        }
 		
 		transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes"); 
 		
