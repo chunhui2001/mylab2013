@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+
+  <c:abstract>
+    <![CDATA[当设法描述拦截器所完成的各种任务时，我们通常称其为横切 (cross-cutting)、预处理 (preprocessing)、后加工 (postprocessing)。<br />
+    从概念上说拦截器的机制是很清晰的，即不让一个简单的控制器直接调用动作，而是有一个处在控制器和动作组件之间的组件。]]>
+  </c:abstract>
+  
+  <c:entry>
+    <c:title>横切 (cross-cutting)</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent id="sourceContent1">
+    <![CDATA[
+    
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[日志处理是一个典型的横切任务。我们把它成为横切是因为它不是某一个动作所特有的，它横向关联所有动作。利用拦截器可以把这个任务提到更高的层面，让它处在任何需要记录日志的请求上 (或之前)。]]>
+        
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>预处理 (preprocessing)</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent id="sourceContent1">
+      <![CDATA[  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[预处理任务的一个绝好的示例是我们已经熟悉的数据转移，它通过 params 拦截器实现。几乎所有的动作组件都需要将一些数据从请求参数转移到特定领域的动作属性上。它必须在动作出发之前完成。]]>
+
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>后加工 (postprocessing)</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent id="sourceContent1">
+      <![CDATA[
+    .....
+  ]]>
+    </c:sourceContent>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>ActionInvocation</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[在 Struts2 中没有一个动作被单独调用。动作调用总是包含一系列的拦截器在动作执行前或之后执行。]]></c:desc1>
+      <c:desc1> <![CDATA[Struts 框架不直接调用动作的 execute() 方法，而是创建一个叫做 <span style="font-weight:bold;font-style:oblique;">ActionInvocation</span> 的对象，它封装了动作和一系列被配置在动作执行之前或之后触发的拦截器。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="ActionInvocation" id="sourceContent1">
+      <![CDATA[
+    <img alt="ActionInvocation" src="http://farm8.staticflickr.com/7291/12652039153_eb84141781_b.jpg" />
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[图示的是一个 defaultStack 的简化版本。并且展示了一个常见的工作流&mdash;没有一个拦截器中断调用。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[动作最终会执行并返回一个控制字符串用来选择合适的结果。在执行结果之后，按照相反的顺序每一个拦截器都有机会在做一些后加工的工作。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[拦截器能够访问动作和其它上下文信息。这允许拦截器了解在处理工程中发生了什么。例如: 拦截器可以检查动作返回的控制字符串以了解选择了哪个结果。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[拦截器可以决定动作该不该执行，且可以自己返回一个控制字符串从而终止工作流。例如 workflow 拦截器: 如果动作实现了 Validateable 接口，那么调用该动作的 validate() 方法。]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+</c:component>

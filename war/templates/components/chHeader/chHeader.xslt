@@ -9,7 +9,7 @@
   	
   	<div class="chHeader" id="{@componentId}">			
 	  	<h1 style="border-bottom:1px solid #ccc;{c:h1/@style}">
-	  		<xsl:value-of select="c:h1" />	
+        <xsl:value-of disable-output-escaping="yes" select="c:h1" />	
 	  	</h1>
 
       <xsl:if test="normalize-space(c:h2) != ''">

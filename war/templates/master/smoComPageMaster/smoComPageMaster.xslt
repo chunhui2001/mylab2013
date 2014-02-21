@@ -29,6 +29,11 @@
 	  	<script type="text/javascript" src="/RenderingAssets/lib/jquery/jquery-1.10.1.min.js"></script>	  	
 	  	<script type="text/javascript" src="/RenderingAssets/lib/jquery/jquery-migrate-1.2.1.min.js"></script>
 
+
+
+      <link rel="stylesheet" type="text/css" href="/RenderingAssets/lib/jCarousel/jcarousel.responsive.css"/>
+      <script type="text/javascript" src="/RenderingAssets/lib/jCarousel/jquery.jcarousel.min.js"></script>
+
   	</head>
   	<body>
 	  	<div>
