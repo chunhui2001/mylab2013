@@ -33,8 +33,8 @@
             <![CDATA[
             <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
             <!--[if lt IE 9]>
-              <script src="http://www.bootcss.com/assets/js/html5shiv.js"></script>
-              <script src="http://www.bootcss.com/assets/js/respond.min.js"></script>
+              <script src="/RenderingAssets/js/html5shiv.js"></script>
+              <script src="/RenderingAssets/js/respond.min.js"></script>
             <![endif]-->
             ]]>
       </xsl:text>
