@@ -28,12 +28,20 @@
 	  	
 	  	<script type="text/javascript" src="/RenderingAssets/lib/jquery/jquery-1.10.1.min.js"></script>	  	
 	  	<script type="text/javascript" src="/RenderingAssets/lib/jquery/jquery-migrate-1.2.1.min.js"></script>
-
-
-
+      
+      <xsl:text disable-output-escaping="yes">
+            <![CDATA[
+            <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+            <!--[if lt IE 9]>
+              <script src="http://www.bootcss.com/assets/js/html5shiv.js"></script>
+              <script src="http://www.bootcss.com/assets/js/respond.min.js"></script>
+            <![endif]-->
+            ]]>
+      </xsl:text>
+      
       <link rel="stylesheet" type="text/css" href="/RenderingAssets/lib/jCarousel/jcarousel.responsive.css"/>
-      <script type="text/javascript" src="/RenderingAssets/lib/jCarousel/jquery.jcarousel.min.js"></script>
-
+      <link rel="stylesheet" href="/RenderingAssets/lib/caroufredsel/caroufredsel.css" type="text/css" />
+      
   	</head>
   	<body>
 	  	<div>
@@ -58,7 +66,11 @@
 					</div>
 			</xsl:for-each>
 	  	</div>
-  	</body>
+
+
+      <script type="text/javascript" src="/RenderingAssets/lib/jCarousel/jquery.jcarousel.min.js"></script>
+      <script src="/RenderingAssets/lib/caroufredsel/jquery.caroufredsel.js" type="text/javascript"></script>
+    </body>
   </html>
   </xsl:template>
 </xsl:stylesheet>  
