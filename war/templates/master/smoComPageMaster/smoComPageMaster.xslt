@@ -13,7 +13,7 @@
   <html lang="{$language}">
   	<head>
 	  	<title>
-	  		<xsl:value-of select="//c:title" />
+	  		<xsl:value-of select="//c:page/c:title[position() = 1]" />
 	  	</title>
       <xsl:if test="normalize-space($country) != ''">
         <meta property="country" content="{$country}" />
