@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chHtmlContent" componentId="chHtmlContent_1" xmlns:c="http://com.snnmo.website">
+	<c:content>
+    <![CDATA[ 
+      <h3>取得项目的 Git 仓库</h3>
+      <div class="content-paragraph">
+         <p>有两种取得 Git 项目仓库的方法。第一种是在现存的目录下，通过导入所有文件来创建新的 Git 仓库。第二种是从已有的 Git 仓库克隆出一个新的镜像仓库来。</p>   
+         
+         <h6 style="font-weight:bold;color:rgb(188, 4, 242);font-size:1.15em;margin-top:1.5em;">在工作目录中初始化新仓库</h6>
+         <p>要对现有的某个项目开始用 Git 管理，只需到此项目所在的目录，执行：</p>   
+         <p style="font-weight:bold;color:#f14e32;font-family:'Microsoft YaHei Light'">$ git init</p>
+         <p>初始化后，在当前目录下会出现一个名为 .git 的目录，所有 Git 需要的数据和资源都存放在这个目录中。
+         不过目前，仅仅是按照既有的结构框架初始化好了里边所有的文件和目录，但我们还没有开始跟踪管理项目中的任何一个文件。
+         （在第九章我们会详细说明刚才创建的 .git 目录中究竟有哪些文件，以及都起些什么作用。）</p>
+         <p>如果当前目录下有几个文件想要纳入版本控制，需要先用 git add 命令告诉 Git 开始对这些文件进行跟踪，然后提交：</p>
+         <p style="font-weight:bold;color:#f14e32;font-family:'Microsoft YaHei Light'">$ git add *.c <br />
+$ git add README<br />
+$ git commit -m 'initial project version'</p>
+<p>稍后我们再逐一解释每条命令的意思。不过现在，你已经得到了一个实际维护着若干文件的 Git 仓库。</p>
+
+<h6 style="font-weight:bold;color:rgb(188, 4, 242);font-size:1.15em;margin-top:1.5em;">从现有仓库克隆</h6>
+         <p>如果想对某个开源项目出一份力，可以先把该项目的 Git 仓库复制一份出来，这就需要用到 git clone 命令。如果你熟悉其他的 VCS 比如 Subversion，你可能已经注意到这里使用的是 clone 而不是 checkout。
+         这是个非常重要的差别，Git 收取的是项目历史的所有数据（每一个文件的每一个版本），服务器上有的数据克隆之后本地也都有了。
+         实际上，即便服务器的磁盘发生故障，用任何一个克隆出来的客户端都可以重建服务器上的仓库，回到当初克隆时的状态。</p>
+         <p>克隆仓库的命令格式为 git clone [url]。比如，要克隆 Ruby 语言的 Git 代码仓库 Grit，可以用下面的命令：</p>
+         <p style="font-weight:bold;color:#f14e32;font-family:'Microsoft YaHei Light'">
+         $ git clone git://github.com/schacon/grit.git
+         </p>
+         <p>这会在当前目录下创建一个名为grit的目录，其中包含一个 .git 的目录，用于保存下载下来的所有版本记录，然后从中取出最新版本的文件拷贝。
+         如果进入这个新建的 grit 目录，你会看到项目中的所有文件已经在里边了，准备好后续的开发和使用。
+         如果希望在克隆的时候，自己定义要新建的项目目录名称，可以在上面的命令末尾指定新的名字：</p>
+         <p style="font-weight:bold;color:#f14e32;font-family:'Microsoft YaHei Light'">
+         $ git clone git://github.com/schacon/grit.git mygrit
+         </p>
+         <p>唯一的差别就是，现在新建的目录成了 mygrit，其他的都和上边的一样。</p>
+         <p>Git 支持许多数据传输协议。之前的例子使用的是 git:// 协议，不过你也可以用 http(s):// 或者 user@server:/path.git 表示的 SSH 传输协议。
+         </p>
+      </div>   
+      
+      
+      <h3>记录每次更新到仓库</h3>
+      <div class="content-paragraph">
+         <p>现在我们手上已经有了一个真实项目的 Git 仓库，并从这个仓库中取出了所有文件的工作拷贝。接下来，对这些文件作些修改，在完成了一个阶段的目标之后，提交本次更新到仓库。</p>   
+         <p>请记住，工作目录下面的所有文件都不外乎这两种状态：已跟踪或未跟踪。已跟踪的文件是指本来就被纳入版本控制管理的文件，在上次快照中有它们的记录，工作一段时间后，它们的状态可能是未更新，已修改或者已放入暂存区。
+         而所有其他文件都属于未跟踪文件。它们既没有上次更新时的快照，也不在当前的暂存区域。初次克隆某个仓库时，工作目录中的所有文件都属于已跟踪文件，且状态为未修改。</p>  
+         <p>在编辑过某些文件之后，Git 将这些文件标为已修改。我们逐步把这些修改过的文件放到暂存区域，直到最后一次性提交所有这些暂存起来的文件，如此重复。所以使用 Git 时的文件状态变化周期下图所示。</p>  
+         <img src="http://git-scm.com/figures/18333fig0201-tn.png" alt="" />
+         
+         <h6 style="font-weight:bold;color:rgb(188, 4, 242);font-size:1.15em;margin-top:1.5em;">检查当前文件状态</h6>
+         <p>要确定哪些文件当前处于什么状态，可以用 git status 命令。如果在克隆仓库之后立即执行此命令，会看到类似这样的输出：</p>   
+         <p style="font-weight:bold;color:#f14e32;font-family:'Microsoft YaHei Light'">$ git status <br />
+          On branch master<br />
+          nothing to commit, working directory clean</p>
+         <p>这说明你现在的工作目录相当干净。换句话说，所有已跟踪文件在上次提交后都未被更改过。此外，上面的信息还表明，当前目录下没有出现任何处于未跟踪的新文件，否则 Git 会在这里列出来。
+         最后，该命令还显示了当前所在的分支是 master，这是默认的分支名称，实际是可以修改的，现在先不用考虑。下一章我们就会详细讨论分支和引用。</p>
+         <p>现在让我们用 vim 创建一个新文件 README，保存退出后运行 git status 会看到该文件出现在未跟踪文件列表中：</p>
+         <p style="font-weight:bold;color:#f14e32;font-family:'Microsoft YaHei Light'">$ vim README<br />
+          $ git status<br />
+          On branch master<br />
+          Untracked files:<br />
+              (use "git add <file>..." to include in what will be committed)<br />
+            <br />
+          README<br />
+          nothing added to commit but untracked files present (use "git add" to track)</p>
+          <p>在状态报告中可以看到新建的README文件出现在“Untracked files”下面。未跟踪的文件意味着Git在之前的快照（提交）中没有这些文件；
+          Git 不会自动将之纳入跟踪范围，除非你明明白白地告诉它“我需要跟踪该文件”，因而不用担心把临时文件什么的也归入版本管理。不过现在的例子中，我们确实想要跟踪管理 README 这个文件。</p>
+
+         
+         <h6 style="font-weight:bold;color:rgb(188, 4, 242);font-size:1.15em;margin-top:1.5em;">跟踪新文件</h6>
+         <p>使用命令 git add 开始跟踪一个新文件。所以，要跟踪 README 文件，运行：</p>   
+         <p style="font-weight:bold;color:#f14e32;font-family:'Microsoft YaHei Light'">$ git add README</p>
+         <p>此时再运行 git status 命令，会看到 README 文件已被跟踪，并处于暂存状态：</p>
+         <p style="font-weight:bold;color:#f14e32;font-family:'Microsoft YaHei Light'">$ git status <br />
+          On branch master <br />
+          Changes to be committed: <br />
+            (use "git reset HEAD <file>..." to unstage) <br />
+                  new file:   README</p>
+          <p>只要在 “Changes to be committed” 这行下面的，就说明是已暂存状态。如果此时提交，那么该文件此时此刻的版本将被留存在历史记录中。
+          你可能会想起之前我们使用 git init 后就运行了 git add 命令，开始跟踪当前目录下的文件。在 git add 后面可以指明要跟踪的文件或目录路径。如果是目录的话，就说明要递归跟踪该目录下的所有文件。
+          （译注：其实 git add 的潜台词就是把目标文件快照放入暂存区域，也就是 add file into staged area，同时未曾跟踪过的文件标记为需要跟踪。这样就好理解后续 add 操作的实际意义了。）</p>
+      </div>   
+    ]]>
+  </c:content>
+</c:component>
