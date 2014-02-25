@@ -76,6 +76,128 @@
       <c:comment1>
         <![CDATA[拦截器可以决定动作该不该执行，且可以自己返回一个控制字符串从而终止工作流。例如 workflow 拦截器: 如果动作实现了 Validateable 接口，那么调用该动作的 validate() 方法。]]>
       </c:comment1>
+      <c:comment1>
+        <![CDATA[&nbsp;]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[知道 ActionInvocation 做什么？ 就等于知道 Struts2 如何处理请求。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[当框架接收到一个请求时，它首先必须决定这个 url 映射到哪个动作。这个动作的一个实例会被加入到一个新创建的 ActionInvocation 实例中。接着会框架咨询声明性架构，以发现哪些拦截器应该被触发及按照什么样的顺序触发。]]>
+      </c:comment1>
     </c:comment>
   </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>开发拦截器</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[Web 领域的大部分常见任务已经编写和捆绑进了 struts-default 包中。]]></c:desc1>
+      <c:desc1> <![CDATA[在开发动作时，时刻注意可以被转移到拦截器中的任何任务。当你这样开始做时，说明你已经迷恋上了拦截器。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1">
+      <![CDATA[
+    
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>TimerInterceptor</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[TimerInterceptor 是 struts-default 包含的一个拦截器。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"><![CDATA[public String interceptor(ActionInvocation invocation) throws Exception {
+    long startTime = System.currentTimeMillis();
+    String result = invocation.invoke();
+    long executionTime = System.currentTimeMillis() - startTime;
+      ... log time...
+    return result;
+}]]></c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[Interceptor 接口定义的 interceptor 方法的拦截器执行的入口点。 ]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[拦截器必须决定是否将控制权转交给剩余的拦截器和动作 (即: 调用 invoke() 方法)。 ]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[在调用 invoke() 方法之后，拦截器等待这个方法的返回值。invoke() 方法返回一个结果字符串，用来指示那个结果被呈现。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[虽然结果字符串告诉拦截器哪个结果会被呈现，但是它没有指出动作是否被触发。完全有可能更深层次的拦截器没有调用 invoke() 方法而是自己返回了一个控制字符串从而改变了工作流。]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>内建的 Struts2 拦截器</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1">
+      <![CDATA[
+]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[timer 拦截器 ]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[logger 拦截器 ]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[params 拦截器 ]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[static-params 拦截器 ]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[autowiring 拦截器 ]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[servler-config 拦截器 ]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[fileUpload 拦截器 ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>工作流拦截器</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1">
+      <![CDATA[...
+]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>其它拦截器</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1">
+      <![CDATA[...
+]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
 </c:component>
