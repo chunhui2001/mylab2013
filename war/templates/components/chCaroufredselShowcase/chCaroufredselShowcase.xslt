@@ -9,108 +9,14 @@
 
 
     <!-- Showcase 47853 -->
-  	<div class="chCaroufredselShowcase showcase-row" id="{@componentId}">
-      
+  	<div class="chCaroufredselShowcase showcase-row" id="{@componentId}">      
       <xsl:for-each select="c:caroufredsel">
         <xsl:call-template name="chCaroufredselShowcase-build">
           <xsl:with-param name="caroufredsel" select="current()" />
           <xsl:with-param name="caroufredsel_index" select="position()" />
           <xsl:with-param name="component_id" select="../@componentId" />
         </xsl:call-template>
-      </xsl:for-each>
-      <!--
-      <div class="moduletable video">
-        <div class="mod_caroufredsel mod_caroufredsel__video">
-          <div id="list_carousel_carousel2" class="list_carousel">
-
-            <ul id="caroufredsel_carousel2">
-              
-            </ul>
-
-            <div id="carousel_carousel2_prev" class="caroufredsel_prev">
-              <span></span>
-            </div>
-            <div id="carousel_carousel2_next" class="caroufredsel_next">
-              <span></span>
-            </div>
-
-            <div id="carousel_carousel2_pag" class="caroufredsel_pagination"></div>
-            <div class="clearfix"></div>
-          </div>
-        </div>
-
-        <script type="text/javascript">
-          <![CDATA[
-          if (jQuery.browser.msie && jQuery.browser.version < 9) {
-                  jQuery(document).ready(function () {
-
-                      var carouselConteiner = jQuery("#caroufredsel_carousel2");
-
-                      carouselConteiner.carouFredSel({
-                          responsive: true,
-                          width: '100%',
-                          items: {
-                              width: 385,
-                              height: 'variable',
-                              visible: {
-                                  min: 1,
-                                  max: 5
-                              },
-                              minimum: 1
-                          },
-                          scroll: {
-                              items: 1,
-                              fx: "scroll",
-                              easing: "swing",
-                              duration: 500,
-                              queue: true
-                          },
-                          auto: true,
-                          direction: 'right',
-                          next: "#carousel_carousel2_next",
-                          prev: "#carousel_carousel2_prev",
-                          swipe: {
-                              onTouch: true
-                          }
-                      });
-                  });
-              } else {
-                  jQuery(window).load(function () {
-
-                      var carouselConteiner = jQuery("#caroufredsel_carousel2");
-
-                      carouselConteiner.carouFredSel({
-                          responsive: true,
-                          width: '100%',
-                          items: {
-                              width: 385,
-                              height: 'variable',
-                              visible: {
-                                  min: 1,
-                                  max: 5
-                              },
-                              minimum: 1
-                          },
-                          scroll: {
-                              items: 1,
-                              fx: "scroll",
-                              easing: "swing",
-                              duration: 500,
-                              queue: true
-                          },
-                          auto: true,
-                          direction: 'right',
-                          next: "#carousel_carousel2_next",
-                          prev: "#carousel_carousel2_prev",
-                          swipe: {
-                              onTouch: true
-                          }
-                      });
-                  });
-              }]]>
-        </script>
-      </div>
-      -->
+      </xsl:for-each>      
   	</div>
 
 
@@ -193,15 +99,28 @@
                               fx: "scroll",
                               easing: "swing",
                               duration: 500,
-                              queue: true
+                              queue: true,
+                              pauseOnHover: true
                           },
                           auto: true,
                           direction: ']]><xsl:value-of select="$direction"/><![CDATA[',
-                          next: "#carousel_carousel]]><xsl:value-of select="$caroufredsel_id"/><![CDATA[_next",
-                          prev: "#carousel_carousel]]><xsl:value-of select="$caroufredsel_id"/><![CDATA[_prev",
+                          next: {button:"#carousel_carousel]]><xsl:value-of select="$caroufredsel_id"/><![CDATA[_next",key:'right',onAfter:function() {  } },
+                          prev: {button:"#carousel_carousel]]><xsl:value-of select="$caroufredsel_id"/><![CDATA[_prev",key:'left',onAfter:function() {  } },
                           swipe: {
                               onTouch: true
                           }
+                      });
+                      
+                      
+                      $("#carousel_carousel]]><xsl:value-of select="$caroufredsel_id"/><![CDATA[_next").bind("click", function() {
+                          // change direction to right
+                         // $(carouselConteiner).carouFredSel({ direction:'right' });
+                         $(carouselConteiner).trigger( 'configuration', [ 'direction', "left" ] );
+                      });
+                      $("#carousel_carousel]]><xsl:value-of select="$caroufredsel_id"/><![CDATA[_prev").bind("click", function() {
+                          // change direction to left
+                          //$(carouselConteiner).carouFredSel({ direction:'left' });
+                         $(carouselConteiner).trigger( 'configuration', [ 'direction', "right" ] );
                       });
                   });
               } else {
@@ -226,18 +145,35 @@
                               fx: "scroll",
                               easing: "swing",
                               duration: 500,
-                              queue: true
+                              queue: true,
+                              pauseOnHover: true
                           },
                           auto: true,
                           direction: ']]><xsl:value-of select="$direction"/><![CDATA[',
-                          next: "#carousel_carousel]]><xsl:value-of select="$caroufredsel_id"/><![CDATA[_next",
-                          prev: "#carousel_carousel]]><xsl:value-of select="$caroufredsel_id"/><![CDATA[_prev",
+                          next: {button:"#carousel_carousel]]><xsl:value-of select="$caroufredsel_id"/><![CDATA[_next",key:'right',onAfter:function() {  } },
+                          prev: {button:"#carousel_carousel]]><xsl:value-of select="$caroufredsel_id"/><![CDATA[_prev",key:'left',onAfter:function() {  } },
                           swipe: {
                               onTouch: true
                           }
                       });
+                      
+                      
+                      $("#carousel_carousel]]><xsl:value-of select="$caroufredsel_id"/><![CDATA[_next").bind("click", function() {
+                          // change direction to right
+                         // $(carouselConteiner).carouFredSel({ direction:'right' });
+                         $(carouselConteiner).trigger( 'configuration', [ 'direction', "left" ] );
+                      });
+                      $("#carousel_carousel]]><xsl:value-of select="$caroufredsel_id"/><![CDATA[_prev").bind("click", function() {
+                          // change direction to left
+                          //$(carouselConteiner).carouFredSel({ direction:'left' });
+                         $(carouselConteiner).trigger( 'configuration', [ 'direction', "right" ] );
+                      });
                   });
-              }]]>
+              }
+              
+              
+              
+              ]]>
       </script>
     </div>
   </xsl:template>
