@@ -2,10 +2,13 @@
 <c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
 
   <c:abstract>
-    <![CDATA[]]>
+    <![CDATA[在开发 AuthenticationInterceptor 拦截器之前应该先整理出一些角色:<br />
+    AuthenticationInterceptor 不做身份验证，它只是阻止没有通过身份验证的用户访问安全的动作。<br />
+    身份验证由登陆动作完成，登陆动作把用户对象存储在会话作用域映射中。<br />
+    AuthenticationInterceptor 检查用户对象是否出现在会话中。验证失败就重定向到登陆页面，终止工作流。]]>
   </c:abstract>
 
-  <c:entry style="margin-top:2em;">
+  <c:entry>
     <c:title>com.opensymphony.xwork2.interceptor.Interceptor</c:title>
     <c:desc>
       <c:desc1> <![CDATA[编写自定义拦截器时需要实现 com.opensymphony.xwork2.interceptor.Interceptor 接口]]></c:desc1>
@@ -13,15 +16,166 @@
     <c:sourceContent type="" title="" id="sourceContent1"><![CDATA[public interface Interceptor extends Serializable {
     void destory();
     void init();
-    String interceptor(ActionInvocation invocation) throws Exception;
+    String intercept(ActionInvocation invocation) throws Exception;
+}]]></c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[其中 interceptor() 方法被 ActionInvocation.invoke() 方法调用。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[如果想编写一个具有参数化类型的拦截器，可以实现 com.opensymphony.xwork2.interceptor.MethodFilterInterceptor 类。因为身份验证拦截器不需要过滤方法，所以我们直接实现 interceptor 接口。]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>Login 动作</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent 
+      type="" 
+      title="Login 动作验证用户身份并将用户存储在会话作用域中" 
+      id="sourceContent1"><![CDATA[public class Login extends ActionSupport implements SessionAware {
+    public String execute() {
+      User user = getPortfolioService().authenticationUser(userName, password);
+        
+      if (user == null) {
+          return INPUT;
+      }
+        
+      session.put(Struts2PortfolioConstants.USER, user);
+        
+      return SUCCESS;
+    } 
+    
+    // 使用 SessionAware 接口以便让会话作用域的映射方便地注入到设置方法。这是 defaultStack 中的 ServletConfigInterceptor 提供的服务之一。
+    public void setSession(Map session) {
+      this.session = session;
+    }
 }]]></c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
       </c:comment1>
+      <c:comment1>
+        <![CDATA[如果想编写一个具有参数化类型的拦截器，可以实现 com.opensymphony.xwork2.interceptor.MethodFilterInterceptor 类。因为身份验证拦截器不需要过滤方法，所以我们直接实现 interceptor 接口。]]>
+      </c:comment1>
     </c:comment>
   </c:entry>
 
+  <c:entry style="margin-top:2em;">
+    <c:title>AuthenticationInterceptor</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent
+      type=""
+      title="Login 动作验证用户身份并将用户存储在会话作用域中"
+      id="sourceContent1"><![CDATA[public class AuthenticationInterceptor implements interceptor {
+    public void destory() {
+      
+    }
+    
+    public void init() {
+      
+    }
+    
+    public String intercept (ActionInvocation actionInvocation) throws Exception {
+        Map session = actionInvocation.getInvocationContent().getSession();
+        User user = session.get(Struts2PortfolioConstants.USER);
+        
+        if (user == null) {
+            return Action.LOGIN;
+        } else {
+            // 用户已经登陆， 从 actionInvocation 中取得当前动作的引用
+            Action action = (Action)actionInvocation.getAction();
+            
+            // 查看其是否实现了 UserAware 接口，并将用户对象注入到动作对象的设置方法。
+            // 只要实现 UserAware 接口就可以让用户对象方便的注入，这是让动作更简洁的一种有效方法。
+            if (action instanceof UserAware) {
+                ((UserAware)action).setUser(user);
+            }
+            
+            return actionInvocation.invoke();
+        }
+    }
+}]]></c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[拦截器实例在动作之间共享。虽然每个请求都会创建动作的一个新实例，但是拦截器会重用。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[拦截器是无状态的，不要再拦截器中存储与当前正在处理的请求相关的数据。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[拦截器应该只把它的处理逻辑应用在请求数据上，你可以通过 ActionInvocation 访问这些已经存储在不同对象的数据。]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 
+  <c:entry style="margin-top:2em;">
+    <c:title>声明拦截器并构建新的默认栈</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[把所有需要权限验证的动作放在同一个包中，并构建一个包含 AnthenticationInterceptor 拦截器的自定义栈。之后把它声明为这个安全包的默认拦截器引用。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent
+      type=""
+      title=""
+      id="sourceContent1"><![CDATA[<package name="name1" namespace="name1/secure" extends="struts-default">
+      <interceptors>
+          <!-- 声明拦截器 (将 Java 类映射到一个逻辑名) -->
+          <interceptor name="authenticationInterceptor" class="packageName.AuthenticationInterceptor" />
+          
+          <!-- 加入拦截器栈 -->
+          <interceptor-stack name="secureStack">
+              <!-- 如果没有经过验证则尽快结束请求 -->
+              <interceptor-ref name="authenticationInterceptor" />
+              <interceptor-ref name="defaultStack" />
+          </interceptor-stack>
+      </interceptors>
+      
+      <!-- 设为默认拦截器 -->
+      <default-interceptor-ref name="secureStack" />      
+      ...
+</package>]]></c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[将所有需要权限验证的动作放在这个包中。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[这个包内的所有动作都会有身份验证和自动返回登陆页的功能。]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 
+  <c:entry style="margin-top:2em;">
+    <c:title>Interceptor 总结</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent
+      type=""
+      title=""
+      id="sourceContent1">
+      <![CDATA[]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[将常见任务的功能模块化之后，可以简单地使用声明性架构来自定义拦截器栈，以满足特定动作或者包内所有动作的需求。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[Struts2 框架的整个执行模型的核心是 ActionInvocation。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[ActionInvocation 实际上管理着执行过程，它提供一个递归的 invoke() 方法作为进入执行过程的入口点。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[ActionInvocation 跟踪执行过程的状态，并且每次 invoke() 方法被调用时都调用下一个拦截器，知道最终动作被执行。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[熟悉 Struts2 提供的最新拦截器集合，是节省时间、避免重复劳动的关键。]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 </c:component>

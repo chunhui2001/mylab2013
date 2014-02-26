@@ -2,13 +2,22 @@
 <xsl:stylesheet version="1.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:c="http://com.snnmo.website"
-                exclude-result-prefixes="c">
+                xmlns:jmath="http://www.oracle.com/XSL/Transform/java/java.lang.Math"
+                xmlns:jString="http://www.oracle.com/XSL/Transform/java/java.lang.String"
+                exclude-result-prefixes="c jmath jString">
   <xsl:output method="html" indent="yes"/>
   
   <xsl:param name="language" />
   <xsl:param name="country" />
   <xsl:param name="countryCode" />
-  
+
+
+  <xsl:template name="jmathCeil" >
+    <xsl:param name="value" />
+    <xsl:value-of select="jmath:ceil($value)"/>
+  </xsl:template>
+
+
   <xsl:template match="c:master[@type='smoComPageMaster']">  
   <html lang="{$language}">
   	<head>

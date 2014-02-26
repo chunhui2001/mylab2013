@@ -2,12 +2,12 @@
 <xsl:stylesheet version="1.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:c="http://com.snnmo.website"
-                exclude-result-prefixes="c">
+                exclude-result-prefixes="c">  
   <xsl:output method="html" indent="yes"/>
   
   <xsl:template match="c:component[@type='chSourceHighlighting']">
     <!--script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js?autoload=true&amp;skin=sunburst&amp;lang=css" defer="defer"></script-->
-
+   
 
     <xsl:if test="normalize-space(c:abstract) != ''">
       <p style="margin: 1em 0;font-weight:bold;">
@@ -36,14 +36,11 @@
 
   <xsl:template name="buildContent">
     <xsl:param name="entry" />
-
     <xsl:if test="normalize-space($entry/c:title) != ''">
       <h3>
-        <xsl:if test="$entry/@style != ''">
-          <xsl:attribute name="style">
-            <xsl:value-of select="$entry/@style"/>
-          </xsl:attribute>
-        </xsl:if>
+        <xsl:attribute name="style">
+          <xsl:value-of select="concat('word-break:break-word;',$entry/@style)"/>
+        </xsl:attribute>
         <xsl:value-of select="$entry/c:title"/>
       </h3>
     </xsl:if>
