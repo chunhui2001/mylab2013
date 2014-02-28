@@ -231,6 +231,7 @@ public void setUser(User user) {
     <s:textfield name="ages" lable="Ages" />
     <s:textfield name="ages" lable="Ages" />
     
+    <!-- 根据索引提交数据时，需要初始化服务器端数组. -->
     <s:textfield name="names[0]" lable="names" />
     <s:textfield name="names[1]" lable="names" />
     <s:textfield name="names[2]" lable="names" />
@@ -247,8 +248,9 @@ public Double[] getAges() {
 public void setAges(Double[] ages) {
     this.ages = ages;
 }
-    
-private String[] names;
+
+// 根据索引提交数据时，需要初始化服务器端数组.
+private String[] names = new String[10];
     
 public String[] getNames() {
     return this.names;
@@ -258,6 +260,10 @@ public void setNames(String[] names) {
     this.names = names;
 }]]></c:sourceContent>
 
+
+    <c:sourceContent type="" title="结果页面" style="margin-top:1em;"
+                     id="sourceContent1"><![CDATA[<h3><s:property value="ages[2]" /></h3>
+<h3><s:property value="names[2]" /></h3>]]></c:sourceContent>
     
     <c:comment>
       <c:comment1>
@@ -268,15 +274,15 @@ public void setNames(String[] names) {
         <table>
             <thead>
                 <tr>
-                  <th style="padding: 0 .5em;">参数名</th><th style="padding: 0 .5em;">参数值</th>
+                  <th style="padding: 0 .5em;text-align:left;">参数名</th><th style="padding: 0 .5em;text-align:left;">参数值</th><th style="padding: 0 .5em;text-align:left;">初始化</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                  <td style="padding: 0 .5em;">ages</td><td style="padding: 0 .5em;">11,22,33</td>
+                  <td style="padding: 0 .5em;">ages</td><td style="padding: 0 .5em;">11,22,33</td> <td style="padding: 0 .5em;vertical-align:middle;">不需要初始化服务器端数组</td>
                 </tr>
                 <tr>
-                  <td style="padding: 0 .5em;">names[0]</td><td style="padding: 0 .5em;">name1</td>
+                  <td style="padding: 0 .5em;">names[0]</td><td style="padding: 0 .5em;">name1</td> <td rowspan="3" style="padding: 0 .5em;vertical-align:middle;">需要初始化服务器端数组</td>
                 </tr>
                 <tr>
                   <td style="padding: 0 .5em;">names[1]</td><td style="padding: 0 .5em;">name2</td>
@@ -286,6 +292,127 @@ public void setNames(String[] names) {
                 </tr>
             </tbody>
         </table>]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>OGNL 数据转移之 List</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[Struts2 支持将一系列请求参数自动转换到各种 Collection 类型的属性。]]></c:desc1>
+      <c:desc1> <![CDATA[Java5 之前 List 不支持特定类型 (即：泛型)，这个时候提交的数据类型默认为 String。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="JSP 表单"
+                     id="sourceContent1"><![CDATA[<s:textfield name="middleNames[0]" lable="middleNames" />
+<s:textfield name="middleNames[1]" lable="middleNames" />
+<s:textfield name="middleNames[2]" lable="middleNames" />
+
+<s:textfield name="lastNames" lable="lastNames" />
+<s:textfield name="lastNames" lable="lastNames" />
+<s:textfield name="lastNames" lable="lastNames" />]]></c:sourceContent>
+
+    <c:sourceContent type="" title="Java 类" style="margin-top:1em;"
+                         id="sourceContent1"><![CDATA[// 无论是否使用索引提交数据， 不需要预先初始化任何一个服务器端 List
+// 没有类型说明，这些 List 中的数据都会默认是 String。如果是其它类型则不会做默认转换。
+private List middleNames;
+private List lastNames;
+
+public List getMiddleNames() {
+    return this.middleNames;
+}
+
+public void setMiddleNames(List middleNames) {
+    this.middleNames = middleNames;
+}
+
+public List getLastNames() {
+    return this.lastNames;
+}
+
+public void setLastNames(List lastNames) {
+    this.lastNames = lastNames;
+}]]></c:sourceContent>
+    
+
+
+    
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>OGNL 数据转移之 List&lt;T&gt;</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[在 Struts2 中，如果想为 List 中的元素指定特定类型，需要使用一个简单的属性文件。并把这个文件在放在 Java 包中这个类的旁边。]]></c:desc1>
+    </c:desc>
+    
+
+    <c:sourceContent type="html" title="属性文件命名约定及内容" style="margin-top:1em;"
+                         id="sourceContent1">
+      <![CDATA[<div style="float:left;">
+      <span style="color:green;font-weight:bold;font-size:1.1em;">命名约定</span>
+      <br /><span style="color:green;font-weight:bold;font-size:1.1em;">例如: DataTransferTest-Conversion.properties</span>
+      <br /><span style="color:green;font-weight:bold;font-size:1.1em;">并把这个文件在放在 Java 包中这个类的旁边。</span>
+      <br />
+      <img src="http://farm4.staticflickr.com/3764/12810632373_ca402dc723_b.jpg" style="width:595px;" src="属性文件命名约定" />
+      </div>
+      <div style="float:left;margin-left:1em;">
+      <span style="color:green;font-weight:bold;font-size:1.1em;">内容</span><br />
+      <img src="http://farm8.staticflickr.com/7345/12810638145_d429896026_b.jpg" src="属性文件的内容" /></div>
+      <div class="clear"></div>]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="" title="JSP 表单" style="margin-top:1em;"
+                         id="sourceContent1"><![CDATA[<s:textfield name="weights[0]" lable="weights" />
+<s:textfield name="weights[1]" lable="weights" />
+<s:textfield name="weights[2]" lable="weights" />]]></c:sourceContent>
+
+    <c:sourceContent type="" title="Java 类" style="margin-top:1em;"
+                     id="sourceContent1"><![CDATA[// 在使用具体类型的 List 时不可以预先初始化，否则会得到一个错误。
+private List weights;
+      
+public List getWeights() {
+    return this.weights;
+}
+      
+public void setWeights(List weights) {
+    this.weights = weights;
+}]]></c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[这与若类型的 List 没有什么不同，只是多了一个用户转换的属性文件。]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>OGNL 数据转移之 Map</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[Java 中的 Map 使用关键字而非索引来关联到它的值。]]></c:desc1>
+      <c:desc1> <![CDATA[如果不指定类型，Map 元素和关键字都会默认为 String 类型。]]></c:desc1>
+      <c:desc1> <![CDATA[在 Struts2 中用于引用 Map 的 OGNL 表达式与 List 略有不同。]]></c:desc1>
+    </c:desc>
+
+
+    <c:sourceContent type="html" title="" style="margin-top:1em;"
+                         id="sourceContent1">
+      <![CDATA[]]>
+    </c:sourceContent>
+
+
+
+    
+
+    
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
       </c:comment1>
     </c:comment>
   </c:entry>
