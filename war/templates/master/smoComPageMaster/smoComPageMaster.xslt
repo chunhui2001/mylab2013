@@ -30,9 +30,9 @@
       <xsl:if test="normalize-space($countryCode) != ''">
         <meta property="countryCode" content="{$countryCode}" />
       </xsl:if>
-        
+
+      <link rel="stylesheet" type="text/css" href="/RenderingAssets/lib/bootstrap/bootstrap.min.css" />
 	  	<link rel="stylesheet" type="text/css" href="/RenderingAssets/css/reset.css" />
-	  	<link rel="stylesheet" type="text/css" href="/RenderingAssets/lib/bootstrap/bootstrap.min.css" />
 	  	<link rel="stylesheet" type="text/css" href="/RenderingAssets/css/global.css" />
 	  	
 	  	<script type="text/javascript" src="/RenderingAssets/lib/jquery/jquery-1.10.1.min.js"></script>	  	
@@ -77,6 +77,7 @@
 	  	</div>
 
 
+      <script type="text/javascript" src="/RenderingAssets/lib/bootstrap/bootstrap.min.js"></script>
       <script type="text/javascript" src="/RenderingAssets/lib/jCarousel/jquery.jcarousel.min.js"></script>
       <script src="/RenderingAssets/lib/caroufredsel/jquery.caroufredsel.js" type="text/javascript"></script>
     </body>
