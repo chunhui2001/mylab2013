@@ -7,31 +7,29 @@
   
   <xsl:template match="c:component[@type='chSourceHighlighting']">
     <!--script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js?autoload=true&amp;skin=sunburst&amp;lang=css" defer="defer"></script-->
-   
 
-    <xsl:if test="normalize-space(c:abstract) != ''">
-      <p style="margin: 1em 0;font-weight:bold;">
-        <xsl:value-of disable-output-escaping="yes" select="normalize-space(c:abstract) "/>
-      </p>
-    </xsl:if>
+    <div class="chSourceHighlighting">
+      <xsl:if test="normalize-space(c:abstract) != ''">
+        <p style="margin: 1em 0;font-weight:bold;">
+          <xsl:value-of disable-output-escaping="yes" select="normalize-space(c:abstract) "/>
+        </p>
+      </xsl:if>
     
-    <xsl:choose>
-      <xsl:when test="count(c:entry) &gt; 0">
-        <xsl:for-each select="c:entry">
+      <xsl:choose>
+        <xsl:when test="count(c:entry) &gt; 0">
+          <xsl:for-each select="c:entry">
+            <xsl:call-template name="buildContent">
+              <xsl:with-param name="entry" select="current()" />
+            </xsl:call-template>
+          </xsl:for-each>
+        </xsl:when>
+        <xsl:otherwise>
           <xsl:call-template name="buildContent">
             <xsl:with-param name="entry" select="current()" />
           </xsl:call-template>
-        </xsl:for-each>
-      </xsl:when>
-      <xsl:otherwise>
-        <xsl:call-template name="buildContent">
-          <xsl:with-param name="entry" select="current()" />
-        </xsl:call-template>
-      </xsl:otherwise>
-    </xsl:choose>
-    
-    
-    
+        </xsl:otherwise>
+      </xsl:choose>
+    </div>
   </xsl:template>
 
   <xsl:template name="buildContent">
@@ -75,7 +73,7 @@
             </xsl:attribute>
           </xsl:if>
           <xsl:if test="current()/@title and normalize-space(current()/@title) != ''">
-            <h6 style="margin:0; background-color:gray;color:white;padding:.2em .5em;font-weight:bold;">
+            <h6 style="margin:0; background-color:gray;color:white;padding:.5em .8em;font-weight:bold;font-size:1em;">
               <xsl:value-of select="current()/@title"/>
             </h6>
           </xsl:if>
@@ -90,7 +88,7 @@
               <!-- Language hints can be put in XML application directive style comments. -->
               <?prettify lang=html linenums=false?>
               <pre class="prettyprint" id="current()/@componentId"
-                   style="{$style}">
+                   style="border-radius:0;{$style}">
                 <xsl:value-of disable-output-escaping="no" select="current()"/>
               </pre>
             </xsl:otherwise>
@@ -100,16 +98,23 @@
     </xsl:if>
 
     <xsl:if test="count($entry/c:comment/*[normalize-space(text()) != '']) &gt; 0">
-      <div style="background-color:#D5D5FC;padding:2em;border-radius:4px;
-                border:1px solid #BABACE;margin-top:1em;">
+      <ul style="background-color:#D5D5FC;padding:1.5em;border-radius:4px;
+                border:1px solid #BABACE;margin-top:1em;list-style:inherit;list-style-type:square;padding-left:3em;word-break:break-all;">
         <xsl:for-each select="$entry/c:comment/*">
           <xsl:if test="normalize-space(current()) != ''">
-            <div style="color:rgb(205, 76, 0);font-weight:bold;">
-              &#9830;&#160;<xsl:value-of disable-output-escaping="yes" select="current()"/>
-            </div>
+            <!--div>
+              <span style="display:block;float:left;">&#9830;</span>
+              
+              <div class="clear"></div>
+            </div-->
+            <li style="color:rgb(205, 76, 0);font-weight:bold;">
+              <span>
+                <xsl:value-of disable-output-escaping="yes" select="current()"/>
+              </span>
+            </li>
           </xsl:if>
         </xsl:for-each>
-      </div>
+      </ul>
     </xsl:if>
     
   </xsl:template>

@@ -58,6 +58,11 @@
 					<div class="col">
 							<xsl:for-each select="c:row">
 								<div class="ro">
+                  <xsl:if test="normalize-space(@style) != ''">
+                    <xsl:attribute name="style">
+                      <xsl:value-of select="@style"/>
+                    </xsl:attribute>
+                  </xsl:if>
 									<xsl:for-each select="c:cell">
 										<div class="ce {@class}" style="{@style};margin:{@margin};float:{@float};">
 											<xsl:for-each select="c:include">
