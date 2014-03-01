@@ -98,7 +98,7 @@
     </xsl:if>
 
     <xsl:if test="count($entry/c:comment/*[normalize-space(text()) != '']) &gt; 0">
-      <ul style="background-color:#D5D5FC;padding:1.5em;border-radius:4px;
+      <ul style="background-color:#EAEAF9;padding:1.5em;border-radius:4px;
                 border:1px solid #BABACE;margin-top:1em;list-style:inherit;list-style-type:square;padding-left:3em;word-break:break-all;">
         <xsl:for-each select="$entry/c:comment/*">
           <xsl:if test="normalize-space(current()) != ''">
@@ -107,8 +107,8 @@
               
               <div class="clear"></div>
             </div-->
-            <li style="color:rgb(205, 76, 0);font-weight:bold;">
-              <span>
+            <li style="color:rgb(205, 76, 0);">
+              <span style="font-weight:bold;">
                 <xsl:value-of disable-output-escaping="yes" select="current()"/>
               </span>
             </li>
