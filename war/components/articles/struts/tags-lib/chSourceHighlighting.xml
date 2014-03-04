@@ -2,16 +2,67 @@
 <c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
 
   <c:abstract>
-    <![CDATA[]]>
+    <![CDATA[Struts2 自带了很多不同类型的标签。这些标签可分为四种类别: 数据标签 (data tag)、流程控制标签 (control-flow tag)、UI 标签 (UI tag) 和其它标签 (miscellaneous tag)。]]>
   </c:abstract>
 
   <c:entry>
-    <c:title>。。</c:title>
+    <c:title>ActionContext 和 OGNL</c:title>
     <c:desc>
-      <c:desc1> <![CDATA[]]></c:desc1>
+      <c:desc1> <![CDATA[当 Struts2 接收到一个请求时，首要任务是创建存储本次请求的所有重要数据的对象。所有这些重要数据连同 ValueStack 通通存储在 ActionContext 的对象中。]]></c:desc1>
+      <c:desc1> <![CDATA[在 Struts2 中，每一个 OGNL 表达式必须从 ActionContext 包含的对象中选择初始对象。]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="" title="" 
-                     id="sourceContent1"><![CDATA[...]]></c:sourceContent>
+    <c:sourceContent type="html" title="ActionContext" 
+                     id="sourceContent1">
+                       <![CDATA[
+                     <img src="http://farm8.staticflickr.com/7304/12895613535_f036faf3e7_b.jpg" alt="ActionContext" />
+                     ]]></c:sourceContent>
+
+    <c:sourceContent type="html" title="ActionContext 中的对象及映射的名字和内容" style="margin-top:1em;"
+                     id="sourceContent1">
+      <![CDATA[
+          <table>
+            <thead>
+                <tr>
+                    <th style="padding:.2em .6em;font-weight:bold;">名字</th>
+                    <th style="padding:.2em .6em;font-weight:bold;">描述</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                  <td style="padding:.2em .6em;"><i><b>parameters</b></i></td>
+                  <td style="padding:.2em .6em;">当请请求中，请求参数的映射</td>
+                </tr>  
+                <tr>
+                  <td style="padding:.2em .6em;"><i><b>request</b></i></td>
+                  <td style="padding:.2em .6em;">请求作用域的属性的映射</td>
+                </tr>   
+                <tr>
+                  <td style="padding:.2em .6em;"><i><b>session</b></i></td>
+                  <td style="padding:.2em .6em;">
+                    会话作用域的属性的映射.<br />
+                    存储在会话作用域内的对象可以让一个特定会话中的所有请求访问.<br />
+                    一个常见的用例是: 将用户对象存储在会话作用域中，以便在多个请求之间表明用户已经登陆.
+                    </td>
+                </tr>    
+                <tr>
+                  <td style="padding:.2em .6em;"><i><b>application</b></i></td>
+                  <td style="padding:.2em .6em;">
+                    应用程序作用域的属性的映射.<br />
+                    存储在应用程序作用域内的对象可以被进入这个应用程序的所有请求访问.
+                  </td>
+                </tr>    
+                <tr>
+                  <td style="padding:.2em .6em;"><i><b>attr</b></i></td>
+                  <td style="padding:.2em .6em;">按照页面、请求、会话、应用程序作用域的顺序，返回第一个出现的属性</td>
+                </tr>     
+                <tr>
+                  <td style="padding:.2em .6em;"><i><b>ValueStack</b></i></td>
+                  <td style="padding:.2em .6em;">包含当前请求的应用程序特定领域的所有数据</td>
+                </tr>      
+            </tbody>
+          </table>
+      ]]>
+    </c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
@@ -19,5 +70,373 @@
     </c:comment>
   </c:entry>
 
-  
+  <c:entry style="margin-top:2em;">
+    <c:title>虚拟对象 ValueStack</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[当 Struts2 接收到一个请求时，它立即创建一个 ActionContext 对象、一个 ValueStack 和一个动作对象。作为应用程序数据的承载者，动作被马上放到 ValueStack 中，以便框架可以通过 OGNL 访问它的属性。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="ActionContext"
+                     id="sourceContent1">
+      <![CDATA[ 
+      <img src="http://farm8.staticflickr.com/7364/12896624755_3dddbf8ce3_b.jpg" alt="" />
+      <br />
+      <p style="color:rgb(218, 14, 175);font-weight:bold;font-style:italic;">
+        当 OGNL 表达式根据 ValueStack 解析时，它装作一个对象。这个虚拟对象包含放了在上面的所有对象的所有属性。如果相同的属性出现多次，栈下面的属性会被上层的同名属性覆盖。
+      </p>
+      ]]>
+    </c:sourceContent>
+
+    
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>JavaBean</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[bean 是一个公开了数据或者工具方法给 JSP 标签或者其它是图层技术的 Java 对象。很多开发人员把公开这些内容的任何对象叫做 bean。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="ActionContext"
+                     id="sourceContent1">
+      <![CDATA[ 
+      ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>Struts2 标签 API 语法</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[Struts2 标签定义在比任何具体的视图层技术更高级的层。一旦指定需要使用的标签，只需要继续在选择的视图层技术 (JSP、Velocity或FreeMarker) 中使用这些标签即可。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="JSP 语法"
+                     id="sourceContent1"><![CDATA[
+<!-- property -->
+<s:property value="name" />
+
+<!-- 注意： 在 JSP 页面中使用 Struts 标签之前，必须声明标签库 -->
+<%@ page contentType="text/html; charset=UTF-8" %>
+<%@ taglib prefix="s" url="/struts-tags" %>]]></c:sourceContent>
+
+    <c:sourceContent type="" title="Velocigy 语法 (Struts 框架原生支持 Velocity)" style="margin-top:1em;"
+                         id="sourceContent1"><![CDATA[
+<!-- 在 Velocity 中，Struts2标签 API 使用 Velocity 宏实现 -->
+#sproperty ("value=name")
+
+
+#sform ("action=register")
+    #stextfield ("value=name" "lable=User Name")
+    #spassword ("value=password" "lable=Password")
+    #stextfield ("lable=Enter a name" "value=portfolioName")
+    
+    #ssubmit ("value=Submit")
+#end]]></c:sourceContent>
+
+    <c:sourceContent type="" title="FreeMarker 语法 (Struts 框架原生支持 FreeMarker)" style="margin-top:1em;"
+                         id="sourceContent1"><![CDATA[<!-- FreeMarker 更像 JSP 的标签语法 -->
+<@s.property value="name" />]]></c:sourceContent>
+
+    <c:sourceContent type="" title="字符串和非字符串类型的属性" style="margin-top:1em;"
+                         id="sourceContent1"><![CDATA[<!-- 如果目标属性在 ValueStack 中不存在，将显示一个空字符串 -->
+<s:property value="nonExistingProperty" /> 
+                           
+<!-- 如果目标属性在 ValueStack 中不存在，将显示 default 字符串字面值 -->           
+<s:property value="nonExistsProperty" default="doesNotExist" />  
+
+<!-- 使用 ${expression} 语法可以强制将字符串属性当作 OGNL 表达式解析 -->           
+<s:property value="nonExistsProperty" default="%{myDefaultString}" />]]></c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>Struts2 之数据标签 (data tag)</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[数据标签能从 ValueStack 上取得数据，或者将变量、对象放在 ValueStack 上。]]></c:desc1>
+      <c:desc1> <![CDATA[数据标签包括： property、set、push、bean、action 等。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="property 标签"
+                     id="sourceContent1">
+      <![CDATA[<table>
+          <thead>
+              <tr>
+                  <th style="padding:.2em .5em;"><b>属性</b></th>
+                  <th style="padding:.2em .5em;"><b>是否必须</b></th>
+                  <th style="padding:.2em .5em;"><b>默认值</b></th>
+                  <th style="padding:.2em .5em;"><b>类型</b></th>
+                  <th style="padding:.2em .5em;"><b>描述</b></th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>value</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">栈最顶端</td>
+                  <td style="padding:.2em .5em;">Object</td>
+                  <td style="padding:.2em .5em;">被显示的值</td>
+              </tr>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>default</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">空 (null)</td>
+                  <td style="padding:.2em .5em;">String</td>
+                  <td style="padding:.2em .5em;">值为空时使用的默认值</td>
+              </tr>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>escape</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">True</td>
+                  <td style="padding:.2em .5em;">Boolean</td>
+                  <td style="padding:.2em .5em;">是否转义 HTML</td>
+              </tr>
+          </tbody>
+      </table>]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="set 标签" style="margin-top:1em;"
+                     id="sourceContent1">
+      <![CDATA[<table>
+          <thead>
+              <tr>
+                  <th style="padding:.2em .5em;"><b>属性</b></th>
+                  <th style="padding:.2em .5em;"><b>是否必须</b></th>
+                  <th style="padding:.2em .5em;"><b>类型</b></th>
+                  <th style="padding:.2em .5em;"><b>描述</b></th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>name</b></i></td>
+                  <td style="padding:.2em .5em;">true</td>
+                  <td style="padding:.2em .5em;">String</td>
+                  <td style="padding:.2em .5em;">被设置在指定作用域内的变量的引用名</td>
+              </tr>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>scope</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">String</td>
+                  <td style="padding:.2em .5em;">application、session、request、page、action，默认为 action</td>
+              </tr>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>value</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">Object</td>
+                  <td style="padding:.2em .5em;">设置值的表达式</td>
+              </tr>
+          </tbody>
+      </table>]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="set 标签示例" style="margin-top:1em;"
+                     id="sourceContent1"><![CDATA[<!-- set 标签把 user.username 表达式的值设置到标签的 name 属性指定的引用上。 -->
+<!-- 由于没有指定作用域，所以这个新的 username 的引用被放在了默认的 ActionContext 作用域内。 -->
+<s:set name="username" value="user.username" />
+Hello, <s:property value="#username" />. How are you?
+      
+      
+      
+<!-- 将新的引用放在 application 作用域内 -->
+<s:set name="username" value="user.username" scope="application" />
+Hello, <s:property value="#application['username']" />. How are you?]]></c:sourceContent>
+
+    <c:sourceContent type="html" title="push 标签" style="margin-top:1em;"
+                     id="sourceContent1">
+      <![CDATA[<table>
+          <thead>
+              <tr>
+                  <th style="padding:.2em .5em;"><b>属性</b></th>
+                  <th style="padding:.2em .5em;"><b>是否必须</b></th>
+                  <th style="padding:.2em .5em;"><b>类型</b></th>
+                  <th style="padding:.2em .5em;"><b>描述</b></th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>value</b></i></td>
+                  <td style="padding:.2em .5em;">true</td>
+                  <td style="padding:.2em .5em;">Object</td>
+                  <td style="padding:.2em .5em;">放到 ValueStack 中的值</td>
+              </tr>
+          </tbody>
+      </table>]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="push 标签示例" style="margin-top:1em;"
+                     id="sourceContent1"><![CDATA[<s:push value="user">
+    This is the "<s:property value="portfolioName" />" portfolio,
+    created by none other than <s:property value="username" />
+</s:push>
+      
+<!-- push 标签有一个开始标签和一个结束标签，在这两个标签之间我们可以像引用 ValueStack 上的顶级属性那样引用 user 对象的属性。
+      最后 push 的结束标签把 user 对象从 ValueStack 中移除。 -->
+<!-- 这个 push 标签把叫做 user 的属性放到 ValueStack 的顶端，此时我们可以把 user 的属性当作 ValueStack 这个虚拟对象上的顶级属性访问。 -->
+<!-- push 和 set 标签在尝试重用视图层技术时会变得很强大。 -->]]></c:sourceContent>
+
+    <c:sourceContent type="html" title="bean 标签" style="margin-top:1em;"
+                     id="sourceContent1">
+      <![CDATA[<table>
+          <thead>
+              <tr>
+                  <th style="padding:.2em .5em;"><b>属性</b></th>
+                  <th style="padding:.2em .5em;"><b>是否必须</b></th>
+                  <th style="padding:.2em .5em;"><b>类型</b></th>
+                  <th style="padding:.2em .5em;"><b>描述</b></th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>name</b></i></td>
+                  <td style="padding:.2em .5em;">true</td>
+                  <td style="padding:.2em .5em;">String</td>
+                  <td style="padding:.2em .5em;">
+                    指向应该被实例化的类<br />
+                    该类必须满足 JavaBean 标准，即有一个没有参数的构造函数。<br />
+                    并且想使用的实例字段必须作为 JavaBean 属性出现。
+                  </td>
+              </tr>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>var</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">String</td>
+                  <td style="padding:.2em .5em;">
+                    在结束标签作用域之外引用这个 bean 时使用的变量名。<br />
+                    任何创建一个对象的标签，都提供了 var 属性用于引用对象实例。
+                  </td>
+              </tr>
+          </tbody>
+      </table>
+      <br />
+      <p style="color:rgb(218, 14, 175);font-weight:bold;font-style:italic;">可以用 bean 标签创建一个对象的实例，并放到 ValueStack 或 ActionContext 的顶级引用上。<br />
+      默认情况下会被放到 ValueStack 上，可以用 var 属性为这个对象指定一个引用名，那么该引用会作为一个命名参数存在于 ActionContext 中.</p>]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="bean 标签示例" style="margin-top:1em;"
+                     id="sourceContent1"><![CDATA[<s:bean name="org.apache.struts2.util.Counter" var="counter">
+    <s:param name="last" value="7" />
+</s:bean>
+
+<!-- 定义迭代标签，类似 for 循环。 -->
+<s:iterator value="#counter">
+    <!-- 没有任何属性的 property 标签只会输出 ValueStack 最顶层的属性。 -->
+    <li><s:property /></li>
+</s:iterator>
+
+
+
+
+<!-- 为了使用 ValueStack 作为i自定义对象的临时存储位置，需要使用开始——结束样式的标签。 -->
+<s:bean name="manning.utils.JokeBean">
+    <s:param name="jokeType">Knock</s:param>
+    <s:property value="startJoke()" />
+    
+    <!-- 在标签结束位置，刚创建的对象会自动从栈中弹出。 -->
+</s:bean>]]>
+</c:sourceContent>
+
+    <c:sourceContent type="html" title="action 标签" style="margin-top:1em;"
+                     id="sourceContent1">
+      <![CDATA[<table>
+          <thead>
+              <tr>
+                  <th style="padding:.2em .5em;"><b>属性</b></th>
+                  <th style="padding:.2em .5em;"><b>是否必须</b></th>
+                  <th style="padding:.2em .5em;"><b>类型</b></th>
+                  <th style="padding:.2em .5em;"><b>描述</b></th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>name</b></i></td>
+                  <td style="padding:.2em .5em;">true</td>
+                  <td style="padding:.2em .5em;">String</td>
+                  <td style="padding:.2em .5em;">
+                    动作名
+                  </td>
+              </tr>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>namespace</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">String</td>
+                  <td style="padding:.2em .5em;">
+                    动作的命名空间，默认使用当前页面的命名空间。
+                  </td>
+              </tr>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>var</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">String</td>
+                  <td style="padding:.2em .5em;">
+                    在页面后续代码中使用的动作对象的引用名
+                  </td>
+              </tr>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>executeResult</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">Boolean</td>
+                  <td style="padding:.2em .5em;">
+                    设置为 true 时排除动作的结果 (默认为 false)
+                  </td>
+              </tr>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>flush</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">Boolean</td>
+                  <td style="padding:.2em .5em;">
+                    设置为 true 时在 action 标签的结尾会刷新写出缓冲 (默认值为 true)
+                  </td>
+              </tr>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>ignoreContextParams</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">Boolean</td>
+                  <td style="padding:.2em .5em;">
+                    设置为 true 时动作被调用时不包含请求参数 (默认值为 false)
+                  </td>
+              </tr>
+          </tbody>
+      </table>
+      <br />
+      <p style="color:rgb(218, 14, 175);font-weight:bold;font-style:italic;">这个标签允许我们从当前视图层调用其他的动作。常见的用例是集成已经存在的动作组件和灵巧地重构某些动作的逻辑。</p>]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="action 标签示例" style="margin-top:1em;"
+                     id="sourceContent1"><![CDATA[<h3>Action Tag</h3>
+<h4>This line is from the ActionTag action's result.</h4>
+<s:action name="TargetAction" executeResult="true" />]]></c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>Struts2 之控制标签 (control-flow tag)</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title=""
+                     id="sourceContent1">
+      <![CDATA[...]]>
+    </c:sourceContent>
+
+    
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 </c:component>

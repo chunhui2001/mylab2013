@@ -62,7 +62,7 @@
 
 
 
-    <xsl:variable name="style" select="'overflow:hidden;border:none;background-color:rgb(238, 238, 238);padding:1em;border:solid 1px rgb(176, 172, 172);'" />
+    <xsl:variable name="style" select="'overflow:hidden;border:none;background-color:rgb(249, 249, 249);padding:1em;border:solid 1px rgb(227, 227, 227);'" />
 
     <xsl:if test="count($entry/c:sourceContent[normalize-space(text()) != '']) &gt; 0">
       <xsl:for-each select="$entry/c:sourceContent">
@@ -73,7 +73,7 @@
             </xsl:attribute>
           </xsl:if>
           <xsl:if test="current()/@title and normalize-space(current()/@title) != ''">
-            <h6 style="margin:0; background-color:gray;color:white;padding:.5em .8em;font-weight:bold;font-size:1em;">
+            <h6 style="margin:0; background-color:rgb(205, 202, 202);color:rgb(46, 45, 45);padding:.5em .8em;font-weight:bold;font-size:1em;">
               <xsl:value-of select="current()/@title"/>
             </h6>
           </xsl:if>
