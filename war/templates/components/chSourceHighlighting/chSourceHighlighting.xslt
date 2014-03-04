@@ -62,25 +62,21 @@
 
 
 
-    <xsl:variable name="style" select="'overflow:hidden;border:none;background-color:rgb(249, 249, 249);padding:1em;border:solid 1px rgb(227, 227, 227);'" />
+    <xsl:variable name="style" select="'overflow:hidden;border:none;background-color:rgb(249, 249, 249);border:solid 1px rgb(227, 227, 227);'" />
 
     <xsl:if test="count($entry/c:sourceContent[normalize-space(text()) != '']) &gt; 0">
       <xsl:for-each select="$entry/c:sourceContent">
-        <div>
-          <xsl:if test="normalize-space(current()/@style) != ''">
-            <xsl:attribute name="style">
-              <xsl:value-of select="normalize-space(current()/@style)"/>
-            </xsl:attribute>
-          </xsl:if>
+        <div style="{concat($style,@style)}">
+          
           <xsl:if test="current()/@title and normalize-space(current()/@title) != ''">
-            <h6 style="margin:0; background-color:rgb(205, 202, 202);color:rgb(46, 45, 45);padding:.5em .8em;font-weight:bold;font-size:1em;">
+            <h6 style="margin:0; background-color:rgb(205, 202, 202);color:rgb(11, 95, 208);padding:.5em .8em;font-weight:bold;font-size:1em;">
               <xsl:value-of select="current()/@title"/>
             </h6>
           </xsl:if>
         
           <xsl:choose>
             <xsl:when test="current()/@type = 'html'">
-              <div style="{$style}">
+              <div style="padding:1em;">
                 <xsl:value-of disable-output-escaping="yes" select="current()"/>
               </div>
             </xsl:when>
@@ -88,7 +84,7 @@
               <!-- Language hints can be put in XML application directive style comments. -->
               <?prettify lang=html linenums=false?>
               <pre class="prettyprint" id="current()/@componentId"
-                   style="border-radius:0;{$style}">
+                   style="border-radius:0;border:none;padding:1em;">
                 <xsl:value-of disable-output-escaping="no" select="current()"/>
               </pre>
             </xsl:otherwise>
