@@ -16,7 +16,7 @@
                 if (e && (!e.readyState || /loaded|complete/.test(e.readyState))) e.onerror = e.onload = e.onreadystatechange = r, --R, R || P(Q, 0), e.parentNode && e.parentNode.removeChild(e),
                 e = r
             }; e.type = "text/javascript"; e.src = "https://google-code-prettify.googlecode.com/svn/loader/lang-" + encodeURIComponent(D[m]) + ".js"; L.insertBefore(e, L.firstChild)
-        })(D[m]); for (var R = D.length, A = [], m = 0, z = N.length; m < z; ++m) A.push("https://google-code-prettify.googlecode.com/svn/loader/skins/" + encodeURIComponent(N[m]) + ".css"); A.push("https://google-code-prettify.googlecode.com/svn/loader/prettify.css"); (function (e) {
+        })(D[m]); for (var R = D.length, A = [], m = 0, z = N.length; m < z; ++m) A.push("https://google-code-prettify.googlecode.com/svn/loader/skins/" + encodeURIComponent(N[m]) + ".css"); A.push("/RenderingAssets/components/chSourceHighlighting/prettify.css"); (function (e) {
             function j(m) {
                 if (m !== w) {
                     var n = x.createElement("link"); n.rel = "stylesheet"; n.type = "text/css";

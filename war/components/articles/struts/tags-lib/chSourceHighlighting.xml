@@ -528,4 +528,241 @@ Hello, <s:property value="#application['username']" />. How are you?]]></c:sourc
       </c:comment1>
     </c:comment>
   </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>其他标签</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="include 标签"
+                     id="sourceContent1">
+      <![CDATA[
+        <table>
+          <thead>
+              <tr>
+                  <th style="padding:.2em .5em;"><b>属性</b></th>
+                  <th style="padding:.2em .5em;"><b>是否必须</b></th>
+                  <th style="padding:.2em .5em;"><b>类型</b></th>
+                  <th style="padding:.2em .5em;"><b>描述</b></th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>value</b></i></td>
+                  <td style="padding:.2em .5em;">true</td>
+                  <td style="padding:.2em .5em;">String</td>
+                  <td style="padding:.2em .5em;">
+                    页面、动作、Servlet 以及其它可以被引用的 URL 的名字。
+                  </td>
+              </tr>
+          </tbody>
+      </table>
+        <br />
+        <p style="color:rgb(218, 14, 175);font-weight:bold;font-style:italic;">
+        使用该标签的好处是可以向被包含的资源传递请求参数， 并且可以跳出 Struts2 架构引用当前应用程序可以访问的任何资源，这意味着可以使用其它的 Servlet 和 JSP。<br />
+        include 标签可以使用 %{ ... } 标记从 ValueStack 中取值，并且可以用 <s:param /> 标签 向 include 标签传递查询字符串参数。<br />
+        与 action 标签不同的是, action 标签只能包含 Struts2 动作。<br />
+        </p>
+      ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="url 标签" style="margin-top:1em;"
+                         id="sourceContent1">
+      <![CDATA[
+        <table>
+          <thead>
+              <tr>
+                  <th style="padding:.2em .5em;"><b>属性</b></th>
+                  <th style="padding:.2em .5em;"><b>是否必须</b></th>
+                  <th style="padding:.2em .5em;"><b>类型</b></th>
+                  <th style="padding:.2em .5em;"><b>描述</b></th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>value</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">String</td>
+                  <td style="padding:.2em .5em;">
+                    基础 URL，默认为呈现为当前页面的 URL 
+                  </td>
+              </tr>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>action</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">String</td>
+                  <td style="padding:.2em .5em;">
+                    生成的 URL 指向的动作名，使用声明性架构中配置的动作名 (不需要 .action 扩展名)
+                  </td>
+              </tr>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>var</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">String</td>
+                  <td style="padding:.2em .5em;">
+                    如果指定该属性，这个 URL 不会被写出，而是存储在 ActionContext 中备用。
+                  </td>
+              </tr>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>includeParams</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">String</td>
+                  <td style="padding:.2em .5em;">
+                    从 all、get、none 中选择参数，默认值为 get
+                  </td>
+              </tr>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>includeContext</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">Boolean</td>
+                  <td style="padding:.2em .5em;">
+                    如果为 true，那么生成的 URL 会使用应用程序的 Context 作为前缀，默认为 true。
+                  </td>
+              </tr>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>encode</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">Boolean</td>
+                  <td style="padding:.2em .5em;">
+                    如果用户浏览器不支持 Cookie，会将 Session ID 追加在生成的 URL 中。
+                  </td>
+              </tr>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>scheme</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">String</td>
+                  <td style="padding:.2em .5em;">
+                    指定协议，默认使用当前的协议 (HTTP 或 HTTPS)
+                  </td>
+              </tr>
+          </tbody>
+      </table>
+      ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="url 标签示例" style="margin-top:1em;"
+                         id="sourceContent1"><![CDATA[例1:
+<s:url value="IteratorTag.action" />
+<a href='<s:url value="IteratorTag.action" />'>Click Me</a>
+      
+      
+例2:
+<s:url action="IteratorTag" var="myUrl">
+    <s:param name="id" value="2" />
+</s:url>
+<a href='<s:property value="#myUrl" />'>Click Me</a>
+      
+// 输出
+<a href="/manningHelloWorld/chapterSix/IteratorTag.action?id=2">Click Me</a>]]></c:sourceContent>
+
+    <c:sourceContent type="html" title="i18n (internationalization) 和 text 标签" style="margin-top:1em;"
+                         id="sourceContent1">
+      <![CDATA[
+        <h6><b>text 属性</b></h6>
+        <table>
+          <thead>
+              <tr>
+                  <th style="padding:.2em .5em;"><b>属性</b></th>
+                  <th style="padding:.2em .5em;"><b>是否必须</b></th>
+                  <th style="padding:.2em .5em;"><b>类型</b></th>
+                  <th style="padding:.2em .5em;"><b>描述</b></th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>name</b></i></td>
+                  <td style="padding:.2em .5em;">true</td>
+                  <td style="padding:.2em .5em;">String</td>
+                  <td style="padding:.2em .5em;">
+                    在 ResourceBundle 中的关键字
+                  </td>
+              </tr>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>var</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">String</td>
+                  <td style="padding:.2em .5em;">
+                    如果找到，文本会使用这个名字保存在 ActionContext 中
+                  </td>
+              </tr>
+          </tbody>
+      </table>
+      <br />
+      <br />
+        <h6><b>i18n 属性</b></h6>
+        <table>
+          <thead>
+              <tr>
+                  <th style="padding:.2em .5em;"><b>属性</b></th>
+                  <th style="padding:.2em .5em;"><b>是否必须</b></th>
+                  <th style="padding:.2em .5em;"><b>类型</b></th>
+                  <th style="padding:.2em .5em;"><b>描述</b></th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>name</b></i></td>
+                  <td style="padding:.2em .5em;">true</td>
+                  <td style="padding:.2em .5em;">String</td>
+                  <td style="padding:.2em .5em;">
+                    ResourceBundle 的名字
+                  </td>
+              </tr>
+          </tbody>
+      </table>
+      <p style="color:rgb(218, 14, 175);font-weight:bold;font-style:italic;">如果想手动指定应该使用的 ResourceBundle，可以使用 i18n 标签</p>
+      ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="i18n (internationalization) 和 text 标签示例" style="margin-top:1em;"
+                         id="sourceContent1"><![CDATA[<s:i18n name="manning.chapterSix.myResourceBundle_tr">
+    In <s:text name="languane" />, 
+    <s:text name="girl" var="foreignWord" />
+</s:i18n>
+
+"<s:property value="#foreignWord" />" means girl.]]></c:sourceContent>
+
+    <c:sourceContent type="html" title="param 标签"
+                     id="sourceContent1">
+      <![CDATA[
+        <table>
+          <thead>
+              <tr>
+                  <th style="padding:.2em .5em;"><b>属性</b></th>
+                  <th style="padding:.2em .5em;"><b>是否必须</b></th>
+                  <th style="padding:.2em .5em;"><b>类型</b></th>
+                  <th style="padding:.2em .5em;"><b>描述</b></th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>name</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">String</td>
+                  <td style="padding:.2em .5em;">
+                    参数名
+                  </td>
+              </tr>
+              <tr>
+                  <td style="padding:.2em .5em;"><i><b>value</b></i></td>
+                  <td style="padding:.2em .5em;">false</td>
+                  <td style="padding:.2em .5em;">Object</td>
+                  <td style="padding:.2em .5em;">
+                    参数值
+                  </td>
+              </tr>
+          </tbody>
+      </table>
+        <br />
+        <p style="color:rgb(218, 14, 175);font-weight:bold;font-style:italic;">
+        Struts2 标签 API 总是被不停地改进和扩展，所以有必要经常查看 Struts2 标签在线文档。
+        </p>
+      ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 </c:component>
