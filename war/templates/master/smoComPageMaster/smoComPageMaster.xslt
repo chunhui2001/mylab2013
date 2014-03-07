@@ -52,6 +52,21 @@
       <link rel="stylesheet" href="/RenderingAssets/lib/caroufredsel/caroufredsel.css" type="text/css" />
 
       <!--script src="http://jwpsrv.com/library/02YIiKJ2EeOigiIACi0I_Q.js"></script-->
+
+      <!-- AddThis Smart Layers BEGIN -->
+      <!-- Go to http://www.addthis.com/get/smart-layers to customize -->
+      <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-52cbb19d138551fd"></script>
+      <script type="text/javascript">
+        addthis.layers({
+        'theme' : 'transparent',
+        'share' : {
+        'position' : 'left',
+        'numPreferredServices' : 6
+        }
+        });
+      </script>
+      <!-- AddThis Smart Layers END -->
+      
   	</head>
   	<body>
 	  	<div>
