@@ -10,6 +10,7 @@
   <xsl:param name="language" />
   <xsl:param name="country" />
   <xsl:param name="countryCode" />
+  <xsl:param name="APP_ROOT" />
 
 
   <xsl:template name="jmathCeil" >
@@ -97,7 +98,9 @@
 			</xsl:for-each>
 	  	</div>
 
-
+<h1 style="display:none;">
+	<xsl:value-of select="$APP_ROOT" />
+</h1>
       <script type="text/javascript" src="/RenderingAssets/lib/bootstrap/bootstrap.min.js"></script>
       <script type="text/javascript" src="/RenderingAssets/lib/jCarousel/jquery.jcarousel.min.js"></script>
       <script src="/RenderingAssets/lib/caroufredsel/jquery.caroufredsel.js" type="text/javascript"></script>

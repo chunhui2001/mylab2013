@@ -117,6 +117,8 @@ public class CspPageContext {
 		transformer.setParameter("country", cc.getName());
 		transformer.setParameter("countryCode", this.request.getLocale().getCountry());
 		
+		transformer.setParameter("APP_ROOT", this.root);
+		
 		
 		 
 		Enumeration enumeration = this.request.getParameterNames();
