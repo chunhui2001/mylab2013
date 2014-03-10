@@ -2,21 +2,253 @@
 <c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
 
   <c:abstract>
-    <![CDATA[]]>
+    <![CDATA[Struts2 UI 组件标签与框架的各个部分紧密集成在一起，从数据转移和数据验证到国际化和界面外观。]]>
   </c:abstract>
 
   <c:entry>
-    <c:title>ActionContext 和 OGNL</c:title>
+    <c:title>标签、模板和主题</c:title>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="" title="ActionContext" 
+    <c:sourceContent type="html" title="UI 组件框架的架构"
                      id="sourceContent1">
-                       <![CDATA[
-                     ...
-                     ]]></c:sourceContent>
+      <![CDATA[<img src="http://farm3.staticflickr.com/2605/13050227245_33937a4c2d_z.jpg" al="" />]]>
+    </c:sourceContent>
 
+    <c:sourceContent type="html" title="Struts2 内建的 UI 主题" style="margin-top:1em;border-bottom:none;"
+                     id="sourceContent1">
+      <![CDATA[<img src="http://farm8.staticflickr.com/7325/13050468925_5e23e3b7c4_b.jpg" al="" />
+      <br />
+      所有框架的默认属性都定义在 default.properties 文件中，这个文件在 Struts 核心的 JAR 文件 (struts2-core-2.x.x.jar) 的 org.apache.struts2 包内。<br />
+      覆盖框架的默认属性，只需创建自己的属性文件并命名为 struts.properties，然后把它放在类路径中 (或 WEB-INF/classes/struts.properties)，并在其中定义如下属性：<br />
+      <span><b style="color:green;">struts.ui.theme=css_xhtml</b></span><br />
+      
+      ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[Struts2 UI 组件标签被设计为一个独立的迷你 MVC UI 组件框架，每一个组件的 HTML 视图都被分离到了一个单独的可以很容易编辑的 FreeMarker 模板中。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[当使用 key 属性时，可以将表单字段的标记简化到一个更高的层面。可以只设置这个属性，UI 组件就能够从框架的 ResourceBundle 中取得本地化的标签，并且能够智能地推算出 name 属性和 value 属性来完成组件的数据绑定。]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:2em;">
+    <c:title>通用属性</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[可以假定 Struts2 标签支持底层的 HTML 元素的所有属性。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title=""
+                     id="sourceContent1">
+      <![CDATA[<img src="http://farm3.staticflickr.com/2537/13050873115_29ed8f574a_b.jpg" alt="" />]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>简单组件</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="head 标签"
+                     id="sourceContent1"><![CDATA[<head>
+    <title>Register</title>
+    <s:head />
+</head>
+      
+<!-- 在默认的 xhtml 主题下呈现如下输出 -->
+<link rel="stylesheet" href="....style.css" type="text/css" />
+<script type="text/javascript" src="...dojo.js"></script>
+<script type="text/javascript" src="dojoRequire.js"></script>]]></c:sourceContent>
+
+    <c:sourceContent type="html" title="form 标签" style="margin-top:1em;border-bottom:none;"
+                         id="sourceContent1">
+      <![CDATA[<img src="http://farm8.staticflickr.com/7371/13051486494_ec0ec843df_b.jpg" alt="" />]]>
+    </c:sourceContent>    
+    <c:sourceContent type="" title="" style="border-top:none;"
+                         id="sourceContent1"><![CDATA[<s:from action="Login">
+  <!-- 如果指向的 action 与生成当前页面的动作在同一个命名空间下，则不需要指定 namespace 属性 -->  
+  <!-- 如果 action 属性中指定的值不是声明性架构中的 Struts2 动作，那么这个值会被用来直接构建 URL -->
+  <!-- 如果指定的字符串以一个 "/" 开头，那么它假定为与 ServletContext 相关，框架会在它之前加上 ServletContext 的路径构建一个 URL -->
+  <!-- 如果指定的字符串没有以 "/" 开头，那么这个值会直接当作 URL -->
+  <s:textfield name="username" label="User Name: " />
+  <s:password name="password" label="Password: " />
+  <s:submit />
+</s:form>
+      
+      
+<!-- 输出 -->
+<form id="Login" name="Login" onsubmit="return true;"
+      action="manningSampleApp/chapterSeven/Login.action" method="POST">
+    <label for="Login_username" class="label">User Name: </label>
+    <input type="text" id="Login_username" name="username" value="" />
+          
+    <label for="Login_password" class="label">Password: </label>
+    <input type="password" id="Login_password" name="password" />
+          
+    <input type="submit" id="Login_0" value="Submit" />
+</form>]]></c:sourceContent>
+
+    <c:sourceContent type="" title="textfield 标签" style="margin-top:1em;border-bottom:none;"
+                     id="sourceContent1"><![CDATA[<!-- 标记 -->
+<s:textfield name="username" label="User Name:" />
+                       
+<!-- 输出 -->
+<!-- td 标记由 XHTML 主题生成，可以选择它在呈现 UI 组件时决定布局样式。(XHTML 主题使用表格来控制扁担元素的布局。) -->
+<td class="tdLabel">
+    <label for="Register_username" class="label">User Name: </label>
+</td>
+<td>
+    <input type="text" name="username" value="" id="Register_username" />
+</td>]]></c:sourceContent>
+    <c:sourceContent type="html" title="" style="border-top:none;"
+                     id="sourceContent1">
+      <![CDATA[<img src="http://farm8.staticflickr.com/7399/13053528965_64c5d4a24b_b.jpg" alt="" />]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="使用 key 属性" style="margin-top:1em;"
+                     id="sourceContent1"><![CDATA[<!-- key 属性可以生成本地化的文本，还可以创建字段的 name 属性 (一个 OGNL 表达式) -->
+<!-- 当组件呈现时，会尝试使用 key 属性的值作为关键字在 ResourceBundle 中查找对应的文本 -->
+<!-- 相应的 ResourceBundle 文件名叫做 global-messages.properties，被放在 WEB-INF/classes/ 下面 -->
+<!-- 内容如下： -->
+username=User Name: 
+
+
+<s:textfield key="username />
+<s:password name="password" label="Password: " />
+
+
+<!-- 输出 -->
+<label for="Login_username" class="label">User Name: </label>
+<input type="text" id="Login_username" name="username" value="" />
+          
+<label for="Login_password" class="label">Password: </label>
+<input type="password" id="Login_password" name="password" />
+
+
+<!-- 为了使用全局属性文件，需要在 WEB-INF/classes/ 下添加 struts.properties 文件，并添加以下内容： -->
+struts.custom.i18n.resources=global-messages]]></c:sourceContent>
+
+    <c:sourceContent type="" title="password 标签" style="margin-top:1em;"
+                     id="sourceContent1">
+      <![CDATA[。。。]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="checkbox 标签" style="margin-top:1em;border-bottom:none;"
+                     id="sourceContent1">
+      <![CDATA[
+      <table>
+          <thead>
+              <tr>
+                  <th style="padding:.2em .5em;font-weight:bold;">属性</th>
+                  <th style="padding:.2em .5em;font-weight:bold;">类型</th>
+                  <th style="padding:.2em .5em;font-weight:bold;">描述</th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr>
+                  <td style="padding:.2em .5em;font-weight:bold;">fieldValue</td>
+                  <td style="padding:.2em .5em;">String</td>
+                  <td style="padding:.2em .5em;">提交的真实值，可能是 true 或 false，默认是 true</td>
+              </tr>
+              <tr>
+                  <td style="padding:.2em .5em;font-weight:bold;">value</td>
+                  <td style="padding:.2em .5em;">String</td>
+                  <td style="padding:.2em .5em;">
+                      与 fieldValue 一起用，决定 checkbox 是否被选中。如果 fieldValue=true，并且 value=true，那么这个组件被选中<br />
+                      如果没有手动指定 value 的值，那么它会重用 name 属性的值<br />
+                      预填充通常使用 UI 组件的 value 属性完成，对于 checkbox 来说情况更复杂一些
+                  </td>
+              </tr>
+          </tbody>
+      </table>]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" style="border-top:none;"
+                   id="sourceContent1"><![CDATA[<s:form action="Register">
+    <s:textfield name="username" label="User Name: " />
+    <s:password name="password" label="Password: " />
+    <s:checkbox name="receiveJunkMail" label="Check to receive junk mail." fieldValue="true" />
+</s:form>
+
+
+<!-- checkbox 的 html 输出 -->
+<input type="checkbox" id="Register_receiveJunkMail" name="receiveJunkMail" value="true" />
+
+
+<!-- JavaBean -->
+public class Register extends ActionSupport {
+    private Boolean receiveJunkMail;
+    public Boolean isReceiveJunkMail() {
+        return this.receiveJunkMail;
+    }
+
+    public void setReceiveJunkMail(Boolean receiveJunkMail) {
+        this.receiveJunkMail = receiveJunkMail;
+    }
+}]]></c:sourceContent>
     
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>基于集合的组件</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="select 标签" style="border-bottom:none;"
+                     id="sourceContent1">
+      <![CDATA[<img src="//farm3.staticflickr.com/2591/13055475994_66cbb0e2cf_b.jpg" alt="" />]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" style="border-top:none;"
+                     id="sourceContent1"><![CDATA[<!-- 最简单用法，由于没有指定 value 属性，所以会从 name 属性推导出 value 属性用于预填充 -->
+<s:select name="user.name" list="{'Mike','Payal','Silas','Keesh',}" />
+      
+      
+<!-- 相对应的输出 -->
+<select id="ViewPortfolio_user_name" name="user.name">
+    <option value="Mike">Mike</option>
+    <option value="Payal">Payal</option>
+    <option value="Silas">Silas</option>
+    <option value="Keesh">Keesh</option>
+</select>
+
+
+<!-- select 之 List -->
+<s:select name="username" list="users" listKey="username" listValue="username" label="Select artist: " />
+
+<!-- select 之 Map -->
+<!-- 当 select 遍历 Map 类型的对象时，不是直接遍历 User 对象而是 Entry 对象。Entry 对象有两个属性 key 和 value -->
+<!-- listKey 的默认值为 key，listValue 的默认值为 value (如果 value 的值是一个对象，则调用该对象的 toString() 方法) -->
+<s:select name=username" list="users" listValue="value.username" label="Select artist: " />]]></c:sourceContent>
+
+    <c:sourceContent type="html" title="radio 标签" style="margin-top:1em;"
+                     id="sourceContent1">
+      <![CDATA[该标签的使用与 select 几乎完全相同]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="checkboxlist 标签" style="margin-top:1em;"
+                     id="sourceContent1">
+      <![CDATA[该标签的使用与 select 几乎完全相同]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="预填充基于集合的组件" style="margin-top:1em;"
+                     id="sourceContent1">
+      <![CDATA[<s:radio ]]>
+    </c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
