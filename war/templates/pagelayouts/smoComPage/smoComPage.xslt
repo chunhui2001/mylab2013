@@ -11,7 +11,17 @@
     </xsl:for-each>
     
 		<xsl:for-each select="c:column">
-				<div class="col">
+      <xsl:variable name="class_main_content">
+        <xsl:choose>
+          <xsl:when test="normalize-space(@class) != ''">
+            <xsl:value-of select="@class"/>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:value-of select="'main-content'"/>
+          </xsl:otherwise>
+        </xsl:choose>
+      </xsl:variable>
+				<div class="col {$class_main_content}">
 						<xsl:for-each select="c:row">
 							<div class="ro">
 								<xsl:for-each select="c:cell">

@@ -14,66 +14,54 @@
     <!--link rel="stylesheet" type="text/css" media="all" href="http://cache.addthiscdn.com/www/140306126825/style/shared/bootstrap3.custom.min.css" /-->
     <link href="/RenderingAssets/components/chAddThisHeader/homepage.css" media="screen" rel="stylesheet" type="text/css" />
 
-    
+    <xsl:value-of disable-output-escaping="yes" select="c:style"/>
 
 
 
     <header class="topbar animated" role="navigation">
       <div class="container clearfix">
-        <a class="addthis-logo" href="/index.shtml" title="AddThis">AddThis</a>
-        <nav>
+        <a class="addthis-logo" href="{c:logo/c:link}" title="{c:logo/c:text}">
+          <xsl:value-of select="c:logo/c:text"/>          
+        </a>
+        <nav style="display:block;">
           <ul class="nav-left">
-            <li class="nav-gtc-link">
-              <a href="/get">Get the Code</a>
-            </li>
-            <li>
-              <a class="nav-whatwedo" href="/what-we-do" title="Learn about our website tools, advertising solutions and data">What We Do</a>
-            </li>
-            <li>
-              <a class="nav-support" href="http://support.addthis.com/" title="Ask questions or browse documentation">Support</a>
-            </li>
-            <li>
-              <a class="nav-blog" href="/blog" title="News and updates from AddThis.com">Blog</a>
-            </li>
-            <li>
-              <a class="nav-settings" href="/settings/user" title="Your AddThis account settings">Settings</a>
-            </li>
-            <li>
-              <a class="nav-signout" href="/logout" title="Sign Out">Sign Out</a>
-            </li>
+            <xsl:for-each select="c:left/c:nav">
+              <li class="{@class}">
+                <a href="{c:link}">
+                  <xsl:value-of select="c:text"/>
+                </a>
+              </li>
+            </xsl:for-each>
           </ul>
           <ul class="nav-right">
-            <li>
-              <a class="nav-analytics" href="/analytics" title="Track how your site is working with social analytics">Analytics</a>
-            </li>
+            <xsl:for-each select="c:right/c:nav">
+              <li>
+                <a class="{@class}" href="{c:link}" title="{c:text}">
+                  <xsl:value-of select="c:text"/>
+                </a>
+              </li>
+            </xsl:for-each>
             <!--li>
               <a class="nav-user-auth" href="/settings" title="Your AddThis account settings">Settings</a>
             </li-->
             <li class="nav-dropbtn">
               <div class="btn-group" title="Get multiple mobile-ready tools with one piece of code">
                 <button type="button" class="btn btn-nav-gtc dropdown-toggle" data-toggle="dropdown">
-                  Get the Code <span class="caret"></span>
+                  <xsl:value-of select="c:right/c:dropdown/@text"/> <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu" role="menu">
-                  <li>
-                    <a class="nav-btn-smartlayers" href="/get/smart-layers">Smart Layers</a>
-                  </li>
-                  <li>
-                    <a class="nav-btn-sharing" href="/get/sharing">Share Buttons</a>
-                  </li>
-                  <li>
-                    <a class="nav-btn-follow" href="/get/follow">Follow Buttons</a>
-                  </li>
-                  <li>
-                    <a class="nav-btn-welcome" href="/get/welcome">Welcome Bar</a>
-                  </li>
-                  <li>
-                    <a class="nav-btn-trending" href="/get/trending">Trending Content</a>
-                  </li>
+                  <xsl:for-each select="c:right/c:dropdown/c:item">
+                    <li>
+                      <a class="nav-btn-layers" href="{c:link}">
+                        <xsl:value-of select="c:text"/>
+                      </a>
+                    </li>
+                  </xsl:for-each>
                 </ul>
               </div>
             </li>
           </ul>
+          <div class="clear"></div>
         </nav>
         <div class="header-drop drop-user">
           <span class="header-drop-caret"></span>

@@ -25,6 +25,9 @@
 	  	<title>
 	  		<xsl:value-of select="//c:page/c:title[position() = 1]" />
 	  	</title>
+      <link rel="icon" href="/images/favicon2.ico" type="image/x-icon" />
+        <link rel="shortcut icon" href="/images/favicon2.ico" type="image/x-icon" />
+      
       <xsl:if test="normalize-space($country) != ''">
         <meta property="country" content="{$country}" />
       </xsl:if>
@@ -38,6 +41,26 @@
 	  	
 	  	<script type="text/javascript" src="/RenderingAssets/lib/jquery/jquery-1.10.1.min.js"></script>	  	
 	  	<script type="text/javascript" src="/RenderingAssets/lib/jquery/jquery-migrate-1.2.1.min.js"></script>
+
+
+      <!-- Add mousewheel plugin (this is optional) -->
+      <script type="text/javascript" src="/RenderingAssets/lib/fancyBox/jquery.mousewheel-3.0.6.pack.js"></script>
+
+      <!-- Add fancyBox main JS and CSS files -->
+      <script type="text/javascript" src="/RenderingAssets/lib/fancyBox/jquery.fancybox.js?v=2.1.5"></script>
+      <link rel="stylesheet" type="text/css" href="/RenderingAssets/lib/fancyBox/jquery.fancybox.css?v=2.1.5" media="screen" />
+
+      <!-- Add Button helper (this is optional) -->
+      <link rel="stylesheet" type="text/css" href="/RenderingAssets/lib/fancyBox/jquery.fancybox-buttons.css?v=1.0.5" />
+      <script type="text/javascript" src="/RenderingAssets/lib/fancyBox/jquery.fancybox-buttons.js?v=1.0.5"></script>
+
+      <!-- Add Thumbnail helper (this is optional) -->
+      <link rel="stylesheet" type="text/css" href="/RenderingAssets/lib/fancyBox/jquery.fancybox-thumbs.css?v=1.0.7" />
+      <script type="text/javascript" src="/RenderingAssets/lib/fancyBox/jquery.fancybox-thumbs.js?v=1.0.7"></script>
+
+      <!-- Add Media helper (this is optional) -->
+      <script type="text/javascript" src="/RenderingAssets/lib/fancyBox/jquery.fancybox-media.js?v=1.0.6"></script>
+      
       
       <xsl:text disable-output-escaping="yes">
             <![CDATA[
@@ -67,8 +90,23 @@
         });
       </script>
       <!-- AddThis Smart Layers END -->
-      
-  	</head>
+
+      <script type="text/javascript">
+        $(function(){
+        $(".various").fancybox({
+        maxWidth	: 800,
+        maxHeight	: 600,
+        fitToView	: false,
+        width		: '70%',
+        height		: '70%',
+        autoSize	: false,
+        closeClick	: false,
+        openEffect	: 'none',
+        closeEffect	: 'none'
+        });
+        });
+      </script>
+    </head>
   	<body>
 	  	<div>
 	  		<xsl:for-each select="c:column">

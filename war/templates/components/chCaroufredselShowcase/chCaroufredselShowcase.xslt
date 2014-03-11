@@ -40,7 +40,7 @@
                 <div class="item_content">
                   <!-- Intro Image -->
                   <div class="item_img img-intro img-intro__none">
-                    <a href="{c:link}">
+                    <a class="fancybox" href="{c:big}" target="_blank">
                       <img src="{c:src}" alt="{c:title}" />
                     </a>
                   </div>
@@ -79,6 +79,7 @@
         <![CDATA[
           if (jQuery.browser.msie && jQuery.browser.version < 9) {
                   jQuery(document).ready(function () {
+                     // $('.fancybox').fancybox();
 
                       var carouselConteiner = jQuery("#caroufredsel_carousel]]><xsl:value-of select="$caroufredsel_id"/><![CDATA[");
 
@@ -125,6 +126,7 @@
                   });
               } else {
                   jQuery(window).load(function () {
+                    //  $('.fancybox').fancybox();
 
                       var carouselConteiner = jQuery("#caroufredsel_carousel]]><xsl:value-of select="$caroufredsel_id"/><![CDATA[");
 
