@@ -245,9 +245,69 @@ public class Register extends ActionSupport {
       <![CDATA[该标签的使用与 select 几乎完全相同]]>
     </c:sourceContent>
 
-    <c:sourceContent type="html" title="预填充基于集合的组件" style="margin-top:1em;"
+    <c:sourceContent type="html" title="预填充基于集合的组件" style="margin-top:1em;border-bottom:none;"
                      id="sourceContent1">
-      <![CDATA[<s:radio ]]>
+      <![CDATA[在使用组件时通常不设置 value 属性，而是让框架根据 name 属性推导出 value 属性。<br />
+      对于基于集合的组件来说，没有一个简单的输入字段，只能选择一个选项。在这种情况下，使用标签的 value 属性值来匹配某一个选项的值。]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" style="border-top:none;border-bottom:none;"
+                     id="sourceContent1"><![CDATA[public class SelectPortfolio extends ActionSupport {
+    public String execute () {
+        Collection users = getPortfolioService().getUsers();
+        setUsers(users);
+        
+        setDefaultUser(getPortfolioService().getDefaultUser());
+        
+        return SUCCESS;
+    }
+}
+
+
+<s:form action="SelectPortfolio">
+    <s:radio name="username" list="users" value="defaultUser.username" listKey="username" listValue="username" label="Select an artist" />
+</s:form>
+
+
+<input type="radio" name="username" value="Jimmy" />
+<input type="radio" name="username" value="Charlie Joe" />
+<input type="radio" name="username" value="Chad" checked="checked" />
+<input type="radio" name="username" value="Mary" />]]></c:sourceContent>
+    <c:sourceContent type="html" title="" style="border-top:none;"
+                     id="sourceContent1">
+      <![CDATA[<p style="color:red;font-weight:bold;">如果需要展示的用户名在动作的 username 属性上，那么就不需要手动指定与 name 属性不同的 value 属性。<br />
+listKey 属性和 listValue 属性都是在遍历基于集合的组件时用到的，遍历时集合中的每一个 User 都会被放到 ValueStack 上，遍历结束在从 ValueStack 上把最后一个 User 移除。<br />
+当对单选组件的 name 属性求值时遍历还没有开始，ValueStack 中的最上层对象是动作而不是一个 User 对象。</p>]]>
+    </c:sourceContent>
+    
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:2em;">
+    <c:title>额外组件</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="label 组件" style=""
+                     id="sourceContent1"><![CDATA[<!-- 该组件很像一个只读的 textfield 组件 -->      
+<s:label name="username" label="User Name" />
+      
+<!-- 输出 -->
+User Name: Chad]]></c:sourceContent>
+
+    <c:sourceContent type="" title="hidden 组件" style="margin-top:1em;"
+                     id="sourceContent1"><![CDATA[<s:hidden name="username" />
+
+<!-- 输出 -->
+<input type="hidden" name="username" value="Chad" id="UpdateAccount_username" />]]></c:sourceContent>
+
+    <c:sourceContent type="html" title="doubleselect 组件" style="margin-top:1em;"
+                     id="sourceContent1">
+      <![CDATA[类似于二级联动菜单......]]>
     </c:sourceContent>
     <c:comment>
       <c:comment1>
