@@ -1,0 +1,119 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+
+  <c:abstract>
+    <![CDATA[在 Struts2 中默认的结果类型是 JSP，也原生支持多种不同类型的结果 Velocity 和 FreeMarker 等。也可以编写自定义的结果。]]>
+  </c:abstract>
+
+  <c:entry>
+    <c:title>动作之后</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[动作接收请求数据并根据请求数据运行自身的业务逻辑，并且将模型数据的结果状态保存在 ValueStack 中。动作做得的最后一件事情是返回一个控制字符串。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title=""
+                     id="sourceContent1">
+      <![CDATA[]]>
+    </c:sourceContent>
+
+    
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:2em;">
+    <c:title>Struts2 Ajax 示例</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="自定义 JSONResult"
+                     id="sourceContent1"><![CDATA[// 自定义结果需要实现 com.opensymphony.xwork2.Result 接口
+public interface Result extends Serializable {
+    public void execute (ActionInvocation invocation) throws Exception;
+}
+
+package mypackagename;
+
+public class JSONResult implements Result {
+     // 定义一个常量作为默认参数
+     // 每一个结果可以定义一个默认参数，它不需要指名就可以被传入
+     public static final String DEFAULT_PARAM = "classAlias";
+     
+     private String classAlias;
+     
+     public String getClassAlias() {
+        return this.classAlias;
+     }
+     
+     public void setClassAlias(String classAlias) {
+        this.classAlias = classAlias;
+     }
+     
+     public void execute (ActionInvocation invocation) throw Exception {
+        // 由于将为客户返回一个 HTTP 相应，所以使用 ServletActionContext 在 servlet 响应对象上设置内容类型
+        ServletActionContext.getResponse().setContentType("text/plain");
+        
+        PrintWriter responseStream = 
+                        ServletActionContext.getResponse().getWriter();
+                        
+        ValueStack valueStack = invocation.getStack();
+        
+        // 从 ValueStack 上取得将要序列化的域对象，可以参数化这个属性
+        Object jsonModel = valueStack.findValue("jsonModel");
+        
+        // 使用开源的软件包来序列化对象: XStream (http://xstream.codehaus.org) 和 Jettison (http://jettison.codehaus.org)
+        // XStream 可以把 java 对象序列化为 XML, 并且 XStream 的 Jettison 驱动添加了对 JSON 类型的支持
+        
+        // 使用 Jettison 驱动创建一个 XStream 序列化器的实例
+        XStream xstream = new XStream(new JettisonMappedXmlDriver());
+        
+        // 设置需要序列化的对象的别名
+        // 如果不适用别名，JSON 会使用类的全限定名来命名这个对象
+        if (classAlias == null) {
+            classAlias = "object";
+        }
+        
+        xstream.alias(classAlias, jsonModel.getClass());
+        
+        // 将输出 JSON 格式的内容
+        responseStream.println(xstream.toXML(jsonModel));
+     }
+}]]></c:sourceContent>
+
+    <c:sourceContent type="" title="动作" style="margin-top:1em;"
+                         id="sourceContent1"><![CDATA[public class RetrieveUser extends ActionSupport {
+    public String execute() throws Exception {
+        User user = getService().getUser("username");
+        setJsonModel (user);
+        
+        return SUCCESS;
+    }
+    
+    private Object jsonModel;
+        
+    public void getJsonModel() {
+        return this.jsonModel;
+    }
+        
+    public Object setJsonModel(Object jsonModel) {
+        this.jsonModel = jsonModel;    
+    }
+}]]></c:sourceContent>
+
+    <c:sourceContent type="" title="声明和使用 JSONResult 类型" style="margin-top:1em;"
+                         id="sourceContent1">
+<![CDATA[<!-- 将该片段放置在对应的动作的 xml 文件中 -->
+<result-types>
+      <result-type name="myJsonType" class="packagename.JSONResult"></result-type>
+</result-types>]]></c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+</c:component>
