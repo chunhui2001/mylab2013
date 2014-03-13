@@ -110,7 +110,7 @@
       });
     </script>
 
-    <div id="maincontent">
+    <div id="maincontent" style="margin-bottom:2em;">
       <section class="banner" role="banner">
 
       </section>

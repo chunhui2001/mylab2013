@@ -24,7 +24,6 @@
     </c:comment>
   </c:entry>
 
-
   <c:entry style="margin-top:2em;">
     <c:title>Struts2 Ajax 示例</c:title>
     <c:desc>
@@ -104,16 +103,128 @@ public class JSONResult implements Result {
     }
 }]]></c:sourceContent>
 
+    <c:sourceContent type="" title="JS" style="margin-top:1em;"
+                         id="sourceContent1"> <![CDATA[function fetchUser() {
+    sendRequest("AjaxRetrieveUser.action?username=myname");  
+}]]></c:sourceContent>
+
     <c:sourceContent type="" title="声明和使用 JSONResult 类型" style="margin-top:1em;"
                          id="sourceContent1">
 <![CDATA[<!-- 将该片段放置在对应的动作的 xml 文件中 -->
 <result-types>
       <result-type name="myJsonType" class="packagename.JSONResult"></result-type>
-</result-types>]]></c:sourceContent>
+</result-types>
+
+<!-- 相同的动作可以关联到很多不同的结果类型 -->
+<action name="AjaxRetrieveUser" class="com.packagename.RetrieveUser">
+    <!-- 由于默认的结果类型不是 myJsonType，所以需要明确指定 type 属性 -->
+    <!-- 把 artist 作为默认参数传入，这个参数会设置到 classAlias 属性上 -->
+    <result type="myJsonType">artist</result>
+</action>]]></c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
       </c:comment1>
     </c:comment>
   </c:entry>
+  
+  <c:entry style="margin-top:2em;">
+    <c:title>结果类型</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="常用结果类型"
+                     id="sourceContent1">
+      <![CDATA[
+        <table>
+          <thead>
+              <tr>
+                  <th style="padding:.2em .5em;font-weight:bold;">结果类型</th>
+                  <th style="padding:.2em .5em;font-weight:bold;">用例</th>
+                  <th style="padding:.2em .5em;font-weight:bold;">参数</th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr>
+                  <td rowspan="2" style="padding:.2em .5em;font-weight:bold;">dispatcher</td>
+                  <td style="padding:.2em .5em;">JSP，其它的 Web 应用程序资源，例如 Servlet</td>
+                  <td style="padding:.2em .5em;">location (默认)、parse</td>
+                  
+              </tr>
+              <tr>
+                  <td colspan="2" style="padding:.2em .5em;font-weight:bold;color:green;">
+                      &lt;result-type name="dispatcher" class="org.apache.struts2.dispatcher.ServletDispatcherResult" default="true" /&gt;
+                  </td>
+              </tr>
+              <tr>
+                  <td rowspan="2" style="padding:.2em .5em;font-weight:bold;">redirect</td>
+                  <td style="padding:.2em .5em;">告诉浏览器重定向到另一个 URL</td>
+                  <td style="padding:.2em .5em;">location (默认)、parse</td>
+              </tr> 
+              <tr>
+                  <td colspan="2" style="padding:.2em .5em;font-weight:bold;color:green;">
+                      &lt;result-type name="dispatcher" class="org.apache.struts2.dispatcher.ServletRedirectResult" /&gt;
+                  </td>
+              </tr> 
+              <tr>
+                  <td rowspan="2" style="padding:.2em .5em;font-weight:bold;">redirectAction</td>
+                  <td style="padding:.2em .5em;">告诉浏览器重定向到另一个 Struts 动作</td>
+                  <td style="padding:.2em .5em;">actionName (默认)、namespace、额外的参数会变成查询字符串</td>
+              </tr>  
+              <tr>
+                  <td colspan="2" style="padding:.2em .5em;font-weight:bold;color:green;">
+                      &lt;result-type name="dispatcher" class="org.apache.struts2.dispatcher.ServletRedirectActionResult" /&gt;
+                  </td>
+              </tr>             
+          </tbody>
+        </table>
+      ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="redirectAction 结果类型示例" style="margin-top:1em;"
+                         id="sourceContent1"><![CDATA[<result type="redirectAction">
+  <param name="actionName">AdminPortfolio</param>
+  <param name="namespace">/chapterEight/secure</param>
+  <param name="parse">true</param>
+  <param name="param1">hardCodeParam</param>
+  <param name="param2">${testProperty}</param>
+</result>
+<result name="input" type="dispatcher">
+  <param name="location">/chapterEight/Login.jsp</param>
+  <param name="parse">true</param>
+</result>]]></c:sourceContent>
+
+    <c:sourceContent type="" title="VelocityResult" style="margin-top:1em;"
+                         id="sourceContent1"><![CDATA[<!-- velocity 结果类型也支持 Velocity 的本地表达式语言，这意味着可以放弃使用 Struts2 标签 API -->
+<result-type name="velocity" class="org.apache.struts2.dispatcher.VelocityResult" />
+      
+      
+<!-- 可以在包的 result-types 元素中重写 velocity 结果，并将 default 属性设置为 true -->
+<result-types>
+    <result-type name="velocity" class="org.apache.struts2.dispatcher.VelocityResult" default="true" />
+</result-types>]]></c:sourceContent>
+
+    <c:sourceContent type="" title="FreeMarkerResult" style="margin-top:1em;"
+                         id="sourceContent1"><![CDATA[<!-- Struts2 内部使用 FreeMarker 呈现 UI 组件，http://www.freemarker.org -->
+<result-type name="freemarker" class="org.apache.struts2.views.freemarker.FreeMarkerResult" />
+      
+      
+<!-- 可以在包的 result-types 元素中重写 freemarker 结果，并将 default 属性设置为 true -->
+<result-types>
+    <result-type name="freemarker" class="org.apache.struts2.views.freemarker.FreeMarkerResult" default="true" />
+</result-types>]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="全局结果" style="margin-top:1em;"
+                         id="sourceContent1"><![CDATA[<!-- 当一个动作返回一个结果控制字符串时，框架对结果的查找顺序是: 本地结果 —— 全局结果 (在查找过程中本地结果会覆盖全局结果) -->
+<global>
+    <result name="error">/..../Error.jsp</result>
+</global>]]></c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
 </c:component>
