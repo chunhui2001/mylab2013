@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xsl:stylesheet version="1.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:c="http://com.snnmo.website"
@@ -112,11 +112,7 @@
       });
     </script>
 
-    <div id="maincontent" style="margin-bottom:2em;">
-      <section class="banner" role="banner">
-
-      </section>
-    </div>
+    
     
     <xsl:if test="normalize-space(c:hero/c:url) != ''">
       <xsl:variable name="heroIndex_Current">
@@ -137,14 +133,11 @@
         </xsl:choose>       
       </xsl:variable>
       
-      <style type="text/css">
-        .banner{
-        <xsl:value-of select="concat('background-image:url(',normalize-space(c:hero/c:url[position() =$heroIndex_Current]),');')" />
-        <xsl:if test="normalize-space(c:hero/@height) != ''">
-          <xsl:value-of select="concat('height:', c:hero/@height, ';')"/>
-        </xsl:if>
-        }
-      </style>
+      <div id="maincontent" style="margin-bottom:2em;">
+	<!--section class="banner" role="banner"></section-->
+
+	<img src="{normalize-space(c:hero/c:url[position() =$heroIndex_Current])}" style="width:100%" />
+      </div>
     </xsl:if>
 
     <!--script type="text/javascript" src="/RenderingAssets/lib/jquery/jquery-1.10.1.min.js"></script>	  	
