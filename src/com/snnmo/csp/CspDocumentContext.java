@@ -86,6 +86,15 @@ public class CspDocumentContext {
 		return root + CspHelper.pageTemplatePath + "/" + pageType + "/" + pageType + ".xslt";
 	}
 	
+
+	public String getXsltExtension () {
+		if (!(pageType != null && pageType.trim().length() > 0)) return "";
+		
+		String ss = "<xsl:import href=\"" + root + CspHelper.xsltExtensionPath + "" + "\" />\r\n";
+		
+		return ss = "";
+	}
+	
 	public String getMasterType(){
 		if (!(masterType != null && masterType.trim().length() > 0)) return "";
 		
@@ -175,8 +184,10 @@ public class CspDocumentContext {
 		   String s = "<xsl:import href=\"" + getComponentType(node) + "\"/>";
 		   if(!importXslt.toString().contains(s) && templateStringTest.indexOf(s) == -1) 
 			   importXslt.append(s + "\r\n");
-		}		
-
+		}
+		
+		// 
+		//importXslt.append(getXsltExtension() + "\r\n");
 		
 		String tmplString = template.asXML()
 				.replace("<xsl:output method=\"html\"", importXslt.toString() + "<xsl:output method=\"html\"");

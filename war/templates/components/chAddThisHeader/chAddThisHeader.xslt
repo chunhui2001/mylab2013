@@ -4,6 +4,8 @@
                 xmlns:c="http://com.snnmo.website"
                 exclude-result-prefixes="c">
   <xsl:output method="html" indent="yes"/>
+
+  <xsl:param name="heroIndex" />
   
   <xsl:template match="c:component[@type='chAddThisHeader']">
 
@@ -115,9 +117,35 @@
 
       </section>
     </div>
-
-
-
+    
+    <xsl:if test="normalize-space(c:hero/c:url) != ''">
+      <xsl:variable name="heroIndex_Current">
+        <xsl:choose>
+          <xsl:when test="$heroIndex = '' or string(number($heroIndex)) = 'NaN'">
+            <xsl:value-of select="count(c:hero/c:url)"/>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:choose>
+              <xsl:when test="($heroIndex &lt; 1 or $heroIndex &gt; count(c:hero/c:url))">
+                <xsl:value-of select="count(c:hero/c:url)"/>
+              </xsl:when>
+              <xsl:otherwise>
+                <xsl:value-of select="$heroIndex"/>
+              </xsl:otherwise>
+            </xsl:choose>
+          </xsl:otherwise>
+        </xsl:choose>       
+      </xsl:variable>
+      
+      <style type="text/css">
+        .banner{
+        <xsl:value-of select="concat('background-image:url(',normalize-space(c:hero/c:url[position() =$heroIndex_Current]),');')" />
+        <xsl:if test="normalize-space(c:hero/@height) != ''">
+          <xsl:value-of select="concat('height:', c:hero/@height, ';')"/>
+        </xsl:if>
+        }
+      </style>
+    </xsl:if>
 
     <!--script type="text/javascript" src="/RenderingAssets/lib/jquery/jquery-1.10.1.min.js"></script>	  	
 	  	<script type="text/javascript" src="/RenderingAssets/lib/jquery/jquery-migrate-1.2.1.min.js"></script-->

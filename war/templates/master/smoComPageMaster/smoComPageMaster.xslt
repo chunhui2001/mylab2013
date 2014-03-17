@@ -4,6 +4,8 @@
                 xmlns:c="http://com.snnmo.website"
                 xmlns:jmath="http://www.oracle.com/XSL/Transform/java/java.lang.Math"
                 xmlns:jString="http://www.oracle.com/XSL/Transform/java/java.lang.String"
+                xmlns:date="http://exslt.org/dates-and-times"
+                extension-element-prefixes="date"
                 exclude-result-prefixes="c jmath jString">
   <xsl:output method="html" indent="yes"/>
   
@@ -85,7 +87,8 @@
         'theme' : 'transparent',
         'share' : {
         'position' : 'left',
-        'numPreferredServices' : 6
+        'services' : 'baidu,sinaweibo,kaixin,email,print,more'
+        /*'numPreferredServices' : 6*/
         }
         });
       </script>
