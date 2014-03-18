@@ -20,6 +20,11 @@
     <xsl:value-of select="jmath:ceil($value)"/>
   </xsl:template>
 
+  <xsl:template name="util-formatDate" >
+    <xsl:param name="value" />
+    <xsl:value-of select="concat(substring($value,1, 4), '.',substring($value,5, 2),  '.',substring($value,7), '')"/>
+  </xsl:template>
+
 
   <xsl:template match="c:master[@type='smoComPageMaster']">  
   <html lang="{$language}">

@@ -69,14 +69,14 @@
         <div style="{concat($style,@style)}">
           
           <xsl:if test="current()/@title and normalize-space(current()/@title) != ''">
-            <h6 style="margin:0; background-color:rgb(205, 202, 202);color:rgb(11, 95, 208);padding:.5em .8em;font-weight:bold;font-size:1em;">
+            <h6 style="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em .8em;font-weight:bold;font-size:1em;">
               <xsl:value-of select="current()/@title"/>
             </h6>
           </xsl:if>
         
           <xsl:choose>
             <xsl:when test="current()/@type = 'html'">
-              <div style="padding:1em;font-size:14px;">
+              <div style="padding:1em;font-size:12px;">
                 <xsl:value-of disable-output-escaping="yes" select="current()"/>
               </div>
             </xsl:when>
