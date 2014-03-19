@@ -76,7 +76,7 @@
         
           <xsl:choose>
             <xsl:when test="current()/@type = 'html'">
-              <div style="padding:1em;font-size:12px;">
+              <div style="padding:1em;font-size:14px;">
                 <xsl:value-of disable-output-escaping="yes" select="current()"/>
               </div>
             </xsl:when>

@@ -1,0 +1,196 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+
+  <c:abstract>
+    <![CDATA[]]>
+  </c:abstract>
+
+  <c:entry>
+    <c:title>生成 struts2-archetype-starter 启动器项目</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[通过该启动器创建的项目包含所有基本元素以及大多数 Web 应用将要使用到的公共 Struts2 插件]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title=""
+                     id="sourceContent1"><![CDATA[mvn archetype:generate -B  
+    -DgroupId=com.test.mysite 
+    -DartifactId=mysite 
+    -DarchetypeGroupId=org.apache.struts 
+    -DarchetypeArtifactId=struts2-archetype-starter
+
+// 运行 Servlet 容器 (需进入 pom.xml 文件所在目录)
+mvn -Djetty.port=9999 jetty:run]]></c:sourceContent>
+
+    <c:sourceContent type="html" title="目录结构" style="margin-top:1em;"
+                     id="sourceContent1">
+      <![CDATA[
+      <div>
+<img src="http://farm4.staticflickr.com/3679/13261559325_59723e80dc_b.jpg" style="border:solid 1px gray;float:left;margin-right:1em;" alt="" />
+<div>
+  <span><span style="font-weight:bold;color:red;">src 目录</span> 是所有代码的根目录，在该目录下包含 main 目录和 test 目录，只有在 src 目录下的内容才会被打包到最终软件制品中去。</span><br />
+  <span><span style="font-weight:bold;color:red;">resource 目录</span> 包含属性、XML、配置文件</span><br />
+  <span><span style="font-weight:bold;color:red;">aspects 目录</span> 当 AspectJ 插件被包含进来时，会出现该目录</span><br />
+  <span><span style="font-weight:bold;color:red;">groovy 目录</span> 包含 Groovy 脚本以备执行 (<a target="_blank" href="http://groovy.codehaus.org/Chinese+Home">Groovy</a> 是一种动态脚本语言，语法和 Java 很相似，可以直接执行也可以向下编译成字节码。) </span><br />  
+  <span><span style="font-weight:bold;color:red;">webapp 目录</span> 对于打包成 war 文件的软件制品，该目录包含 WAR 文件所需的其它信息，而 EAR 或 JAR 不需要这些信息</span><br />
+</div>
+<div class="clear"></div>
+</div>
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="Maven2 配置文件" style="margin-top:1em;"
+                     id="sourceContent1"><![CDATA[<project>      
+    <!-- modelVersion 该值表示 Maven2 的模型版本 -->
+    <modelVersion>4.0.0</modelVersion> 
+    
+    <groupId>com.mytest.webapp</groupId>
+    <artifactId>webapp</artifactId>
+    
+    <!-- 如果是 web 项目，那么该值总是 war (也可以是 jar) -->
+    <!-- 如果项目中是一个包含了 Web 组件、EJB 组件或其它资源的 J2EE 应用，那么 packaging 的值就是 ear -->
+    <packaging>war</packaging>       
+    
+    <!-- version 的值可以保持不变。当组件作为产品发布时，version 的值需改成 1.0，随之进一步的开发可以做相应递增。 -->
+    <version>1.0-SNAPSHOT</version>
+    
+    <!-- 在启动器应用的代码生成之后可以修改 name、url、description 的默认值，这三个元素用来描述开发者和使用者的信息 -->
+    <name>Struts 2 Starter</name>
+    <url>http://www.myComp.com</url>
+    <description>Struts 2 Starter</description>
+    .........
+</project>]]></c:sourceContent>
+
+    <c:sourceContent type="" title="依赖项的配置" style="margin-top:1em;"
+                     id="sourceContent1"><![CDATA[<project>      
+    .........
+    <dependencies>
+        <!-- jUnit -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version>
+            <scope>test</scope>
+        </dependency>
+        
+        <!-- Struts2 -->
+        <dependency>
+            <groupId>org.apache.struts</groupId>
+            <artifactId>struts2-core</artifactId>
+            <version>2.0.9</version>
+        </dependency>
+        
+        <!-- Servlet & Jsp -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+            <version>2.4</version>
+            <scope>provided</scope>
+        </dependency>
+        ........
+    </dependencies>
+    .........
+</project>]]></c:sourceContent>
+
+    <c:sourceContent type="" title="控制构建过程&#8212;build" style="margin-top:1em;"
+                     id="sourceContent1"><![CDATA[<project>      
+    .........
+    <build>
+        <!-- finalName 用于覆盖最终产品名字: myapp.war (设置), myapp-1.0-SNAPSHOT.war(不设置) -->
+        <finalName>myapp</finalName> 
+        <plugins>
+            <plugin>
+                 <artifactId>maven-compiler-plugin</artifactId>   <!-- Java5 编译器 -->
+                 <configuration>
+                    <source>1.5</source>
+                    <target>1.5</target>
+                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.mortbay.jetty</groupId>              <!-- Servlet 容器 -->
+                <artifactId>maven-jetty-plugin</artifactId>
+                <version>6.0.1</version>
+                <configuration>
+                    <!-- 默认 8080 端口 -->
+                     
+                    <!-- 告诉 Jetty 10 秒钟检查一次 war 文件，一旦发生变化就重新加载应用 -->
+                    <scanIntervalSeconds>10</scanIntervalSeconds>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    .........
+</project>]]></c:sourceContent>
+
+    <c:sourceContent type="" title="struts2-archetype-starter 启动器包含的插件" style="margin-top:1em;"
+                     id="sourceContent1"><![CDATA[<project>      
+    .........
+    <dependencies>
+        <!-- sitemesh -->
+        <dependency>
+            <groupId>org.apache.struts</groupId>
+            <artifactId>struts2-sitemesh-plugin</artifactId>
+            <version>2.0.9</version>
+        </dependency>
+        
+        <!-- spring -->
+        <dependency>
+            <groupId>org.apache.struts</groupId>
+            <artifactId>struts2-spring-plugin</artifactId>
+            <version>2.0.9</version>
+        </dependency>
+    </dependencies>
+    .........
+</project>
+
+<!-- 修改 web.xml 配置文件，使插件工作 --> 
+<context-param>
+    <!-- 指定 applicationContext.xml 配置文件的存放位置 -->
+    <param-name>contextConfigLocation</param-name>
+    <param-value>classpath*:applicationContext*.xml</param-value>
+</context-param>
+
+<listener>
+    <!-- 该监听器用于访问 spring 上下文 -->
+    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+</listener>
+
+
+<!-- 为 sitemesh 定义过滤器 -->
+<filter>
+    <filter-name>action2-cleanup</filter-name>
+    <filter-class>org.apache.struts2.dispather.ActionContextCleanUp</filter-class>
+</filter>
+<filter>
+    <filter-name>sitemesh</filter-name>
+    <filter-class>com.opensymphony.module.sitemesh.filter.PageFilter</filter-class>
+</filter>
+<filter>
+    <filter-name>action2</filter-name>
+    <filter-class>org.apache.struts2.dispather.FilterDispather</filter-class>
+</filter>
+
+<filter-mapping>
+    <filter-name>action2-cleanup</filter-name>
+    <filter-class>/*</filter-class>
+</filter-mapping>
+<filter-mapping>
+    <filter-name>sitemesh</filter-name>
+    <filter-class>/*</filter-class>
+</filter-mapping>
+<filter-mapping>
+    <filter-name>action2</filter-name>
+    <filter-class>/*</filter-class>
+</filter-mapping>]]></c:sourceContent>
+
+    <c:sourceContent type="" title="显示第一个页面" style="margin-top:1em;"
+                     id="sourceContent1">
+      <![CDATA[....]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+</c:component>
