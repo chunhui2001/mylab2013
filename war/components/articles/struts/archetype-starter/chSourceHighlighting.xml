@@ -21,11 +21,16 @@
 // 运行 Servlet 容器 (需进入 pom.xml 文件所在目录)
 mvn -Djetty.port=9999 jetty:run]]></c:sourceContent>
 
-    <c:sourceContent type="html" title="目录结构" style="margin-top:1em;"
+    <c:sourceContent type="html" title="目录结构"
                      id="sourceContent1">
       <![CDATA[
       <div>
-<img src="http://farm4.staticflickr.com/3679/13261559325_59723e80dc_b.jpg" style="border:solid 1px gray;float:left;margin-right:1em;" alt="" />
+<img src="http://farm4.staticflickr.com/3679/13261559325_59723e80dc_b.jpg" 
+      style="border:solid 1px gray;float:left;margin-right:1em;
+            border-top-right-radius:8px;
+            border-top-left-radius:8px;
+            border-bottom-right-radius:8px;
+            border-bottom-left-radius:8px;" alt="" />
 <div>
   <span><span style="font-weight:bold;color:red;">src 目录</span> 是所有代码的根目录，在该目录下包含 main 目录和 test 目录，只有在 src 目录下的内容才会被打包到最终软件制品中去。</span><br />
   <span><span style="font-weight:bold;color:red;">resource 目录</span> 包含属性、XML、配置文件</span><br />
@@ -38,7 +43,7 @@ mvn -Djetty.port=9999 jetty:run]]></c:sourceContent>
 ]]>
     </c:sourceContent>
 
-    <c:sourceContent type="" title="Maven2 配置文件" style="margin-top:1em;"
+    <c:sourceContent type="" title="Maven2 配置文件"
                      id="sourceContent1"><![CDATA[<project>      
     <!-- modelVersion 该值表示 Maven2 的模型版本 -->
     <modelVersion>4.0.0</modelVersion> 
@@ -60,7 +65,7 @@ mvn -Djetty.port=9999 jetty:run]]></c:sourceContent>
     .........
 </project>]]></c:sourceContent>
 
-    <c:sourceContent type="" title="依赖项的配置" style="margin-top:1em;"
+    <c:sourceContent type="" title="依赖项的配置"
                      id="sourceContent1"><![CDATA[<project>      
     .........
     <dependencies>
@@ -91,7 +96,7 @@ mvn -Djetty.port=9999 jetty:run]]></c:sourceContent>
     .........
 </project>]]></c:sourceContent>
 
-    <c:sourceContent type="" title="控制构建过程&#8212;build" style="margin-top:1em;"
+    <c:sourceContent type="" title="控制构建过程&#8212;build"
                      id="sourceContent1"><![CDATA[<project>      
     .........
     <build>
@@ -121,12 +126,20 @@ mvn -Djetty.port=9999 jetty:run]]></c:sourceContent>
     .........
 </project>]]></c:sourceContent>
 
-    <c:sourceContent type="" title="struts2-archetype-starter 启动器包含的插件" style="margin-top:1em;"
+    <c:sourceContent type="" title="struts2-archetype-starter 启动器包含的插件"
                      id="sourceContent1"><![CDATA[<project>      
     .........
     <dependencies>
         <!-- sitemesh -->
         <dependency>
+            <!-- sitemesh 提供一套初始用户界面 -->
+            <!-- sitemesh 利用过滤器拦截 Struts2 结果然后往结果里增加其他 HTML 代码 -->
+            <!-- 启动器生成的 WEB-INF/decorators.xml 文件中给出了 URL 模式与装饰器之间的映射信息 -->
+            <!-- WEB-INF/decorators/main.jsp 中定义了 3 个非常有用的标签: <decorator:title />，<decorator:head />，<decorator:body /> -->
+            <!-- <decorator:title /> 将原始页面的 title 插入装饰器模板 -->
+            <!-- <decorator:head /> 将原始页面的 head 标签里的内容插入装饰器模板 -->
+            <!-- <decorator:body /> 将原始页面的 body 标签里的内容插入装饰器模板 -->
+            <!-- 原始页面并不需要引用装时器模板文件，这是一种松耦合的可选机制 -->
             <groupId>org.apache.struts</groupId>
             <artifactId>struts2-sitemesh-plugin</artifactId>
             <version>2.0.9</version>
@@ -181,16 +194,132 @@ mvn -Djetty.port=9999 jetty:run]]></c:sourceContent>
     <filter-name>action2</filter-name>
     <filter-class>/*</filter-class>
 </filter-mapping>]]></c:sourceContent>
-
-    <c:sourceContent type="" title="显示第一个页面" style="margin-top:1em;"
-                     id="sourceContent1">
-      <![CDATA[....]]>
-    </c:sourceContent>
+    
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
       </c:comment1>
     </c:comment>
   </c:entry>
+  
+  <c:entry style="margin-top:2em;">
+    <c:title>显示第一个页面 index.action</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[运行 servlet 容器, jetty:run --> http://localhost:8080/app --> http://localhost:8080/app/index.action ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="IndexAction.java" style="border-bottom:none;"
+                      id="sourceContent1"><![CDATA[@Conversion()
+public class IndexAction extends ActionSupport {
+    // Struts2 为每个请求创建一个新的 action 实例，所以实例中类的成员变量是每个请求独有的，因此可以使用该成员变量传递数据 (当然也可以使用方法中的局部变量)
+    // Struts1.x 在多个请求中共享 action 实例，无法保证线程安全，因此只能使用方法中的局部变量
+    private Date now = new Date(System.currentTimeMillis());
+    
+    @TypeConversion(converter = "com.fdar.apress.s2.DateConverter")
+    public Date getDateNow() { 
+        return this.now;        // 任何类属性都可以在获取方法和设置方法中使用
+    }
+          
+    public String execute() {
+        // 使用方法中的局部变量
+        now = new Date(System.currentTimeMillis());
+        return SUCCESS;
+    }
+}]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" style="border-top:none;"
+                      id="sourceContent1"><![CDATA[<!-- src/main/resources/struts.xml -->
+<struts>
+    <package name="myPackage" extends="struts-default">
+        <action name="index" class="com.mypackagename.IndexAction">
+            <!-- 注意该 action 没有提供 namespace 属性 -->
+            <!-- result 的 name 属性默认是 success，type 属性默认是 jsp -->
+            <result>/jsp/index.jsp</result>
+        </action>
+    </package>
+</struts>]]></c:sourceContent>
+    
+    <c:sourceContent type="" title="/jsp/index.jsp"
+                      id="sourceContent1"><![CDATA[<%@taglib prefix="s" uri="/struts-tags" %>
+      
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <title>Index</title>
+        <s:head />
+    </head>
+    <body>
+        <s:form action="helloWorld">
+            <s:textfield name="name" label="What is your name?" />
+            <s:textfield name="dateNow" label="What is the date?" />
+                
+            <s:submit />
+        </s:form>
+    </body>
+</html>]]></c:sourceContent>
+    <c:sourceContent type="" title="helloWorldAction.java" style="border-bottom:none;"
+                      id="sourceContent1"><![CDATA[@Validation()      // 类级别注释告诉 Struts2 该类具有验证功能
+@Conversion()
+public class HelloWorldAction extends ActionSupport {
+    private Date now;
+    private String name;
+    
+    @TypeConversion (converter = "com.mypackage.DateConverter")
+    @RequiredFieldValidator (message = "Please enter the date")
+    public void setDateNow(Date now) {
+        this.now = now;
+    }
+    
+    public Date getDateNow() {
+        return this.now;
+    }
+    
+    @RequiredStringValidator (message = "Please enter a name", tirm = true)
+    public void setName(String name) {
+        this.name = name;
+    }
+    
+    public String getName() {
+        return this.name;
+    }
+    
+    public String execute() thorws Exception {
+        return SUCCESS;
+    }
+}]]></c:sourceContent>
+    <c:sourceContent type="" title="" style="border-top:none;border-bottom:none;"
+                      id="sourceContent1"><![CDATA[<!-- src/main/resources/struts.xml -->
+<struts>
+    <package name="myPackage" extends="struts-default">
+        <!-- 让 Spring 管理 action 的创建，需将 class 属性设置成 spring bean 的 id -->
+        <action name="helloWorld" class="helloWorldAction">
+            <result name="input">/jsp/index.jsp</result>
+            <result>/jsp/helloWrold.jsp</result>
+        </action>
+    </package>
+</struts>]]></c:sourceContent>
+    <c:sourceContent type="" title="" style="border-top:none;"
+                      id="sourceContent1"><![CDATA[<!-- src/main/resources/applicationContext.xml -->
+<beans>
+    <bean id="helloWorldAction"
+          class="com.mypackagename.HelloWorldAction" singleton="false" />
+</beans>]]></c:sourceContent>
 
-</c:component>
+    <c:sourceContent type="" title="/jsp/helloWrold.jsp"
+                  id="sourceContent1"><![CDATA[<%@taglib prefix="s" uri="/struts-tags" %>
+      
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <title>Hello world!</title>
+        <s:head />
+    </head>
+    <body>
+        Hello <s:property name="name" />，today is <s:property name="dateNow" />
+    </body>
+</html>]]></c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  </c:component>
