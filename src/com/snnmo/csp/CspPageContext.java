@@ -118,6 +118,7 @@ public class CspPageContext {
 		transformer.setParameter("countryCode", this.request.getLocale().getCountry());
 		
 		transformer.setParameter("APP_ROOT", this.root);
+		transformer.setParameter("PAGE_URI", this.url.replaceAll("//", "/"));
 		
 		
 		 
