@@ -18,8 +18,15 @@
     -DarchetypeGroupId=org.apache.struts 
     -DarchetypeArtifactId=struts2-archetype-starter
 
+
 // 运行 Servlet 容器 (需进入 pom.xml 文件所在目录)
-mvn -Djetty.port=9999 jetty:run]]></c:sourceContent>
+mvn -Djetty.port=9999 jetty:run
+
+// 安装
+mvn clean install
+
+// 打包
+mvn package]]></c:sourceContent>
 
     <c:sourceContent type="html" title="目录结构"
                      id="sourceContent1">
@@ -298,9 +305,13 @@ public class HelloWorldAction extends ActionSupport {
 </struts>]]></c:sourceContent>
     <c:sourceContent type="" title="" style="border-top:none;"
                       id="sourceContent1"><![CDATA[<!-- src/main/resources/applicationContext.xml -->
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC 
+       "-//SPRING//DTD BEAN//EN" 
+       "http://www.springframework.org/dtd/spring-beans.dtd">
 <beans>
-    <bean id="helloWorldAction"
-          class="com.mypackagename.HelloWorldAction" singleton="false" />
+  <bean id="helloWorldAction"
+        class="com.mystruts.web.HelloWorldAction" singleton="false" />
 </beans>]]></c:sourceContent>
 
     <c:sourceContent type="" title="/jsp/helloWrold.jsp"
@@ -316,6 +327,301 @@ public class HelloWorldAction extends ActionSupport {
     </body>
 </html>]]></c:sourceContent>
 
+    <c:sourceContent type="" title="自定义数据类型转换"
+                  id="sourceContent1"><![CDATA[/* Struts2 可以处理许多基本数据类型的转换，如: Boolean、char、Character、int、Integer、float、Float、etc. */
+/* 可以编写自定义类型转换器，实现特殊转换 */
+      
+public class DateConverter extends StrutsTypeConverter {          
+    public Object convertFromString (Map context, String[] values, Class toClass) {
+        // values 定义为数组类型，是为了处理单个表单名传递多个值得情况
+        if (values != null && values.length > 0 
+                && values[0] != null && values[0].length() > 0) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd");
+                  
+            try {
+                return sdf.parse(values[0]);
+            } catch (ParseException e) {
+                throw new TypeConversionException (e);
+            }
+                  
+            return null;
+        }
+    }
+    
+    public String convertToString (Map context, Object o) {
+        if (o instanceof Date) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd");
+            return sdf.format((Date) o);
+        }
+        
+        return "";
+    }
+}]]></c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>测试 action</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title=""
+              id="sourceContent1"><![CDATA[public class IndexActionTest extends TestCase {
+    public void testIndexAction () throws Exception {
+        IndexAction   indexAction = new IndexAction();
+        String result = indexAction.execute();
+              
+        // 也可以为 action 的获取方法和设置方法设置断言
+        assertEquals(Action.SUCCESS, result);
+    }
+}]]></c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+      <c:title>我的第一个应用 s2app</c:title>
+      <c:desc>
+        <c:desc1> <![CDATA[s2app 是一个社区娱乐应用，可以为喜爱的选手投票，并可以看到投票结果。]]></c:desc1>
+      </c:desc>
+      <c:sourceContent type="html" title="业务用例1：注册新活动"
+                id="sourceContent1"><![CDATA[
+                1、查询现存活动判定新活动是否存在 (此项可选，用户可以跳过这项继续下面的步骤) <br />
+                2、用户需要登陆 (如果用户没有注册，用户还需要注册)<br />
+                3、创建活动，指定活动名称、开始时间、结束时间、投票期限以及时差等等<br />
+                4、将选手增加到活动中去]]></c:sourceContent>
+      <c:sourceContent type="html" title="业务用例2：投票"
+                  id="sourceContent1"><![CDATA[
+                  1、登陆 (如果没有注册还需要事先注册) <br />
+                  2、登记到用户想要投票的活动<br />
+                  3、投票给参加活动的选手]]></c:sourceContent>
+      <c:sourceContent type="html" title="业务用例3：查看投票结果"
+                  id="sourceContent1"><![CDATA[
+                  1、活动结束后马上出现结果，而且能让所有用户看到 (不管用户是否登陆)]]></c:sourceContent>
+  
+      <c:sourceContent type="html" title="系统用例" style="margin-top:1em;"
+                id="sourceContent1"><![CDATA[
+                1、注册、更新用户配置、上传头像<br />
+                2、创建活动、用户登录、用户注销<br />
+                3、搜索活动<br />
+                4、发布活动信息<br />
+                5、登记到某个活动<br />
+                6、投票<br />
+                7、查看活动结果]]></c:sourceContent>
+  
+      <c:sourceContent type="html" title="系统用例" style="margin-top:1em;"
+                id="sourceContent1"><![CDATA[
+                1、注册、更新用户配置、上传头像<br />
+                2、创建活动、用户登录、用户注销<br />
+                3、搜索活动<br />
+                4、发布活动信息<br />
+                5、登记到某个活动<br />
+                6、投票<br />
+                7、查看活动结果]]></c:sourceContent>
+      <c:sourceContent type="html" title="集成技术" style="margin-top:1em;"
+                  id="sourceContent1"><![CDATA[
+                  1、Hibernate： 使用 JPA (Java Persistence API) 为应用的持久化提供对象关系映射<br />
+                  2、Spring：提供业务服务，这是一个将 Struts2 的 action 与持久化层隔开的架构层<br />
+                  3、Acegi： 可选组件，用户提供授权和身份验证服务<br />
+                  4、Rome： 用来为共享数据产生 RSS Feed<br />
+                  5、GWT 和 Dojo： 提供 Ajax 界面]]></c:sourceContent>
+  
+    
+      <c:comment>
+        <c:comment1>
+          <![CDATA[]]>
+        </c:comment1>
+      </c:comment>
+    </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>s2app 的领域模型</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[每个应用都需要用类来表示应用的核心概念，类还包含核心概念之间的不同关系。类和关系一起形成了应用的领域模型。]]></c:desc1>
+      <c:desc1> <![CDATA[在敏捷开发过程中，领域模型是逐步完善的。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title=""
+              id="sourceContent1"><![CDATA[
+      <img src="//farm4.staticflickr.com/3801/13372272974_306d9d22a2_b.jpg" alt="" />   <br />
+      <br />
+      <p style="margin:.2em 0">
+          <span style="color:red;font-weight:bold;">Event</span> 是模型中的核心领域对象，它为活动的所有基本信息提供属性。该信息被分割成 Progress枚举、Location、Address 和 Broadcase类。
+      </p>
+      <p style="margin:.2em 0">
+          <span style="color:red;font-weight:bold;">Progress</span> 枚举类型提供活动存在的生命周期状态。每个状态允许用户执行特定的任务，例如没有人能够在 CLOSED 或 NO_STARTE 状态时投票。
+      </p>
+      <p style="margin:.2em 0">
+          <span style="color:red;font-weight:bold;">Location</span> 提供关于活动举办场所的信息，它有两个子类： Address 类提供物理地址，Broadcast 类提供有关活动转播电视台的信息。
+      </p>
+      <p style="margin:.2em 0">
+          <span style="color:red;font-weight:bold;">User</span> 描述当前 Web 应用的当前用户。在本应用中用户不能同时是选手。
+      </p>
+      <p style="margin:.2em 0">
+          <span style="color:red;font-weight:bold;">Contestant</span> 包含 Event 中的选手信息，选手就是参与竞赛活动的人，那些登记到活动的用户可以为选手投票。
+      </p>
+      <p style="margin:.2em 0">
+          <span style="color:red;font-weight:bold;">Voter</span> 描述活动与用户之间的关系，在用户登记投票时就会创建一个 Voter 类实例。当用户投票时，被选定的活动选手就会被记录下来。
+      </p>
+    ]]></c:sourceContent>
+    
+    
+    
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+      <c:title>敏捷开发</c:title>
+      <c:desc>
+        <c:desc1> <![CDATA[敏捷开发将注意力集中在使提供的功能让用户直接受益的活动上，同时严格控制功能的膨胀。]]></c:desc1>
+        <c:desc1> <![CDATA[产品开发被分割成多个更小的迭代过程 (每个迭代过程平均 2-6 个星期)]]></c:desc1>
+        <c:desc1> <![CDATA[在每次迭代中，待完成特性要经历挑选、计划、实现、测试以及由客户或产品经理签出等阶段。]]></c:desc1>
+        <c:desc1> <![CDATA[在每次迭代完成后还要检查整个迭代过程，看看还有哪些方面需要完善 (例如: 特性实现方面、管理方面、过程方面)]]></c:desc1>
+      </c:desc>
+      <c:sourceContent type="html" title=""
+                id="sourceContent1"><![CDATA[
+        
+      ]]></c:sourceContent>
+    
+    
+    
+      <c:comment>
+        <c:comment1>
+          <![CDATA[]]>
+        </c:comment1>
+      </c:comment>
+    </c:entry>
+
+  <c:entry style="margin-top:2em;">
+        <c:title>为 s2app 集成持久化层</c:title>
+        <c:desc>
+          <c:desc1> <![CDATA[本应用将使用 Hibernate 提供的 JPA 扩展，而不是使用自定义 Hibernate 映射机制。]]></c:desc1>
+          <c:desc1> <![CDATA[JPA 是 J2EE 映射和持久化数据到数据库的标准方案。]]></c:desc1>
+        </c:desc>
+        <c:sourceContent type="" title="添加 Hibernate 依赖"
+                  id="sourceContent1"><![CDATA[<project>
+  <repositories>
+      <!-- 添加 Hibernate 本地存储库 -->
+      <repository>
+          <id>jboss</id>
+          <url>http://repository.jboss.com/maven2</url>
+      </repository>
+  </repositories>
+          
+  <dependencies>
+    <!-- hibernate -->
+    <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate</artifactId>
+        <version>3.2.1.ga</version>
+    </dependency>
+    <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-annotations</artifactId>
+        <version>3.2.1.ga</version>
+    </dependency>
+    <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-entitymanager</artifactId>
+        <version>3.2.1.ga</version>
+    </dependency>
+    
+    <!-- mysql -->
+    <dependency>
+        <groupId>mysql</groupId>
+        <artifactId>mysql-connector-java</artifactId>
+        <version>3.1.14</version>
+    </dependency>
+    
+    <!-- JPA (理论上 JPA 依赖项需要到 sun 网站上下载，但是 JBoxx 存储库提供了 JPA 依赖而无需手动安装本地依赖。) -->
+    <dependency>
+        <groupId>javax.persistence</groupId>
+        <artifactId>persistence-api</artifactId>
+        <version>1.0</version>
+    </dependency>
+    <dependency>
+        <groupId>javax.transaction</groupId>
+        <artifactId>jta</artifactId>
+        <version>1.0.1B</version>
+    </dependency>
+  </dependencies>
+</project>]]></c:sourceContent>
+
+    <c:sourceContent type="" title="创建 MySQL 数据库"
+                  id="sourceContent1">
+      
+    </c:sourceContent>
+        <c:comment>
+          <c:comment1>
+            <![CDATA[]]>
+          </c:comment1>
+        </c:comment>
+      </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>创建 MySQL 数据库</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[MySQL 下载地址: <a href="http://dev.mysql.com/download/mysql/4.1.html">http://dev.mysql.com/download/mysql/4.1.html</a> ]]></c:desc1>
+    </c:desc>
+    
+
+    <c:sourceContent type="html" title=""
+                  id="sourceContent1">
+<![CDATA[1. 创建数据库： create database s2app;<br />
+2. 创建的数据库结构图如下： <br />
+<img width="500px" src="//farm4.staticflickr.com/3779/13376885253_372dcbe485_b.jpg" alt="" />]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>配置 JPA</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[ ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="/src/main/resources/META-INF/persistence.xml"
+                  id="sourceContent1"><![CDATA[<persistence>
+    <persistence-unit name="s2appsql">
+        <!-- 使用 Hibernate 提供的 JPA 实现 (也可以使用 Top Link 或者 IBM 提供的 JPA 实现) -->
+        <provider>org.hibernate.ejb.HibernatePersistence</provider>
+        <properties>
+            <property name="hibernate.dialect"
+                      value="org.hibernate.dialect.MySQLDialect" />
+            <property name="hibernate.connection.driver_class"
+                      value="com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource" />
+            <property name="hibernate.connection.url"
+                      value="jdbc:mysql://localhost/s2app" />
+            <property name="hibernate.connection.username" value="root" />
+            <property name="hibernate.connection.password" value="password" />
+            <property name="hibernate.hbm2ddl.auto" value="update" />
+            <property name="hibernate.archive.autodetection" value="class" />
+            <property name="hibernate.show_sql" value="true" />
+            <property name="hibernate.format_sql" value="true" />
+        </properties>
+    </persistence-unit>
+</persistence>]]></c:sourceContent>
+    <c:sourceContent type="" title="persistence.xml 文件中与数据库相关的属性"
+                  id="sourceContent1">
+      <![CDATA[...]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="persistence.xml 文件中与 Hibernate 相关的属性"
+                  id="sourceContent1">
+      <![CDATA[...]]>
+    </c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
