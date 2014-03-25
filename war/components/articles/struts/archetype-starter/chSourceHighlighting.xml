@@ -416,15 +416,7 @@ public class DateConverter extends StrutsTypeConverter {
                 6、投票<br />
                 7、查看活动结果]]></c:sourceContent>
   
-      <c:sourceContent type="html" title="系统用例" style="margin-top:1em;"
-                id="sourceContent1"><![CDATA[
-                1、注册、更新用户配置、上传头像<br />
-                2、创建活动、用户登录、用户注销<br />
-                3、搜索活动<br />
-                4、发布活动信息<br />
-                5、登记到某个活动<br />
-                6、投票<br />
-                7、查看活动结果]]></c:sourceContent>
+      
       <c:sourceContent type="html" title="集成技术" style="margin-top:1em;"
                   id="sourceContent1"><![CDATA[
                   1、Hibernate： 使用 JPA (Java Persistence API) 为应用的持久化提供对象关系映射<br />
@@ -557,10 +549,7 @@ public class DateConverter extends StrutsTypeConverter {
   </dependencies>
 </project>]]></c:sourceContent>
 
-    <c:sourceContent type="" title="创建 MySQL 数据库"
-                  id="sourceContent1">
-      
-    </c:sourceContent>
+    
         <c:comment>
           <c:comment1>
             <![CDATA[]]>
@@ -594,33 +583,690 @@ public class DateConverter extends StrutsTypeConverter {
       <c:desc1> <![CDATA[ ]]></c:desc1>
     </c:desc>
     <c:sourceContent type="" title="/src/main/resources/META-INF/persistence.xml"
-                  id="sourceContent1"><![CDATA[<persistence>
-    <persistence-unit name="s2appsql">
+                  id="sourceContent1">
+      <![CDATA[<!-- MySQL -->
+<persistence xmlns="http://java.sun.com/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd"
+             version="2.0">
+    <persistence-unit name="s2app">
         <!-- 使用 Hibernate 提供的 JPA 实现 (也可以使用 Top Link 或者 IBM 提供的 JPA 实现) -->
         <provider>org.hibernate.ejb.HibernatePersistence</provider>
         <properties>
-            <property name="hibernate.dialect"
-                      value="org.hibernate.dialect.MySQLDialect" />
-            <property name="hibernate.connection.driver_class"
+            <property name="hibernate.dialect" 
+                      value="org.hibernate.dialect.MySQLDialect"/>
+            <property name="hibernate.connection.driver_class" 
                       value="com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource" />
-            <property name="hibernate.connection.url"
+            <property name="hibernate.connection.url" 
                       value="jdbc:mysql://localhost/s2app" />
             <property name="hibernate.connection.username" value="root" />
             <property name="hibernate.connection.password" value="password" />
+            <property name="hibernate.hbm2ddl.auto" value="update"/>
+            <property name="hibernate.archive.autodetection" value="class"/>
+            <property name="hibernate.show_sql" value="true"/>
+            <property name="hibernate.format_sql" value="true"/>
+        </properties>
+    </persistence-unit>
+</persistence>
+
+<!-- HyperSQL (HSQLDB) -->
+<!-- http://www.programmingforfuture.com/2010/06/using-hypersql-hsqldb.html -->
+<!--
+    <dependency>
+        <groupId>org.hsqldb</groupId>
+        <artifactId>hsqldb</artifactId>
+        <version>1.8.0.10</version>
+        <scope>test</scope>
+    </dependency>
+-->
+<persistence xmlns="http://java.sun.com/xml/ns/persistence" 
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd" 
+             version="2.0">
+    <persistence-unit name="manager" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.ejb.HibernatePersistence</provider>
+        <properties>
+            <property name="hibernate.dialect" 
+                      value="org.hibernate.dialect.HSQLDialect" />
+            <property name="hibernate.connection.driver_class" 
+                      value="org.hsqldb.jdbcDriver" />
+            <property name="hibernate.connection.url" 
+                      value="jdbc:hsqldb:file:src/main/resources/db/mydbname;shutdown=true" />
+            <!--
+                <property name="hibernate.connection.url" 
+                          value="jdbc:hsqldb:hsql://localhost/mydbname;shutdown=true" /> -->
+            <property name="hibernate.connection.user" value="sa" />
             <property name="hibernate.hbm2ddl.auto" value="update" />
             <property name="hibernate.archive.autodetection" value="class" />
-            <property name="hibernate.show_sql" value="true" />
-            <property name="hibernate.format_sql" value="true" />
+            <!-- <property name="hibernate.show_sql" value="true"/> -->
+            <property name="hibernate.flushMode" value="FLUSH_AUTO" />
         </properties>
     </persistence-unit>
 </persistence>]]></c:sourceContent>
-    <c:sourceContent type="" title="persistence.xml 文件中与数据库相关的属性"
+    <c:sourceContent type="html" title="persistence.xml 文件中与数据库相关的属性"
                   id="sourceContent1">
-      <![CDATA[...]]>
+      <![CDATA[
+        <table>
+            <thead>
+                <tr>
+                    <th style="padding:.2em .5em;font-weight:bold;">属性名</th>
+                    <th style="padding:.2em .5em;font-weight:bold;">描述</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding:.2em .5em;font-weight:bold;">hibernate.dialect</td>
+                    <td style="padding:.2em .5em;font-style:italic;">
+                        方言，告诉 Hibernate 怎样为特定种类的数据库构建 SQL 和 DDL
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:.2em .5em;font-weight:bold;">hibernate.connection.driver_class</td>
+                    <td style="padding:.2em .5em;font-style:italic;">
+                        用于连接数据库的 JDBC 驱动类
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:.2em .5em;font-weight:bold;">hibernate.connection.url</td>
+                    <td style="padding:.2em .5em;font-style:italic;">
+                        数据库或 schema 的位置
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:.2em .5em;font-weight:bold;">hibernate.connection.username</td>
+                    <td style="padding:.2em .5em;font-style:italic;">用户名</td>
+                </tr>
+                <tr>
+                    <td style="padding:.2em .5em;font-weight:bold;">hibernate.connection.passowrd</td>
+                    <td style="padding:.2em .5em;font-style:italic;">密码</td>
+                </tr>
+            </tbody>
+        </table>
+      ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="persistence.xml 文件中与 Hibernate 相关的属性"
+    <c:sourceContent type="html" title="persistence.xml 文件中与 Hibernate 相关的属性"
                   id="sourceContent1">
-      <![CDATA[...]]>
+      <![CDATA[<table>
+            <thead>
+                <tr>
+                    <th style="padding:.2em .5em;font-weight:bold;">属性名</th>
+                    <th style="padding:.2em .5em;font-weight:bold;">描述</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding:.2em .5em;font-weight:bold;">hibernate.archive.autodetection</td>
+                    <td style="padding:.2em .5em;font-style:italic;">
+                        告诉 Hibernate 如何发现持久化类，class 值告诉 Hibernate 使用注释功能来发现持久化类，
+                        其他可能的值还有 hbm，这个值告诉 Hibernate 使用老式 XML 配置文件的方式来发现持久化类。
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:.2em .5em;font-weight:bold;">hibernate.hbm2ddl.auto</td>
+                    <td style="padding:.2em .5em;font-style:italic;">
+                        确定 Hibernate 是否使用 DDL 命令来管理数据库中的数据结构。该属性的值可以为 validate (表示仅验证数据结构)，
+                        create (创建数据结构)，update (更新数据库以便和模型匹配)，create-drop (创建会话工厂 session factory 的同时创建数据结构),
+                        当会话工厂销毁时，也同时销毁数据结构<br />
+                        
+                        <br />
+                        <span style="color:rgb(213, 28, 181);font-weight:bold;font-style:normal;">
+                        1. 当属性设置为 update 时，可以满足数据库的任何变动要求，包括创建初始数据库结构。<br />
+                        2. 当需要测试数据完整性或者需要从某个数据结构版本移植到另一个版本时，这个特性也会带来问题。
+                        在这种情况下，最好是自动产生数据结构的 DDL 脚本。
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:.2em .5em;font-weight:bold;">hibernate.show_sql</td>
+                    <td style="padding:.2em .5em;font-style:italic;">
+                        显示在数据库上运行的 SQL 语句
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:.2em .5em;font-weight:bold;">hibernate.format_sql</td>
+                    <td style="padding:.2em .5em;font-style:italic;">
+                        调整显示的 SQL 语句的格式
+                    </td>
+                </tr>
+            </tbody>
+        </table>]]>
+    </c:sourceContent>
+    
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[ 创建数据访问对象 <span style="color:gray;">(<span style="font-style:italic;">使用 Hibernate/JPA 持久化注释</span> )</span>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[JPA 常用注释： (更多映射注释信息请访问: <a target="_blank" href="http://annotations.hibernate.org">http://annotations.hibernate.org</a>)]]></c:desc1>
+      <c:desc1> <![CDATA[<span style="color:#066;font-weight:bold;">@Entity：</span> 将类定义成映射到数据的实体]]></c:desc1>
+      <c:desc1> <![CDATA[<span style="color:#066;font-weight:bold;">@Table：</span> 
+                  提供映射到数据库表中的其他信息，在本例中是将类映射到名为 S2APP 这个 schema 中的 APP_USER 表<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+               <span style="color:rgb(255, 116, 0);font-weight:bold;font-style:italic;"> oracle, mysql 之类的数据库系统中，一个schema 其实就是一套表，VIEW，等。 类似于SQL SERVER中的一个数据库。</span>]]></c:desc1>
+      <c:desc1> <![CDATA[<span style="color:#066;font-weight:bold;">@Id：</span> 标明表的主键字段]]></c:desc1>
+      <c:desc1> <![CDATA[<span style="color:#066;font-weight:bold;">@Column：</span> 列名]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent expand="true" type="" title="User"
+                  id="sourceContent1"><![CDATA[package com.fdar.apress.s2.domain;
+                    
+import javax.persistence.*;
+import java.io.Serializable;
+
+@Entity @Table( name="APP_USER", schema="S2APP" )
+public class User implements Serializable {
+
+    private String firstName;
+    private String lastName;
+    private String email;
+    private String password;
+    private byte[] portrait;
+
+   @Id @Column(name="EMAIL")
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    @Column(name="FIRST_NAME")
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    @Column(name="LAST_NAME")
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    @Column(name="USER_PASSWORD")
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    @Lob @Column(name="PORTRAIT")
+    public byte[] getPortrait() {
+        return portrait;
+    }
+
+    public void setPortrait(byte[] portrait) {
+        this.portrait = portrait;
+    }
+}
+]]></c:sourceContent>
+    <c:sourceContent expand="" type="" title="Event"
+                  id="sourceContent1"><![CDATA[import org.hibernate.annotations.Generated;
+
+import javax.persistence.*;
+import java.util.*;
+import java.io.Serializable;
+
+@Entity @Table( name="EVENT", schema="S2APP" )
+public class Event  implements Serializable {
+
+    private long id;
+    private String name;
+    private Date startTime;
+    private int duration;
+    private int timeZoneOffset;
+    private Date votingStartTime;
+    private Date lastUpdateTime;
+    private Set<Voter> voters = new HashSet<Voter>();
+    private Location location;
+    private List<Contestant> options = new ArrayList<Contestant>();
+    private Progress status;
+
+    @Id @GeneratedValue(strategy=GenerationType.AUTO) @Column(name="ID")
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    @Column(name="NAME")
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Column(name="START_TIME") @Temporal(TemporalType.TIMESTAMP)
+    public Date getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(Date startTime) {
+        this.startTime = startTime;
+    }
+
+    @Column(name="DURATION")
+    public int getDuration() {
+        return duration;
+    }
+
+    public void setDuration(int duration) {
+        this.duration = duration;
+    }
+
+    @Column(name="TZ_OFFSET")
+    public int getTimeZoneOffset() {
+        return timeZoneOffset;
+    }
+
+    public void setTimeZoneOffset(int timeZoneOffset) {
+        this.timeZoneOffset = timeZoneOffset;
+    }
+
+    @Column(name="VOTING_STARTS") @Temporal(TemporalType.TIMESTAMP)
+    public Date getVotingStartTime() {
+        return votingStartTime;
+    }
+
+    public void setVotingStartTime(Date votingStartTime) {
+        this.votingStartTime = votingStartTime;
+    }
+
+    @Column(name="LAST_UPDATE") @Temporal(TemporalType.TIMESTAMP)
+    public Date getLastUpdateTime() {
+        return lastUpdateTime;
+    }
+
+    public void setLastUpdateTime(Date lastUpdateTime) {
+        this.lastUpdateTime = lastUpdateTime;
+    }
+
+    @OneToMany(mappedBy="event",cascade=CascadeType.ALL)
+    public Set<Voter> getVoters() {
+        return voters;
+    }
+
+    public void setVoters(Set<Voter> voters) {
+        this.voters = voters;
+    }
+
+    public void addVoter( Voter v ) {
+        v.setEvent(this);
+        voters.add(v);
+    }
+
+    @ManyToOne(cascade=CascadeType.ALL) @JoinColumn(name="LOCATION_FK")
+    public Location getLocation() {
+        return location;
+    }
+
+    public void setLocation(Location location) {
+        this.location = location;
+    }
+
+    @OneToMany(mappedBy="event",cascade=CascadeType.ALL)
+    public List<Contestant> getOptions() {
+        return options;
+    }
+
+    public void setOptions(List<Contestant> options) {
+        this.options = options;
+    }
+
+    public void addOption( Contestant c ) {
+        c.setEvent(this);
+        options.add(c);
+    }
+
+    @Column(name="STATE") @Enumerated(EnumType.STRING)
+    public Progress getStatus() {
+        return status;
+    }
+
+    public void setStatus(Progress status) {
+        this.status = status;
+    }
+}]]></c:sourceContent>
+    <c:sourceContent expand="" type="" title="Address"
+                  id="sourceContent1"><![CDATA[package com.fdar.apress.s2.domain;
+
+import javax.persistence.*;
+
+@Entity @Table( name="ADDRESS", schema="S2APP" )
+@PrimaryKeyJoinColumn(name="LOCATION_PK")
+public class Address extends Location {
+
+    private String address;
+    private String zipcode;
+
+    @Column(name="ADDRESS")
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    @Column(name="ZIPCODE")
+    public String getZipcode() {
+        return zipcode;
+    }
+
+    public void setZipcode(String zipcode) {
+        this.zipcode = zipcode;
+    }
+}
+]]></c:sourceContent>
+    <c:sourceContent expand="" type="" title="Broadcast"
+                  id="sourceContent1"><![CDATA[package com.fdar.apress.s2.domain;
+
+import javax.persistence.*;
+
+@Entity @Table( name="BROADCAST", schema="S2APP" )
+@PrimaryKeyJoinColumn(name="LOCATION_PK")
+public class Broadcast extends Location {
+
+    private String stationIdentifier;
+    private String network;
+
+    @Column(name="CALLSIGN")
+    public String getStationIdentifier() {
+        return stationIdentifier;
+    }
+
+    public void setStationIdentifier(String stationIdentifier) {
+        this.stationIdentifier = stationIdentifier;
+    }
+
+    @Column(name="NETWORK")
+    public String getNetwork() {
+        return network;
+    }
+
+    public void setNetwork(String network) {
+        this.network = network;
+    }
+}
+]]></c:sourceContent>
+    <c:sourceContent expand="" type="" title="Contestant"
+                  id="sourceContent1"><![CDATA[package com.fdar.apress.s2.domain;
+
+import javax.persistence.*;
+
+@Entity @Table( name="CONTESTANT", schema="S2APP" )
+public class Contestant {
+
+    private long id;
+    private String name;
+    private String description;
+    private Event event;
+
+    @Id @GeneratedValue(strategy=GenerationType.AUTO) @Column(name="ID")
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    @Column(name="NAME")
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Column(name="DESCRIPTION")
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    @ManyToOne @JoinColumn(name="EVENT_FK")
+    public Event getEvent() {
+        return event;
+    }
+
+    public void setEvent(Event event) {
+        this.event = event;
+    }
+}
+]]></c:sourceContent>
+    <c:sourceContent expand="" type="" title="Location"
+                  id="sourceContent1"><![CDATA[package com.fdar.apress.s2.domain;
+
+import javax.persistence.*;
+import java.io.Serializable;
+
+@Entity @Table( name="LOCATION", schema="S2APP" )
+@Inheritance(strategy= InheritanceType.JOINED)
+public abstract class Location implements Serializable {
+
+    private long id;
+    private String name;
+    private String city;
+    private String state;
+
+    @Id @GeneratedValue(strategy=GenerationType.AUTO) @Column(name="ID")
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    @Column(name="NAME")
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Column(name="CITY")
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    @Column(name="STATE")
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent expand="" type="" title="Progress"
+                  id="sourceContent1"><![CDATA[package com.fdar.apress.s2.domain;
+
+public enum Progress {
+    NOT_STARTED,
+    IN_PROGRESS,
+    COMPLETED,
+    VOTING_CLOSED,
+    CLOSED
+}]]></c:sourceContent>
+    <c:sourceContent expand="" type="" title="Voter"
+                  id="sourceContent1"><![CDATA[package com.fdar.apress.s2.domain;
+
+import javax.persistence.*;
+import java.io.Serializable;
+import java.util.Date;
+
+@Entity @Table( name="VOTER", schema="S2APP" )
+public class Voter implements Serializable {
+
+    private long id;
+    private Date enrollmentTime;
+    private Date voteRecordedTime;
+    private Contestant votedForOption;
+    private User user;
+    private Event event;
+
+    @Id  @GeneratedValue(strategy=GenerationType.AUTO) @Column(name="ID")
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    @Column(name="ENROLLMENT_TIME") @Temporal(TemporalType.TIMESTAMP)
+    public Date getEnrollmentTime() {
+        return enrollmentTime;
+    }
+
+    public void setEnrollmentTime(Date enrollmentTime) {
+        this.enrollmentTime = enrollmentTime;
+    }
+
+    @Column(name="VOTED_ON",nullable=true) @Temporal(TemporalType.TIMESTAMP)
+    public Date getVoteRecordedTime() {
+        return voteRecordedTime;
+    }
+
+    public void setVoteRecordedTime(Date voteRecordedTime) {
+        this.voteRecordedTime = voteRecordedTime;
+    }
+
+    @ManyToOne @JoinColumn(name="CONTESTANT_FK",nullable=true)
+    public Contestant getVotedForOption() {
+        return votedForOption;
+    }
+
+    public void setVotedForOption(Contestant votedForOption) {
+        this.votedForOption = votedForOption;
+    }
+
+    @ManyToOne @JoinColumn(name="USER_FK")
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    @ManyToOne @JoinColumn(name="EVENT_FK")
+    public Event getEvent() {
+        return event;
+    }
+
+    public void setEvent(Event event) {
+        this.event = event;
+    }
+}
+]]></c:sourceContent>
+    
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[为实体类做单元测试]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[每个实体类的单元测试都包含一些公共功能：]]></c:desc1>
+      <c:desc1> <![CDATA[1、获取实体管理器工厂。]]></c:desc1>
+      <c:desc1> <![CDATA[2、创建实体管理器以及管理事务。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent expand="true" type="" title="测试公用类 PersistenceBaseClass"
+                      id="sourceContent1"><![CDATA[public class PersistenceBaseClass extends TestCase {
+    private EntityManagerFactory emf;
+    protected EntityManager em;
+    protected EntityTransaction tx;
+          
+    public PersistenceBaseClass () {
+        super();
+        emf = Persistence.createEntityManagerFactory("s2app");    // 根据 persistence.xml 取得实体管理器工厂
+    }
+          
+    protected void setUp () throws Exception {
+        super.setUp();
+              
+        em = emf.createEntityManager();                           // 使用工厂创建实体管理器
+        tx = em.getTransaction();
+        tx.begin();
+    }
+          
+    protected void tearDown () throws Exception {
+        super.tearDown();
+        tx.rollback();
+    }
+}]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="UserTestCase"
+                      id="sourceContent1"><![CDATA[public class UserTestCase extends PersistenceBaseClass {
+    public void testCreateFind () throws Exception {
+        User u = new User();
+              
+        u.setEmail("Keesh@struts.com");
+        u.setFirstName("张");
+        u.setLastName("Chunhui");
+        u.setPassword("123");
+        em.persist(u);
+        em.flush();
+              
+        User firstUser = em.find(User.class,u.getEmail());
+              
+        assertNotNull(firstUser);
+        assertEquals(firstUser.getEmail(), u.getEmail());
+        assertEquals(firstUser.getFirstName(), u.getFirstName());
+    }
+}]]>
+</c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[通过 maven 执行单元测试需要执行： <br /> mvn test]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[User 之 CURD]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    
+    <c:sourceContent expand="true" type="" title="UserTestCase"
+                      id="sourceContent1">
+      <![CDATA[。。。]]>
     </c:sourceContent>
     <c:comment>
       <c:comment1>
@@ -628,4 +1274,4 @@ public class DateConverter extends StrutsTypeConverter {
       </c:comment1>
     </c:comment>
   </c:entry>
-  </c:component>
+</c:component>

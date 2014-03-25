@@ -39,7 +39,7 @@
         <xsl:attribute name="style">
           <xsl:value-of select="concat('word-break:break-word;',$entry/@style)"/>
         </xsl:attribute>
-        <xsl:value-of select="$entry/c:title"/>
+        <xsl:value-of disable-output-escaping="yes" select="$entry/c:title"/>
       </h3>
     </xsl:if>
     
@@ -70,6 +70,11 @@
           
           <xsl:if test="current()/@title and normalize-space(current()/@title) != ''">
             <h6 style="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em .8em;font-weight:bold;font-size:1em;">
+              <xsl:if test="@expand">
+                <xsl:call-template name="build-expand">
+                  <xsl:with-param name="isExpand" select="@expand" />
+                </xsl:call-template>
+              </xsl:if>
               <xsl:value-of select="current()/@title"/>
             </h6>
           </xsl:if>
@@ -113,5 +118,25 @@
       </ul>
     </xsl:if>
     
+  </xsl:template>
+
+  <xsl:template name="build-expand">
+    <xsl:param name="isExpand" />
+    <span style="margin-left:-8px;display:block;float:left;width:19px;height:19px;">
+      <xsl:choose>
+        <xsl:when test="normalize-space($isExpand) = ''">
+          <xsl:attribute name="class">
+            <xsl:value-of select="'SourceHighligh-Hand SourceHighlight-Collapse'"/>
+          </xsl:attribute>
+          
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:attribute name="style">
+            <xsl:value-of select="'SourceHighligh-Hand SourceHighlight-Expand'"/>
+          </xsl:attribute>
+          
+        </xsl:otherwise>
+      </xsl:choose>
+    </span>
   </xsl:template>
 </xsl:stylesheet>  
