@@ -1288,8 +1288,119 @@ public class PersistenceBaseClass extends TestCase {
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
     
-    <c:sourceContent expand="true" type="" title="UserTestCase"
-                      id="sourceContent1">
+    <c:sourceContent expand="true" type="" title="UserService"
+                      id="sourceContent1"><![CDATA[package com.s2app.services;
+
+public interface UserService {
+    public User findByEmial(String email);          
+    public void persist (User user, String email);
+}]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="UserServiceImpl"
+                      id="sourceContent1"><![CDATA[package com.s2app.services.impl;
+      
+public class UserServiceImpl implements UserService {
+    public User findByEmial(String email) {
+        return null;
+    }
+          
+    public void persist (User user, String email) {
+        // TODO
+    }
+}]]></c:sourceContent>
+    
+    <c:sourceContent expand="true" type="" title="Spring Bean"
+                      id="sourceContent1"><![CDATA[<bean id="userService" class="com.s2app.services.impl.UserServiceImpl" />
+                      
+// 需使用属性注入或自动装配
+
+// 自动装配，在 struts.xml 文件中添加如下内容：
+<constant name="struts.objectFactory.spring.autoWire" value="type" />]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="struts.xml"
+                          id="sourceContent1"><![CDATA[<package name="user" extends="struts-default" namespace="/user">
+    <default-interceptor-ref name="paramsPrepareParamsStack" />
+    ...
+</package>]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="UserAction"
+                      id="sourceContent1"><![CDATA[// params 拦截器中设置 emailId 属性
+// prepare 拦截器调用 prepare() 方法
+// modelDriven 拦截器将领域模型放在值栈中
+public class UserAction implements ModelDriven<User>
+                                   , Preparable {
+    private User user;
+    
+    // 由于 prepare 拦截器在 modelDriven 拦截器之前执行，所以在 prepare 方法中无法访问领域模型
+    // 如果属性对应的设置方法在领域模型中不存在，那么系统将在值栈中继续向下查找以确定该值是否可以被赋给另一个对象
+    // 排在领域模型之后的是 action，即: 如果在领域模型中没有对象的属性，但是在 action 中有对应的属性，那么也能够被正确赋值
+    // 所以在 action 中创建一个新的领域模型没有的属性用于接收 email
+    private String emailId;         
+    private UserService userService;
+    
+    public User getModel() {
+        return user;
+    }
+    
+    public void setEmailId(String emailId) {
+        this.emailId = emailId;
+    }
+    
+    public String getEmailId() {
+        return this.emailId;
+    }
+    
+    public void setUserService(UserService userService) {
+        this.userService = userService;
+    }
+    
+    public void prepare() throws Exception {
+        if (emailId == null || "".equals(emailId)) {
+            user = new User();
+        } else {
+            user = userService.findByEmail(emailId);
+        }
+    }
+}]]>
+    </c:sourceContent>
+    <c:sourceContent expand="true" type="" title="BaseUserAction"
+                          id="sourceContent1"><![CDATA[// 可能会有很多 action 需要构建类似的代码，为了避免出现冗余，可以将公用的代码抽取到基类中
+public abstract class BaseUserAction extends ActionSupport 
+                                     implements ModelDriven<User>
+                                                , Preparable {
+    private User user;
+    private String emailId;         
+    private UserService userService;
+    
+    public User getModel() {
+        return user;
+    }
+    
+    public void setEmailId(String emailId) {
+        this.emailId = emailId;
+    }
+    
+    public String getEmailId() {
+        return this.emailId;
+    }
+    
+    public void setUserService(UserService userService) {
+        this.userService = userService;
+    }
+    
+    public void prepare() throws Exception {
+        if (emailId == null || "".equals(emailId)) {
+            user = new User();
+        } else {
+            user = userService.findByEmail(emailId);
+        }
+    }         
+}]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="FindUserAction"
+                              id="sourceContent1"><![CDATA[public abstract class FindUserAction extends BaseUserAction {
+    public String execute() throws Exception {
+        return SUCCESS;
+    }    
+}]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="零配置"
+                              id="sourceContent1">
       <![CDATA[。。。]]>
     </c:sourceContent>
     <c:comment>
