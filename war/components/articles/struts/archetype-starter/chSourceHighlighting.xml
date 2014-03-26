@@ -378,7 +378,9 @@ public class DateConverter extends StrutsTypeConverter {
         // 也可以为 action 的获取方法和设置方法设置断言
         assertEquals(Action.SUCCESS, result);
     }
-}]]></c:sourceContent>
+}
+
+mvn test]]></c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
@@ -505,47 +507,54 @@ public class DateConverter extends StrutsTypeConverter {
   <repositories>
       <!-- 添加 Hibernate 本地存储库 -->
       <repository>
-          <id>jboss</id>
-          <url>http://repository.jboss.com/maven2</url>
-      </repository>
+      <id>maven2-repository.dev.java.net</id>
+      <name>Java.net Repository for Maven</name>
+      <url>http://download.java.net/maven/2/</url>
+      <layout>default</layout>
+    </repository>
   </repositories>
           
   <dependencies>
-    <!-- hibernate -->
-    <dependency>
-        <groupId>org.hibernate</groupId>
-        <artifactId>hibernate</artifactId>
-        <version>3.2.1.ga</version>
-    </dependency>
-    <dependency>
-        <groupId>org.hibernate</groupId>
-        <artifactId>hibernate-annotations</artifactId>
-        <version>3.2.1.ga</version>
-    </dependency>
-    <dependency>
-        <groupId>org.hibernate</groupId>
-        <artifactId>hibernate-entitymanager</artifactId>
-        <version>3.2.1.ga</version>
-    </dependency>
-    
-    <!-- mysql -->
-    <dependency>
+      <!-- Hibernate -->
+      <dependency>
         <groupId>mysql</groupId>
         <artifactId>mysql-connector-java</artifactId>
         <version>3.1.14</version>
-    </dependency>
-    
-    <!-- JPA (理论上 JPA 依赖项需要到 sun 网站上下载，但是 JBoxx 存储库提供了 JPA 依赖而无需手动安装本地依赖。) -->
-    <dependency>
+      </dependency>
+      
+      <dependency>
+        <groupId>org.hsqldb</groupId>
+        <artifactId>hsqldb</artifactId>
+        <version>1.8.0.10</version>
+        <!--scope>test</scope-->
+      </dependency>
+      
+      <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate</artifactId>
+        <version>3.2.1.ga</version>
+      </dependency>
+      <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-annotations</artifactId>
+        <version>3.2.1.ga</version>
+      </dependency>
+      <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-entitymanager</artifactId>
+        <version>3.2.1.ga</version>
+      </dependency>
+
+      <dependency>
         <groupId>javax.persistence</groupId>
         <artifactId>persistence-api</artifactId>
         <version>1.0</version>
-    </dependency>
-    <dependency>
+      </dependency>
+      <dependency>
         <groupId>javax.transaction</groupId>
         <artifactId>jta</artifactId>
         <version>1.0.1B</version>
-    </dependency>
+      </dependency>    
   </dependencies>
 </project>]]></c:sourceContent>
 
@@ -587,8 +596,8 @@ public class DateConverter extends StrutsTypeConverter {
       <![CDATA[<!-- MySQL -->
 <persistence xmlns="http://java.sun.com/xml/ns/persistence"
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd"
-             version="2.0">
+             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd"
+             version="1.0">
     <persistence-unit name="s2app">
         <!-- 使用 Hibernate 提供的 JPA 实现 (也可以使用 Top Link 或者 IBM 提供的 JPA 实现) -->
         <provider>org.hibernate.ejb.HibernatePersistence</provider>
@@ -618,11 +627,19 @@ public class DateConverter extends StrutsTypeConverter {
         <version>1.8.0.10</version>
         <scope>test</scope>
     </dependency>
+    
+    // server.properties 
+    // Content：
+       server.database.0=file:hsqldb/hemrajdb
+       server.dbname.0=s2app
+    
+    // Command -> java -classpath lib/hsqldb.jar org.hsqldb.server.Server --database.0 file:hsqldb/s2appdb --dbname.0 s2app
+    // Connection String -> jdbc:hsqldb:hsql://localhost/s2app
 -->
 <persistence xmlns="http://java.sun.com/xml/ns/persistence" 
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd" 
-             version="2.0">
+             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd" 
+             version="1.0">
     <persistence-unit name="manager" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.ejb.HibernatePersistence</provider>
         <properties>
@@ -1208,7 +1225,14 @@ public class Voter implements Serializable {
       <c:desc1> <![CDATA[2、创建实体管理器以及管理事务。]]></c:desc1>
     </c:desc>
     <c:sourceContent expand="true" type="" title="测试公用类 PersistenceBaseClass"
-                      id="sourceContent1"><![CDATA[public class PersistenceBaseClass extends TestCase {
+                      id="sourceContent1"><![CDATA[import junit.framework.TestCase;
+
+import javax.persistence.EntityTransaction;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
+
+public class PersistenceBaseClass extends TestCase {
     private EntityManagerFactory emf;
     protected EntityManager em;
     protected EntityTransaction tx;
