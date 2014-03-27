@@ -1609,11 +1609,102 @@ public class UserAction extends ActionSupport
   <c:entry style="margin-top:2em;">
     <c:title><![CDATA[单元测试]]></c:title>
     <c:desc>
+      <c:desc1> <![CDATA[为测试 action 对象的功能，我们将使用 <a target="_blank" href="www.jmock.org">jModk</a> 库。]]></c:desc1>
+      <c:desc1> <![CDATA[mock 对象提供与真实对象一样的方法，但允许通过设置，让那些你所期望的方法被调用。]]></c:desc1>
+      <c:desc1> <![CDATA[在测试时 mock 对象可以确认方法调用的正确性，是否所有期望的方法都被调用了且没有额外的方法被调用等等。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent expand="true" type="" title="jMock"
+                              id="sourceContent1"><![CDATA[<!-- 在 pom.xml 中添加 jmock 依赖 -->
+      
+<dependency>
+    <groupId>jmock</groupId>
+    <artifactId>jmock</artifactId>
+    <version>1.0.1</version>
+    <scope>test</scope>
+</dependency>]]></c:sourceContent>
+
+    <c:sourceContent expand="true" type="" title="BaseUserAction、FindUserAction、UpdateUserAction 和 UserAction" style="margin-top:1em;"
+                              id="sourceContent1"><![CDATA[<!-- 
+    1. BaseUserAction 是基类不需要测试
+    2. FindUserAction 大部分的内容都是基于注释的配置，也不需要测试
+    3. UpdateUserAction 需要测试
+    4. UserAction 需要测试
+-->
+
+<!-- 按照下面的步骤来测试 action 类 -->      
+<!-- 
+    1. 创建 mock 对象并设置期望值
+    2. 创建 action 实例
+    3. 为 action 实例设置测试数据，包括依赖对象 (和 mock 对象)
+    4. 执行被测试的方法
+    5. 对结果是否正确进行断言，包括 mock 对象的方法是否像预期的那样被调用
+-->]]></c:sourceContent>
+
+    <c:sourceContent expand="true" type="" title="UpdateUserAction 测试用例之创建新用户" style="margin-top:1em;"
+                              id="sourceContent1"><![CDATA[public void testPersistNewUser() throws Exception {
+    // 通过接口创建一个 mock 对象
+    Mock service = new Mock(UserService.class);
+          
+    // 期望 persist() 方法被调用一次
+    service.excepts(once()).method("persiste").with(isA(User.class), eq(null));
+          
+    UpdateUserAction action = new UpdateUserAction();
+    action.setUserService((UserService)service.proxy());
+          
+    // 因为有些测试依赖的功能需要 Struts2 在 action 外部执行，所以在调用 execute() 方法之前执行 prepare() 方法
+    action.prepare();
+    assertEquals(Action.SUCCESS, action.execute());
+    service.verify();
+}]]></c:sourceContent>
+
+    <c:sourceContent expand="true" type="" title="UpdateUserAction 测试用例之更新已有用户"
+                              id="sourceContent1"><![CDATA[public void testPersistExistingUser() throws Exception {
+    User user = new User();
+    
+    Mock service = new Mock(UserService.class);
+          
+    service.excepts(once()).method("findByEmail")
+                           .with(eq("keesh@struts.com"))
+                           .with(returnValue(user));
+                           
+    service.excepts(once()).method("persist")
+                           .with(same(user), eq("keesh@struts.com"));
+          
+    UpdateUserAction action = new UpdateUserAction();
+    action.setUserService((UserService)service.proxy());
+    action.setEmailId("keesh@struts.com");
+          
+    action.prepare();
+    assertEquals(Action.SUCCESS, action.execute());
+    service.verify();
+}]]></c:sourceContent>
+
+    <c:sourceContent expand="true" type="html" title="jUnit"
+                              id="sourceContent1">
+      <![CDATA[<div style="font-weight:bold;color:green;font-size:15px;">在 s2app 应用中使用 3.8 版本的 jUnit，它使用约定的命名规范来确定待测试类中哪些方法是测试用例 (以 test 开头的方法)，
+      哪些方法需要在测试用例执行前调用 (setUp() 方法)，哪些方法需要在测试用例结束后调用 (tearDown()) <br />
+      <br />
+      所有测试用例都遵循一套共同的模式:<br />
+      创建测试对象、调用测试对象的方法测试业务逻辑、断言结果是否与我们的预期结果一样<br />
+      <br />
+      在 4.0 的 jUnit 中，不再使用约定的命名规则，而是通过注释的方法标识测试方法。同时，注释提供一些高级功能，如忽略测试用例、在所有测试用例运行前将某个方法执行一次等等。。
+      </div>]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[用户界面设计]]></c:title>
+    <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
-    <c:sourceContent expand="true" type="jMock" title="" style="margin-top:2em;"
+    <c:sourceContent expand="true" type="" title="jMock"
                               id="sourceContent1">
-      <![CDATA[。。]]>
+      <![CDATA[。。。]]>
     </c:sourceContent>
     <c:comment>
       <c:comment1>

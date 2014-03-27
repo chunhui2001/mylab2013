@@ -1,0 +1,140 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+
+  <c:abstract>
+    <![CDATA[]]>
+  </c:abstract>
+  <c:entry>
+    <c:title>@Entity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[通过注释@Entity或者（@Entity()）表示被标示的类对应数据库中的一张表。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title=""
+                     id="sourceContent1"><![CDATA[@Entity  
+public class TravelProfile {  
+    ...  
+}  ]]></c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[上面的例子告诉O/R映射引擎，类TravelProfile是可以持久化的，同时它对应数据库中的一张表。但是它没有指明对应哪个数据库中的哪张表。]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>@Table</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[Name:指明表的名字。（可选）<br />
+Catalog:表示表的catalog.（可选）<br />
+Schema:表示表的schema.（可选）<br />
+uniqueConstraints:制定表的唯一约束。（可选）]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title=""
+                     id="sourceContent1">
+  <![CDATA[@Entity  
+@Table(name="CUST", schema="RECORDS")  
+public class Customer { ... }  
+
+@Table(  
+  name="EMPLOYEE",  
+  uniqueConstraints=@UniqueConstraint(columnNames={"EMP_ID", "EMP_NAME"})  
+)  
+public class Employee { ... }  ]]></c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>@Column</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[Name:指定字段名。<br />
+Unique：指明该字段是否唯一，默认为false。<br />
+Nullable：指明是否可以为空，默认是true。<br />
+Insertable：指明该字段在产生SQL INSERT语句中是否产生该字段。<br />
+Updatable：指明该字段在产生SQL INSERT语句中是否产生该字段。<br />
+columnDefinition：指定产生表的时候，使用它指定该字段一些属性。<br />
+Table：当一个实体对应多个表的时候，指定该字段属于哪个表。<br />
+Length：制定该字段的长度（只有在字段为字符类型的才有用），默认是255。<br />
+Precision: 指明字段的精度（在字段为decimal类型的时候使用），默认是0<br />
+Scale：为字段为number型指定标量，默认为0。]]>
+      </c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title=""
+                     id="sourceContent1">
+      <![CDATA[@Column(name="DESC", nullable=false, length=512)  
+public String getDescription() { return description; }  
+  
+@Column(name="DESC",  columnDefinition="CLOB NOT NULL",  table="EMP_DETAIL")  
+@Lob  
+public String getDescription() { return description; }  
+  
+@Column(name="ORDER_COST", updatable=false, precision=12, scale=2)  
+public BigDecimal getCost() { return cost; }   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>@JoinColumn</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[Name:指定外键字段名，缺省的名字是被引用实体在引用实体内部的属性标量名或域名加上下划线”_”，再加上被引用实体的主键字段名构成。<br />
+ReferencedColumnName：被引用表的字段，如果没有那缺省的就是该表的主键。<br />
+Unique：指明该字段是否唯一，默认为false。<br />
+Nullable：外键是否可以为空，默认是true。<br />
+Insertable：指明该字段在产生SQL INSERT语句中是否产生该字段。<br />
+Updatable：指明该字段在产生SQL INSERT语句中是否产生该字段。<br />
+columnDefinition：指定产生表的时候，使用它指定该字段一些属性。<br />
+Table：当一个实体对应多个表的时候，指定该字段属于哪个表。<br />
+下面例子的多对一关系中，指明了被引用实体在本实体的外键为ADDR_ID。]]>
+      </c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title=""
+                     id="sourceContent1">
+      <![CDATA[@ManyToOne  
+@JoinColumn(name="ADDR_ID")  
+public Address getAddress() { return address; }    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>@JoinColumns</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[@JoinColumns标记用在符合外键的时候，这个时候属性name和referencedColumnName必须在@JoinColumn中进行初始化。]]>
+      </c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title=""
+                     id="sourceContent1">
+      <![CDATA[@ManyToOne  
+@JoinColumns({  
+    @JoinColumn(name="ADDR_ID", referencedColumnName="ID"),  
+    @JoinColumn(name="ADDR_ZIP", referencedColumnName="ZIP")  
+})  
+public Address getAddress() { return address; }   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+</c:component>
