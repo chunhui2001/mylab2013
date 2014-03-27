@@ -91,8 +91,8 @@
         addthis.layers({
         'theme' : 'transparent',
         'share' : {
-        'position' : 'left',
-        'services' : 'baidu,sinaweibo,kaixin,email,print,more'
+        'position' : 'right',
+        'services' : 'baidu,sinaweibo,kaixin,email,print'
         /*'numPreferredServices' : 6*/
         }
         });
