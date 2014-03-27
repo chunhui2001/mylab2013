@@ -577,7 +577,7 @@ mvn test]]></c:sourceContent>
                   id="sourceContent1">
 <![CDATA[1. 创建数据库： create database s2app;<br />
 2. 创建的数据库结构图如下： <br />
-<img width="500px" src="//farm4.staticflickr.com/3779/13376885253_372dcbe485_b.jpg" alt="" />]]>
+<img width="900px" src="/images/UML/er001.png" alt="" />]]>
     </c:sourceContent>
     <c:comment>
       <c:comment1>
@@ -1277,7 +1277,14 @@ public class PersistenceBaseClass extends TestCase {
 </c:sourceContent>
     <c:comment>
       <c:comment1>
-        <![CDATA[通过 maven 执行单元测试需要执行： <br /> mvn test]]>
+        <![CDATA[通过 maven 执行单元测试需要执行： <br /> mvn test <br /><br /><br />]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[<p style="color:red;font-weight:bold;"> 当解决完中文乱码问题后，又发现报 "非法字符： \65279" 问题。<br /><br />
+        解决方案及原因：<br />
+        UltraEdit、EditPlus等编辑器会在utf8编码格式的文件开头添加utf8标识，使文件的编码格式由utf8变为utf8+BOM，导致mvn编译时将utf8标识误认为非法字符。<br /><br />
+        解决办法：<br />
+        通过UltraEdit、EditPlus等编辑器将utf8+BOM编码格式的文件改为utf8格式，去掉文件开头的utf8标识即可。</p>]]>
       </c:comment1>
     </c:comment>
   </c:entry>
@@ -1313,18 +1320,30 @@ public class UserServiceImpl implements UserService {
                       
 // 需使用属性注入或自动装配
 
-// 自动装配，在 struts.xml 文件中添加如下内容：
+// 如果使用自动装配，需在 struts.xml 文件中添加如下内容：
 <constant name="struts.objectFactory.spring.autoWire" value="type" />]]></c:sourceContent>
     <c:sourceContent expand="true" type="" title="struts.xml"
                           id="sourceContent1"><![CDATA[<package name="user" extends="struts-default" namespace="/user">
     <default-interceptor-ref name="paramsPrepareParamsStack" />
     ...
 </package>]]></c:sourceContent>
+    <c:sourceContent expand="true" type="html" title="params-prepare-params 模式"
+                          id="sourceContent1">
+      <![CDATA[<span style="font-weight:bold;">paramsPrepareParamsStack 拦截器栈按照如下顺序执行拦截器：</span><br />
+1. 执行 params 拦截器设置 emailId 属性<br />
+2. 执行 prepare 拦截器调用 prepare() 方法<br />
+3. 执行 modelDriven 拦截器将领域模型放在值栈中<br />
+4. 模型已经可用 (可能取自数据库)，执行 params 拦截器为其赋值<br /><br />
+
+<span style="font-weight:bold;">如果拦截器没有按照既定的顺序执行，可能会发生一些奇怪的 bug：</span><br />
+1. 如果 params 拦截器没有在 prepare 拦截器之前执行，emailId 的值将一直是空<br />
+2. 如果 modelDriven 拦截器没有被应用到 action 上，那么领域模型将不会被设置到 ValueStack 上，进而修改后的值和新值都不能被赋值给领域模型对象<br />
+3. 如果 params 拦截器没有被先后两次执行，那么数据值将不会赋值给领域对象模型<br />
+4. 如果 prepare 拦截器没有被调用，系统会抛出 NullPointerException 异常， 或者不会更新领域对象的数据
+      ]]>
+    </c:sourceContent>
     <c:sourceContent expand="true" type="" title="UserAction"
-                      id="sourceContent1"><![CDATA[// params 拦截器中设置 emailId 属性
-// prepare 拦截器调用 prepare() 方法
-// modelDriven 拦截器将领域模型放在值栈中
-public class UserAction implements ModelDriven<User>
+                      id="sourceContent1"><![CDATA[public class UserAction implements ModelDriven<User>
                                    , Preparable {
     private User user;
     
@@ -1393,15 +1412,208 @@ public abstract class BaseUserAction extends ActionSupport
         }
     }         
 }]]></c:sourceContent>
-    <c:sourceContent expand="true" type="" title="FindUserAction"
-                              id="sourceContent1"><![CDATA[public abstract class FindUserAction extends BaseUserAction {
+    <c:sourceContent expand="true" type="" title="FindUserAction (使用注释)" style="border-bottom:none;"
+                              id="sourceContent1"><![CDATA[@ParentPackage ("base-package")
+@Results({
+        @Result(name="success", type="ServletDispatcherResult.class", value="/WEB-INF/jsp/user/user.jsp")
+    }
+)
+public abstract class FindUserAction extends BaseUserAction {
     public String execute() throws Exception {
         return SUCCESS;
     }    
-}]]></c:sourceContent>
-    <c:sourceContent expand="true" type="" title="零配置"
+}
+
+// @ParentPackage 注释用于指定当前 action 的所属包，该注释的值必须是在 struts.xml 中真实存在的包名。
+
+// 由于基于注释配置的局限性，现在还不能完全通过注释来获得 web 应用的全部信息
+// 可以同时使用基于 XML 的配置和基于注释的配置，以获得 web 应用的全部信息]]></c:sourceContent>
+
+    <c:sourceContent expand="true" type="html" title="" style="border-top:none;"
                               id="sourceContent1">
-      <![CDATA[。。。]]>
+      <![CDATA[<div style="color:red;font-weight:bold;">
+ &diams;&nbsp;&nbsp;需要向 web.xml 中添加一个名为 actionPackages 的参数，以确定需要扫描包含注释的 action (多个包名之间用逗号分隔) <br />
+
+ &diams;&nbsp;&nbsp;选择将哪些包放在配置中定义也很重要，因为它将决定包含其中的 action 的命名空间，例如：
+  <p style="margin-left:1.5em;color:blue;font-weight:bold;">
+    1. 如果一个 action 被放在 com.apress.s2.actions.user 包中，而 actionPackages 的值在配置文件中的值是 com.apress.s2.action，那么该 action 的相对包路径就是 user，所以它的命名空间就是 /user<br />
+    2. 如果一个 action 被放在 com.apress.s2.actions.search.user 包中，那么它的命名空间就是 /search/user
+  </p>
+   &diams;&nbsp;&nbsp;也可以给 action 添加 @Namespace 注释以指定命名空间
+ </div>]]>
+    </c:sourceContent>
+
+    <c:sourceContent expand="true" type="" title="codebehind" style="margin-top:1em;"
+                              id="sourceContent1"><![CDATA[<!-- 使用 codebehind 插件，需在 struts.xml 中配置两个新的常量，并添加相应依赖 -->
+<!-- 该插件将按照以下规则构建结果名： -->
+<!--
+    1. 一个路径前缀 (如果被配置了的话)
+    2. URL 的 action 名
+    3. 连接符 '-'
+    4. execute() 方法返回的值 (小写)
+    5. 根据结果类型追加扩展名：JSP -> .jsp，Freemarker -> .ftl，Velocity -> .vm
+    6. example: /user/findUser-success.jsp，/user/findUser-input.ftl，/user/findUser-update.vm
+    7. 可以在开发应用原型时使用 codebehind 插件
+-->
+
+<!-- 指定使用 codebehind 功能的包名 -->
+<constant name="struts.codebehind.defaultPackage" value="base-package" />   
+
+<!-- 指定模板路径前缀 -->
+<constant name="struts.codebehind.pathPrefix" value="/WEB-INF/jsp/" />
+
+<!-- 在 pom.xml 中添加 codebehind 依赖 -->
+<dependency>
+    <groupId>org.apache.struts</groupId>
+    <artifactId>struts2-codebehind-plugin</artifactId>
+    <version>2.0.9</version>
+</dependency>]]></c:sourceContent>
+
+    <c:sourceContent expand="true" type="" title="UpdateUserAction (Add or Update)" style="margin-top:1em;border-bottom:none;"
+                              id="sourceContent1"><![CDATA[@ParentPackage("base-package")
+@Result(name="success", value="index", type="ServletActionRedirectResult.class")
+public class UpdateUserAction extends BaseUserAction {
+    public String execute() {
+        userService.persist(user, emailId);
+    }
+}]]></c:sourceContent>
+    <c:sourceContent expand="true" type="html" title="" style="border-top:none;color:blue;"
+                              id="sourceContent1">
+      <![CDATA[<div style="color:rgb(216, 12, 189);font-weight:bold;">
+          在 UpdateUserAction 成功运行之后，使用重定向 <span style="color:#080;font-weight:bold;">(ServletActionRedirectResult)</span> 可以避免当用户刷新页面时请求被执行两次。<br />
+          在 UpdateUserAction 中并没有使用 codebehind 插件。因为在用户创建或更新后再无其他任务，系统将重定向到首页。<br />
+          如果使用了 codebehind 插件，许多 jsp 页面就会彼此重复，或很多 HTTP 请求被转发到某个公用 action。直接配置结果可以避免重复。<br /><br />
+          <img src="//c2.staticflickr.com/4/3726/13441837093_3ab897a78c_b.jpg" alt="" />
+          <br /><br />
+          
+          index action 没有实际的功能所以没有必要创建 IndexAction，可以使用 ActionSupport 类在 struts.xml 中配置 index action。          
+          </div>
+      ]]>
+    </c:sourceContent>
+
+    <c:sourceContent expand="true" type="" title="更新后的 struts.xml" style="margin-top:1em;"
+                              id="sourceContent1"><![CDATA[<constant name="struts.codebehind.defaultPackage" value="base-package" />  
+<constant name="struts.codebehind.pathPrefix" value="/WEB-INF/jsp/" />
+
+<package name="base-package" extends="struts-default">
+    <default-interceptor-ref name="paramsPrepareParamsStack" />
+          
+    <action name="index" class="com.opensymphony.xwork2.ActionSupport">
+        <result name="success">/WEB-INF/jsp/index.jsp</result>
+    </action>
+</package>]]></c:sourceContent>
+
+    <c:sourceContent expand="true" type="" title="UserAction 之多工作单元" style="margin-top:1em;"
+                              id="sourceContent1"><![CDATA[/*
+ * 在多工作单元中，一个 action 类不再只包含一个 execute() 方法，而是可以拥有很多方法，这些方法可以通过不同的 URL 调用
+ * 以这种方式构建 action 时，再也不能使用零配置，而是使用基于 XML 的配置 (@Result 注释是类级别，而不是方法级)
+*/
+public class UserAction extends ActionSupport 
+                        implements ModelDriven<User>
+                                   , Preparable {
+    private User user;
+    private String emailId;         
+    private UserService userService;
+    
+    public User getModel() {
+        return user;
+    }
+    
+    public void setEmailId(String emailId) {
+        this.emailId = emailId;
+    }
+    
+    public String getEmailId() {
+        return this.emailId;
+    }
+    
+    public void setUserService(UserService userService) {
+        this.userService = userService;
+    }
+    
+    public void prepare() throws Exception {
+        if (emailId == null || "".equals(emailId)) {
+            user = new User();
+        } else {
+            user = userService.findByEmail(emailId);
+        }
+    }
+    
+    // 替代 FindUserAction 类
+    public String find() {
+        // 执行完 find() 方法后显示编辑用户信息界面
+        return INPUT;
+    }
+    
+    // 替代 UpdateUserAction 类
+    public String update() {
+        userService.persist(user, emailId);
+        
+        // 更新用户信息之后回到首页
+        return SUCCESS;
+    }
+}]]>
+    </c:sourceContent>
+
+    <c:sourceContent expand="true" type="" title="添加了方法属性的 struts.xml" style="margin-top:1em;"
+                              id="sourceContent1"><![CDATA[<!-- constant name="struts.codebehind.defaultPackage" value="base-package" />  
+<constant name="struts.codebehind.pathPrefix" value="/WEB-INF/jsp/" / -->
+
+<package name="user" extends="struts-default" namespace="/user">
+    <default-interceptor-ref name="paramsPrepareParamsStack" />
+          
+    <action name="index" class="com.opensymphony.xwork2.ActionSupport">
+        <result name="success">/WEB-INF/jsp/index.jsp</result>
+    </action>
+          
+    <action name="findUser" method="find" class="com.s2app.action.UserAction">
+        <result name="input">/WEB-INF/jsp/user/findUser-success.jsp</result>
+    </action>
+          
+    <action name="updateUser" method="update" class="com.s2app.action.UserAction">
+        <result name="success" type="redirectAction">index</result>
+    </action>
+</package>]]></c:sourceContent>
+
+    <c:sourceContent expand="true" type="" title="通配符映射" style="margin-top:1em;"
+                              id="sourceContent1"><![CDATA[<!-- 单个领域对象 -->
+<action name="*User" method="{1}" class="com.s2app.action.UserAction">
+    <result name="input">/WEB-INF/jsp/user/{1}User-success.jsp</result>
+    <result name="success" type="redirectAction">index</result>
+</action>
+
+<![CDATA[<!-- 多个领域对象 -->
+<action name="*_*" method="{1}" class="com.s2app.action.{2}Action">
+    <result name="input">/WEB-INF/jsp/user/{1}{2}-success.jsp</result>
+    <result name="success" type="redirectAction">index</result>
+</action>
+
+<!-- 使用通配符需要注意的几点 -->
+<!--
+    1. 只能使用九个组，从 {1} - {9}
+    2. {0} 具有特殊意义，包含完整的 URL 请求
+    3. * 可以匹配零个或多个字符，但不包括 /
+    4. ** 可以匹配零个或多个字符， 并包括 /
+    5. 字符 \ 作为转义字符用来处理标点符号，例如： \\, \', \*
+-->]]></c:sourceContent>
+
+    
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[单元测试]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent expand="true" type="jMock" title="" style="margin-top:2em;"
+                              id="sourceContent1">
+      <![CDATA[。。]]>
     </c:sourceContent>
     <c:comment>
       <c:comment1>
@@ -1409,4 +1621,4 @@ public abstract class BaseUserAction extends ActionSupport
       </c:comment1>
     </c:comment>
   </c:entry>
-</c:component>
+  </c:component>

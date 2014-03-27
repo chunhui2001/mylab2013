@@ -109,7 +109,7 @@
               <div class="clear"></div>
             </div-->
             <li style="color:rgb(205, 76, 0);">
-              <span style="font-weight:bold;">
+              <span style="font-weight:bold;display:block;">
                 <xsl:value-of disable-output-escaping="yes" select="current()"/>
               </span>
             </li>
