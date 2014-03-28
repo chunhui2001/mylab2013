@@ -1433,6 +1433,7 @@ public abstract class FindUserAction extends BaseUserAction {
                               id="sourceContent1">
       <![CDATA[<div style="color:red;font-weight:bold;">
  &diams;&nbsp;&nbsp;需要向 web.xml 中添加一个名为 actionPackages 的参数，以确定需要扫描包含注释的 action (多个包名之间用逗号分隔) <br />
+ <img src="//yahoov4s2-a.akamaihd.net/so/7143/13461457975_4e5fde7731_b.jpg" alt="" /><br />
 
  &diams;&nbsp;&nbsp;选择将哪些包放在配置中定义也很重要，因为它将决定包含其中的 action 的命名空间，例如：
   <p style="margin-left:1.5em;color:blue;font-weight:bold;">
@@ -1698,14 +1699,72 @@ public class UserAction extends ActionSupport
   </c:entry>
 
   <c:entry style="margin-top:2em;">
-    <c:title><![CDATA[用户界面设计]]></c:title>
+    <c:title><![CDATA[s2app 的用户界面设计]]></c:title>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
-    <c:sourceContent expand="true" type="" title="jMock"
+    <c:sourceContent expand="true" type="" title="/user/findUser-success.jsp"
+                              id="sourceContent1"><![CDATA[<%@ taglib uri="/struts-tags" prefix="s" %>
+      
+<html>
+    <head>
+        <title>User Information</title>
+    </head>
+    <body>
+        <s:form name="/user" action="updateUser" method="post">
+            <s:textfield name="firstName" label="First Name" />
+            <s:textfield name="lastName"  label="Last Name" />
+            <s:textfield name="email"     label="Email" />
+            <s:password  name="password"  label="Password" />
+                  
+            <s:hidden name="emailId" />
+                  
+            <s:if test="email == null">
+                <s:submit value="Register" />
+            </s:if>
+            <s:else>
+                <s:submit value="Update" />
+            </s:else>
+        </s:form>
+    </body>
+</html>]]>    </c:sourceContent>
+    <c:sourceContent expand="true" type="" title="/index.jsp"
+                              id="sourceContent1"><![CDATA[<%@ taglib uri="/struts-tag" prefix="s" %>
+                              
+<html>
+    <head>
+        <title>Home</title>
+    </head>
+    <body>
+        <s:if test="#session['user'] == null">
+            <s:url id="register" action="findUser" namespace="/user" />
+            <s:a href="%{register}">Register</a>
+        </s:if>
+        <s:else>
+            <s:url id="update" action="findUser" namespace="/user" />
+                <s:param name="emailId" value="#session['user'].email" />
+            </s:url>
+            <s:a href="%{update}">Update Profile</s:a>
+        </s:else>
+    </body>
+</html>]]></c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[s2app 的国际化]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent expand="true" type="" title="/user/findUser-success.jsp"
                               id="sourceContent1">
       <![CDATA[。。。]]>
     </c:sourceContent>
+    
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
