@@ -1299,14 +1299,14 @@ public class PersistenceBaseClass extends TestCase {
                       id="sourceContent1"><![CDATA[package com.s2app.services;
 
 public interface UserService {
-    public User findByEmial(String email);          
+    public User findByEmail(String email);          
     public void persist (User user, String email);
 }]]></c:sourceContent>
     <c:sourceContent expand="true" type="" title="UserServiceImpl"
                       id="sourceContent1"><![CDATA[package com.s2app.services.impl;
       
 public class UserServiceImpl implements UserService {
-    public User findByEmial(String email) {
+    public User findByEmail(String email) {
         return null;
     }
           
@@ -1775,13 +1775,123 @@ public class UserAction extends ActionSupport
   <c:entry style="margin-top:2em;">
     <c:title><![CDATA[s2app 的输入验证]]></c:title>
     <c:desc>
-      <c:desc1> <![CDATA[]]></c:desc1>
+      <c:desc1> <![CDATA[为 action 类添加一个类级别的 @Validation 注释。]]></c:desc1>
+      <c:desc1> <![CDATA[为待验证属性对应的设置方法添加具体的验证注释。]]></c:desc1>
+      <c:desc1> <![CDATA[为 INPUT 返回值配置结果，验证框架在验证失败后返回该结果。]]></c:desc1>
+      <c:desc1> <![CDATA[在 action 上使用 validation (执行验证工作) 拦截器和 workflow 拦截器 (返回 INPUT 结果)]]></c:desc1>
+      <c:desc1> <![CDATA[validationWorkflowStack、paramsPrepareParamsStack 和 defaultStack 拦截器均包含 validation 拦截器和 workflow 拦截器]]></c:desc1>
     </c:desc>
-    <c:sourceContent expand="true" type="" title=""
-                              id="sourceContent1">
-      <![CDATA[。。。]]>
-    </c:sourceContent>
+    <c:sourceContent expand="true" type="" title="UserAction.java"
+                              id="sourceContent1"><![CDATA[import com.opensymphony.xwork2.validator.annotations.Validations;
+import com.opensymphony.xwork2.validator.annotations.VisitorFieldValidator;
+import com.opensymphony.xwork2.validator.annotations.Validation;
 
+
+
+                              
+@Validations( visitorFields = {
+            @VisitorFieldValidator(message = "Default message", key = "i18n.key", fieldName= "model", appendPrefix = false) }) 
+public String execute() {
+  ...
+}   
+
+@Validations( visitorFields = {
+            @VisitorFieldValidator(message = "Default message", key = "i18n.key", fieldName= "model", appendPrefix = false) }) 
+public String update() {
+  ...
+} 
+
+public String find() {
+  ...
+}
+
+// @Valications 可以对验证类型的多个实例分组
+// @VisitorFieldValidator 是一个非常强大的验证器。它实现了访问者模式，允许每一个参数对象潜在提供它自己的验证信息。
+// (该模式可以促使我们把注释放到领域对象上，然后再多个 action 中重用)
+
+// 当验证框架发现 @VisitorFieldValidator 注释时，就会在对象类中搜索其它的验证信息。
+
+// 默认情况下，执行 action 逻辑的所有方法都会执行 @Validations 注释 
+// (findUser.action 和 updateUser.action 时都执行，应当仅在 updateUser.action 时才执行 @Validations 注释)
+// 通过将拦截器中的 validateAnnotatedMethodOnly 属性设置为 true 可以达到此目的 
+// (没有办法为包提供这种全局的配置，所以需要将这些附加的配置添加到每一个带有验证注释的 action 的配置中)
+<action name="findUser" method="find" class="com.s2app.action.UserAction">
+    <result name="input">/WEB-INF/jsp/user/findUser-success.jsp</result>
+    <interceptor-ref name="paramsPrepareParamsStack">
+        <param name="validation.validateAnnotatedMethodOnly">true</param>
+    </interceptor-ref>
+</action>]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="添加了验证注释的 User.java"
+                                  id="sourceContent1"><![CDATA[import com.opensymphony.xwork2.validator.annotations.EmailValidator;
+import com.opensymphony.xwork2.validator.annotations.RequiredStringValidator;
+import com.opensymphony.xwork2.validator.annotations.StringLengthFieldValidator;
+
+                                  
+@Entity @Table( name="APP_USER", schema="S2APP" )
+public class User implements Serializable {
+
+    private String firstName;
+    private String lastName;
+    private String email;
+    private String password;
+    private byte[] portrait;
+
+   @Id @Column(name="EMAIL")
+    public String getEmail() {
+        return email;
+    }
+    
+    @EmailValidator(message="Validation Error", key="validate.email")
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    @Column(name="FIRST_NAME")
+    public String getFirstName() {
+        return firstName;
+    }
+
+    @RequiredStringValidator(message="Validation Error", key="validate.notEmpty", trim=true)
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    @Column(name="LAST_NAME")
+    public String getLastName() {
+        return lastName;
+    }
+
+    @RequiredStringValidator(message="Validation Error", key="validate.notEmpty", trim=true)
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    @Column(name="USER_PASSWORD")
+    public String getPassword() {
+        return password;
+    }
+
+    // shortCircuit 属性用来确定在某个验证失败后，后面的验证器是否继续执行。(所有验证器都具有 shortCircuit 属性)
+    @RequiredStringValidator(message="Validation Error", key="validate.notEmpty", trim=true, shortCircuit=true)
+    @StringLengthFieldValidator(message="Length too short", key="validate.minLength.6", trim=true,minLength="6")
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    @Lob @Column(name="PORTRAIT", nullable=true)
+    public byte[] getPortrait() {
+        return portrait;
+    }
+
+    public void setPortrait(byte[] portrait) {
+        this.portrait = portrait;
+    }
+}]]>    </c:sourceContent>
+    <c:sourceContent expand="true" type="" title="User.properties"
+                              id="sourceContent1"><![CDATA[# Validation Messages
+validate.email=Please enter a valid email address
+validate.notEmpty=Please enter a value
+validate.minLength.6=Please enter more then 6 characters]]></c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
@@ -1792,12 +1902,98 @@ public class UserAction extends ActionSupport
   <c:entry style="margin-top:2em;">
     <c:title><![CDATA[s2app 的异常处理]]></c:title>
     <c:desc>
-      <c:desc1> <![CDATA[]]></c:desc1>
+      <c:desc1> <![CDATA[在 Struts2 中使用 exception 拦截器处理异常，该拦截器被置于所有内置的拦截器栈中。]]></c:desc1>
+      <c:desc1> <![CDATA[可以在 struts.xml 配置文件中通过 global-results 和 global-exception-mappings 标签进行全局定义]]></c:desc1>
     </c:desc>
     <c:sourceContent expand="true" type="" title=""
-                              id="sourceContent1">
-      <![CDATA[。。。]]>
+                              id="sourceContent1"><![CDATA[<package name="base-package" extends="struts-default">
+    <global-results>
+        <result name="unknowError">/jsp/error.jsp</result>
+        <result name="dbError">/jsp/error2.jsp</result>
+        
+        <result name="logon">/jsp/logon.jsp</result>
+        <result name="noAccess">/jsp/noAccess.jsp</result>
+    </global-results>
+    <global-exception-mappings>
+        <exception-mapping exception="java.lang.Exception" result="unknowError" />
+        <exception-mapping exception="java.lang.SQLException" result="dbError" />
+        
+        <exception-mapping exception="UserNotAuthenticatedException" result="logon" />
+        <exception-mapping exception="ActionNotAllowedException" result="noAccess" /> <!-- 该 exception-mapping 标签也可以在 action 中重用 -->
+    </global-exception-mappings>
+</package>]]></c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[通过与用户交互恢复异常]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[在已经编写的代码中并没有处理重复输入主键值得问题。]]></c:desc1>
+      <c:desc1> <![CDATA[当用户输入了重复的 email 地址时，系统就会抛出异常。这个异常可以通过与用户交互的方式来解决 (如询问用户是否修改 E-mail 地址)。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent expand="true" type="" title=""
+                              id="sourceContent1"><![CDATA[// 主键重复异常的嵌套层次如下：
+javax.persistence.RollbackException
+    caused by a org.hibernate.exception.ConstraintViolationException
+        caused by a org.hibarnate.exception.java.sql.BatchUpdateException
+        
+// 为了避免处理一般的 RollbackException 异常，UserServiceImpl 的 persiste() 方法需要加入异常处理
+try {
+    // start transaction, persist object, commit transaction
+} catch (RollbackException e) {
+    // rollback transaction
+    throw (RuntimeException) e.getCause();
+    
+    // 这样就可以抛出 ConstraintViolationException，并可以在 struts2 中进行配置，从而将异常分割为更精确的部分，并对其进行控制。
+}]]>
     </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[显示错误消息]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[当 exception 拦截器拦截了异常以后，将在 ValueStack 中增加两个新的属性用于显示错误信息，该信息可以反馈给用户。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent expand="true" type="html" title=""
+                              id="sourceContent1">
+      <![CDATA[1、exception：<s:property value="exception" /> <br />
+      2、exceptionStack：异常栈的跟踪信息。<s:property value="exceptionStack" />]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[异常日志]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[exception 拦截器可以避免向用户展示丑陋的错误页面，但也导致这些异常不能被记录到日志中。]]></c:desc1>
+      <c:desc1> <![CDATA[可以为 exception 拦截器配置一些额外的参数，开启记录日志。]]></c:desc1>
+      <c:desc1> <![CDATA[通常我们会创建一个新的拦截器栈，并将 exception 拦截器作为第一个拦截器。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent expand="true" type="" title=""
+                              id="sourceContent1"><![CDATA[<interceptor-stack name="loggingParamsPrepareParamsStack">
+    <interceptor-ref name="exception-logging">
+        <param name="logEnabled">true</param>
+        <param name="logLevel">ERROR</param>
+        <param name="logCategory">com.s2app.web</param>
+    </interceptor-ref>
+    <interceptor-ref name="paramsPrepareParamsStack" />
+</interceptor-stack>]]></c:sourceContent>
 
     <c:comment>
       <c:comment1>
