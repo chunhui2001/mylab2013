@@ -2005,10 +2005,11 @@ try {
   <c:entry style="margin-top:2em;">
     <c:title><![CDATA[s2app 的向导和工作流]]></c:title>
     <c:desc>
+      <c:desc1> <![CDATA[使用一连串小的表单来收集所有数据，严格控制用户的操作过程以及表单顺序，以保证所有数据都被收集。]]></c:desc1>
       <c:desc1> <![CDATA[向导和工作流通过一连串页面来获取用户输入，应用程序能智能地决定下一步的询问内容。这种方式可以避免将不必要的信息显示给用户。]]></c:desc1>
       <c:desc1> <![CDATA[Struts2 提供了一个新的拦截器，该拦截器提供了诸如工作流、复杂验证、自定义验证、用来呈现模板的自定义标签以及 flash 作用域。]]></c:desc1>
-      <c:desc1> <![CDATA[使用一连串小的表单来收集所有数据，严格控制用户的操作过程以及表单顺序，以保证所有数据都被收集。]]></c:desc1>
       <c:desc1> <![CDATA[在 struts2 中创建工作流最简单的方式是使用 scope 拦截器，它在工作流生命周期中将数据半持久化，在工作流结束时在将这些数据删除。]]></c:desc1>
+      <c:desc1> <![CDATA[scope 拦截器： scope 拦截器从会话 (session) 或应用 (application) 作用域对象中存取 action 属性。]]></c:desc1>
     </c:desc>
     <c:sourceContent expand="true" type="html" title="创建活动的过程中，需要完成如下一系列的任务： (可以把这一系列的任务视为一个工作流)"
                               id="sourceContent1">
@@ -2023,21 +2024,78 @@ try {
                                   id="sourceContent1">
       <![CDATA[<img src="//c2.staticflickr.com/4/3761/13773605963_15f977484d_b.jpg" alt="" /><br />
       <span style="color:green;font-weight:bold;">每个框表示一个屏幕或页面，并且应用中存在两种场所类型，即 Broadcast 和 Address，用户需要选择一种场所类型，
-      只有这样下一个页面才能正确地显示需要添加的表单字段。</span>]]>
-    </c:sourceContent>
-    <c:sourceContent expand="true" type="html" title="scope 拦截器： scope 拦截器从会话 (session) 或应用 (application) 作用域对象中存取 action 属性"
-                                  id="sourceContent1">
-      <![CDATA[<img src="//c2.staticflickr.com/4/3761/13773605963_15f977484d_b.jpg" alt="" /><br />
-      <span style="color:green;font-weight:bold;">每个框表示一个屏幕或页面，并且应用中存在两种场所类型，即 Broadcast 和 Address，用户需要选择一种场所类型，
-      只有这样下一个页面才能正确地显示需要添加的表单字段。</span>]]>
-    </c:sourceContent>
-    <c:sourceContent expand="true" type="html" title="创建活动用例的领域对象及其依赖项如下："
-                                  id="sourceContent1">
-      <![CDATA[1、基本的活动信息被输入到 Event 领域对象中，在这个阶段还没有足够的信息来持久化该对象并在数据库中保存一个有效的活动。<br />
+      只有这样下一个页面才能正确地显示需要添加的表单字段。</span><br />
+      
+      <b>创建活动用例的领域对象及其依赖项如下：</b><br />
+      1、基本的活动信息被输入到 Event 领域对象中，在这个阶段还没有足够的信息来持久化该对象并在数据库中保存一个有效的活动。<br />
       2、选择 Location 对象或创建一个新的 Location 对象。场所对活动没有依赖，但活动却需要被赋予一个场所，所以在活动存储到数据库以前其对应的场所信息必须被持久保存到数据库。<br />
-      3、为每个选手创建一个 Contestant 对象，选手依赖于活动，活动也依赖于选手，所以这些对象需要一起被持久保存。
-      4、解决方案是，将 Event 对象及其关联的 Location 对象和所有依赖的 Contestant 对象保存到会话中知道用户最后确认。
-      5、如果会话中保存的信息过多将影响系统性能与扩展性，尤其在引入高可用]]>
+      3、为每个选手创建一个 Contestant 对象，选手依赖于活动，活动也依赖于选手，所以这些对象需要一起被持久保存。<br />
+      4、解决方案是，将 Event 对象及其关联的 Location 对象和所有依赖的 Contestant 对象保存到会话中知道用户最后确认。<br />
+      5、如果会话中保存的信息过多将影响系统性能与扩展性，尤其在引入高可用性集群后更是如此。<br />
+      6、理解开发中应用的非功能性需求，尤其是用户负载方面的需求，将有助于你做出决定是采用此方案还是其他方案。<br />
+      7、其它方案包含个性化实现。]]>
+    </c:sourceContent>
+    
+    
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[enterEvent 包]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[由于 paramsPrepareParams 不包含 scope 拦截器，所以创建一个新的拦截器栈： eventStack]]></c:desc1>
+    </c:desc>
+    <c:sourceContent expand="true" type="" title="eventStack"
+                              id="sourceContent1"><![CDATA[<package name="enterEvent" extends="struts-default" namespace="/event">
+    <interceptors>
+        <interceptor-stack name="eventStack">
+            <interceptor-ref name="scope">
+              <param name="session">model</param>     <!-- 多个值可以用逗号分隔，这些值将被保存至 session 作用域，也可以使用 application 参数! -->
+              <param name="key">partialEvent</param>  <!-- 半持久化的属性名： 如果整个工作流中只有一个 action， 那么 key 参数可以省去。因为他的作用就是在 action 之间传递哪些保存在会话中的数据。 -->
+            </interceptor-ref>
+            <interceptor-ref name="paramsPrepareParamsStack" />
+        </interceptor-stack>
+    </interceptors>
+          
+    <default-interceptor-ref name="eventStack" />
+</package>]]></c:sourceContent>
+    <c:sourceContent expand="true" type="html" title="工作流中的两个 action" style="border-bottom:none;"
+                                  id="sourceContent1">
+      <![CDATA[1、在定义好拦截器栈之后，还需要对两个 action 进行特殊配置：一个 action 用于初始化工作流，另一个用于完成工作流。<br />
+      2、在这两个 action 中对拦截器的 type 属性进行重载，type 属性可以为 start 或 end。<br />
+      3、当 type 的属性值为 start 的时候，scope 拦截器将重置会话里的属性。当为 end 时，将从会话作用域中清除属性值以节省服务器内存。<br />
+      4、这个两个 action 均是过道式的 action，只是提供了工作流的入口和出口。]]>
+    </c:sourceContent>
+    <c:sourceContent expand="true" type="" style="border-top:none;"
+                                  id="sourceContent1"><![CDATA[<package name="enterEvent" extends="struts-default" namespace="/event">
+    。。。
+    <action name="addEventFlow" class="com.s2app.actions.event.BaseEventAction">
+        <interceptor-ref name="eventStack">
+            <param name="scope.type">start</param>
+        </interceptor-ref>
+        <result>/jsp/event/enterEventDetail-input.jsp</result>
+    </action>
+    <action name="completeEvent" class="com.s2app.actions.event.BaseEventAction">
+        <interceptor-ref name="eventStack">
+              <param name="scope.type">end</param>
+          </interceptor-ref>
+        <result>/jsp/event/eventReview.jsp</result>
+    </action>
+</package>]]></c:sourceContent>
+    <c:sourceContent expand="true" type="html" title="工作流元素" 
+                                  id="sourceContent1">
+      <![CDATA[<div style="float:left;width:65%;"><img src="//c2.staticflickr.com/4/3756/13839075014_6d7c6731f0_b.jpg" alt="" /></div>
+      <div style="float:left;width:33%;margin-left:1%;font-weight:bold;">
+        1、灰色的方块表示的 action 在 struts.xml 文件中的配置，其它 action 通过注释配置。<br />
+        2、jsp 页面和结果类型 (标注于箭头线中)。<br />
+        3、因为 scope 拦截器保存了 "model" 属性，所以还需要一个 "model" 对象的设置方法，该方法被放在了 BaseEventAction 类中。<br />
+        4、工作流的每一步都由一个单独的 action 实现，也可以仅使用一个大的 action 来实现整个工作流。从配置的角度看，唯一的变化是省去了 scope 拦截器中的 key 参数。
+        5、如果工作流中的每一步都使用同一个 action，那么将使用前文已经讨论过的默认名称机制 (由保存的属性名称和 action 名称合并而成)。
+      </div><div class="clear"></div>]]>
     </c:sourceContent>
     <c:comment>
       <c:comment1>
@@ -2046,6 +2104,149 @@ try {
     </c:comment>
   </c:entry>
 
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[s2app 的自定义验证]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[在开发过程中如果个别字段在领域对象中没有对应的属性时，需要在 action 中定义该属性！(例如：partialStartDate、partialStartTime 和 partialVotingStartTime)]]></c:desc1>
+      <c:desc1> <![CDATA[自定义时间验证器，例如： 8:30AM 或 3:30PM]]></c:desc1>
+    </c:desc>
+    <c:sourceContent expand="true" type="" title=""
+                              id="sourceContent1"><![CDATA[<head>
+    <title><s:text name="createEvent.enterEvent.title /></title>
+</head>
+<body>
+    <s:form action="enterEventDetails" namespace="/event" method="post">
+        <s:textfield label="Event Name" name="name" />
+        <s:textfield label="Start Date" name="partialStartDate" />
+        <s:textfield label="Start Time" name="partialStartTime" />
+        <s:textfield label="Time Zone Offset" name="timeZoneOffset" />
+        <s:textfield label="Voting Start Time" name="partialVotingStartTime" />
+        <s:textfield label="Duration" name="duration" />
+              
+        <s:submit value="Create" />
+    </s:form>
+</body>]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="EnterEventDetailaAction.java"
+                                  id="sourceContent1"><![CDATA[// 该 action 的验证器由两部分组成，即 Event 领域对象的访问者验证及 action 的属性验证
+// CustomValidator 的 type 属性，表明验证过程使用的是 validation.xml 配置文件中的哪个自定义验证器
+public class EnterEventDetailaAction extends BaseEventAction implements Preparable {
+    public void prepare() {
+        // 创建一个活动并设置初始值
+        event = new Event();
+        event.setStatus(Progresss.NOT_STARTED);
+        event.setLastUpdateTime(Calendar.getInstance().getTime());
+    }
+          
+    public Date getPartialStartDate() {
+        return partialStartDate;
+    }
+    
+    @RequiredFieldValidator(message="Validation Error", key="validate.notEmpty")
+    public void setPartialStartDate(Date partialStartDate) {
+        this.partialStartDate = partialStartDate;
+    }
+          
+    public String getPartialStartTime() {
+        return this.partialStartTime;
+    }
+    
+    @CustomValidator(type="timeValidator", key="validate.timeOfDay")
+    public void setPartialStartTime(String partialStartTime) {
+        this.partialStartTime = partialStartTime;
+    }
+          
+    public String getPartialVotingStartTime() {
+        return this.partialVotingStartTime;
+    }
+    
+    @CustomValidator(type="timeValidator", key="validate.timeOfDay")
+    public void setPartialVotingStartTime(String partialVotingStartTime) {
+        this.partialVotingStartTime = partialVotingStartTime;
+    }
+    
+    @VisitorFieldValidator(message="Default Message", fieldName="model", shortCircuit=false, appendPrefix=false)
+    public String execute() {
+        // 从表单字段中获取用户输入并将其转换成有效的 Event 领域对象日期属性
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(partialStartDate);
+              
+        TimeUtil timeUtil = new TimeUtil(partialStartTime);
+        event.setStartTime(timeUtil.resolveDate(partialStartDate, event.getTimeZoneOffset()));
+              
+        cal = Calendar.getInstance();
+        cal.setTime(partialStartDate);
+        timeUtil = new TimeUtil(partialVotingStartTime);
+        event.setVotingStartTime(timeUtil.resolveDate(partialStartDate, event.getTimeZoneOffset()));
+              
+        return SUCCESS;
+    }
+}]]></c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[s2app 的 CustomValidator]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[如果使用的是默认提供的验证功能，那么就不需要提供 validation.xml 文件。]]></c:desc1>
+      <c:desc1> <![CDATA[当使用自定义验证器时，需要将 default.xml 配置文件从 XWork JAR 的 com\opensymphony\xwork2\validator\validators 文件夹下复制到 classpath 的跟目录，并重命名为 validators.xml]]></c:desc1>
+      <c:desc1> <![CDATA[开发自定义验证器需要实现 Validator 接口，可以选择继承 ValidatorSupport 类或 FieldValidatorSupport 类。 (后者用于验证特定字段且提供相关的获取方法和设置方法以获得该属性的名字)]]></c:desc1>
+      <c:desc1> <![CDATA[如果验证失败可以使用 addFieldError() 或 addActionError() 方法，ValidatorContext 提供了这两个方法。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent expand="true" type="" title="更新后的 validators.xml 文件" style="border-bottom:none;"
+                              id="sourceContent1"><![CDATA[<validators>
+    .....
+    .....
+          
+    <!-- 添加新的验证器配置，验证器的 name 属性具有唯一性 -->
+    <validator name="timeValidator" class="com.s2app.validator.TimeValidator" />
+</validators>]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="" style="border-top:none;border-bottom:none;"
+                                  id="sourceContent1"><![CDATA[public class TimeValidator extends FieldValidatorSupport {
+    public void validate(Object obj) throws Exception {
+        String fieldName = getFieldName();            // 取得正在验证的字段名
+        Object value = getFieldValue(fieldName, obj); // 待验证的值
+        
+        if(value == null || !(value instanceof String)
+                         || !(new TimeUtil((String) value).isValid())) {
+            addFieldError(fieldName, obj);
+        }
+    }
+}]]></c:sourceContent>
+    <c:sourceContent expand="true" type="html" title="" style="border-top:none;"
+                                  id="sourceContent1">
+      <![CDATA[<h4>工作流的第一个页面：</h4>
+      <img src="//c2.staticflickr.com/8/7202/13843637683_b187a7459f_b.jpg" alt="" />]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[s2app 的自定义标签]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[重新定义 s:radio，令其垂直布局，而不是水平排列。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent expand="true" type="html" title="" style="border-bottom:none;"
+                              id="sourceContent1"><![CDATA[1、在 web 应用根目录下创建一个名为 /template/s2app 的子目录。<br />
+      2、复制一份 theme 模板用于修改<br />
+      3、修改模板文件 radiomap.ftl 和 checkboxlist.ftl ，分别加入 <br />]]> </c:sourceContent>
+    <c:sourceContent expand="true" type="" title="" style="border-top:none;"
+                            id="sourceContent1"><![CDATA[<s:radio theme="s2app" list="types" name="typeClass" 
+    listKey="class.name" listValue="getText(class.name)" />]]></c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[可以创建大量的 theme，例如一个模板用于创建两列布局，另一个模板用于三列布局。]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
   <c:entry style="margin-top:2em;">
     <c:title><![CDATA[s2app 的文件上传]]></c:title>
     <c:desc>
@@ -2064,9 +2265,12 @@ try {
   </c:entry>
 
   <c:entry style="margin-top:2em;">
-    <c:title><![CDATA[s2app 的安全]]></c:title>
+    <c:title><![CDATA[s2app 的安全： 授权 (authorization)、身份验证 (authentication)]]></c:title>
     <c:desc>
-      <c:desc1> <![CDATA[]]></c:desc1>
+      <c:desc1> <![CDATA[用户登录和注销]]></c:desc1>
+      <c:desc1> <![CDATA[1、基于容器的身份验证：应用服务器或者 servlet 容器提供的身份验证服务。]]></c:desc1>
+      <c:desc1> <![CDATA[2、使用现有库 (<a href="http://www.acegisecurity.org" target="_blank">Acegi</a>)]]></c:desc1>
+      <c:desc1> <![CDATA[3、自定义身份验证、授权]]></c:desc1>
     </c:desc>
     <c:sourceContent expand="true" type="" title=""
                               id="sourceContent1">
