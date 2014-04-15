@@ -2269,7 +2269,7 @@ public class EnterEventDetailaAction extends BaseEventAction implements Preparab
     <c:desc>
       <c:desc1> <![CDATA[用户登录和注销]]></c:desc1>
       <c:desc1> <![CDATA[1、基于容器的身份验证：应用服务器或者 servlet 容器提供的身份验证服务。]]></c:desc1>
-      <c:desc1> <![CDATA[2、使用现有库 (<a href="http://www.acegisecurity.org" target="_blank">Acegi</a>)]]></c:desc1>
+      <c:desc1> <![CDATA[2、使用现有库 <a href="http://www.acegisecurity.org" target="_blank">Acegi</a>]]></c:desc1>
       <c:desc1> <![CDATA[3、自定义身份验证、授权]]></c:desc1>
     </c:desc>
     <c:sourceContent expand="true" type="" title=""
@@ -2277,6 +2277,81 @@ public class EnterEventDetailaAction extends BaseEventAction implements Preparab
       <![CDATA[。。。]]>
     </c:sourceContent>
 
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[集成 Acegi 和 Struts2]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[安全范围仅局限于 URL 和 Web 应用级别 (即针对 action 和 jsp)]]></c:desc1>
+    </c:desc>
+    <c:sourceContent expand="true" type="" title="添加 Acegi 依赖"
+                              id="sourceContent1"><![CDATA[<dependency>
+    <groupId></groupId>
+    <artifactId></artifactId>
+    <version>1.0.4</version>
+</dependency>]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="配置 Acegi 的 Servlet 的过滤器"
+                                  id="sourceContent1"><![CDATA[<!-- 该过滤器允许 Acegi 拦截那些向 Web 应用发出的 URL 请求，同时提供自定义的安全处理机制 -->
+<filter>
+    <filter-name>Acegi Filter Chain Proxy</filter-name>
+    <filter-class>org.acegisecurity.util.FilterToBeanProxy</filter-class>
+    <init-param>
+        <param-name>targetClass</param-name>
+        <param-value>org.acegisecurity.util.FilterChainProxy</param-value>
+    </init-param>
+</filter>
+
+<!-- web.xml 中定义的过滤器映射顺序就是应用调用过滤器的顺序 -->
+<!-- 该映射需要定义在 Struts2 分发过滤器的前面，否则任何用户都可以调用 Struts2 的 action -->
+<filter-mapping>
+    <filter-name>Acegi Filter Chain Proxy</filter-name>
+    <filter-pattern>/*</filter-pattern>
+</filter-mapping>]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="Acegi 应用上下文配置文件 applicationContext-acegi-security.xml (在 Acegi 的示例 WAR 中可以找到该文件)"
+                                  id="sourceContent1"><![CDATA[<!-- 该文件也需要在 web.xml 中配置，可以使用如下通配符 -->
+<!-- 任何以 applicationContext 开头且存放在 classpath 中的文件都能自动加载 -->
+<context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>classpath*:applicationContext*.xml</param-value>
+</context-param>
+
+
+<!-- 文件内容 -->
+<bean id="filterChainProxy" class="org.acegisecurigy.util.FilterChainProxy">
+    <property name="filterInvocationDefinitionSource">
+        <value>
+          CONVERT_URL_TO_LOWERCASE_BEFORE_COMPARISON
+          PATTERN_TYPE_APACHE_ANT
+          
+          <!-- 该处用于说明 Acegi 如何处理 /event/** 这个 URL -->
+          /event/**=httpSessionContextIntegrationFilter,logoutFilter,authenticationProcessingFilter,basicProcessingFilter,
+          securityContextHolderAwareRequestFilter,anonymousProcessingFilter,exceptionTranslationFilter,filterInvocationInterceptor
+        </value>
+    </property>
+</bean>
+
+<bean id="filterInvocationInterceptor"
+      class="org.acegisecurity.intercept.web.FilterSecurityInterceptor">
+    <property name="authenticationManager">
+        <ref bean="authenticationManager" />
+    </property>
+    <property name="accessDecisionManager">
+        <ref local="httpRequestAccessDesisionManager" />
+    <property>
+    <property name="objectDefinitionSource">
+        <value>
+            CONVERT_URL_TO_LOWERCASE_BEFORE_COMPARISON
+            PATTERN_TYPE_APACHE_ANT
+            /event/**=ROLE_USER
+            /**=ROLE_ANONYMOUS,ROLE_USER
+        </value>
+    </property>
+</bean>]]></c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
