@@ -2291,9 +2291,9 @@ public class EnterEventDetailaAction extends BaseEventAction implements Preparab
     </c:desc>
     <c:sourceContent expand="true" type="" title="添加 Acegi 依赖"
                               id="sourceContent1"><![CDATA[<dependency>
-    <groupId></groupId>
-    <artifactId></artifactId>
-    <version>1.0.4</version>
+    <groupId>org.acegisecurity</groupId>
+      <artifactId>acegi-security</artifactId>
+      <version>1.0.4</version>
 </dependency>]]></c:sourceContent>
     <c:sourceContent expand="true" type="" title="配置 Acegi 的 Servlet 的过滤器"
                                   id="sourceContent1"><![CDATA[<!-- 该过滤器允许 Acegi 拦截那些向 Web 应用发出的 URL 请求，同时提供自定义的安全处理机制 -->
@@ -2313,7 +2313,8 @@ public class EnterEventDetailaAction extends BaseEventAction implements Preparab
     <filter-pattern>/*</filter-pattern>
 </filter-mapping>]]></c:sourceContent>
     <c:sourceContent expand="true" type="" title="Acegi 应用上下文配置文件 applicationContext-acegi-security.xml (在 Acegi 的示例 WAR 中可以找到该文件)"
-                                  id="sourceContent1"><![CDATA[<!-- 该文件也需要在 web.xml 中配置，可以使用如下通配符 -->
+                                  id="sourceContent1">
+                  <![CDATA[<!-- 该文件也需要在 web.xml 中配置，可以使用如下通配符 -->
 <!-- 任何以 applicationContext 开头且存放在 classpath 中的文件都能自动加载 -->
 <context-param>
     <param-name>contextConfigLocation</param-name>
@@ -2322,36 +2323,317 @@ public class EnterEventDetailaAction extends BaseEventAction implements Preparab
 
 
 <!-- 文件内容 -->
-<bean id="filterChainProxy" class="org.acegisecurigy.util.FilterChainProxy">
-    <property name="filterInvocationDefinitionSource">
-        <value>
-          CONVERT_URL_TO_LOWERCASE_BEFORE_COMPARISON
-          PATTERN_TYPE_APACHE_ANT
-          
-          <!-- 该处用于说明 Acegi 如何处理 /event/** 这个 URL -->
-          /event/**=httpSessionContextIntegrationFilter,logoutFilter,authenticationProcessingFilter,basicProcessingFilter,
-          securityContextHolderAwareRequestFilter,anonymousProcessingFilter,exceptionTranslationFilter,filterInvocationInterceptor
-        </value>
-    </property>
-</bean>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 
-<bean id="filterInvocationInterceptor"
-      class="org.acegisecurity.intercept.web.FilterSecurityInterceptor">
-    <property name="authenticationManager">
-        <ref bean="authenticationManager" />
-    </property>
-    <property name="accessDecisionManager">
-        <ref local="httpRequestAccessDesisionManager" />
-    <property>
-    <property name="objectDefinitionSource">
-        <value>
-            CONVERT_URL_TO_LOWERCASE_BEFORE_COMPARISON
-            PATTERN_TYPE_APACHE_ANT
-            /event/**=ROLE_USER
-            /**=ROLE_ANONYMOUS,ROLE_USER
-        </value>
-    </property>
-</bean>]]></c:sourceContent>
+<beans>
+    <!-- ======================== FILTER CHAIN ======================= -->
+    <bean id="filterChainProxy" class="org.acegisecurity.util.FilterChainProxy">
+        <property name="filterInvocationDefinitionSource">
+            <value>
+                CONVERT_URL_TO_LOWERCASE_BEFORE_COMPARISON
+                PATTERN_TYPE_APACHE_ANT
+                <!-- 该处用于说明 Acegi 如何处理 /event/** 这个 URL -->
+                /**=httpSessionContextIntegrationFilter,logoutFilter,authenticationProcessingFilter,basicProcessingFilter,securityContextHolderAwareRequestFilter,anonymousProcessingFilter,exceptionTranslationFilter,filterInvocationInterceptor
+            </value>
+        </property>
+    </bean>
+
+    <!-- ======================== AUTHENTICATION ======================= -->
+    <bean id="authenticationManager" class="org.acegisecurity.providers.ProviderManager">
+        <property name="providers">
+            <list>
+                <ref local="daoAuthenticationProvider"/>
+                <ref local="anonymousAuthenticationProvider"/>
+            </list>
+        </property>
+    </bean>
+
+    <!-- 1. 该配置被 authenticationManager bean 引用，然后 URL 配置中的 basicProcessingFilter 会依次访问该 bean -->
+    <!-- 2. 为了向应用的特定服务返回 Acegi 所需使用的用户对象，需要修改 daoAuthenticationProvider 配置，以便它引用一个不同的 userDetailService bean -->
+    <!--<bean id="passwordEncoder" class="org.acegisecurity.providers.encoding.Md5PasswordEncoder"/>-->
+    <bean id="daoAuthenticationProvider" class="org.acegisecurity.providers.dao.DaoAuthenticationProvider">
+        <property name="userDetailsService"><ref bean="userService"/></property>
+        <!--<property name="passwordEncoder"><ref local="passwordEncoder"/></property>-->
+    </bean>
+
+    <!-- Automatically receives AuthenticationEvent messages -->
+    <bean id="loggerListener" class="org.acegisecurity.event.authentication.LoggerListener"/>
+
+    <bean id="basicProcessingFilter" class="org.acegisecurity.ui.basicauth.BasicProcessingFilter">
+        <property name="authenticationManager"><ref local="authenticationManager"/></property>
+        <property name="authenticationEntryPoint"><ref local="basicProcessingFilterEntryPoint"/></property>
+    </bean>
+
+    <bean id="basicProcessingFilterEntryPoint" class="org.acegisecurity.ui.basicauth.BasicProcessingFilterEntryPoint">
+        <property name="realmName"><value>Contacts Realm</value></property>
+    </bean>
+
+    <bean id="anonymousProcessingFilter" class="org.acegisecurity.providers.anonymous.AnonymousProcessingFilter">
+        <property name="key"><value>foobar</value></property>
+        <property name="userAttribute"><value>anonymousUser,ROLE_ANONYMOUS</value></property>
+    </bean>
+
+    <bean id="anonymousAuthenticationProvider" class="org.acegisecurity.providers.anonymous.AnonymousAuthenticationProvider">
+        <property name="key"><value>foobar</value></property>
+    </bean>
+
+    <bean id="httpSessionContextIntegrationFilter" class="org.acegisecurity.context.HttpSessionContextIntegrationFilter">
+    </bean>
+
+    <bean id="logoutFilter" class="org.acegisecurity.ui.logout.LogoutFilter">
+        <constructor-arg value="/index.action"/> <!-- URL redirected to after logout -->
+        <constructor-arg>
+            <list>
+                <bean class="org.acegisecurity.ui.logout.SecurityContextLogoutHandler"/>
+            </list>
+        </constructor-arg>
+    </bean>
+
+    <bean id="securityContextHolderAwareRequestFilter" class="org.acegisecurity.wrapper.SecurityContextHolderAwareRequestFilter"/>
+
+
+    <!-- ===================== HTTP REQUEST SECURITY ==================== -->
+    <bean id="exceptionTranslationFilter" class="org.acegisecurity.ui.ExceptionTranslationFilter">
+        <property name="authenticationEntryPoint"><ref local="authenticationProcessingFilterEntryPoint"/></property>
+        <property name="accessDeniedHandler">
+            <bean class="org.acegisecurity.ui.AccessDeniedHandlerImpl" />
+        </property>
+    </bean>
+
+    <bean id="authenticationProcessingFilter" class="org.acegisecurity.ui.webapp.AuthenticationProcessingFilter">
+        <property name="authenticationManager"><ref bean="authenticationManager"/></property>
+        <property name="authenticationFailureUrl"><value>/acegilogin.action?login_error=1</value></property>
+        <property name="defaultTargetUrl"><value>/</value></property>
+        <property name="filterProcessesUrl"><value>/j_acegi_security_check</value></property>
+    </bean>
+
+    <bean id="authenticationProcessingFilterEntryPoint" class="org.acegisecurity.ui.webapp.AuthenticationProcessingFilterEntryPoint">
+        <property name="loginFormUrl"><value>/acegilogin.action</value></property>
+        <property name="forceHttps"><value>false</value></property>
+    </bean>
+
+    <bean id="httpRequestAccessDecisionManager" class="org.acegisecurity.vote.AffirmativeBased">
+        <property name="allowIfAllAbstainDecisions"><value>false</value></property>
+        <property name="decisionVoters">
+            <list>
+                <ref bean="roleVoter"/>
+            </list>
+        </property>
+    </bean>
+
+    <!-- Note the order that entries are placed against the objectDefinitionSource is critical.
+      The FilterSecurityInterceptor will work from the top of the list down to the FIRST pattern that matches the request URL.
+      Accordingly, you should place MOST SPECIFIC (ie a/b/c/d.*) expressions first, with LEAST SPECIFIC (ie a/.*) expressions last -->
+    <bean id="filterInvocationInterceptor" class="org.acegisecurity.intercept.web.FilterSecurityInterceptor">
+        <property name="authenticationManager"><ref bean="authenticationManager"/></property>
+        <property name="accessDecisionManager"><ref local="httpRequestAccessDecisionManager"/></property>
+        <property name="objectDefinitionSource">
+            <value>
+                CONVERT_URL_TO_LOWERCASE_BEFORE_COMPARISON
+                PATTERN_TYPE_APACHE_ANT
+                /event/**=ROLE_USER
+                /**=ROLE_ANONYMOUS,ROLE_USER
+            </value>
+        </property>
+    </bean>
+
+    <!-- An access decision voter that reads ROLE_* configuration settings -->
+    <bean id="roleVoter" class="org.acegisecurity.vote.RoleVoter"/>
+</beans>]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="实现 org.acegisecurity.userdetails.UserDetailsService 接口" style="border-bottom:none;"
+                                  id="sourceContent1"><![CDATA[package com.s2app.services;
+
+import com.fdar.apress.s2.domain.User;
+
+import javax.persistence.*;
+
+import org.acegisecurity.userdetails.UserDetailsService;
+import org.acegisecurity.userdetails.UserDetails;
+import org.acegisecurity.userdetails.UsernameNotFoundException;
+import org.springframework.dao.DataAccessException;
+
+public class UserServiceImpl implements UserService, UserDetailsService {
+
+    private EntityManagerFactory emf;
+
+    public UserServiceImpl() {
+        emf = Persistence.createEntityManagerFactory("s2app");
+    }
+
+    public User findByEmail(String email) {
+        EntityManager entityMgr = emf.createEntityManager();
+        return entityMgr.find(User.class,email);
+    }
+
+    public void persist(User user,String emailId) {
+
+        EntityManager entityMgr = emf.createEntityManager();
+        EntityTransaction tx = null;
+        try {
+            tx = entityMgr.getTransaction();
+            tx.begin();
+
+            if( "".equals(emailId) ) {
+                entityMgr.persist(user);
+            } else {
+                entityMgr.merge(user);
+            }
+
+            tx.commit();
+        }
+        catch (Exception e) {
+            if ( tx != null && tx.isActive() )
+                tx.rollback();
+            throw (RuntimeException)e.getCause();
+        }
+    }
+
+    public UserDetails loadUserByUsername(String s) throws UsernameNotFoundException, DataAccessException {
+        User u = findByEmail(s);
+        if( s==null || "".equals(s.trim()) || u==null ) {
+            throw new UsernameNotFoundException(s);
+        }
+        return new PermissionedUser(u);
+    }
+}
+]]></c:sourceContent>
+    <c:sourceContent expand="true" type="html" title="" style="border-top:none;border-bottom:none;"
+                              id="sourceContent1">
+      <![CDATA[<div style="color:red;font-weight:bold;">org.acegisecurity.userdetails.UserDetailsService 包含一个 loadUserByUsername() 方法，如果找到了一个 User 对象，该方法就返回一个 PermissionedUser 对象。
+      该对象封装了 User 对象，提供身份验证与授权信息，同时实现了 Acegi 的 UserDetails 接口。</div>]]>
+    </c:sourceContent>
+    <c:sourceContent expand="true" type="" title="com.s2app.services.PermissionedUser 对象" style="border-top:none;"
+                                      id="sourceContent1"><![CDATA[package com.fdar.apress.s2.services;
+
+import org.acegisecurity.userdetails.UserDetails;
+import org.acegisecurity.GrantedAuthority;
+import org.acegisecurity.GrantedAuthorityImpl;
+import com.fdar.apress.s2.domain.User;
+
+/**
+ * @author Ian Roughley
+ * @version $Id$
+ */
+public class PermissionedUser implements UserDetails {
+
+    private User user;
+
+    public PermissionedUser( User user ) {
+        this.user = user;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public String getPassword() {
+        return user==null ? "" : user.getPassword();
+    }
+
+    // 该方法返回身份验证信息，在本例中身份验证信息是用户已授权的角色
+    // 在本例中仅使用 ROLE_ANONYMOUS 和 ROLE_USER 两个角色，任何已注册的用户都会被自动指定为 ROLE_USER 角色
+    public GrantedAuthority[] getAuthorities() {
+        return new GrantedAuthority[] { new GrantedAuthorityImpl("ROLE_USER") };
+    }
+
+    public String getUsername() {
+        return user==null ? "" : user.getEmail();
+    }
+
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    public boolean isEnabled() {
+        return true;
+    }
+
+}]]></c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[Acegi 的用户身份验证]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[当用户初次登陆或者是输入用户名密码错误时，都会被定向到 acegilogon.jsp。此页面的 url 在 authenticationProcessingFilterEntryPoint 以及 authenticationProcessingFilter bean 中配置.]]></c:desc1>
+    </c:desc>
+    <c:sourceContent expand="true" type="" title="配置 acegilogon.action"
+                              id="sourceContent1"><![CDATA[<action name="acegilogin" class="com.fdar.apress.s2.actions.BaseAction" >
+    <result name="success">/acegilogin.jsp?login_error=${login_error}</result>
+</action>]]></c:sourceContent>
+
+
+    <c:sourceContent expand="true" type="" title="/acegilogin.jsp" style="border-bottom:none;"
+                              id="sourceContent1"><![CDATA[<%@ page import="org.acegisecurity.AuthenticationException" %>
+<%@ page import="org.acegisecurity.ui.AbstractProcessingFilter" %>
+<%@ page contentType="text/html; charset=UTF-8" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+    <title><s:text name="home.logon" /></title>
+</head>
+<body>
+
+<s:if test="#parameters.size()>0">
+    <s:text name="text.error.reason" />:  
+    <s:property value="#session['ACEGI_SECURITY_LAST_EXCEPTION'].message" /><br/>
+    <s:text name="text.register"/><br/><br/>
+</s:if>
+
+<form action="<%=request.getContextPath()%>/j_acegi_security_check" method="POST" >
+    <s:text name="logon.username"/> <input type="text" name="j_username" /> <br/>
+    <s:text name="logon.password"/> <input type="password" name="j_password" /> <br/>
+    <input type="submit" value="<s:text name="button.logon" />" />
+</form>
+
+</body>
+</html>]]></c:sourceContent>
+    <c:sourceContent expand="true" type="html" title="" style="border-top:none;border-bottom:none;"
+                                  id="sourceContent1"><![CDATA[
+<div style="color:red;font-weight:bold;">基于 Acegi 身份验证的登陆页面与基于容器管理的登陆页面的不同之处在于：
+用于提供身份验证的 URL 是 /j_acegi_security_check 而不是 /j_security_check，而且错误的获取方式也不一样。
+此处的 jsp 页面通过测试参数的个数来判定是否发生错误而不是检查特定参数的值。
+如果 URL 中存在一个以上的参数，那么就会显示身份验证消息。</div>]]>
+</c:sourceContent>
+
+    <c:sourceContent expand="true" type="" title="" style="border-top:none;"
+                                  id="sourceContent1"><![CDATA[<!-- Acegi 也提供特定身份验证问题的消息，可以使用 struts 标签或 OGNL 表达式获得: -->
+<s:property value="#session['ACEGI_SECURITY_LAST_EXCEPTION'].message" />
+<%= ((AuthenticationException) session
+    .getAttribute("AbstractProcessingFilter.ACEGI_SECURITY_LAST_EXCEPTION_KET")).gewtMessage() %>]]></c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[自定义 authenticated 栈用于身份验证]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent expand="true" type="" title=""
+                              id="sourceContent1">
+      <![CDATA[。。。]]>
+    </c:sourceContent>
+
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
