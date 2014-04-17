@@ -2629,6 +2629,156 @@ public class PermissionedUser implements UserDetails {
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
+    <c:sourceContent expand="true" type="" title="struts.xml"
+                              id="sourceContent1"><![CDATA[<package name="home-package" extends="struts-default" namespace="/">
+    <interceptors>
+    
+        <interceptor name="acegi" class="com.s2app.util.AcegiInterceptor" />  <!-- 该拦截器可以将用户赋给 action -->
+        <interceptor-stack name="authenticated">
+            <interceptor-ref name="acegi"/>
+            <interceptor-ref name="paramsPrepareParamsStack"/>
+        </interceptor-stack>
+    </interceptors>
+
+    <default-interceptor-ref name="authenticated" />
+        
+    <action name="index" class="com.s2app.actions.BaseAction" >
+        <result name="success">/WEB-INF/jsp/index.jsp</result>
+    </action>
+
+    <action name="acegilogin" class="com.s2app.actions.BaseAction" >
+        <result name="success">/acegilogin.jsp?login_error=${login_error}</result>
+    </action>
+</package>]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="BaseAction.java"
+                              id="sourceContent1"><![CDATA[/*
+    所有需要身份验证信息的 action 都需要有一个增加了注释的设置方法，这样所有继承自该类的 action 都可以访问已验证的用户信息了
+*/
+package com.s2app.actions;
+
+import com.opensymphony.xwork2.ActionSupport;
+import com.fdar.apress.s2.services.PermissionedUser;
+import com.fdar.apress.s2.util.AcegiPrincipal;
+import org.acegisecurity.Authentication;
+
+/**
+ * @author Ian Roughley
+ * @version $Id$
+ */
+public class BaseAction extends ActionSupport {
+
+    private PermissionedUser user;
+
+    @AcegiPrincipal
+    public void setAuthenticatedUser(PermissionedUser user) {
+        this.user = user;
+    }
+
+    public PermissionedUser getAuthenticatedUser() {
+        return user;
+    }
+}]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="在 /WEB-INF/jsp/index.jsp 中访问已通过身份验证的用户信息"
+                              id="sourceContent1"><![CDATA[<%@ page contentType="text/html; charset=UTF-8" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
+<%@ taglib prefix="authz" uri="http://acegisecurity.org/authz" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+    <title><s:text name="home.title" /></title>
+</head>
+<body>
+
+<authz:authorize ifNotGranted="ROLE_USER">
+
+    <s:url id="register" action="findUser" namespace="/user" />
+    <s:a href="%{register}"><s:text name="link.register" /></s:a>
+
+    <s:url id="login" action="acegilogin" namespace="/" />
+    |  <s:a href="%{login}"><s:text name="home.logon" /></s:a>
+</authz:authorize>
+<authz:authorize ifAllGranted="ROLE_USER">
+    <s:url id="update" action="findUser" namespace="/user" >
+        <s:param name="emailId" value="authenticatedUser.username" />
+    </s:url>
+    <s:a href="%{update}"><s:text name="link.updateProfile" /></s:a>
+
+    |  <a href="<%=request.getContextPath()%>/j_acegi_logout"><s:text name="link.logoff" /></a>
+</authz:authorize>
+
+<s:url id="newEvent" action="addEventFlow" namespace="/event" />
+|  <s:a href="%{newEvent}"><s:text name="link.addEvent" /></s:a>
+
+</body>
+</html>]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="AcegiInterceptor.java"
+                              id="sourceContent1"><![CDATA[package com.s2app.util;
+
+import com.opensymphony.xwork2.interceptor.AbstractInterceptor;
+import com.opensymphony.xwork2.ActionInvocation;
+import com.fdar.apress.s2.services.PermissionedUser;
+import org.acegisecurity.Authentication;
+import org.acegisecurity.context.SecurityContextHolder;
+
+import java.lang.reflect.Method;
+
+public class AcegiInterceptor extends AbstractInterceptor {
+
+    public String intercept(ActionInvocation invocation) throws Exception {
+
+        Object action = invocation.getAction();
+        Authentication currentUser = SecurityContextHolder.getContext().getAuthentication();
+
+        if( currentUser!=null ) {
+            for( Method m: action.getClass().getDeclaredMethods() ) {
+                if( m.getAnnotation(AcegiPrincipal.class)!=null                       // 使用反射查找设置了 AcegiPrincipal 标记标签的方法
+                        && currentUser.getPrincipal() instanceof PermissionedUser ) { // 如果找到了，
+                                                                                      // 将会从 Acegi 安全环境中获取的用户对象作为参数来调用设置方法
+                                                                                      // 此处只判断用户是否注册，而不管它是某个特定角色
+                                                                                      // 因此只需从 Authentication 对象里检索 principal 主体，
+                                                                                      // 然后将这个不带任何角色信息的主题赋给 action 
+                    m.invoke(action,currentUser.getPrincipal());                      // getPrincipal() 方法的返回类型与 
+                                                                                      // UserServiceImpl 服务中的 loadUserByUsername() 
+                                                                                      // 返回类型一样， 都是 PermissionedUser 类
+                }
+            }
+        }
+
+        return invocation.invoke();
+    }
+}]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="AcegiPrincipal.java"
+                                  id="sourceContent1"><![CDATA[package com.s2app.util;
+
+import java.lang.annotation.Target;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Retention;
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface AcegiPrincipal {
+
+}]]></c:sourceContent>
+
+    <c:sourceContent expand="true" type="html" title="测试拦截器"
+                                  id="sourceContent1">
+      <![CDATA[。。。。]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[自定义身份验证、授权]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
     <c:sourceContent expand="true" type="" title=""
                               id="sourceContent1">
       <![CDATA[。。。]]>
