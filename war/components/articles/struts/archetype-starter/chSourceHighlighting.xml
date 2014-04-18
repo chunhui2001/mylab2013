@@ -134,7 +134,8 @@ mvn package]]></c:sourceContent>
 </project>]]></c:sourceContent>
 
     <c:sourceContent type="" title="struts2-archetype-starter 启动器包含的插件"
-                     id="sourceContent1"><![CDATA[<project>      
+                     id="sourceContent1">
+              <![CDATA[<project>      
     .........
     <dependencies>
         <!-- sitemesh -->
@@ -142,11 +143,12 @@ mvn package]]></c:sourceContent>
             <!-- sitemesh 提供一套初始用户界面 -->
             <!-- sitemesh 利用过滤器拦截 Struts2 结果然后往结果里增加其他 HTML 代码 -->
             <!-- 启动器生成的 WEB-INF/decorators.xml 文件中给出了 URL 模式与装饰器之间的映射信息 -->
-            <!-- WEB-INF/decorators/main.jsp 中定义了 3 个非常有用的标签: <decorator:title />，<decorator:head />，<decorator:body /> -->
+            <!-- webapp/WEB-INF/decorators/main.jsp 中定义了 3 个非常有用的标签: <decorator:title />，<decorator:head />，<decorator:body /> -->
             <!-- <decorator:title /> 将原始页面的 title 插入装饰器模板 -->
             <!-- <decorator:head /> 将原始页面的 head 标签里的内容插入装饰器模板 -->
             <!-- <decorator:body /> 将原始页面的 body 标签里的内容插入装饰器模板 -->
             <!-- 原始页面并不需要引用装时器模板文件，这是一种松耦合的可选机制 -->
+            <!-- 放在 webapp/nodecorate/* 目录下的文件可以避免被 SiteMesh 装饰 -->
             <groupId>org.apache.struts</groupId>
             <artifactId>struts2-sitemesh-plugin</artifactId>
             <version>2.0.9</version>
@@ -2792,6 +2794,52 @@ public @interface AcegiPrincipal {
   </c:entry>
 
   <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[更新页面布局]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[当需要将很多不想关的部分结合起来以构建 Web 页面时，一个更好的方法是使用 Struts2 的 action 标签在 JSP 模板里调用 action。]]></c:desc1>
+      <c:desc1> <![CDATA[当在 JSP 模板里使用 action 标签时，开发人员可以选择是否将 action 调用之后产生的结果包含到当前 JSP 里来。即使结果没有被包含进来，被调用的 action 在值栈里仍然可用。action 标签还可以嵌套 param 标签以便向 action 传递参数信息。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent expand="true" type="" title="s:action"
+                              id="sourceContent1"><![CDATA[<s:action name="myactionname" namespace="/user" executeResult="true">
+    <s:param name="number">10</s:param>
+</s:action>]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="s:component -- eventListing.jsp"
+                                  id="sourceContent1"><![CDATA[<%@ page contentType="text/html; charset=UTF-8" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
+
+<p>
+<h3><s:property value="parameters.event.name" /></h3>
+<s:text name="display.event.date"/>  <s:date name="parameters.event.startTime" format="MMM d, yyyy"/> <br/>
+<s:text name="display.event.start"/> <s:date name="parameters.event.startTime" format="hh:mm a" /> <br/>
+<s:text name="display.event.voting"/> <s:date name="parameters.event.votingStartTime" format="hh:mm a"/> <br/>
+</p>]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="s:component -- listEvents-partial.jsp"
+                                  id="sourceContent1">
+  <![CDATA[<%@ page contentType="text/html; charset=UTF-8" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
+
+<s:if test="results.size()==0">
+    <s:text name="text.noEvents" />
+</s:if>
+<s:else>
+    <s:iterator id="next" value="results">
+        <!-- c:component 使用两个属性确定模板位置 template 和 theme： /template/apress/eventListing.jsp-->
+        <s:component template="eventListing.jsp" theme="apress">
+            <s:param name="event" value="#next" />
+        </s:component>
+    </s:iterator>
+</s:else>]]></c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[利用 c:component 将呈现代码从迭代逻辑中分离出来，以达到呈现逻辑的重用，即利用 c:component 将视图分隔成多个 jsp。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[在开发过程中，实现细节不能影响结果的获取方式以及结果的呈现方式。]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
     <c:title><![CDATA[搜索]]></c:title>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
@@ -2809,15 +2857,263 @@ public @interface AcegiPrincipal {
   </c:entry>
 
   <c:entry style="margin-top:2em;">
-    <c:title><![CDATA[REST]]></c:title>
+    <c:title><![CDATA[聚合与集成]]></c:title>
     <c:desc>
-      <c:desc1> <![CDATA[]]></c:desc1>
+      <c:desc1> <![CDATA[使用 RSS feed 创建 mashup，并提供 REST 风格的 Web 服务来访问数据。]]></c:desc1>
+      <c:desc1> <![CDATA[Google Maps 就是使用 mashup 的典范，它从一个 API 或 RSS Fees 获取数据，然后和 Google Maps 合并将存文本的信息显示为地图！]]></c:desc1>
+      <c:desc1> <![CDATA[可以使用 <a href="http://rome.dev.java.net" target="_blank">Rome</a> 开源库生成 RSS，它支持所有 RSS 版本的格式，同时也支持 Atom。]]></c:desc1>
+      <c:desc1> <![CDATA[可以定义一个新的结果类型用于呈现 RSS，是用该结果类型允许任何包含 User 对象列表的 action 快速而又容易的将列表转换成 RSS feed.]]></c:desc1>
     </c:desc>
-    <c:sourceContent expand="true" type="" title=""
+    <c:sourceContent expand="true" type="" title="Rome 库依赖"
+                              id="sourceContent1"><![CDATA[<!-- Rome -->
+<dependency>
+	<groupId>rome</groupId>
+	<artifactId>rome</artifactId>
+	<version>0.9</version>
+</dependency>
+<dependency>
+	<groupId>rome</groupId>
+	<artifactId>georss-rome</artifactId>
+	<version>0.9.8</version>
+</dependency>]]></c:sourceContent>
+    <c:sourceContent expand="true" type="html" title="配置 GeoRSS 模块, 用于描述地理信息"
                               id="sourceContent1">
-      <![CDATA[。。。]]>
+      <![CDATA[1、下载并安装 GeoRSS 库文件：<a href="http://georss.geonames.org/georss-rome-0.9.8.jar">http://georss.geonames.org/georss-rome-0.9.8.jar</a><br />
+      2、使用 maven 命令将该库安装到本地库中: <br />
+       <span style="color:red;font-weight:bold;">mvn install:install-file -DgroupId=rome -DartifactId=georss-rome -Dversion=0.9.8 -Dpackaging=jar -Dfile=georss-rome-0.9.8.jar</span>]]>
     </c:sourceContent>
+    <c:sourceContent expand="true" type="" title="开发自定义 RSS 结果类型"
+                                  id="sourceContent1"><![CDATA[<result-types>
+    <result-type name="eventRss" class="com.s2app.myresults.EventRssResult" />
+</result-types>]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="配置 action 使用新的结果类型"
+                                  id="sourceContent1"><![CDATA[<action name="rss" class="com.s2app.myaction">
+    <param name="number">10</param>
+    <result name="success" type="eventRss">
+        <param name="inputName">results</param>
+        <param name=“feedType">rss_2.0</param>
+        <param name="title">Most Recent Events</param>
+        <param name="link">http://localhost:8080/s2app/rss.action</param>
+        <param name="desc">The most recent events in RSS format.</param>
+    </result>
+</action>]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="com.s2app.myresults.EventRssResult"
+                                  id="sourceContent1"><![CDATA[package com.s2app.myresults;
 
+import com.opensymphony.xwork2.ActionInvocation;
+import com.opensymphony.xwork2.TextProvider;
+import com.opensymphony.xwork2.Result;
+
+import com.sun.syndication.feed.synd.*;
+import com.sun.syndication.feed.module.georss.GeoRSSModule;
+import com.sun.syndication.feed.module.georss.W3CGeoModuleImpl;
+import com.sun.syndication.feed.module.georss.geometries.Position;
+import com.sun.syndication.io.FeedException;
+import com.sun.syndication.io.SyndFeedOutput;
+import com.fdar.apress.s2.domain.Event;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.List;
+import java.util.ArrayList;
+import java.text.SimpleDateFormat;
+import java.text.DateFormat;
+import java.net.URL;
+
+import org.apache.struts2.StrutsStatics;
+import sun.net.www.protocol.http.HttpURLConnection;
+
+public class EventRssResult implements Result {
+    private static final String MIME_TYPE = "application/xml";
+
+    private String inputName = "inputList";
+    private String feedType = "rss_2.0";
+
+    private String title;
+    private String link;
+    private String description;
+
+    public void setInputName(String inputName) {
+        this.inputName = inputName;
+    }
+
+    public void setFeedType(String feedType) {
+        this.feedType = feedType;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setLink(String link) {
+        this.link = link;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void execute(ActionInvocation invocation) throws Exception {
+        HttpServletResponse response = (HttpServletResponse) invocation.getInvocationContext().get(StrutsStatics.HTTP_RESPONSE);
+        response.setContentType(MIME_TYPE);
+
+        List<Event> events = (List<Event>) invocation.getStack().findValue(inputName);
+
+        try {
+
+            SyndFeedOutput feedOutput = new SyndFeedOutput();
+            feedOutput.output(createFeed(events,feedType, (TextProvider)invocation.getAction()),response.getWriter());
+            response.getWriter().flush();
+
+        } finally {
+            if( response.getWriter() != null ) {
+                response.getWriter().close();
+            }
+        }
+    }
+
+    protected SyndFeed createFeed(List<Event> events,String feedType, TextProvider textProvider) throws IOException,FeedException {
+        SyndFeed feed = new SyndFeedImpl();
+        feed.setFeedType(feedType);
+
+        feed.setTitle(title);
+        feed.setLink(link);
+        feed.setDescription(description);
+
+        List entries = new ArrayList();
+        for( Event next: events ) {
+            entries.add( createEntry(next,textProvider) );
+        }
+
+        feed.setEntries(entries);
+        return feed;
+    }
+
+    private SyndEntry createEntry(Event event, TextProvider textProvider) {
+        SyndEntry entry = new SyndEntryImpl();
+        entry.setTitle(event.getName());
+        entry.setLink(link.substring(0,link.lastIndexOf("/")+1)+"api/event/"+event.getId());
+        entry.setPublishedDate(event.getStartTime());
+
+        SyndContent description = new SyndContentImpl();
+        description.setType("text/html");
+        description.setValue(createDescription(event,textProvider));
+        entry.setDescription(description);
+
+        entry.getModules().add(geoCodeLocation(event));
+
+        return entry;
+    }
+
+    private String createDescription(Event event, TextProvider textProvider) {
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("<ul>");
+        sb.append("<li>")
+                .append(textProvider.getText("event.startDate"))
+                .append(": ")
+                .append(df.format(event.getStartTime()))
+                .append("</li>");
+        sb.append("<li>")
+                .append(textProvider.getText("event.timeZoneOffset"))
+                .append(": ")
+                .append(event.getTimeZoneOffset())
+                .append("</li>");
+        sb.append("<li>")
+                .append(textProvider.getText("event.duration"))
+                .append(": ")
+                .append(event.getDuration())
+                .append("</li>");
+        sb.append("<li>")
+                .append(textProvider.getText("event.location"))
+                .append(": ")
+                .append(event.getLocation().getCity())
+                .append(", ")
+                .append(event.getLocation().getState())
+                .append("</li>");
+        sb.append("</ul>");
+
+        return sb.toString();
+    }
+
+    private GeoRSSModule geoCodeLocation(Event event) {
+        // GeoCode the address
+        StringBuilder sb = new StringBuilder()
+                .append("http://maps.google.com/maps/geo?q=")
+                .append(event.getLocation().getCity().replaceAll(" ","+"))
+                .append(",")
+                .append(event.getLocation().getState().replaceAll(" ","+"))
+                .append("&output=csv")
+                .append("&key={googleKey}");
+
+        String[] data = null;
+        try {
+            HttpURLConnection url = new HttpURLConnection(new URL(sb.toString()),"maps.google.com",80);
+            url.connect();
+            BufferedReader br = new BufferedReader(new InputStreamReader(url.getInputStream()));
+
+            String buffer = br.readLine();
+            data = buffer.split(",");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        double latitude = Double.parseDouble(data[2]);
+        double longitude = Double.parseDouble(data[3]);
+
+        // Add RSS GeoCoding
+        GeoRSSModule geoRSSModule = new W3CGeoModuleImpl();
+        Position pos = new Position(latitude,longitude);
+        geoRSSModule.setPosition(pos);
+
+        return geoRSSModule;
+    }
+}]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="实现 Atom Feed"
+                              id="sourceContent1"><![CDATA[<action name="atom" class="com.s2app.myaction">
+    <param name="number">10</param>
+    <result name="success" type="eventRss">
+        <param name="inputName">results</param>
+        <param name=“feedType">atom_0.3</param>
+        <param name="title">Most Recent Events</param>
+        <param name="link">http://localhost:8080/s2app/rss.action</param>
+        <param name="desc">The most recent events in RSS format.</param>
+    </result>
+</action>]]></c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[实现 REST 式的 web 服务]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[REST 架构性的 Web 服务主要围绕 URL 的概念来标识集成点。为了修改访问对象的状态，需要使用 HTTP 的 POST、GET、PUT、DELETE 等方法。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent expand="true" type="" title="将 URL 映射到 action"
+                              id="sourceContent1"><![CDATA[<!-- 在 Struts2 中默认使用 DefaultActionMapper 类映射 HTTP 请求 -->
+<!-- 在 struts-default.xml 中已经定义了若干 action 映射器的实现： -->
+<bean type="org.apache.struts2.dispatcher.mapper.ActionMapper" name="struts"
+      class="org.apache.struts2.dispatcher.mapper.DefaultActionMapper" />
+<bean type="org.apache.struts2.dispatcher.mapper.ActionMapper" name="composite"
+      class="org.apache.struts2.dispatcher.mapper.CompositeActionMapper" />
+<bean type="org.apache.struts2.dispatcher.mapper.ActionMapper" name="restful2"
+      class="org.apache.struts2.dispatcher.mapper.Restful2ActionMapper" />]]></c:sourceContent>
+    <c:sourceContent expand="true" type="html" title="restful2-mapping" style="border-bottom:none;"
+                                  id="sourceContent1">
+      <![CDATA[<img src="//c1.staticflickr.com/3/2935/13920932285_af90dee01b_b.jpg" alt="" /><br /><br />
+      
+      <span style="color:red;font-weight:bold;">因为 http 不支持 PUT 和 DELETE 方法，所以一个额外的 HTTP 参数 __http_method 用来模拟 PUT 和 DELETE：</span><br />
+      <span style="color:green;font-weight:bold;"><input type="hidden" name="__http_method" value="DELETE" /></span>]]>
+    </c:sourceContent>
+    <c:sourceContent expand="true" type="" title="" style="border-top:none;"
+                                  id="sourceContent1"><![CDATA[<input type="hidden" name="__http_method" value="DELETE" />]]></c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
