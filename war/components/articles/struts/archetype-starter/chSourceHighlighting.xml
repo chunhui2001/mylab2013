@@ -1349,7 +1349,7 @@ public class UserServiceImpl implements UserService {
                                    , Preparable {
     private User user;
     
-    // 由于 prepare 拦截器在 modelDriven 拦截器之前执行，所以在 prepare 方法中无法访问领域模型
+    // 由于 prepare 拦截器在 modelDriven 拦截器之前执行，因此使用 prepare() 方法初始化领域对象，否则 ModelDriven 无效
     // 如果属性对应的设置方法在领域模型中不存在，那么系统将在值栈中继续向下查找以确定该值是否可以被赋给另一个对象
     // 排在领域模型之后的是 action，即: 如果在领域模型中没有对象的属性，但是在 action 中有对应的属性，那么也能够被正确赋值
     // 所以在 action 中创建一个新的领域模型没有的属性用于接收 email
@@ -3114,6 +3114,209 @@ public class EventRssResult implements Result {
     </c:sourceContent>
     <c:sourceContent expand="true" type="" title="" style="border-top:none;"
                                   id="sourceContent1"><![CDATA[<input type="hidden" name="__http_method" value="DELETE" />]]></c:sourceContent>
+
+    <c:sourceContent expand="true" type="" title="更新 struts.xml"
+                              id="sourceContent1"><![CDATA[<struts>
+    <!--constant name="struts.action.extension" value="" /-->                        <!-- URL 扩展名，默认是 .action -->           
+    
+    <constant name="struts.enable.SlashesInActionNames" value="true" />         <!-- 不会使用 / 来区分命名空间和 action 的名字 -->
+    <constant name="struts.mapper.alwaysSelectFullNamespace" value="false" />   <!-- 最后一个 / 字符前面的所有内容是否就是某个命名空间的名字 -->
+    <constant name="struts.mapper.composite" value="struts,restful2" />         <!-- 映射器的名字，可以实现自定义的映射器 -->
+    <constant name="struts.mapper.class" value="composite" />                   
+</struts>]]></c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[创建自定义 action 映射器]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[当应用即要实现一个 REST 式的 URL，同时又保留 .action 扩展名时，就需要编写自定义映射器]]></c:desc1>
+    </c:desc>
+    
+    
+    
+
+    <c:sourceContent expand="true" type="" title="org.apache.struts2.dispatcher.mapper.FallbackRestful2ActionMapper.java"
+                              id="sourceContent1"><![CDATA[package org.apache.struts2.dispatcher.mapper;
+
+import org.apache.struts2.dispatcher.mapper.Restful2ActionMapper;
+import org.apache.struts2.dispatcher.mapper.ActionMapping;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
+import java.net.URLDecoder;
+
+import com.opensymphony.xwork2.config.ConfigurationManager;
+
+
+public class FallbackRestful2ActionMapper extends Restful2ActionMapper {
+    List<String> knownExtenstions = new ArrayList() {{ add("css"); add("html"); add("js"); }};
+
+    String dropExtension(String name) {
+        Iterator it = knownExtenstions.iterator();
+        while (it.hasNext()) {
+            String extension = "." + (String) it.next();
+            if (name.endsWith(extension)) {
+                return null;
+            }
+        }
+        return name;
+    }
+
+    public ActionMapping getMapping(HttpServletRequest request, ConfigurationManager configManager) {
+        if (!isSlashesInActionNames()) {
+            throw new IllegalStateException("This action mapper requires the setting 'slashesInActionNames' to be set to 'true'");
+        }
+
+        // ---- from DefaultActionMapper ----------------------------------------------------
+        ActionMapping mapping = new ActionMapping();
+        String uri = getUri(request);
+
+        uri = dropExtension(uri);
+        if (uri == null) {
+            // 返回 null 就可以阻止 Struts2 做进一步的处理
+            return null;
+        }
+
+        parseNameAndNamespace(uri, mapping, configManager);
+
+        handleSpecialParameters(request, mapping);
+
+        if ( mapping == null || mapping.getName() == null) {
+            return null;
+        }
+
+        // ---- from Restful2ActionMapper ---------------------------------------------------
+        String actionName = mapping.getName();
+
+        // Only try something if the action name is specified
+        if (actionName != null && actionName.length() > 0) {
+            int lastSlashPos = actionName.lastIndexOf('/');
+
+            // If a method hasn't been explicitly named, try to guess using ReST-style patterns
+            if (mapping.getMethod() == null) {
+
+                if (lastSlashPos == actionName.length() -1) {
+
+                    // Index e.g. foo/
+                    if (isGet(request)) {
+                        mapping.setMethod("index");
+
+                    // Creating a new entry on POST e.g. foo/
+                    } else if (isPost(request)) {
+                        mapping.setMethod("create");
+                    }
+
+                } else if (lastSlashPos > -1) {
+                    String id = actionName.substring(lastSlashPos+1);
+
+                    // Viewing the form to create a new item e.g. foo/new
+                    if (isGet(request) && "new".equals(id)) {
+                        mapping.setMethod("editNew");
+
+                    // Viewing an item e.g. foo/1
+                    } else if (isGet(request)) {
+                        mapping.setMethod("view");
+
+                    // Removing an item e.g. foo/1
+                    } else if (isDelete(request)) {
+                        mapping.setMethod("remove");
+
+                    // Updating an item e.g. foo/1
+                    }  else if (isPut(request)) {
+                        mapping.setMethod("update");
+                    }
+
+                    if (getIdParameterName() != null) {
+                    	if (mapping.getParams() == null) {
+                            mapping.setParams(new HashMap());
+                        }
+                    	mapping.getParams().put(getIdParameterName(), id);
+                    }
+                } 
+
+                if (getIdParameterName() != null && lastSlashPos > -1) {
+                	actionName = actionName.substring(0, lastSlashPos);
+                }
+            }
+
+            // Try to determine parameters from the url before the action name
+            int actionSlashPos = actionName.lastIndexOf('/', lastSlashPos - 1);
+            if (actionSlashPos > 0 && actionSlashPos < lastSlashPos) {
+                String params = actionName.substring(0, actionSlashPos);
+                HashMap<String,String> parameters = new HashMap<String,String>();
+                try {
+                    StringTokenizer st = new StringTokenizer(params, "/");
+                    boolean isNameTok = true;
+                    String paramName = null;
+                    String paramValue;
+
+                    while (st.hasMoreTokens()) {
+                        if (isNameTok) {
+                            paramName = URLDecoder.decode(st.nextToken(), "UTF-8");
+                            isNameTok = false;
+                        } else {
+                            paramValue = URLDecoder.decode(st.nextToken(), "UTF-8");
+
+                            if ((paramName != null) && (paramName.length() > 0)) {
+                                parameters.put(paramName, paramValue);
+                            }
+
+                            isNameTok = true;
+                        }
+                    }
+                    if (parameters.size() > 0) {
+                        if (mapping.getParams() == null) {
+                            mapping.setParams(new HashMap());
+                        }
+                        mapping.getParams().putAll(parameters);
+                    }
+                } catch (Exception e) {
+                    LOG.warn(e);
+                }
+                mapping.setName(actionName.substring(actionSlashPos+1));
+            }
+        }
+
+        return mapping;
+    }
+}]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="更新 struts.xml"
+                              id="sourceContent1"><![CDATA[<struts>
+    <!-- 为新的映射器配置一个新的 bean -->
+    <bean type="org.apache.struts2.dispatcher.mapper.ActionMapper" name="fallback"
+          class="org.apache.struts2.dispatcher.mapper.FallbackRestful2ActionMapper" />
+
+    <!-- 例如: /event/2 这个 URL 将在 action 被调用时，调用 setId(2) 方法 -->
+    <constant name="struts.mapper.idParameterName" value="id" />
+
+    <constant name="struts.enable.SlashesInActionNames" value="true" />
+    <constant name="struts.mapper.alwaysSelectFullNamespace" value="false" />
+    <constant name="struts.mapper.composite" value="struts,fallback" />
+    <constant name="struts.mapper.class" value="composite" />
+</struts>]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[Ajax]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[使用 Dojo Toolkit 来提供 Ajax 特性，<a href="http://dojotoolkit.org" target="_blank">Dojo Toolkit</a> 将集中常用的库集成起来， 
+      包括：<a href="http://developer.yahoo.com/yui" target="_blank">YUI</a>、<a href="http://www.prototypejs.org" target="_blank">Prototype</a> 等。]]></c:desc1>
+    </c:desc>    
+    <c:sourceContent expand="true" type="" title="更新 struts.xml"
+                              id="sourceContent1">
+      <![CDATA[...]]>
+    </c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
