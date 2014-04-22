@@ -29,58 +29,101 @@
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="" title="自定义 JSONResult"
-                     id="sourceContent1"><![CDATA[// 自定义结果需要实现 com.opensymphony.xwork2.Result 接口
+    <c:sourceContent type="" title="自定义 JSONResult" style="border-bottom:none;"
+                     id="sourceContent1"><![CDATA[<dependency>
+  <groupId>com.thoughtworks.xstream</groupId>
+  <artifactId>xstream</artifactId>
+  <version>1.4.7</version>
+</dependency>
+<dependency>
+  <groupId>org.codehaus.jettison</groupId>
+  <artifactId>jettison</artifactId>
+  <version>1.3.3</version>
+</dependency>]]></c:sourceContent>
+    <c:sourceContent type="" title="自定义 JSONResult" style="border-top:none;"
+                         id="sourceContent1">
+  <![CDATA[// 自定义结果需要实现 com.opensymphony.xwork2.Result 接口
 public interface Result extends Serializable {
     public void execute (ActionInvocation invocation) throws Exception;
 }
 
 package mypackagename;
 
+import java.io.PrintWriter;
+import java.io.Writer;
+
+import org.apache.struts2.ServletActionContext;
+
+import com.opensymphony.xwork2.ActionInvocation;
+import com.opensymphony.xwork2.Result;
+import com.opensymphony.xwork2.util.ValueStack;
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.json.JettisonMappedXmlDriver;
+import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+import com.thoughtworks.xstream.io.json.JsonHierarchicalStreamDriver;
+import com.thoughtworks.xstream.io.json.JsonWriter;
+
+
 public class JSONResult implements Result {
-     // 定义一个常量作为默认参数
-     // 每一个结果可以定义一个默认参数，它不需要指名就可以被传入
-     public static final String DEFAULT_PARAM = "classAlias";
-     
-     private String classAlias;
-     
-     public String getClassAlias() {
-        return this.classAlias;
-     }
-     
-     public void setClassAlias(String classAlias) {
-        this.classAlias = classAlias;
-     }
-     
-     public void execute (ActionInvocation invocation) throw Exception {
-        // 由于将为客户返回一个 HTTP 相应，所以使用 ServletActionContext 在 servlet 响应对象上设置内容类型
-        ServletActionContext.getResponse().setContentType("text/plain");
+    // 定义一个常量作为默认参数
+    // 每一个结果可以定义一个默认参数，它不需要指名就可以被传入
+    public static final String DEFAULT_PARAM = "classAlias";
+
+    String classAlias;
+
+    public String getClassAlias() {
+	    return classAlias;
+    }
+
+    public void setClassAlias(String classAlias) {
+	    this.classAlias = classAlias;
+    }
+
+    public void execute(ActionInvocation invocation) throws Exception {	
+      Object action = invocation.getAction();
+      
+
+    
+      // 由于将为客户返回一个 HTTP 相应，所以使用 ServletActionContext 在 servlet 响应对象上设置内容类型
+      ServletActionContext.getResponse().setContentType("text/plain");
+      PrintWriter responseStream = ServletActionContext.getResponse()
+		      .getWriter();
+
+      ValueStack valueStack = invocation.getStack();
+
+      // 从 ValueStack 上取得将要序列化的域对象，可以参数化这个属性
+      // Object jsonModel = valueStack.findValue("jsonModel");
+      Object jsonModel；
+      
+      // 利用属性标签取得待序列化对象
+      for( Method m: action.getClass().getDeclaredMethods() ) { 
+          if( m.getAnnotation(JSONModel.class) != null) {
+              jsonModel =  m.invoke(action);
+          }
+      }
+
+      // 使用开源的软件包来序列化对象: XStream (http://xstream.codehaus.org) 和 Jettison (http://jettison.codehaus.org)
+      // XStream 可以把 java 对象序列化为 XML, 并且 XStream 的 Jettison 驱动添加了对 JSON 类型的支持
         
-        PrintWriter responseStream = 
-                        ServletActionContext.getResponse().getWriter();
-                        
-        ValueStack valueStack = invocation.getStack();
-        
-        // 从 ValueStack 上取得将要序列化的域对象，可以参数化这个属性
-        Object jsonModel = valueStack.findValue("jsonModel");
-        
-        // 使用开源的软件包来序列化对象: XStream (http://xstream.codehaus.org) 和 Jettison (http://jettison.codehaus.org)
-        // XStream 可以把 java 对象序列化为 XML, 并且 XStream 的 Jettison 驱动添加了对 JSON 类型的支持
-        
-        // 使用 Jettison 驱动创建一个 XStream 序列化器的实例
-        XStream xstream = new XStream(new JettisonMappedXmlDriver());
-        
-        // 设置需要序列化的对象的别名
-        // 如果不适用别名，JSON 会使用类的全限定名来命名这个对象
-        if (classAlias == null) {
-            classAlias = "object";
-        }
-        
-        xstream.alias(classAlias, jsonModel.getClass());
-        
-        // 将输出 JSON 格式的内容
-        responseStream.println(xstream.toXML(jsonModel));
-     }
+      // 使用 Jettison 驱动创建一个 XStream 序列化器的实例
+      /*XStream xstream = new XStream(new JettisonMappedXmlDriver());*/
+    
+      XStream xstream = new XStream(new JsonHierarchicalStreamDriver() {
+	      public HierarchicalStreamWriter createWriter(Writer writer) {
+		      return new JsonWriter(writer, JsonWriter.DROP_ROOT_MODE);
+	      }
+      });
+
+      // 设置需要序列化的对象的别名
+      // 如果不适用别名，JSON 会使用类的全限定名来命名这个对象
+      if (classAlias == null) {
+	      classAlias = "object";
+      }
+      xstream.alias(classAlias, jsonModel.getClass());
+
+      // 将输出 JSON 格式的内容
+      responseStream.println(xstream.toXML(jsonModel));
+    }
 }]]></c:sourceContent>
 
     <c:sourceContent type="" title="动作" style="margin-top:1em;"
