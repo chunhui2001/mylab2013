@@ -30,6 +30,21 @@
         </xsl:otherwise>
       </xsl:choose>
     </div>
+
+    <script type="text/javascript">
+
+      function doExpand(sender) {
+      var nextBody = $($(sender).parents("h6")[0]).nextAll(".entryBody")[0];
+
+      if( $(nextBody ).is(":visible")) {
+      $(nextBody ).slideUp();
+      $(sender ).css("background-image", "url(//dl.dropboxusercontent.com/s/m076srx7h7a5ifq/arrow1.png)");
+      } else {
+      $(nextBody ).slideDown();
+      $(sender ).css("background-image", "url(//dl.dropboxusercontent.com/s/vl2aiv70jvurc34/arrow2.png)");
+      }
+      }
+    </script>
   </xsl:template>
 
   <xsl:template name="buildContent">
@@ -69,7 +84,7 @@
         <div style="{concat($style,@style)}">
           
           <xsl:if test="current()/@title and normalize-space(current()/@title) != ''">
-            <h6 style="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em .8em;font-weight:bold;font-size:1em;">
+            <h6 style="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em .8em;font-weight:bold;font-size:1em;position:relative;">
               <xsl:if test="@expand">
                 <xsl:call-template name="build-expand">
                   <xsl:with-param name="isExpand" select="@expand" />
@@ -78,22 +93,29 @@
               <xsl:value-of select="current()/@title"/>
             </h6>
           </xsl:if>
-        
-          <xsl:choose>
-            <xsl:when test="current()/@type = 'html'">
-              <div style="padding:1em;font-size:14px;">
-                <xsl:value-of disable-output-escaping="yes" select="current()"/>
-              </div>
-            </xsl:when>
-            <xsl:otherwise>
-              <!-- Language hints can be put in XML application directive style comments. -->
-              <?prettify lang=html linenums=false?>
-              <pre class="prettyprint" id="current()/@componentId"
-                   style="border-radius:0;border:none;padding:1em;">
-                <xsl:value-of disable-output-escaping="no" select="current()"/>
-              </pre>
-            </xsl:otherwise>
-          </xsl:choose>
+
+          <div class="entryBody">
+            <xsl:if test="current()/@expand = 'false'">
+              <xsl:attribute name="style">
+                <xsl:value-of select="'display:none;'"/>
+              </xsl:attribute>
+            </xsl:if>
+            <xsl:choose>
+              <xsl:when test="current()/@type = 'html'">
+                <div style="padding:1em;font-size:14px;">
+                  <xsl:value-of disable-output-escaping="yes" select="current()"/>
+                </div>
+              </xsl:when>
+              <xsl:otherwise>
+                <!-- Language hints can be put in XML application directive style comments. -->
+                <?prettify lang=html linenums=false?>
+                <pre class="prettyprint" id="current()/@componentId"
+                     style="border-radius:0;border:none;padding:1em;">
+                  <xsl:value-of disable-output-escaping="no" select="current()"/>
+                </pre>
+              </xsl:otherwise>
+            </xsl:choose>
+          </div>
         </div>
       </xsl:for-each>      
     </xsl:if>
@@ -122,17 +144,29 @@
 
   <xsl:template name="build-expand">
     <xsl:param name="isExpand" />
-    <span style="margin-left:-8px;display:block;float:left;width:19px;height:19px;">
+    <span onclick="javascript:doExpand(this);">
+      <xsl:variable name="style">
+        <xsl:value-of select="'top:0;left:-2px;display:block;float:left;width:19px;height:19px;position:absolute;cursor:pointer;background-repeat:no-repeat;background-position:center;'"/>
+      </xsl:variable>
+      
       <xsl:choose>
-        <xsl:when test="normalize-space($isExpand) = ''">
+        <xsl:when test="normalize-space($isExpand) = 'false'">
           <xsl:attribute name="class">
             <xsl:value-of select="'SourceHighligh-Hand SourceHighlight-Collapse'"/>
+          </xsl:attribute>
+
+          <xsl:attribute name="style">
+            <xsl:value-of select="concat($style,'background-image:url(//dl.dropboxusercontent.com/s/m076srx7h7a5ifq/arrow1.png);')"/>
           </xsl:attribute>
           
         </xsl:when>
         <xsl:otherwise>
-          <xsl:attribute name="style">
+          <xsl:attribute name="class">
             <xsl:value-of select="'SourceHighligh-Hand SourceHighlight-Expand'"/>
+          </xsl:attribute>
+
+          <xsl:attribute name="style">
+            <xsl:value-of select="concat($style,'background-image:url(//dl.dropboxusercontent.com/s/vl2aiv70jvurc34/arrow2.png);')"/>
           </xsl:attribute>
           
         </xsl:otherwise>

@@ -2059,11 +2059,17 @@ try {
     </c:desc>
     <c:sourceContent expand="true" type="" title="eventStack"
                               id="sourceContent1"><![CDATA[<package name="enterEvent" extends="struts-default" namespace="/event">
-    <interceptors>
+    <interceptors>    
+        <interceptor name="flash" class="com.opensymphony.webwork.interceptor.FlashInterceptor" />
+        
         <interceptor-stack name="eventStack">
             <interceptor-ref name="scope">
-              <param name="session">model</param>     <!-- 多个值可以用逗号分隔，这些值将被保存至 session 作用域，也可以使用 application 参数! -->
-              <param name="key">partialEvent</param>  <!-- 半持久化的属性名： 如果整个工作流中只有一个 action， 那么 key 参数可以省去。因为他的作用就是在 action 之间传递哪些保存在会话中的数据。 -->
+              <!-- scope 拦截器的两个参数： session (或 application) 和 key -->
+              <!-- 配置的顺序很重要，因为在业务逻辑执行之前，保存在会话作用域或应用作用域中的对象需要被检索并设置到 action 上 -->
+              <param name="session">model</param>     <!-- 一串用逗号分隔的属性值组成，这些值将被保存至 session 作用域，
+                                                           也可以使用 application 参数! -->
+              <param name="key">partialEvent</param>  <!-- key 参数指定了属性值的名称，如果整个工作流中只有一个 action， 那么 key 参数可以省去。
+                                                           因为他的作用就是在 action 之间传递哪些保存在会话中的数据。 -->
             </interceptor-ref>
             <interceptor-ref name="paramsPrepareParamsStack" />
         </interceptor-stack>
@@ -2076,7 +2082,8 @@ try {
       <![CDATA[1、在定义好拦截器栈之后，还需要对两个 action 进行特殊配置：一个 action 用于初始化工作流，另一个用于完成工作流。<br />
       2、在这两个 action 中对拦截器的 type 属性进行重载，type 属性可以为 start 或 end。<br />
       3、当 type 的属性值为 start 的时候，scope 拦截器将重置会话里的属性。当为 end 时，将从会话作用域中清除属性值以节省服务器内存。<br />
-      4、这个两个 action 均是过道式的 action，只是提供了工作流的入口和出口。]]>
+      4、这个两个 action 均是过道式的 action，只是提供了工作流的入口和出口。<br />
+      5、如果 scope 拦截器被应用于某个包的所有 action 上，那么包中的 action 的所有属性都必须具有获取和设置方法。否则须将该 action 移到工作流包外面。]]>
     </c:sourceContent>
     <c:sourceContent expand="true" type="" style="border-top:none;"
                                   id="sourceContent1"><![CDATA[<package name="enterEvent" extends="struts-default" namespace="/event">
@@ -2087,13 +2094,85 @@ try {
         </interceptor-ref>
         <result>/jsp/event/enterEventDetail-input.jsp</result>
     </action>
+    
     <action name="completeEvent" class="com.s2app.actions.event.BaseEventAction">
         <interceptor-ref name="eventStack">
               <param name="scope.type">end</param>
           </interceptor-ref>
         <result>/jsp/event/eventReview.jsp</result>
     </action>
+    
+     <action name="flashedSelectEventType" class="com.fdar.apress.s2.actions.event.SelectLocationTypeAction">
+          <interceptor-ref name="flash">
+              <param name="operation">Retrieve</param>
+          </interceptor-ref>
+          <interceptor-ref name="eventStack" />
+        <result>/WEB-INF/jsp/event/selectLocationType-input.jsp</result>
+    </action>
 </package>]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="BaseEventAction"
+                                  id="sourceContent1"><![CDATA[package com.s2app.actions.event;
+
+import com.s2app.domain.Event;
+import com.opensymphony.xwork2.ActionSupport;
+import com.opensymphony.xwork2.ModelDriven;
+
+public class BaseEventAction extends ActionSupport implements ModelDriven<Event> {
+
+    protected Event event = null;
+
+    public Event getModel() {
+        return event;
+    }
+
+    public void setModel(Event model) {
+        this.event = model;
+    }
+
+}]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="/jsp/event/enterEventDetail-input.jsp"
+                                  id="sourceContent1"><![CDATA[<%@ page contentType="text/html; charset=UTF-8" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+    <title><s:text name="createEvent.enterEvent.title" /></title>
+</head>
+<body>
+
+<s:form action="enterEventDetails" namespace="/event" method="post" >
+
+    <s:textfield key="event.name" name="name" />
+    <s:textfield key="event.startDate" name="partialStartDate" />
+    <s:textfield key="event.startTime" name="patialStartTime" />
+    <s:textfield key="event.timeZoneOffset" name="timeZoneOffset" />
+    <s:textfield key="event.votingStartTime" name="partialVotingStartTime" />
+    <s:textfield key="event.duration" name="duration" />
+
+    <s:submit key="button.create" />
+
+</s:form>
+
+</body>
+</html>]]></c:sourceContent>
+    <c:sourceContent expand="true" type="" title="/jsp/event/eventReview.jsp"
+                                  id="sourceContent1"><![CDATA[<%@ page contentType="text/html; charset=UTF-8" %>
+<%@ taglib uri="/struts-tags" prefix="s" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+    <title><s:text name="createEvent.eventReview.title" /></title>
+</head>
+<body>
+
+YOU ARE DONE!
+
+</body>
+</html>]]></c:sourceContent>
     <c:sourceContent expand="true" type="html" title="工作流元素" 
                                   id="sourceContent1">
       <![CDATA[<div style="float:left;width:65%;"><img src="//c2.staticflickr.com/4/3756/13839075014_6d7c6731f0_b.jpg" alt="" /></div>
@@ -2105,6 +2184,429 @@ try {
         5、如果工作流中的每一步都使用同一个 action，那么将使用前文已经讨论过的默认名称机制 (由保存的属性名称和 action 名称合并而成)。
       </div><div class="clear"></div>]]>
     </c:sourceContent>
+    <c:sourceContent expand="false" type="" title="com.s2app.actions.event.EnterEventDetailsAction.java"
+                                  id="sourceContent1"><![CDATA[package com.s2app.actions.event;
+
+import com.opensymphony.xwork2.Preparable;
+import com.opensymphony.xwork2.validator.annotations.RequiredFieldValidator;
+import com.opensymphony.xwork2.validator.annotations.CustomValidator;
+import com.opensymphony.xwork2.validator.annotations.Validation;
+import com.opensymphony.xwork2.validator.annotations.VisitorFieldValidator;
+import com.fdar.apress.s2.domain.Event;
+import com.fdar.apress.s2.domain.Progress;
+import com.fdar.apress.s2.util.TimeUtil;
+
+import java.util.Calendar;
+import java.util.Date;
+import java.text.DateFormat;
+
+import org.apache.struts2.config.ParentPackage;
+import org.apache.struts2.config.Result;
+import org.apache.struts2.dispatcher.ServletActionRedirectResult;
+
+
+@ParentPackage("enterEvent")
+@Result(type= ServletActionRedirectResult.class,value="selectLocation",params={"method","input"})
+@Validation
+public class EnterEventDetailsAction extends BaseEventAction implements Preparable {
+
+    private Date partialStartDate;
+    private String patialStartTime;
+    private String partialVotingStartTime;
+
+    public void prepare() throws Exception {
+        event = new Event();
+        event.setStatus(Progress.NOT_STARTED);
+        event.setLastUpdateTime( Calendar.getInstance().getTime() );
+    }
+
+    public Date getPartialStartDate() {
+        return partialStartDate;
+    }
+
+    @RequiredFieldValidator(message="Validation Error", key="validate.notEmpty")
+    public void setPartialStartDate(Date partialStartDate) {
+        this.partialStartDate = partialStartDate;
+    }
+
+    public String getPatialStartTime() {
+        return patialStartTime;
+    }
+
+    @CustomValidator(type ="timeValidator", key="validate.timeOfDay")
+    public void setPatialStartTime(String patialStartTime) {
+        this.patialStartTime = patialStartTime;
+    }
+
+    public String getPartialVotingStartTime() {
+        return partialVotingStartTime;
+    }
+
+    @CustomValidator(type ="timeValidator", key="validate.timeOfDay")
+    public void setPartialVotingStartTime(String partialVotingStartTime) {
+        this.partialVotingStartTime = partialVotingStartTime;
+    }
+
+    @VisitorFieldValidator(message="Default message", fieldName="model", shortCircuit=false, appendPrefix=false)
+    public String execute() throws Exception {
+
+        Calendar cal = Calendar.getInstance();
+
+        cal.setTime(partialStartDate);
+        TimeUtil timeUtil = new TimeUtil(patialStartTime);
+        event.setStartTime( timeUtil.resolveDate( partialStartDate, event.getTimeZoneOffset() ) );
+
+        cal = Calendar.getInstance();
+        cal.setTime(partialStartDate);
+        timeUtil = new TimeUtil(partialVotingStartTime);
+        event.setVotingStartTime( timeUtil.resolveDate( partialStartDate, event.getTimeZoneOffset() ) );
+
+        return SUCCESS;
+    }
+}]]></c:sourceContent>
+    <c:sourceContent expand="false" type="" title="com.s2app.actions.event.SelectLocationAction.java"
+                                  id="sourceContent1"><![CDATA[package com.s2app.actions.event;
+
+import org.apache.struts2.dispatcher.ServletActionRedirectResult;
+import org.apache.struts2.config.ParentPackage;
+import org.apache.struts2.config.Result;
+import com.fdar.apress.s2.services.LocationService;
+import com.fdar.apress.s2.domain.Location;
+import com.opensymphony.xwork2.Preparable;
+import com.opensymphony.xwork2.validator.annotations.RequiredFieldValidator;
+import com.opensymphony.xwork2.validator.annotations.Validation;
+
+import java.util.List;
+
+
+@ParentPackage("enterEvent")
+@Result(type= ServletActionRedirectResult.class,value="selectContestants")
+@Validation
+public class SelectLocationAction extends BaseEventAction implements Preparable {
+
+    private List<Location> locations;
+    private Long selectedLocation = null;
+
+    private LocationService service;
+
+
+    public void setLocationService(LocationService service) {
+        this.service = service;
+    }
+
+    public void prepare() throws Exception {
+        locations = service.findAll();
+    }
+
+
+    public List<Location> getLocations() {
+        return locations;
+    }
+
+    public Long getSelectedLocation() {
+        return selectedLocation;
+    }
+
+    @RequiredFieldValidator(message = "Default message", key = "validation.selectLocation")
+    public void setSelectedLocation(Long selectedLocation) {
+        this.selectedLocation = selectedLocation;
+    }
+
+    public String input() {
+        return INPUT;
+    }
+
+    public String execute() throws Exception {
+        event.setLocation(service.findById(selectedLocation));
+        return SUCCESS;
+    }
+}]]></c:sourceContent>
+    <c:sourceContent expand="false" type="" title="com.s2app.actions.event.SelectLocationTypeAction.java"
+                                  id="sourceContent1"><![CDATA[package com.s2app.actions.event;
+
+import com.opensymphony.xwork2.Preparable;
+import com.fdar.apress.s2.domain.Broadcast;
+import com.fdar.apress.s2.domain.Location;
+import com.fdar.apress.s2.domain.Address;
+import org.apache.struts2.config.Result;
+import org.apache.struts2.config.ParentPackage;
+import org.apache.struts2.dispatcher.ServletActionRedirectResult;
+
+import java.util.List;
+import java.util.ArrayList;
+
+
+@ParentPackage("enterEvent")
+@Result(type= ServletActionRedirectResult.class,value="enterLocationDetails")
+public class SelectLocationTypeAction extends BaseEventAction implements Preparable {
+
+    private Integer typeId;
+    private List<Location> types;
+
+    public Integer getTypeId() {
+        return typeId;
+    }
+
+    public void setTypeId(Integer typeId) {
+        this.typeId = typeId;
+    }
+
+    public List<Location> getTypes() {
+        return types;
+    }
+
+    public void prepare() throws Exception {
+        types = new ArrayList<Location>();
+        types.add(new Address());
+        types.add(new Broadcast());
+    }
+
+    public String input() throws Exception {
+        return INPUT;
+    }
+
+}]]></c:sourceContent>
+    <c:sourceContent expand="false" type="" title="com.s2app.actions.event.EnterLocationDetailsAction.java"
+                id="sourceContent1"><![CDATA[package com.s2app.actions.event;
+
+import org.apache.struts2.config.Results;
+import org.apache.struts2.config.ParentPackage;
+import org.apache.struts2.config.Result;
+import org.apache.struts2.dispatcher.ServletActionRedirectResult;
+
+import java.util.List;
+import java.util.ArrayList;
+
+import com.opensymphony.webwork.dispatcher.FlashResult;
+import com.opensymphony.xwork2.Preparable;
+import com.opensymphony.xwork2.validator.validators.VisitorFieldValidator;
+import com.opensymphony.xwork2.validator.DelegatingValidatorContext;
+import com.fdar.apress.s2.services.LocationService;
+import com.fdar.apress.s2.domain.Broadcast;
+import com.fdar.apress.s2.domain.Address;
+import com.fdar.apress.s2.domain.Location;
+
+@ParentPackage("enterEvent")
+@Results( value={
+    @Result(type= ServletActionRedirectResult.class,value="selectLocation",params={"method","input"}),
+    @Result(type= FlashResult.class,name="selectType",value="/event/flashedSelectEventType.action")
+})
+public class EnterLocationDetailsAction extends BaseEventAction implements Preparable {
+
+    private String setup;
+    private String typeClass;
+    private Object location;
+
+    private LocationService service;
+
+    public void prepare() throws Exception {
+        if( typeClass!=null ) {
+            Class clazz = Class.forName(typeClass);
+            location = clazz.newInstance();
+        }
+    }
+
+    public void setLocationService(LocationService service) {
+        this.service = service;
+    }
+
+    public void setSetup(String setup) {
+        this.setup = setup;
+    }
+
+    public String getTypeClass() {
+        return typeClass;
+    }
+
+    public void setTypeClass(String typeClass) {
+        this.typeClass = typeClass;
+    }
+
+    public Broadcast getBroadcast() {
+        return (Broadcast)location;
+    }
+
+    public void setBroadcast( Broadcast location ) {
+        this.location = location;
+    }
+
+    public Address getAddress() {
+        return (Address)location;
+    }
+
+    public void setAddress( Address location ) {
+        this.location = location;
+    }
+
+    public String execute() throws Exception {
+
+        if( typeClass==null ) {
+            addFieldError("typeClass",getText("validate.selectType",new String[]{}));
+            return "selectType";
+
+        } else {
+
+            String objType = typeClass.substring(typeClass.lastIndexOf(".")+1).toLowerCase();
+
+            if( setup!=null ) {
+                return objType;
+                
+            } else {
+
+                VisitorFieldValidator validator = new VisitorFieldValidator();
+                validator.setAppendPrefix(true);
+                validator.setValidatorContext(new DelegatingValidatorContext(this));
+                validator.setFieldName(objType);
+                validator.validate(this);
+
+                if( hasFieldErrors() ) {
+                    return objType;
+                }
+            }
+
+            service.create((Location)location);
+            return SUCCESS;
+        }
+    }
+}]]></c:sourceContent>
+    <c:sourceContent expand="false" type="" title="com.s2app.actions.event.SelectContestantsAction.java"
+                id="sourceContent1"><![CDATA[package com.s2app.actions.event;
+
+import org.apache.struts2.config.ParentPackage;
+
+import java.util.List;
+import java.util.ArrayList;
+
+@ParentPackage("enterEvent")
+public class SelectContestantsAction extends BaseEventAction {
+
+    public String execute() throws Exception {
+        return INPUT;
+    }
+}]]></c:sourceContent>
+    <c:sourceContent expand="false" type="" title="com.s2app.actions.event.RemoveContestantsAction.java"
+                id="sourceContent1"><![CDATA[package com.s2app.actions.event;
+
+import com.fdar.apress.s2.domain.Contestant;
+import com.opensymphony.xwork2.validator.annotations.Validation;
+import com.opensymphony.xwork2.validator.annotations.ExpressionValidator;
+import com.opensymphony.xwork2.validator.annotations.Validations;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.struts2.dispatcher.ServletActionRedirectResult;
+import org.apache.struts2.config.Result;
+import org.apache.struts2.config.ParentPackage;
+import org.apache.struts2.config.Results;
+
+
+@ParentPackage("enterEvent")
+@Results( value={
+    @Result(type= ServletActionRedirectResult.class,value="selectContestants"),
+    @Result(name="input",value="/WEB-INF/jsp/event/selectContestants-input.jsp")
+})
+@Validation
+public class RemoveContestantsAction extends BaseEventAction {
+
+    private List<String> selectedContestants;
+
+    public List<String> getSelectedContestants() {
+        return selectedContestants;
+    }
+
+    public void setSelectedContestants(List<String> selectedContestants) {
+        this.selectedContestants = selectedContestants;
+    }
+
+    @Validations( expressions = {
+        @ExpressionValidator(message="Default message", key="validate.mustSelectOne",
+            expression="selectedContestants!=null && selectedContestants.size>0" )
+    })
+    public String execute() throws Exception {
+        List<Contestant> result = new ArrayList<Contestant>();
+        for( Contestant c: event.getOptions() ) {
+            if( !selectedContestants.contains(c.getName()) ) {
+                result.add(c);
+            }
+        }
+        event.setOptions(result);
+        return SUCCESS;
+    }
+}]]>
+    </c:sourceContent>
+    <c:sourceContent expand="false" type="" title="com.s2app.actions.event.EnterContestantDetailsAction.java"
+                id="sourceContent1"><![CDATA[package com.s2app.actions.event;
+
+import com.fdar.apress.s2.domain.Contestant;
+import com.opensymphony.xwork2.validator.annotations.VisitorFieldValidator;
+import com.opensymphony.xwork2.validator.annotations.Validation;
+import org.apache.struts2.dispatcher.ServletActionRedirectResult;
+import org.apache.struts2.config.Result;
+import org.apache.struts2.config.ParentPackage;
+
+
+@ParentPackage("enterEvent")
+@Result(type= ServletActionRedirectResult.class,value="selectContestants")
+@Validation
+public class EnterContestantDetailsAction extends BaseEventAction {
+
+    private Contestant contestant = new Contestant();
+
+    @VisitorFieldValidator(message="", fieldName="contestant", appendPrefix=true)
+    public Contestant getContestant() {
+        return contestant;
+    }
+
+    public void setContestant(Contestant contestant) {
+        this.contestant = contestant;
+    }
+
+    public String input() {
+        return INPUT;
+    }
+
+    public String execute() throws Exception {
+        event.addOption(contestant);
+        return SUCCESS;
+    }
+}]]></c:sourceContent>
+    <c:sourceContent expand="false" type="" title="com.s2app.actions.event.SaveEventAction.java"
+                id="sourceContent1"><![CDATA[package com.s2app.actions.event;
+
+import com.opensymphony.xwork2.validator.annotations.Validation;
+import com.opensymphony.xwork2.validator.annotations.ExpressionValidator;
+import com.opensymphony.xwork2.validator.annotations.Validations;
+import com.fdar.apress.s2.services.EventService;
+import org.apache.struts2.config.ParentPackage;
+import org.apache.struts2.config.Result;
+import org.apache.struts2.config.Results;
+import org.apache.struts2.dispatcher.ServletActionRedirectResult;
+
+
+@ParentPackage("enterEvent")
+@Results( value={
+    @Result(name="input",value="/WEB-INF/jsp/event/selectContestants-input.jsp"),
+    @Result(type= ServletActionRedirectResult.class,value="completeEvent")
+})
+@Validation
+public class SaveEventAction extends BaseEventAction {
+
+    private EventService service;
+
+    public void setEventService(EventService service) {
+        this.service = service;
+    }
+
+    @Validations( expressions={
+        @ExpressionValidator(message="Default message", key="validate.moreThanTwoOptions",
+            expression="options!=null && options.size>1" )
+    })
+    public String execute() throws Exception {
+        service.create(event);
+        return SUCCESS;
+    }
+}]]></c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
@@ -2881,6 +3383,13 @@ public @interface AcegiPrincipal {
 	<groupId>rome</groupId>
 	<artifactId>georss-rome</artifactId>
 	<version>0.9.8</version>
+</dependency>
+
+
+<dependency>
+  <groupId>com.totsp.feedpod</groupId>
+  <artifactId>purl-org-content</artifactId>
+  <version>0.3</version>
 </dependency>]]></c:sourceContent>
     <c:sourceContent expand="true" type="html" title="配置 GeoRSS 模块, 用于描述地理信息"
                               id="sourceContent1">
@@ -2904,7 +3413,8 @@ public @interface AcegiPrincipal {
     </result>
 </action>]]></c:sourceContent>
     <c:sourceContent expand="true" type="" title="com.s2app.myresults.EventRssResult"
-                                  id="sourceContent1"><![CDATA[package com.s2app.myresults;
+                                  id="sourceContent1">
+  <![CDATA[package com.s2app.myresults;
 
 import com.opensymphony.xwork2.ActionInvocation;
 import com.opensymphony.xwork2.TextProvider;
@@ -2917,6 +3427,12 @@ import com.sun.syndication.feed.module.georss.geometries.Position;
 import com.sun.syndication.io.FeedException;
 import com.sun.syndication.io.SyndFeedOutput;
 import com.fdar.apress.s2.domain.Event;
+
+import com.totsp.xml.syndication.content.ContentItem;
+import com.totsp.xml.syndication.content.ContentModule;
+import com.totsp.xml.syndication.content.ContentModuleImpl;
+import com.totsp.xml.syndication.content.io.ContentModuleParser;
+import com.totsp.xml.syndication.content.io.ContentModuleGenerator;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -3003,13 +3519,20 @@ public class EventRssResult implements Result {
         entry.setLink(link.substring(0,link.lastIndexOf("/")+1)+"api/event/"+event.getId());
         entry.setPublishedDate(event.getStartTime());
 
-        SyndContent description = new SyndContentImpl();
+       /* SyndContent description = new SyndContentImpl();
         description.setType("text/html");
         description.setValue(createDescription(event,textProvider));
-        entry.setDescription(description);
+        entry.setDescription(description);*/
 
         entry.getModules().add(geoCodeLocation(event));
 
+
+        List<String> contents = new ArrayList<String>();
+        contents.add("<h1>jjjjjddd</h2>");
+        ContentModule module = new ContentModuleImpl();
+        module.setEncodeds(contents);
+        entry.getModules().add(module);
+      
         return entry;
     }
 
