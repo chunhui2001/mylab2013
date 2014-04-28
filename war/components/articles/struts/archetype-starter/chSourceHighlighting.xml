@@ -2135,12 +2135,12 @@ try {
         <result>/jsp/event/enterEventDetails-input.jsp</result>
     </action>    
     
-    <action name="enterEventDetails" method="input" class="com.s2app.actions.event.EnterEventDetailsAction">
+    <action name="enterEventDetails" class="com.s2app.actions.event.EnterEventDetailsAction">
         <result name="success" type="redirectAction">selectLocation</result>
         <result name="input">/jsp/event/enterEventDetails-input.jsp</result>
     </action>    
     
-    <action name="selectLocation" class="com.s2app.actions.event.SelectLocationAction">
+    <action name="selectLocation" method="input" class="com.s2app.actions.event.SelectLocationAction">
         <result name="success" type="redirectAction">selectContestants</result>
         <result name="input">/jsp/event/selectLocation-input.jsp</result>
     </action>   
@@ -2955,6 +2955,587 @@ public class LocationServiceImpl implements LocationService {
     public Location findById(Long id) {
         EntityManager entityMgr = emf.createEntityManager();
         return entityMgr.find(Location.class,id);
+    }
+}]]></c:sourceContent>
+    <c:sourceContent expand="false" type="" title="com.s2app.util.TimeUtil.java"
+                id="sourceContent1"><![CDATA[package com.s2app.util;
+
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
+public class TimeUtil {
+
+    private boolean valid = false;
+
+    private int hour = 0;
+    private int minute = 0;
+    private int amOrPm = 0;
+
+    private static final int INVALID = -1;
+
+    /**
+     * Constructor.  Creates a valid TimeUtil object.
+     *
+     * @param time the time as a string.
+     */
+    public TimeUtil( String time ) {
+        parseTime(time);
+    }
+
+    /**
+     * Non-argument constructor to help unit testing.
+     */
+    protected TimeUtil() {
+    }
+
+    protected void parseTime( String time, Locale locale ) {
+        if (time != null) {
+            final String lowerCaseTime = time.toLowerCase();
+            int ampmIndex = lowerCaseTime.indexOf("am");
+            if (ampmIndex == INVALID) {
+                ampmIndex = lowerCaseTime.indexOf("pm");
+            }
+            int timeEnd = lowerCaseTime.indexOf(' ');
+            if (timeEnd == INVALID) {
+                timeEnd = ampmIndex!=INVALID ? ampmIndex : time.length();
+            }
+            StringBuffer timeBuffer = new StringBuffer(time.substring(0, timeEnd));
+            if ( lowerCaseTime.indexOf(':')==INVALID ) {
+                timeBuffer.append(":00");
+            }
+            if ( ampmIndex != INVALID) {
+                timeBuffer.append(' ');
+                timeBuffer.append(time.substring(ampmIndex));
+            }
+            try {
+                DateFormat df = DateFormat.getTimeInstance(DateFormat.SHORT, locale);
+                df.setLenient(false);
+                Date parsed = df.parse(timeBuffer.toString());
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(parsed);
+                this.amOrPm = cal.get(Calendar.AM_PM);
+                this.hour = cal.get(Calendar.HOUR_OF_DAY);
+                this.minute = cal.get(Calendar.MINUTE);
+                this.valid = true;
+            } catch ( ParseException e ) {
+                this.valid = false;
+            }
+        }
+    }
+
+    protected void parseTime( String time ) {
+        parseTime( time, Locale.getDefault());
+    }
+
+    /**
+     * Validates that the time is valid.
+     * <ul>
+     *  <li>required: A digit 0..12 / 0..24 depending on Locale</li>
+     *  <li>optional: a colon and digit 00..59</li>
+     *  <li>optional: space</li>
+     *  <li>depending on Locale: case insensitive, either "am" or "pm" for 12 hour formats, empty for 24 hour formats</li>
+     * </ul>
+     *
+     * Example:
+     * <ul>
+     *  <li>12:30 am</li>
+     *  <li>12:30pm</li>
+     *  <li>9</li>
+     *  <li>21:00</li>
+     * </ul>
+     *
+     * @return true if valid, otherwise false.
+     */
+    public boolean isValid() {
+        return valid;
+    }
+
+    /**
+     * Returns the hour of day in 24 hour scale.
+     *
+     * @return the hour
+     */
+    public int getHour() {
+        return hour;
+    }
+
+    /**
+     * Returns the hour in 12 hour scale.
+     *
+     * @return the hour
+     */
+    public int getHourAmPm() {
+        return hour % 12;
+    }
+
+    /**
+     * Returns the minute.
+     *
+     * @return the minute
+     */
+    public int getMinute() {
+        return minute;
+    }
+
+    /**
+     * Returns whether this is an Calendar.AM or Calendar.PM time.
+     *
+     * @return either Calendar.AM or Calendar.PM
+     */
+    public int getAmOrPm() {
+        return amOrPm;
+    }
+
+    protected Date resolveDate( Date baseDate, int offset, int hour, int minute ) throws ParseException {
+        if (baseDate != null) {
+            Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT+0"));
+            cal.setTime(baseDate);
+            StringBuffer sb = new StringBuffer("GMT");
+            if ( offset>=0 ) {
+                sb.append("+");
+            }
+            sb.append(offset);
+            cal.setTimeZone(TimeZone.getTimeZone(sb.toString()));
+            cal.set(Calendar.HOUR_OF_DAY, hour);
+            cal.set(Calendar.MINUTE, minute);
+            return cal.getTime();
+        } else {
+            return null;
+        }
+    }
+
+    public Date resolveDate( Date baseDate, int offset ) throws ParseException {
+        return resolveDate( baseDate, offset, this.hour, this.minute);
+    }
+
+}]]></c:sourceContent>
+    <c:sourceContent expand="false" type="" title="com.s2app.util.TimeValidator.java"
+                id="sourceContent1"><![CDATA[package com.s2app.util;
+
+import com.opensymphony.xwork2.validator.validators.FieldValidatorSupport;
+import com.opensymphony.xwork2.validator.ValidationException;
+
+import java.util.Calendar;
+
+/**
+ * Validates a time to be of the following format -
+ * <ul>
+ *  <li>required: A digit 0..12</li>
+ *  <li>optional: a colon and digit 00..59</li>
+ *  <li>optional: space</li>
+ *  <li>required: case insensitive, either "am" or "pm"</li>
+ * </ul>
+ *
+ * Example:
+ * <ul>
+ *  <li>12 am</li>
+ *  <li>12:30am</li>
+ * </ul>
+ */
+public class TimeValidator extends FieldValidatorSupport {
+
+    /**
+     * @see Validator#validate(java.lang.Object)
+     */
+    public void validate( Object obj ) throws ValidationException {
+
+        String fieldName = getFieldName();
+        Object value = this.getFieldValue(fieldName, obj);
+
+        if( value == null || !(value instanceof String) || !( new TimeUtil( (String)value ).isValid() ) ) {
+            addFieldError( fieldName, obj );
+        }
+
+    }
+
+
+ 
+}]]></c:sourceContent>
+
+    <c:sourceContent expand="false" type="" title="/resources/validators.xml"
+                id="sourceContent1"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE validators PUBLIC
+        "-//OpenSymphony Group//XWork Validator Config 1.0//EN"
+        "http://www.opensymphony.com/xwork/xwork-validator-config-1.0.dtd">
+<!-- START SNIPPET: validators-default -->
+<validators>
+    <validator name="required" class="com.opensymphony.xwork2.validator.validators.RequiredFieldValidator"/>
+    <validator name="requiredstring" class="com.opensymphony.xwork2.validator.validators.RequiredStringValidator"/>
+    <validator name="int" class="com.opensymphony.xwork2.validator.validators.IntRangeFieldValidator"/>
+    <validator name="double" class="com.opensymphony.xwork2.validator.validators.DoubleRangeFieldValidator"/>
+    <validator name="date" class="com.opensymphony.xwork2.validator.validators.DateRangeFieldValidator"/>
+    <validator name="expression" class="com.opensymphony.xwork2.validator.validators.ExpressionValidator"/>
+    <validator name="fieldexpression" class="com.opensymphony.xwork2.validator.validators.FieldExpressionValidator"/>
+    <validator name="email" class="com.opensymphony.xwork2.validator.validators.EmailValidator"/>
+    <validator name="url" class="com.opensymphony.xwork2.validator.validators.URLValidator"/>
+    <validator name="visitor" class="com.opensymphony.xwork2.validator.validators.VisitorFieldValidator"/>
+    <validator name="conversion" class="com.opensymphony.xwork2.validator.validators.ConversionErrorFieldValidator"/>
+    <validator name="stringlength" class="com.opensymphony.xwork2.validator.validators.StringLengthFieldValidator"/>
+    <validator name="regex" class="com.opensymphony.xwork2.validator.validators.RegexFieldValidator"/>
+    <validator name="timeValidator" class="com.s2app.util.TimeValidator"/>
+</validators>
+<!--  END SNIPPET: validators-default -->]]></c:sourceContent>
+
+    <c:sourceContent expand="false" type="" title="com.s2app.domain.Event.java"
+                id="sourceContent1"><![CDATA[package com.s2spp.domain;
+
+import javax.persistence.*;
+import java.util.*;
+import java.io.Serializable;
+
+import com.opensymphony.xwork2.validator.annotations.RequiredStringValidator;
+import com.opensymphony.xwork2.validator.annotations.RequiredFieldValidator;
+import com.opensymphony.xwork2.validator.annotations.IntRangeFieldValidator;
+
+@Entity @Table( name="EVENT", schema="S2APP" )
+public class Event  implements Serializable {
+
+    private long id;
+    private String name;
+    private Date startTime;
+    private int timeZoneOffset = 0;
+    private Date votingStartTime;
+    private int duration;
+    private Date lastUpdateTime;
+    private Set<Voter> voters = new HashSet<Voter>();
+    private Location location;
+    private List<Contestant> options = new ArrayList<Contestant>();
+    private Progress status;
+
+    @Id @GeneratedValue(strategy=GenerationType.AUTO) @Column(name="ID")
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    @Column(name="NAME")
+    public String getName() {
+        return name;
+    }
+
+    @RequiredStringValidator(message="Validation Error", key="validate.notEmpty",trim=true)
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Column(name="START_TIME") @Temporal(TemporalType.TIMESTAMP)
+    public Date getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(Date startTime) {
+        this.startTime = startTime;
+    }
+
+    @Column(name="DURATION")
+    public int getDuration() {
+        return duration;
+    }
+
+    @RequiredFieldValidator(message="Validation Error", key="validate.notEmpty")
+    @IntRangeFieldValidator(message = "Default message", key = "validate.between1and24", min = "1", max = "24")
+    public void setDuration(int duration) {
+        this.duration = duration;
+    }
+
+    @Column(name="TZ_OFFSET")
+    public int getTimeZoneOffset() {
+        return timeZoneOffset;
+    }
+
+    public void setTimeZoneOffset(int timeZoneOffset) {
+        this.timeZoneOffset = timeZoneOffset;
+    }
+
+    @Column(name="VOTING_STARTS") @Temporal(TemporalType.TIMESTAMP)
+    public Date getVotingStartTime() {
+        return votingStartTime;
+    }
+
+    public void setVotingStartTime(Date votingStartTime) {
+        this.votingStartTime = votingStartTime;
+    }
+
+    @Column(name="LAST_UPDATE") @Temporal(TemporalType.TIMESTAMP)
+    public Date getLastUpdateTime() {
+        return lastUpdateTime;
+    }
+
+    public void setLastUpdateTime(Date lastUpdateTime) {
+        this.lastUpdateTime = lastUpdateTime;
+    }
+
+    @OneToMany(mappedBy="event",cascade=CascadeType.ALL)
+    public Set<Voter> getVoters() {
+        return voters;
+    }
+
+    public void setVoters(Set<Voter> voters) {
+        this.voters = voters;
+    }
+
+    public void addVoter( Voter v ) {
+        v.setEvent(this);
+        voters.add(v);
+    }
+
+    @ManyToOne(cascade=CascadeType.ALL) @JoinColumn(name="LOCATION_FK")
+    public Location getLocation() {
+        return location;
+    }
+
+    public void setLocation(Location location) {
+        this.location = location;
+    }
+
+    @OneToMany(mappedBy="event",cascade=CascadeType.ALL)
+    public List<Contestant> getOptions() {
+        return options;
+    }
+
+    public void setOptions(List<Contestant> options) {
+        this.options = options;
+    }
+
+    public void addOption( Contestant c ) {
+        c.setEvent(this);
+        options.add(c);
+    }
+
+    @Column(name="STATE") @Enumerated(EnumType.STRING)
+    public Progress getStatus() {
+        return status;
+    }
+
+    public void setStatus(Progress status) {
+        this.status = status;
+    }
+}]]></c:sourceContent>
+    <c:sourceContent expand="false" type="" title="com.s2app.domain.Location.java"
+                id="sourceContent1"><![CDATA[package com.s2app.domain;
+
+import com.opensymphony.xwork2.validator.annotations.RequiredStringValidator;
+
+import javax.persistence.*;
+import java.io.Serializable;
+
+@Entity @Table( name="LOCATION", schema="S2APP" )
+@Inheritance(strategy=InheritanceType.JOINED)
+public class Location implements Serializable {
+
+    private long id;
+    private String name;
+    private String city;
+    private String state;
+
+    @Id @GeneratedValue(strategy=GenerationType.AUTO) @Column(name="ID")
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    @Column(name="NAME")
+    public String getName() {
+        return name;
+    }
+
+    @RequiredStringValidator(message="Validation Error", key="validate.notEmpty",trim=true)
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Column(name="CITY")
+    public String getCity() {
+        return city;
+    }
+
+    @RequiredStringValidator(message="Validation Error", key="validate.notEmpty",trim=true)
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    @Column(name="STATE")
+    public String getState() {
+        return state;
+    }
+
+    @RequiredStringValidator(message="Validation Error", key="validate.notEmpty",trim=true)
+    public void setState(String state) {
+        this.state = state;
+    }
+}]]></c:sourceContent>
+    <c:sourceContent expand="false" type="" title="com.s2app.domain.Address.java"
+                id="sourceContent1"><![CDATA[package com.s2app.domain;
+
+import com.opensymphony.xwork2.validator.annotations.RequiredStringValidator;
+
+import javax.persistence.*;
+
+@Entity @Table( name="ADDRESS", schema="S2APP" )
+@PrimaryKeyJoinColumn(name="LOCATION_PK")
+public class Address extends Location {
+
+    private String address;
+    private String zipcode;
+
+    @Column(name="ADDRESS")
+    public String getAddress() {
+        return address;
+    }
+
+    @RequiredStringValidator(message="Validation Error", key="validate.notEmpty",trim=true)
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    @Column(name="ZIPCODE")
+    public String getZipcode() {
+        return zipcode;
+    }
+
+    @RequiredStringValidator(message="Validation Error", key="validate.notEmpty",trim=true)
+    public void setZipcode(String zipcode) {
+        this.zipcode = zipcode;
+    }
+}]]></c:sourceContent>
+    <c:sourceContent expand="false" type="" title="com.s2app.domain.Broadcast.java"
+                id="sourceContent1"><![CDATA[package com.s2app.domain;
+
+import com.opensymphony.xwork2.validator.annotations.RequiredStringValidator;
+
+import javax.persistence.*;
+
+@Entity @Table( name="BROADCAST", schema="S2APP" )
+@PrimaryKeyJoinColumn(name="LOCATION_PK")
+public class Broadcast extends Location {
+
+    private String stationIdentifier;
+    private String network;
+
+    @Column(name="CALLSIGN")
+    public String getStationIdentifier() {
+        return stationIdentifier;
+    }
+
+    @RequiredStringValidator(message="Validation Error", key="validate.notEmpty",trim=true)
+    public void setStationIdentifier(String stationIdentifier) {
+        this.stationIdentifier = stationIdentifier;
+    }
+
+    @Column(name="NETWORK")
+    public String getNetwork() {
+        return network;
+    }
+
+    @RequiredStringValidator(message="Validation Error", key="validate.notEmpty",trim=true)
+    public void setNetwork(String network) {
+        this.network = network;
+    }
+}]]></c:sourceContent>
+    <c:sourceContent expand="false" type="" title="com.s2app.domain.Contestant.java"
+                id="sourceContent1"><![CDATA[package com.s2app.domain;
+
+import com.opensymphony.xwork2.validator.annotations.RequiredStringValidator;
+
+import javax.persistence.*;
+
+@Entity @Table( name="CONTESTANT", schema="S2APP" )
+public class Contestant {
+
+    private long id;
+    private String name;
+    private String description;
+    private Event event;
+
+    @Id @GeneratedValue(strategy=GenerationType.AUTO) @Column(name="ID")
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    @Column(name="NAME")
+    public String getName() {
+        return name;
+    }
+
+    @RequiredStringValidator(message="Validation Error", key="validate.notEmpty",trim=true)
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Column(name="DESCRIPTION")
+    public String getDescription() {
+        return description;
+    }
+
+    @RequiredStringValidator(message="Validation Error", key="validate.notEmpty",trim=true)
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    @ManyToOne @JoinColumn(name="EVENT_FK")
+    public Event getEvent() {
+        return event;
+    }
+
+    public void setEvent(Event event) {
+        this.event = event;
+    }
+
+
+    public int hashCode() {
+        return name.hashCode();
+    }
+
+    public boolean equals(Object obj) {
+        return obj instanceof Contestant && name.equals(((Contestant)obj).getName()); 
+    }
+}]]></c:sourceContent>
+    <c:sourceContent expand="false" type="" title="com.s2app.domain.Broadcast.java"
+                id="sourceContent1"><![CDATA[package com.s2app.domain;
+
+import com.opensymphony.xwork2.validator.annotations.RequiredStringValidator;
+
+import javax.persistence.*;
+
+@Entity @Table( name="BROADCAST", schema="S2APP" )
+@PrimaryKeyJoinColumn(name="LOCATION_PK")
+public class Broadcast extends Location {
+
+    private String stationIdentifier;
+    private String network;
+
+    @Column(name="CALLSIGN")
+    public String getStationIdentifier() {
+        return stationIdentifier;
+    }
+
+    @RequiredStringValidator(message="Validation Error", key="validate.notEmpty",trim=true)
+    public void setStationIdentifier(String stationIdentifier) {
+        this.stationIdentifier = stationIdentifier;
+    }
+
+    @Column(name="NETWORK")
+    public String getNetwork() {
+        return network;
+    }
+
+    @RequiredStringValidator(message="Validation Error", key="validate.notEmpty",trim=true)
+    public void setNetwork(String network) {
+        this.network = network;
     }
 }]]></c:sourceContent>
     <c:comment>

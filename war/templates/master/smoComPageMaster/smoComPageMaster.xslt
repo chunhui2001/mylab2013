@@ -127,7 +127,7 @@
                     </xsl:attribute>
                   </xsl:if>
 									<xsl:for-each select="c:cell">
-										<div class="ce {@class}" style="{@style};margin:{@margin};float:{@float};">
+										<div class="ce {@class}" style="{@style};float:{@float};">
 											<xsl:for-each select="c:include">
 												<xsl:apply-templates select="c:component" />
 											</xsl:for-each>
@@ -136,8 +136,8 @@
 												<xsl:apply-templates select="c:page" />
 											</xsl:for-each>
 										</div>
-										<div class="clear"></div>
-									</xsl:for-each>	
+                  </xsl:for-each>
+                  <div class="clear"></div>
 								</div>
 							</xsl:for-each>
 					</div>
