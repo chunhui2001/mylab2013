@@ -2099,8 +2099,13 @@ try {
     </c:desc>
     <c:sourceContent expand="true" type="" title="eventStack"
                               id="sourceContent1"><![CDATA[<package name="enterEvent" extends="struts-default" namespace="/event">
+    <result-types>
+      <result-type name="flashResult" 
+                   class="com.opensymphony.webwork.dispatcher.FlashResult" />
+    </result-types>
     <interceptors>    
-        <interceptor name="flash" class="com.opensymphony.webwork.interceptor.FlashInterceptor" />
+        <interceptor name="flash" 
+                     class="com.opensymphony.webwork.interceptor.FlashInterceptor" />
         
         <interceptor-stack name="eventStack">
             <interceptor-ref name="scope">
@@ -2135,53 +2140,66 @@ try {
         <result>/jsp/event/enterEventDetails-input.jsp</result>
     </action>    
     
-    <action name="enterEventDetails" class="com.s2app.actions.event.EnterEventDetailsAction">
-        <result name="success" type="redirectAction">selectLocation</result>
+    <action name="enterEventDetails" 
+            class="com.s2app.actions.event.EnterEventDetailsAction">
+        <result name="success" type="redirectAction">
+          <param name="actionName">selectLocation</param>
+          <param name="method">input</param>
+        </result>
         <result name="input">/jsp/event/enterEventDetails-input.jsp</result>
     </action>    
     
-    <action name="selectLocation" method="input" class="com.s2app.actions.event.SelectLocationAction">
+    <action name="selectLocation" method="input" 
+            class="com.s2app.actions.event.SelectLocationAction">
         <result name="success" type="redirectAction">selectContestants</result>
         <result name="input">/jsp/event/selectLocation-input.jsp</result>
     </action>   
     
-    <action name="selectLocationType" class="com.s2app.actions.event.SelectLocationTypeAction">
+    <action name="selectLocationType" 
+            class="com.s2app.actions.event.SelectLocationTypeAction">
         <result name="success" type="redirectAction">enterLocationDetails</result>
         <result name="input">/jsp/event/selectLocationType-input.jsp</result>
     </action>  
     
-    <action name="enterLocationDetails" method="input" class="com.s2app.actions.event.EnterLocationDetailsAction">
+    <action name="enterLocationDetails" method="input" 
+            class="com.s2app.actions.event.EnterLocationDetailsAction">
         <result name="success" type="redirectAction">selectLocation</result>
         <result name="selectType" type="flashResult">/event/flashedSelectEventType.action</result>
     </action> 
     
-    <action name="selectContestants" method="input" class="com.s2app.actions.event.SelectContestantsAction">
-        <result name="input" type="redirectAction">selectContestants-input.jsp</result>
+    <action name="selectContestants" method="input" 
+            class="com.s2app.actions.event.SelectContestantsAction">
+        <result name="input">/jsp/event/selectContestants-input.jsp</result>
     </action>
     
-    <action name="removeContestants" method="input" class="com.s2app.actions.event.RemoveContestantsAction">
+    <action name="removeContestants" method="input" 
+            class="com.s2app.actions.event.RemoveContestantsAction">
         <result name="success" type="redirectAction">selectContestants</result>
         <result name="input">/jsp/event/selectContestants-input.jsp</result>
     </action>
     
-    <action name="enterContestantDetails" method="input" class="com.s2app.actions.event.EnterContestantDetailsAction">
+    <action name="enterContestantDetails" method="input" 
+            class="com.s2app.actions.event.EnterContestantDetailsAction">
         <result name="success" type="redirectAction">selectContestants</result>
         <result name="input">/jsp/event/enterContestantDetails-input.jsp</result>
     </action>
     
-    <action name="saveEvent" method="input" class="com.s2app.actions.event.SaveEventAction ">
+    <action name="saveEvent" method="input" 
+            class="com.s2app.actions.event.SaveEventAction ">
         <result name="success" type="redirectAction">completeEvent</result>
         <result name="input">/WEB-INF/jsp/event/selectContestants-input.jsp</result>
     </action>
     
-    <action name="completeEvent" class="com.s2app.actions.event.BaseEventAction">
+    <action name="completeEvent" 
+            class="com.s2app.actions.event.BaseEventAction">
         <interceptor-ref name="eventStack">
               <param name="scope.type">end</param>
           </interceptor-ref>
         <result>/jsp/event/eventReview.jsp</result>
     </action>
     
-     <action name="flashedSelectEventType" class="com.fdar.apress.s2.actions.event.SelectLocationTypeAction">
+     <action name="flashedSelectEventType" 
+             class="com.fdar.apress.s2.actions.event.SelectLocationTypeAction">
           <interceptor-ref name="flash">
               <param name="operation">Retrieve</param>
           </interceptor-ref>
@@ -2209,7 +2227,7 @@ public class BaseEventAction extends ActionSupport implements ModelDriven<Event>
     }
 
 }]]></c:sourceContent>
-    <c:sourceContent expand="false" type="" title="/jsp/event/enterEventDetail-input.jsp"
+    <c:sourceContent expand="false" type="" title="/jsp/event/enterEventDetails-input.jsp"
                                   id="sourceContent1"><![CDATA[<%@ page contentType="text/html; charset=UTF-8" %>
 <%@ taglib uri="/struts-tags" prefix="s" %>
 
@@ -2414,7 +2432,7 @@ YOU ARE DONE!
     
     <c:sourceContent expand="true" type="html" title="工作流元素" 
                                   id="sourceContent1">
-      <![CDATA[<div style="float:left;width:65%;"><img src="//c2.staticflickr.com/4/3756/13839075014_6d7c6731f0_b.jpg" alt="" /></div>
+      <![CDATA[<div style="float:left;width:65%;"><img src="//c2.staticflickr.com/4/3756/13839075014_6d7c6731f0_b.jpg" alt="" style="width:100%;" /></div>
       <div style="float:left;width:33%;margin-left:1%;font-weight:bold;">
         1、灰色的方块表示的 action 在 struts.xml 文件中的配置，其它 action 通过注释配置。<br />
         2、jsp 页面和结果类型 (标注于箭头线中)。<br />
@@ -3157,10 +3175,14 @@ public class TimeValidator extends FieldValidatorSupport {
 }]]></c:sourceContent>
 
     <c:sourceContent expand="false" type="" title="/resources/validators.xml"
-                id="sourceContent1"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE validators PUBLIC
+                id="sourceContent1">
+          <![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<!--!DOCTYPE validators PUBLIC
         "-//OpenSymphony Group//XWork Validator Config 1.0//EN"
-        "http://www.opensymphony.com/xwork/xwork-validator-config-1.0.dtd">
+        "http://www.opensymphony.com/xwork/xwork-validator-config-1.0.dtd"-->
+<!DOCTYPE validators PUBLIC
+        "-//Apache Struts//XWork Validator Config 1.0//EN"
+        "http://struts.apache.org/dtds/xwork-validator-config-1.0.dtd">
 <!-- START SNIPPET: validators-default -->
 <validators>
     <validator name="required" class="com.opensymphony.xwork2.validator.validators.RequiredFieldValidator"/>
@@ -3581,7 +3603,7 @@ import com.opensymphony.xwork2.ActionInvocation;
 import com.opensymphony.xwork2.ActionContext;
 import com.opensymphony.xwork2.interceptor.PreResultListener;
 import com.opensymphony.xwork2.interceptor.AbstractInterceptor;
-import com.opensymphony.xwork2.util.OgnlValueStack;
+import com.opensymphony.xwork2.ognl.OgnlValueStack;
 
 /**
  * <!-- START SNIPPET: description -->
