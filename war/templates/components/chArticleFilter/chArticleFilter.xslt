@@ -26,13 +26,13 @@
 
     
 
-    <ul class="chArticleFilter" style="margin-top:2em;">
+    <ul class="chArticleFilter" style="margin-top:2em;color:gray;">
 
       <xsl:for-each select="exsl:node-set($monthList)/monthList/month">
         <xsl:sort select="current()" data-type="number" order="descending"/>
         <xsl:variable name="articleCount" select="count($articles[contains(c:pubDate, current())])" />
         <xsl:if test="$articleCount != 0">
-          <li style="text-align:right;font-size:1.2em;padding:.2em 0;">
+          <li style="text-align:right;font-size:1.1em;padding:.2em 0;">
             <span>
               <xsl:call-template name="chArticleFilter-format-date">
                 <xsl:with-param name="date" select="current()" />
