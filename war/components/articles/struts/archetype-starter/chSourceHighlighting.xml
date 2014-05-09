@@ -706,7 +706,7 @@ public class CaptchaServiceTest extends TestCase {
       <dependency>
         <groupId>mysql</groupId>
         <artifactId>mysql-connector-java</artifactId>
-        <version>3.1.14</version>
+        <version>5.1.6</version>
       </dependency>
       
       <dependency>
@@ -2314,80 +2314,87 @@ try {
       5、如果 scope 拦截器被应用于某个包的所有 action 上，那么包中的 action 的所有属性都必须具有获取和设置方法。否则须将该 action 移到工作流包外面。]]>
     </c:sourceContent>
     <c:sourceContent expand="true" type="" style="border-top:none;"
-                                  id="sourceContent1"><![CDATA[<package name="enterEvent" extends="struts-default" namespace="/event">
+                                  id="sourceContent1">
+      <![CDATA[<package name="enterEvent" extends="struts-default" namespace="/event">
     。。。
-    <action name="addEventFlow" class="com.s2app.actions.event.BaseEventAction">
-        <interceptor-ref name="eventStack">
-            <param name="scope.type">start</param>
-        </interceptor-ref>
-        <result>/jsp/event/enterEventDetails-input.jsp</result>
-    </action>    
-    
-    <action name="enterEventDetails" 
-            class="com.s2app.actions.event.EnterEventDetailsAction">
-        <result name="success" type="redirectAction">
-          <param name="actionName">selectLocation</param>
-          <param name="method">input</param>
-        </result>
-        <result name="input">/jsp/event/enterEventDetails-input.jsp</result>
-    </action>    
-    
-    <action name="selectLocation" method="input" 
-            class="com.s2app.actions.event.SelectLocationAction">
-        <result name="success" type="redirectAction">selectContestants</result>
-        <result name="input">/jsp/event/selectLocation-input.jsp</result>
-    </action>   
-    
-    <action name="selectLocationType" 
-            class="com.s2app.actions.event.SelectLocationTypeAction">
-        <result name="success" type="redirectAction">enterLocationDetails</result>
-        <result name="input">/jsp/event/selectLocationType-input.jsp</result>
-    </action>  
-    
-    <action name="enterLocationDetails" method="input" 
-            class="com.s2app.actions.event.EnterLocationDetailsAction">
-        <result name="success" type="redirectAction">selectLocation</result>
-        <result name="selectType" type="flashResult">/event/flashedSelectEventType.action</result>
-    </action> 
-    
-    <action name="selectContestants" method="input" 
-            class="com.s2app.actions.event.SelectContestantsAction">
-        <result name="input">/jsp/event/selectContestants-input.jsp</result>
+    <action name="addEventFlow" class="com.myproject.web.actions.event.BaseEventAction">
+      <interceptor-ref name="eventStack">
+        <param name="scope.type">start</param>
+      </interceptor-ref>
+      <result>/jsp/event/enterEventDetails-input.jsp</result>
     </action>
-    
-    <action name="removeContestants" method="input" 
-            class="com.s2app.actions.event.RemoveContestantsAction">
-        <result name="success" type="redirectAction">selectContestants</result>
-        <result name="input">/jsp/event/selectContestants-input.jsp</result>
+
+    <action name="enterEventDetails"
+            class="com.myproject.web.actions.event.EnterEventDetailsAction">
+      <result name="success" type="redirectAction">
+        <param name="actionName">selectLocation</param>
+        <param name="method">input</param>
+      </result>
+      <result name="input">/jsp/event/enterEventDetails-input.jsp</result>
     </action>
-    
-    <action name="enterContestantDetails" method="input" 
-            class="com.s2app.actions.event.EnterContestantDetailsAction">
-        <result name="success" type="redirectAction">selectContestants</result>
-        <result name="input">/jsp/event/enterContestantDetails-input.jsp</result>
+
+    <action name="selectLocation"
+            class="com.myproject.web.actions.event.SelectLocationAction">
+      <result name="success" type="redirectAction">selectContestants</result>
+      <result name="input">/jsp/event/selectLocation-input.jsp</result>
     </action>
-    
-    <action name="saveEvent" method="input" 
-            class="com.s2app.actions.event.SaveEventAction ">
-        <result name="success" type="redirectAction">completeEvent</result>
-        <result name="input">/WEB-INF/jsp/event/selectContestants-input.jsp</result>
+
+    <action name="selectLocationType"
+            class="com.myproject.web.actions.event.SelectLocationTypeAction">
+      <result name="success" type="redirectAction">enterLocationDetails</result>
+      <result name="input">/jsp/event/selectLocationType-input.jsp</result>
     </action>
-    
-    <action name="completeEvent" 
-            class="com.s2app.actions.event.BaseEventAction">
-        <interceptor-ref name="eventStack">
-              <param name="scope.type">end</param>
-          </interceptor-ref>
-        <result>/jsp/event/eventReview.jsp</result>
+
+    <action name="enterLocationDetails"
+            class="com.myproject.web.actions.event.EnterLocationDetailsAction">
+      <result name="success" type="redirectAction">
+        <param name="actionName">selectLocation</param>
+        <param name="method">input</param>
+      </result>
+      <result name="selectType" type="flashResult">/event/flashedSelectEventType.action</result>
+      <result name="broadcast">/jsp/event/enterLocationDetails-broadcast.jsp</result>
+      <result name="address">/jsp/event/enterLocationDetails-address.jsp</result>
     </action>
-    
-     <action name="flashedSelectEventType" 
-             class="com.fdar.apress.s2.actions.event.SelectLocationTypeAction">
-          <interceptor-ref name="flash">
-              <param name="operation">Retrieve</param>
-          </interceptor-ref>
-          <interceptor-ref name="eventStack" />
-        <result>/WEB-INF/jsp/event/selectLocationType-input.jsp</result>
+
+    <action name="selectContestants"
+            class="com.myproject.web.actions.event.SelectContestantsAction">
+      <result name="input">/jsp/event/selectContestants-input.jsp</result>
+    </action>
+
+    <action name="removeContestants"
+            class="com.myproject.web.actions.event.RemoveContestantsAction">
+      <result name="success" type="redirectAction">selectContestants</result>
+      <result name="input">/jsp/event/selectContestants-input.jsp</result>
+    </action>
+
+    <action name="enterContestantDetails"
+            class="com.myproject.web.actions.event.EnterContestantDetailsAction">
+      <result name="success" type="redirectAction">selectContestants</result>
+      <result name="input">/jsp/event/enterContestantDetails-input.jsp</result>
+    </action>
+
+    <action name="saveEvent"
+            class="com.myproject.web.actions.event.SaveEventAction">
+      <result name="success" type="redirectAction">completeEvent</result>
+      <result name="input">/jsp/event/selectContestants-input.jsp</result>
+      <result name="error">/jsp/event/eventTest.jsp</result>
+    </action>
+
+    <action name="completeEvent"
+            class="com.myproject.web.actions.event.BaseEventAction">
+      <interceptor-ref name="eventStack">
+        <param name="scope.type">end</param>
+      </interceptor-ref>
+      <result>/jsp/event/eventReview.jsp</result>
+    </action>
+
+    <action name="flashedSelectEventType"
+            class="com.myproject.web.actions.event.SelectLocationTypeAction">
+      <interceptor-ref name="flash">
+        <param name="operation">Retrieve</param>
+      </interceptor-ref>
+      <interceptor-ref name="eventStack" />
+      <result>/jsp/event/selectLocationType-input.jsp</result>
     </action>
 </package>]]></c:sourceContent>
     <c:sourceContent expand="true" type="" title="BaseEventAction"
