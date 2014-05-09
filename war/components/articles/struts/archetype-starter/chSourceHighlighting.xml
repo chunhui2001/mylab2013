@@ -2490,6 +2490,7 @@ public class BaseEventAction extends ActionSupport implements ModelDriven<Event>
     <s:textfield key="broadcast.stationIdentifier" name="broadcast.stationIdentifier" />
 
     <s:hidden name="typeClass"/>
+    <s:hidden name="setup" value="false" />
     
     <s:submit key="button.create" />
 
@@ -2518,6 +2519,7 @@ public class BaseEventAction extends ActionSupport implements ModelDriven<Event>
     <s:textfield key="address.zipcode" name="address.zipcode" />
 
     <s:hidden name="typeClass"/>
+    <s:hidden name="setup" value="false" />
 
     <s:submit key="button.create" />
 
@@ -2842,7 +2844,7 @@ import com.fdar.apress.s2.domain.Location;
 })
 public class EnterLocationDetailsAction extends BaseEventAction implements Preparable {
 
-    private String setup;
+    private Boolean setup;
     private String typeClass;
     private Object location;
 
@@ -2859,7 +2861,7 @@ public class EnterLocationDetailsAction extends BaseEventAction implements Prepa
         this.service = service;
     }
 
-    public void setSetup(String setup) {
+    public void setSetup(Boolean setup) {
         this.setup = setup;
     }
 
@@ -2897,7 +2899,7 @@ public class EnterLocationDetailsAction extends BaseEventAction implements Prepa
 
             String objType = typeClass.substring(typeClass.lastIndexOf(".")+1).toLowerCase();
 
-            if( setup!=null ) {
+            if( setup ) {
                 return objType;
                 
             } else {
