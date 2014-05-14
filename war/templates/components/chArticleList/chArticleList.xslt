@@ -9,7 +9,7 @@
   <xsl:param name="APP_ROOT" />
   
   <xsl:template match="c:component[@type='chArticleList']">
-    <xsl:variable name="articles" select="document(concat($APP_ROOT,'/RichMedia/blog/smoArticleMaster.xml'))/*/c:article" />
+    <xsl:variable name="articles" select="document(concat($APP_ROOT,c:articleMaster))/*/c:article" />
     
     <div class="chArticleList">
       
@@ -24,7 +24,7 @@
           </xsl:if>
 
           <h4 style="font-size:1.2em;margin-bottom:.4em;">
-            <a target="_blank" href="{c:articleLink}"> 
+            <a target="{c:articleLink/@target}" href="{c:articleLink}"> 
               <xsl:value-of select="c:title"/>
             </a>
           </h4>
