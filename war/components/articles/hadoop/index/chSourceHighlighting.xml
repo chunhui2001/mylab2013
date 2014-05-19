@@ -298,10 +298,13 @@ public class WordCount {
       // 根据标点符号分词 
       StringTokenizer itr = new StringTokenizer(value.toString(), " \t\n\r\f,.:;?![]'");   
       
-      while (itr.hasMoreTokens()) {
-       // word.set(itr.nextToken());              // 把 Token 放入 Text 对象中
-        word.set(itr.nextToken().toLowerCase());  // 在 Hadoop 中, 特殊的 Text 类取代了 String。
-                                                  // 在将 String 转成 Text 之前，先将所有单词转成小写.
+      while (itr.hasMoreTokens()) {      
+        // 在 Hadoop 中, 特殊的 Text 类取代了 String。
+        // 把 Token 放入 Text 对象中
+        // 在将 String 转成 Text 之前，先将所有单词转成小写.
+        // word.set(itr.nextToken());              
+        word.set(itr.nextToken().toLowerCase());  
+                                                  
         context.write(word, one);
       }
     }
@@ -320,7 +323,8 @@ public class WordCount {
       result.set(sum);
       
       // 仅统计数量大于 4 的单词
-      if (sum > 4) context.write(key, result);           // 输出每个 Token 的统计结果
+      // 输出每个 Token 的统计结果
+      if (sum > 4) context.write(key, result);           
     }
   }
 
@@ -354,13 +358,38 @@ public class WordCount {
   <c:entry style="margin-top:2em;">
     <c:title>Hadoop 的构造模块</c:title>
     <c:desc>
-      <c:desc1> <![CDATA[]]></c:desc1>
+      <c:desc1> <![CDATA[在一个全配置的集群上，运行 Hadoop 意味着在网络分布的不同服务器上运行一组守护进程。
+      这些守护进程有特殊的角色，一些仅存在于单个服务器上，一些运行在多个服务器上。]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="" title="" id="sourceContent1">
-      <![CDATA[。。]]>
+    <c:sourceContent type="html" title="Hadoop 的守护进程" id="sourceContent1">
+      <![CDATA[<p style="font-weight:bold;">
+      NameNode (名字节点) <br />
+      DataNode (数据节点) <br />
+      Secondary NameNode (次名字节点) <br />
+      JobTracker (作业跟踪节点) <br />
+      TaskTracker (任务跟踪节点)</p> ]]>
     </c:sourceContent>
 
-    
+    <c:sourceContent type="html" title="NameNode" id="sourceContent1" style="margin-top:1em;">
+      <![CDATA[
+      <b>1、</b>Hadoop 在分布式计算与<b>分布式存储 (HDFS)</b>中采用了<b>主/从 (master/slave)</b>结构。<br />
+      <b>2、</b>NameNode 位于 HDFS 的主端，它指导从端的 DataNode 执行底层的 I/O 任务。<br />
+      <b>3、</b>NameNode 是 HDFS 的书记员，它跟踪文件如何被分割成文件块，这些块又被哪些节点存储，以及分布式文件系统的整体运行状态是否正常。<br />
+      <b>4、</b>运行 NameNode 会消耗大量内存和 I/O 资源，所以驻留 NameNode 的服务器通常不会存储用户数据或者执行 MapReduce 程序的计算任务。<br />
+      <b>5、</b>除了 NameNode，其它任何守护进程驻留的节点发生故障或失效均不会影响 Hadoop 集群的整体运行。]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="DataNode" id="sourceContent1" style="margin-top:1em;">
+      <![CDATA[
+      <b>1、</b>Hadoop 集群上的所有节点都会驻留一个 DataNode 守护进程，来执行<b>HDFS</b>的繁重工作 (将 HDFS 数据块读取或写入到本地文件系统的实际文件中)。<br />
+      <b>2、</b>当希望对 HDFS 文件进行读写时，文件被分割为多个块，由 NameNode 告知客户端每个数据块驻留在哪个 DataNode 节点。<br />
+      <b>3、</b>客户端直接与 DataNode 守护进程通信，来处理与数据块相对应的本地文件。而后，DataNode 会与其它 DataNode 节点通信，复制这些数据块以实现冗余。
+      <b>4、</b>
+      <b>5、</b>]]>
+    </c:sourceContent>
+
+
+
 
     <c:comment>
       <c:comment1>
