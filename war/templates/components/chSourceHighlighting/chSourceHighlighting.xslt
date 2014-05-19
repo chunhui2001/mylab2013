@@ -8,6 +8,7 @@
   <xsl:template match="c:component[@type='chSourceHighlighting']">
     <!--script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js?autoload=true&amp;skin=sunburst&amp;lang=css" defer="defer"></script-->
 
+    <link rel="stylesheet" type="text/css" href="/RenderingAssets/components/chSourceHighlighting/chSourceHighlighting.css" />
     <div class="chSourceHighlighting">
       <xsl:if test="normalize-space(c:abstract) != ''">
         <p style="margin: 1em 0;font-weight:bold;">

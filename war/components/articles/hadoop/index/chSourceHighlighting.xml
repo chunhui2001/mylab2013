@@ -7,7 +7,7 @@
     </c:desc>
   <c:sourceContent type="html" title="分布式系统和 Hadoop" id="sourceContent1">
     <![CDATA[
-    <p>对于一个有 4 个 I/O 通道的高端机，即使每个通道的吞吐量各为 100MB/s，读取 4TB 的数据集也需要 3 个小时。
+    <p style="margin-bottom:1em;">对于一个有 4 个 I/O 通道的高端机，即使每个通道的吞吐量各为 100MB/s，读取 4TB 的数据集也需要 3 个小时。
     而利用 Hadoop，同样的数据集会被划分为较小的块 (通常为 64MB)，通过 Hadoop 分布式文件系统 (HDFS) 分布在集群内多台机器上。
     使用适度的复制，集群可以并行读取数据，进而提供很高的吞吐量。这样一组通用机器比一台高端服务器更加便宜。</p>
     
@@ -33,18 +33,30 @@
     </c:comment>
   </c:entry>
 
-  <c:entry>
+  <c:entry style="margin-top:2em;">
     <c:title>MapReduce</c:title>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
     <c:sourceContent type="html" title="MapReduce" id="sourceContent1">
       <![CDATA[
-    <p>MapReduce 算法将查询操作和数据集都分解为组件&mdash;这就是映射 (Map)。
-    在查询中被映射的组件可以被同时处理 (即规约:Reduce) 从而快速地返回结果。MapReduce不幸的是 MapReduce 是一个在概念和实现上都很复杂的想法！</p>
+    <p><b>MapReduce</b> 算法将查询操作和数据集都分解为组件&mdash;这就是<b>映射 (Map)</b>。
+    在查询中被映射的组件可以被同时处理 (即<b>规约:Reduce</b> ) 从而快速地返回结果。不幸的是 <b>MapReduce</b>  是一个在概念和实现上都很复杂的想法！</p>
     ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="管道和消息队列" id="sourceContent1">
+      <![CDATA[
+    <p style="margin-bottom:0em;"><b>管道</b>和<b>消息队列</b>等数据处理模型可专用于数据处理应用的方方面面。</p>
+    <p style="margin-bottom:0em;"><b>管道</b>有助于<b>进程原语</b>的重用，已有模块的简单链接即可组成一个新的模块。</p>
+    <p style="margin-bottom:0em;"><b>消息队列</b>有助于<b>进程原语</b>的同步，程序员将数据处理任务以生产者或消费者的形式编写为进程原语，由系统来管理它们何时执行。</p>
     
+    
+    <p style="margin-top:1em;"><b>MapReduce</b> 也是一个数据处理模型，它的最大优点是容易扩展到多个计算节点上处理数据。</p>
+    <p style="margin-top:0em;">在 <b>MapReduce</b> 模型中，数据处理原语被称为 mapper 和 reducer。
+    分解一个数据处理应用为 mapper 和 reducer 有时是繁琐的，但是一旦以 MapReduce 的形式写好一个应用程序，
+    仅需修改配置就可以将它扩展到集群中几百、几千甚至上万台机器上运行。</p>
+    ]]>
+    </c:sourceContent>
     
 
     <c:comment>
@@ -54,4 +66,26 @@
     </c:comment>
   </c:entry>
 
+  <c:entry style="margin-top:2em;">
+    <c:title>动手扩展一个单词统计程序</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Do as I say, not as I do." id="sourceContent1"><![CDATA[define wordCount as Multiset;
+for each document in documentSet {
+  T = tokenize (document);
+  for each token in T {
+    wordCount[token]++;
+  }
+}
+display(wordCount);]]></c:sourceContent>
+    
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 </c:component>
