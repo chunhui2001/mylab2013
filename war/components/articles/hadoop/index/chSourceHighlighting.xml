@@ -41,13 +41,10 @@
     <c:sourceContent type="html" title="单词统计" id="sourceContent1" style="border-bottom:none;">
       <![CDATA[
     Do as I say, not as I do.
-    ]]>
-    </c:sourceContent>
+    ]]></c:sourceContent>
 
 
-    <c:sourceContent type="" title="" id="sourceContent1" style="border-top:none;border-bottom:none;">
-      <![CDATA[
-// 实现该程序的伪代码如下;
+    <c:sourceContent type="" title="" id="sourceContent1" style="border-top:none;border-bottom:none;"><![CDATA[// 实现该程序的伪代码如下;
 define wordCount as Multiset;
 for each document in documentSet {
   T = tokenize(document);
@@ -218,7 +215,7 @@ reduce (String token, List<Integer> values) {
     <c:desc>
       <c:desc1> <![CDATA[从网站 <a href="http://hadoop.apache.org/core/releases.html">http://hadoop.apache.org/core/releases.html</a> 上下载最新的稳定版本]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="html" title="安装 Hadoop" id="sourceContent1">
+    <c:sourceContent type="html" title="在 Mac 上安装 Hadoop" id="sourceContent1">
       <![CDATA[打开 Hadoop 发布包 &rarr; 编辑脚本 conf/hadoop-env.sh &rarr; 将 JAVA_HOME 设置为 Java 安装目录：<br />
       <b>export JAVA_HOME=/Library/Java/Home</b> <br /><br />
       
@@ -227,7 +224,9 @@ reduce (String token, List<Integer> values) {
       
       <br />
       <br />
-      运行 hadoop 示例程序：<b>bin/hadoop jar hadoop-*-example.jar wordcount</b> <br />
+      运行 hadoop 示例程序：<b>bin/hadoop jar $HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.2.0.jar wordcount</b> 
+      <br />
+      <br />
       将提示 wordcount 程序的参数列表：<br />
       <b>wordcount [-m &lt;maps&gt;] [-r &lt;reduces&gt;] &lt;input&gt; &lt;output&gt;</b><br /><br />
       
@@ -236,6 +235,147 @@ reduce (String token, List<Integer> values) {
       
       程序运行完毕之后，在 output 文件夹下将看到所有单词的统计结果...
 ]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[Windows 也可以支持开发模式，但你需要在节点上安装 <a href="http://www-cygwin.com/">cygwin</a> 来支持 shell 和 Unix 脚本]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>修改 wordcount 源码</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="建立 WordCount.java 源码副本" id="sourceContent1"><![CDATA[mkdir playground
+mkdir playground/src
+mkdir playground/classes
+cp hadoop-2.2.0-src/hadoop-mapreduce-project/hadoop-mapreduce-examples/src/main/java/org/apache/hadoop/examples/WordCount.java
+        playground/src/WordCount.java
+
+// 在 Hadoop 框架中编译和执行该副本
+javac -classpath hadoop-*-core.jar -d playground/classes
+        playground/src/WordCount.java
+        
+jar -cvf playground/wordcount.jar -C playground/classes/ .
+
+// 运行该副本 (如 output 目录存在应先将其删除)
+bin/hadoop jar playground/wordcount.jar org.apache.hadoop.examples.WordCount input output]]></c:sourceContent>
+
+    <c:sourceContent type="" title="修改 WordCount.java 源码" id="sourceContent1"><![CDATA[package org.apache.hadoop.examples;
+
+import java.io.IOException;
+import java.util.StringTokenizer;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.util.GenericOptionsParser;
+
+public class WordCount {
+
+  public static class TokenizerMapper 
+       extends Mapper<Object, Text, Text, IntWritable>{
+    
+    private final static IntWritable one = new IntWritable(1);
+    private Text word = new Text();
+      
+    public void map(Object key, Text value, Context context) 
+                                  throws IOException, InterruptedException {
+      // 使用空格进行分词 
+      //StringTokenizer itr = new StringTokenizer(value.toString());                           
+      
+      // 根据标点符号分词 
+      StringTokenizer itr = new StringTokenizer(value.toString(), " \t\n\r\f,.:;?![]'");   
+      
+      while (itr.hasMoreTokens()) {
+       // word.set(itr.nextToken());              // 把 Token 放入 Text 对象中
+        word.set(itr.nextToken().toLowerCase());  // 在 Hadoop 中, 特殊的 Text 类取代了 String。
+                                                  // 在将 String 转成 Text 之前，先将所有单词转成小写.
+        context.write(word, one);
+      }
+    }
+  }
+  
+  public static class IntSumReducer 
+       extends Reducer<Text,IntWritable,Text,IntWritable> {
+    private IntWritable result = new IntWritable();
+
+    public void reduce(Text key, Iterable<IntWritable> values, Context context) 
+                                  throws IOException, InterruptedException {
+      int sum = 0;
+      for (IntWritable val : values) {
+        sum += val.get();
+      }
+      result.set(sum);
+      
+      // 仅统计数量大于 4 的单词
+      if (sum > 4) context.write(key, result);           // 输出每个 Token 的统计结果
+    }
+  }
+
+  public static void main(String[] args) throws Exception {
+    Configuration conf = new Configuration();
+    String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+    if (otherArgs.length != 2) {
+      System.err.println("Usage: wordcount <in> <out>");
+      System.exit(2);
+    }
+    Job job = new Job(conf, "word count");
+    job.setJarByClass(WordCount.class);
+    job.setMapperClass(TokenizerMapper.class);
+    job.setCombinerClass(IntSumReducer.class);
+    job.setReducerClass(IntSumReducer.class);
+    job.setOutputKeyClass(Text.class);
+    job.setOutputValueClass(IntWritable.class);
+    FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
+    FileOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
+    System.exit(job.waitForCompletion(true) ? 0 : 1);
+  }
+}]]></c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:2em;">
+    <c:title>Hadoop 的构造模块</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1">
+      <![CDATA[。。]]>
+    </c:sourceContent>
+
+    
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>Hadoop 组件</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1">
+      <![CDATA[。。]]>
     </c:sourceContent>
 
 
