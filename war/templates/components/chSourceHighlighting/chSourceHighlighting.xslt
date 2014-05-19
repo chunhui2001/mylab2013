@@ -121,25 +121,43 @@
       </xsl:for-each>      
     </xsl:if>
 
-    <xsl:if test="count($entry/c:comment/*[normalize-space(text()) != '']) &gt; 0">
-      <ul style="background-color:#EAEAF9;padding:1.5em;border-radius:4px;font-size:.98em;
-                border:1px solid #BABACE;margin-top:1em;list-style:inherit;list-style-type:square;padding-left:3em;word-break:break-all;">
-        <xsl:for-each select="$entry/c:comment/*">
-          <xsl:if test="normalize-space(current()) != ''">
-            <!--div>
+    <xsl:for-each select="$entry/c:comment">
+      <xsl:if test="count(current()/*[normalize-space(text()) != '']) &gt; 0">
+        <xsl:variable name="st">
+          <xsl:value-of select="'background-color:#EAEAF9;padding:1.5em;border-radius:4px;font-size:.98em;
+                border:1px solid #BABACE;margin-top:1em;list-style:inherit;list-style-type:square;padding-left:3em;word-break:break-all;'"/>
+        </xsl:variable>
+        
+        <ul>
+          <xsl:attribute name="style">
+            <xsl:choose>
+              <xsl:when test="position() != last()">
+                <xsl:value-of select="concat($st, 'margin-top:1em;')"/>
+              </xsl:when>
+              <xsl:otherwise>
+                <xsl:value-of select="concat($st, '')"/>
+              </xsl:otherwise>
+            </xsl:choose>
+          </xsl:attribute>
+          
+          <xsl:for-each select="current()/*">
+            <xsl:if test="normalize-space(current()) != ''">
+              <!--div>
               <span style="display:block;float:left;">&#9830;</span>
               
               <div class="clear"></div>
             </div-->
-            <li style="color:rgb(205, 76, 0);">
-              <span style="font-weight:bold;display:block;">
-                <xsl:value-of disable-output-escaping="yes" select="current()"/>
-              </span>
-            </li>
-          </xsl:if>
-        </xsl:for-each>
-      </ul>
-    </xsl:if>
+              <li style="color:rgb(205, 76, 0);">
+                <span style="font-weight:bold;display:block;">
+                  <xsl:value-of disable-output-escaping="yes" select="current()"/>
+                </span>
+              </li>
+            </xsl:if>
+          </xsl:for-each>
+        </ul>
+      </xsl:if>
+    </xsl:for-each>
+    
     
   </xsl:template>
 

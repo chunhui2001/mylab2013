@@ -10,13 +10,13 @@
     <p style="margin-bottom:1em;">对于一个有 4 个 I/O 通道的高端机，即使每个通道的吞吐量各为 100MB/s，读取 4TB 的数据集也需要 3 个小时。
     而利用 Hadoop，同样的数据集会被划分为较小的块 (通常为 64MB)，通过 Hadoop 分布式文件系统 (HDFS) 分布在集群内多台机器上。
     使用适度的复制，集群可以并行读取数据，进而提供很高的吞吐量。这样一组通用机器比一台高端服务器更加便宜。</p>
-    
+    <br />
     <p>Hadoop 强调把代码向数据迁移，即： 让数据不动，而将可执行代码发送到数据所在的机器上去。
     数据被拆分后在集群中分布，并且尽可能让一段数据的计算发生在同一台机器上，既这段数据驻留的地方。
     这里所说的代码指的就是 MapReduce 程序。</p>
     ]]>
   </c:sourceContent>
-  <c:sourceContent type="html" title="比较 SQL 数据库和 Hadoop" id="sourceContent1">
+  <c:sourceContent type="html" title="比较 SQL 数据库和 Hadoop" id="sourceContent1" style="margin-top:1em;">
     <![CDATA[
     <p><span style="font-weight:bold">用横向扩展替代纵向扩展：</span>前者加硬件后者加机器</p>
     <p><span style="font-weight:bold">用键值对替代关系表：</span> Hadoop 的数据来源可以使任意形式，但最终会转换为键值对以供处理。</p>
@@ -34,14 +34,144 @@
   </c:entry>
 
   <c:entry style="margin-top:2em;">
+<<<<<<< HEAD
+=======
+    <c:title>扩展一个单词统计程序</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[统计一组文档中每个单词出现的次数]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="单词统计" id="sourceContent1" style="border-bottom:none;">
+      <![CDATA[
+    Do as I say, not as I do.
+    ]]></c:sourceContent>
+
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="border-top:none;border-bottom:none;"><![CDATA[// 实现该程序的伪代码如下;
+define wordCount as Multiset;
+for each document in documentSet {
+  T = tokenize(document);
+  for each token in T {
+    wordCount[toke]++;
+  }
+}
+display(wordCount);]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="border-top:none;border-bottom:none;">
+      <![CDATA[该程序只适合处理少量文档，一旦文档数量激增，它就不能胜任了：<b>使用单台计算机反复遍历所有文档将会非常费时。</b><br /><br />
+      重写程序让工作可以分布在多台机器上，每台计算机处理这些文档的不同部分。当所有的机器都完成时，第二个处理阶段将合并这结果。]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="border-top:none;border-bottom:none;">
+      <![CDATA[
+// 第一阶段要分布到多台机器上去的伪代码为: 
+define wordCount as Multiset;
+for each document in documentSet {
+  T = tokenize(document);
+  for each token in T {
+    wordCount[toke]++;
+  }
+}
+sendToSecondPhase(wordCount);
+
+// 第二阶段的伪代码为: 
+define totalWordCount as Multiset;
+for each wordCount received from firstPhase {
+  multisetAdd (totalWordCount, wordCount);
+}]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="border-top:none;">
+      <![CDATA[为了使该程序工作在一个分布式计算机集群上，需要添加以下功能：<br />
+     <p style="font-weight:bold;"> 1、存储文件到许多台计算机上 (第一阶段)。<br />
+      2、编写一个基于磁盘的散列表，使得处理不受内存容量限制。 <br />
+      3、划分来自第一阶段的中间数据 (即 wordCount)。 <br />
+      4、洗牌到这些分区到第二阶段中合适的计算机上。</p>]]>
+    </c:sourceContent>
+
+    
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:2em;">
+>>>>>>> 4255efb4755a4e4b83b618cdad4849cf42abba44
     <c:title>MapReduce</c:title>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
     <c:sourceContent type="html" title="MapReduce" id="sourceContent1">
       <![CDATA[
+<<<<<<< HEAD
     <p><b>MapReduce</b> 算法将查询操作和数据集都分解为组件&mdash;这就是<b>映射 (Map)</b>。
     在查询中被映射的组件可以被同时处理 (即<b>规约:Reduce</b> ) 从而快速地返回结果。不幸的是 <b>MapReduce</b>  是一个在概念和实现上都很复杂的想法！</p>
+=======
+    <p>MapReduce 算法将查询操作和数据集都分解为组件&mdash;这就是映射 (Map)。
+    在查询中被映射的组件可以被同时处理 (即规约:Reduce) 从而快速地返回结果。不幸的是 MapReduce 是一个在概念和实现上都很复杂的想法！</p>
+    <br />
+    <p><b>管道</b>和<b>消息队列</b>等数据处理模型，用于数据处理应用的方方面面 (Unix pipes 就是一种常见的管道)。
+        <b>管道</b>有助于进程原语的重用，已有模块的简单链接即可组成一个新的模块；<b>消息队列</b>则有助于进程原语的同步。
+        程序员将数据处理任务编写为进程原语，由系统来管理它们何时执行。</p>
+    <br />
+    <p>MapReduce 做为一个数据处理模型，它的最大优点是容易扩展到多个计算节点上处理数据。
+      在 <b>MapReduce</b> 模型中，数据处理原语被称为 <b>mapper</b> 和 <b>reducer</b>。分解一个数据处理应用为 mapper 和 reducer 有时是繁琐的。
+      但是一旦以 MapReduce 的形式写好了一个应用程序，仅需修改配置就可以将它扩展到集群上运行。</p>
+    <br />
+    <p>MapReduce 程序的执行分为两个主要阶段，即：mapping 和 reducing。每个阶段均定义成一个数据处理函数，分别称为 mapper 和 reducer。
+       <b>在 mapping 阶段，MapReduce 获取输入数据并将数据单元装入 mapper。在 reducing 阶段，reducer 处理来自 mapper 的所有输出，并给出最终结果。</b>
+       <b style="color:green;">mapper 意味着将输入进行过滤转换 (通常是转换成键值对)，使 reducer 可以完成聚合。</b></p>
+    <br />
+    <p>MapReduce 使用使用<b>列表</b>和<b>键/值</b>对作为其主要的数据原语。</p>
+    <table style="margin-top:.5em;">
+      <thead>
+        <tr>
+          <th style="padding:.2em .3em;border-right:solid 1px black;"></th>
+          <th style="padding:.2em .3em;font-weight:bold;border-right:solid 1px black;border-top:solid 1px black;background-color:rgb(199, 195, 195);">输入</th>
+          <th style="padding:.2em .3em;font-weight:bold;border-top:solid 1px black;background-color:rgb(199, 195, 195);">输出</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="text-align:right;padding:.2em .3em;border-right:solid 1px black;border-top:solid 1px black;">map</td>
+          <td style="padding:.2em .3em;border-right:solid 1px black;border-top:solid 1px black;">&lt;k1, v1&gt;</td>
+          <td style="padding:.2em .3em;border-top:solid 1px black;">list(&lt;k2, v2&gt;)</td>
+        </tr>
+        <tr>
+          <td style="text-align:right;padding:0 .3em;border-right:solid 1px black;border-top:solid 1px black;border-bottom:solid 1px black;">reduce</td>
+          <td style="padding:.2em .3em;border-right:solid 1px black;border-top:solid 1px black;border-bottom:solid 1px black;">&lt;k2, list(v2)&gt;</td>
+          <td style="padding:.2em .3em;border-top:solid 1px black;border-bottom:solid 1px black;">list(&lt;k3, v3&gt;)</td>
+        </tr>
+      </tbody>
+    </table>
+    <br />
+    <p><b>在 MapReduce 中编写程序就是定制化 mapper 和 reducer 的过程，其完整的数据流如下：</b></p>
+    <ul style="list-style:decimal;margin-left:1.3em;margin-top:.5em;">
+      <li>应用的输入必须组织为一个键/值对列表 <b>list(&lt;k1, v1&gt;)</b>。用于处理文件的输入格式通常为 <b>list(&lt;fileName, fileContent&gt;)</b>。
+         用于处理类似日志文件的大文件的输入格式为 <b>list&lt;lineNumber, lineContent&gt;</b>。<br /><br /></li>
+      <li>含有键值对的列表被拆分，进而通过调用 mapper 的 map 函数对每个单独的键值对 <b>&lt;k1, v1&gt;</b> 进行处理。
+      mapper 转换每个 <b>&lt;k1, v1&gt;</b> 对并将之放入 <b>&lt;k2, v2&gt;</b> 对的列表中。
+      <br /> <br />
+      对于下面的单词统计程序，<b>&lt;String fileName, String fileContent&gt;</b> 被输入 mapper，而其中的 fileName 可以被忽略。
+      mapper 可以输出一个 <b>&lt;String word, Integer count&gt;</b> 的列表。<br /><br />
+      </li>
+      <li>所有 mapper 的输出被聚合到一个包含 <b>&lt;k2, v2&gt;</b> 的巨大列表中。
+          所有共享相同 k2 的对被组织在一起形成一个新的键值对 <b>&lt;k2, list(v2)&gt; </b>。
+          
+          框架让 reducer 来分别处理没一个被聚合起来的 <b>&lt;k2, list(v2)&gt; </b>。
+          <br /> <br />
+      对于下面的单词统计程序，一个文档的 map 输出的列表中可能出现三次 <b>&lt;'foo', 1&gt;</b>，而另一个文档的 map 输出可能出现两次 <b>&lt;'foo', 1&gt;</b>。
+      reducer 看到的聚合对为 <b>&lt;'foo', list(1,1,1,1,1)&gt;</b>，此时 reducer 的输出为 <b>&lt;'foo', 5&gt;</b>。
+          <br /> <br />
+          每一个 reducer 负责不同的单词，MapReduce 框架自动搜集所有的 <b>&lt;k3, v3&gt;</b> 对，并将之写入文件。
+      
+      <br /><br /></li>
+    </ul>
+>>>>>>> 4255efb4755a4e4b83b618cdad4849cf42abba44
     ]]>
     </c:sourceContent>
     <c:sourceContent type="html" title="管道和消息队列" id="sourceContent1">
@@ -66,6 +196,7 @@
     </c:comment>
   </c:entry>
 
+<<<<<<< HEAD
   <c:entry style="margin-top:2em;">
     <c:title>动手扩展一个单词统计程序</c:title>
     <c:desc>
@@ -80,6 +211,239 @@ for each document in documentSet {
 }
 display(wordCount);]]></c:sourceContent>
     
+=======
+
+  <c:entry style="margin-top:2em;">
+    <c:title>基于 MapReduce 重写单词统计程序</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="单词统计中 map 和 reduce 函数的伪代码" id="sourceContent1"><![CDATA[
+/* 因为 map 和 reduce 的输出都是列表，
+   所以可以使用 Hadoop 中的 emit 函数生成列表中的元素 */ 
+map (String fileName, String document) {
+  List<String> T = tokenize (document);
+      
+  for each token in T {
+    emit ((String) token, (Integer) 1);
+  }
+}
+    
+reduce (String token, List<Integer> values) {
+  Integer sum = 0;      
+  for each value in values {
+    sum = sum + value;
+  }      
+  emit ((String) token, (Integer) sum);
+}]]></c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>用 Hadoop 统计单词</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[从网站 <a href="http://hadoop.apache.org/core/releases.html">http://hadoop.apache.org/core/releases.html</a> 上下载最新的稳定版本]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="在 Mac 上安装 Hadoop" id="sourceContent1">
+      <![CDATA[打开 Hadoop 发布包 &rarr; 编辑脚本 conf/hadoop-env.sh &rarr; 将 JAVA_HOME 设置为 Java 安装目录：<br />
+      <b>export JAVA_HOME=/Library/Java/Home</b> <br /><br />
+      
+      不加任何参数的运行 <b>bin/hadoop</b>，显示 Hadoop 的用法文档: <br />
+      <img style="margin-top:.5em;width:100%;" src="//c1.staticflickr.com/3/2933/13997007728_8bdab253b0_c.jpg" />
+      
+      <br />
+      <br />
+      运行 hadoop 示例程序：<b>bin/hadoop jar $HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.2.0.jar wordcount</b> 
+      <br />
+      <br />
+      将提示 wordcount 程序的参数列表：<br />
+      <b>wordcount [-m &lt;maps&gt;] [-r &lt;reduces&gt;] &lt;input&gt; &lt;output&gt;</b><br /><br />
+      
+      <b>&lt;input&gt;</b> 指的是所需分析的文本文档的输入目录。(可以从<a href="http://www.gpoaccess.gov/sou/">这里</a>下载所需的文本文件)<br />
+      <b>&lt;output&gt;</b> 指的是程序填充结果的输出目录。<br /><br />
+      
+      程序运行完毕之后，在 output 文件夹下将看到所有单词的统计结果...
+]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[Windows 也可以支持开发模式，但你需要在节点上安装 <a href="http://www-cygwin.com/">cygwin</a> 来支持 shell 和 Unix 脚本]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>修改 wordcount 源码</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="建立 WordCount.java 源码副本" id="sourceContent1"><![CDATA[mkdir playground
+mkdir playground/src
+mkdir playground/classes
+cp hadoop-2.2.0-src/hadoop-mapreduce-project/hadoop-mapreduce-examples/src/main/java/org/apache/hadoop/examples/WordCount.java
+        playground/src/WordCount.java
+
+// 在 Hadoop 框架中编译和执行该副本
+javac -classpath hadoop-*-core.jar -d playground/classes
+        playground/src/WordCount.java
+        
+jar -cvf playground/wordcount.jar -C playground/classes/ .
+
+// 运行该副本 (如 output 目录存在应先将其删除)
+bin/hadoop jar playground/wordcount.jar org.apache.hadoop.examples.WordCount input output]]></c:sourceContent>
+
+    <c:sourceContent type="" title="修改 WordCount.java 源码" id="sourceContent1"><![CDATA[package org.apache.hadoop.examples;
+
+import java.io.IOException;
+import java.util.StringTokenizer;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.util.GenericOptionsParser;
+
+public class WordCount {
+
+  public static class TokenizerMapper 
+       extends Mapper<Object, Text, Text, IntWritable>{
+    
+    private final static IntWritable one = new IntWritable(1);
+    private Text word = new Text();
+      
+    public void map(Object key, Text value, Context context) 
+                                  throws IOException, InterruptedException {
+      // 使用空格进行分词 
+      //StringTokenizer itr = new StringTokenizer(value.toString());                           
+      
+      // 根据标点符号分词 
+      StringTokenizer itr = new StringTokenizer(value.toString(), " \t\n\r\f,.:;?![]'");   
+      
+      while (itr.hasMoreTokens()) {      
+        // 在 Hadoop 中, 特殊的 Text 类取代了 String。
+        // 把 Token 放入 Text 对象中
+        // 在将 String 转成 Text 之前，先将所有单词转成小写.
+        // word.set(itr.nextToken());              
+        word.set(itr.nextToken().toLowerCase());  
+                                                  
+        context.write(word, one);
+      }
+    }
+  }
+  
+  public static class IntSumReducer 
+       extends Reducer<Text,IntWritable,Text,IntWritable> {
+    private IntWritable result = new IntWritable();
+
+    public void reduce(Text key, Iterable<IntWritable> values, Context context) 
+                                  throws IOException, InterruptedException {
+      int sum = 0;
+      for (IntWritable val : values) {
+        sum += val.get();
+      }
+      result.set(sum);
+      
+      // 仅统计数量大于 4 的单词
+      // 输出每个 Token 的统计结果
+      if (sum > 4) context.write(key, result);           
+    }
+  }
+
+  public static void main(String[] args) throws Exception {
+    Configuration conf = new Configuration();
+    String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+    if (otherArgs.length != 2) {
+      System.err.println("Usage: wordcount <in> <out>");
+      System.exit(2);
+    }
+    Job job = new Job(conf, "word count");
+    job.setJarByClass(WordCount.class);
+    job.setMapperClass(TokenizerMapper.class);
+    job.setCombinerClass(IntSumReducer.class);
+    job.setReducerClass(IntSumReducer.class);
+    job.setOutputKeyClass(Text.class);
+    job.setOutputValueClass(IntWritable.class);
+    FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
+    FileOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
+    System.exit(job.waitForCompletion(true) ? 0 : 1);
+  }
+}]]></c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:2em;">
+    <c:title>Hadoop 的构造模块</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[在一个全配置的集群上，运行 Hadoop 意味着在网络分布的不同服务器上运行一组守护进程。
+      这些守护进程有特殊的角色，一些仅存在于单个服务器上，一些运行在多个服务器上。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Hadoop 的守护进程" id="sourceContent1">
+      <![CDATA[<p style="font-weight:bold;">
+      NameNode (名字节点) <br />
+      DataNode (数据节点) <br />
+      Secondary NameNode (次名字节点) <br />
+      JobTracker (作业跟踪节点) <br />
+      TaskTracker (任务跟踪节点)</p> ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="NameNode" id="sourceContent1" style="margin-top:1em;">
+      <![CDATA[
+      <b>1、</b>Hadoop 在分布式计算与<b>分布式存储 (HDFS)</b>中采用了<b>主/从 (master/slave)</b>结构。<br />
+      <b>2、</b>NameNode 位于 HDFS 的主端，它指导从端的 DataNode 执行底层的 I/O 任务。<br />
+      <b>3、</b>NameNode 是 HDFS 的书记员，它跟踪文件如何被分割成文件块，这些块又被哪些节点存储，以及分布式文件系统的整体运行状态是否正常。<br />
+      <b>4、</b>运行 NameNode 会消耗大量内存和 I/O 资源，所以驻留 NameNode 的服务器通常不会存储用户数据或者执行 MapReduce 程序的计算任务。<br />
+      <b>5、</b>除了 NameNode，其它任何守护进程驻留的节点发生故障或失效均不会影响 Hadoop 集群的整体运行。]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="DataNode" id="sourceContent1" style="margin-top:1em;">
+      <![CDATA[
+      <b>1、</b>Hadoop 集群上的所有节点都会驻留一个 DataNode 守护进程，来执行<b>HDFS</b>的繁重工作 (将 HDFS 数据块读取或写入到本地文件系统的实际文件中)。<br />
+      <b>2、</b>当希望对 HDFS 文件进行读写时，文件被分割为多个块，由 NameNode 告知客户端每个数据块驻留在哪个 DataNode 节点。<br />
+      <b>3、</b>客户端直接与 DataNode 守护进程通信，来处理与数据块相对应的本地文件。而后，DataNode 会与其它 DataNode 节点通信，复制这些数据块以实现冗余。
+      <b>4、</b>
+      <b>5、</b>]]>
+    </c:sourceContent>
+
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>Hadoop 组件</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1">
+      <![CDATA[。。]]>
+    </c:sourceContent>
+
+>>>>>>> 4255efb4755a4e4b83b618cdad4849cf42abba44
 
 
     <c:comment>
