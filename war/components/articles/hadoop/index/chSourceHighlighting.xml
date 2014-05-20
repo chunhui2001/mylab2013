@@ -406,28 +406,83 @@ public class WordCount {
 
     <c:sourceContent type="html" title="NameNode" id="sourceContent1" style="margin-top:1em;">
       <![CDATA[
-      <b>1、</b>Hadoop 在分布式计算与<b>分布式存储 (HDFS)</b>中采用了<b>主/从 (master/slave)</b>结构。<br />
+      <b>1、</b>Hadoop 在<b>分布式计算</b>与<b>分布式存储 (HDFS)</b>中均采用了<b>主/从 (master/slave)</b>结构。<br />
       <b>2、</b>NameNode 位于 HDFS 的主端，它指导从端的 DataNode 执行底层的 I/O 任务。<br />
       <b>3、</b>NameNode 是 HDFS 的书记员，它跟踪文件如何被分割成文件块，这些块又被哪些节点存储，以及分布式文件系统的整体运行状态是否正常。<br />
       <b>4、</b>运行 NameNode 会消耗大量内存和 I/O 资源，所以驻留 NameNode 的服务器通常不会存储用户数据或者执行 MapReduce 程序的计算任务。<br />
       <b>5、</b>除了 NameNode，其它任何守护进程驻留的节点发生故障或失效均不会影响 Hadoop 集群的整体运行。]]>
     </c:sourceContent>
 
-    <c:sourceContent type="html" title="DataNode" id="sourceContent1" style="margin-top:1em;">
+    <c:sourceContent type="html" expand="false" title="DataNode" id="sourceContent1" style="margin-top:1em;">
       <![CDATA[
       <b>1、</b>Hadoop 集群上的所有节点都会驻留一个 DataNode 守护进程，来执行<b>HDFS</b>的繁重工作 (将 HDFS 数据块读取或写入到本地文件系统的实际文件中)。<br />
       <b>2、</b>当希望对 HDFS 文件进行读写时，文件被分割为多个块，由 NameNode 告知客户端每个数据块驻留在哪个 DataNode 节点。<br />
-      <b>3、</b>客户端直接与 DataNode 守护进程通信，来处理与数据块相对应的本地文件。而后，DataNode 会与其它 DataNode 节点通信，复制这些数据块以实现冗余。
-      <b>4、</b>
-      <b>5、</b>]]>
+      <b>3、</b>客户端直接与 DataNode 守护进程通信，来处理与数据块相对应的本地文件。而后，DataNode 会与其它 DataNode 节点通信，复制这些数据块以实现冗余。<br />
+      <b>4、</b>下图是 NameNode 和 DataNode 在 HDFS 中的交互。NameNode 跟踪文件的元数据--描述系统中所包含的文件以及每个文件如何被分割为数据块。
+      DataNode 提供数据块的备份存储，并持续不断的向 NameNode 报告，以保持元数据为最新状态。<br />
+      <img src="//c1.staticflickr.com/3/2939/14227977545_b73c8e45ca_z.jpg" style="width:100%;" /><br />
+      <b style="color:green;">在上图中有两个数据文件，一个位于目录 /user/chuck/data1，另一个位于 /user/james/data2。
+      data1 有 1、2、3 三个数据块，data2 有 4、5 两个数据块。
+      其中每个数据块有三个副本，这确保了任何一个 DataNode 崩溃，数据文件仍然可以访问。
+      DataNode 会不断地更新 NameNode，为之提供本地修改的相关信息，同时接收相关指令以进行创建、移动、或删除本地磁盘上的数据块。</b>]]>
     </c:sourceContent>
 
+    <c:sourceContent type="html" expand="false" title="Secondary NameNode (SNN)" id="sourceContent1" style="margin-top:1em;">
+      <![CDATA[
+      <b>1、</b>SNN 是一个用于监测 HDFS 集群状态的辅助守护进程。它与 NameNode 通信，根据集群所配置的时间间隔获取 HDFS 元数据的快照。<br />
+      <b>2、</b>NameNode 是 Hadoop 集群的单一故障点，而 SNN 的数据快照有助于减少停机的时间并降低数据丢失的风险。<br />
+      <b>3、</b>NameNode 的失效处理需要人工的干预，即手动地重新配置集群，将 SNN 用作主要的 NameNode。<br />
+      ]]>
+    </c:sourceContent>
 
+    <c:sourceContent type="html" expand="false" title="JobTracker" id="sourceContent1" style="margin-top:1em;">
+      <![CDATA[
+      <b>1、</b>JobTracker 守护进程是应用程序和 Hadoop 之间的纽带。
+      一旦提交代码到集群上，JobTracker 就会确定执行计划，包括决定处理哪些文件、为不同的任务分配节点以及监控所有任务的运行。<br />
+      <b>2、</b>如果任务失败，JobTracker 将自动重启任务，同时受到预定义的重试次数限制。<br />
+      <b>3、</b>每个 Hadoop 集群只有一个 JobTracker 守护进程，它通常运行在服务器集群的主节点上。
+      ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" expand="false" title="TaskTracker" id="sourceContent1" style="margin-top:1em;">
+      <![CDATA[
+      <b>1、</b>与存储的守护进程一样，计算的守护进程也遵循主/从架构： JobTracker 作为主节点，监测 MapReduce 作业的整个执行过程。<br />
+      <b>2、</b>TaskTracker 管理各个任务在每个从节点上的执行情况，并负责执行由 JobTracker 分配的单项任务。<br />
+      <b>3、</b>每个从节点上仅有一个 TaskTracker，但每个 TaskTracker 可以生成多个 JVM 来并行地处理许多 map 或 reduce 任务。<br />
+      <b>3、</b>TaskTracker 的一个职责是持续不断地与 JobTracker 通信。
+            如果 JobTracker 在指定的时间内没有收到来自 TaskTracker 的 "心跳"，它会假定 TaskTracker 已经崩溃了，进而重新提交相应的任务到集群中的其它节点中。<br />
+            <br />
+      <b>Hadoop 集群的拓扑结构：</b><br />
+      <img src="//c1.staticflickr.com/3/2915/14248462943_c30a94a4af.jpg" style="width:100%;" /><br />
+      <b>这个拓扑结构遵从主/从架构，其中 NameNode 和 JobTracker 为主端，DataNode 和 TaskTracker 为从端。</b>
+      ]]>
+    </c:sourceContent>
 
 
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>组建一个完整的 Hadoop 集群</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1">
+      <![CDATA[]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[首先建立主节点以及节点之间的控制通道，即 Secure Shell (SSH) 通道。]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[其次建立单机或者伪分布模式或者标准的集群安装模式 (全分布模式)]]>
       </c:comment1>
     </c:comment>
   </c:entry>
