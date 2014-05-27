@@ -102,6 +102,19 @@ for each wordCount received from firstPhase {
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
+    <!--c:sourceContent type="html" title="管道和消息队列" id="sourceContent1">
+      <![CDATA[
+    <p style="margin-bottom:0em;"><b>管道</b>和<b>消息队列</b>等数据处理模型可专用于数据处理应用的方方面面 (Unix pipes 就是一种常见的管道)。</p>
+    <p style="margin-bottom:0em;"><b>管道</b>有助于<b>进程原语</b>的重用，已有模块的简单链接即可组成一个新的模块。</p>
+    <p style="margin-bottom:0em;"><b>消息队列</b>有助于<b>进程原语</b>的同步，程序员将数据处理任务以生产者或消费者的形式编写为进程原语，由系统来管理它们何时执行。</p>
+    
+    
+    <p style="margin-top:1em;"><b>MapReduce</b> 也是一个数据处理模型，它的最大优点是容易扩展到多个计算节点上处理数据。</p>
+    <p style="margin-top:0em;">在 <b>MapReduce</b> 模型中，数据处理原语被称为 mapper 和 reducer。
+    分解一个数据处理应用为 mapper 和 reducer 有时是繁琐的，但是一旦以 MapReduce 的形式写好一个应用程序，
+    仅需修改配置就可以将它扩展到集群中几百、几千甚至上万台机器上运行。</p>
+    ]]>
+    </c:sourceContent-->
     <c:sourceContent type="html" title="MapReduce" id="sourceContent1">
       <![CDATA[
     <p><b>MapReduce</b> 算法将查询操作和数据集都分解为组件&mdash;这就是<b>映射 (Map)</b>。
@@ -121,7 +134,7 @@ for each wordCount received from firstPhase {
        <b>在 mapping 阶段，MapReduce 获取输入数据并将数据单元装入 mapper。在 reducing 阶段，reducer 处理来自 mapper 的所有输出，并给出最终结果。</b>
        <b style="color:green;">mapper 意味着将输入进行过滤转换 (通常是转换成键值对)，使 reducer 可以完成聚合。</b></p>
     <br />
-    <p>MapReduce 使用使用<b>列表</b>和<b>键/值</b>对作为其主要的数据原语。</p>
+    <p>MapReduce 使用<b>列表</b>和<b>键/值</b>对作为其主要的数据原语。</p>
     <table style="margin-top:.5em;">
       <thead>
         <tr>
@@ -168,19 +181,7 @@ for each wordCount received from firstPhase {
     </ul>
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="html" title="管道和消息队列" id="sourceContent1">
-      <![CDATA[
-    <p style="margin-bottom:0em;"><b>管道</b>和<b>消息队列</b>等数据处理模型可专用于数据处理应用的方方面面。</p>
-    <p style="margin-bottom:0em;"><b>管道</b>有助于<b>进程原语</b>的重用，已有模块的简单链接即可组成一个新的模块。</p>
-    <p style="margin-bottom:0em;"><b>消息队列</b>有助于<b>进程原语</b>的同步，程序员将数据处理任务以生产者或消费者的形式编写为进程原语，由系统来管理它们何时执行。</p>
     
-    
-    <p style="margin-top:1em;"><b>MapReduce</b> 也是一个数据处理模型，它的最大优点是容易扩展到多个计算节点上处理数据。</p>
-    <p style="margin-top:0em;">在 <b>MapReduce</b> 模型中，数据处理原语被称为 mapper 和 reducer。
-    分解一个数据处理应用为 mapper 和 reducer 有时是繁琐的，但是一旦以 MapReduce 的形式写好一个应用程序，
-    仅需修改配置就可以将它扩展到集群中几百、几千甚至上万台机器上运行。</p>
-    ]]>
-    </c:sourceContent>
     
 
     <c:comment>
@@ -495,7 +496,121 @@ public class WordCount {
       <img style="max-width:100%;" src="//c2.staticflickr.com/6/5525/14272256944_1659236551_b.jpg" />
       ]]>
     </c:sourceContent>
+    
+    <c:sourceContent type="html" title="Hadoop 配置目录" id="sourceContent1">
+      <![CDATA[
+      <img style="max-width:100%;" src="//c2.staticflickr.com/6/5579/14281021394_238533831e_b.jpg" /><br />
+      <br />
+      指定包括主节点在内的所有节点上的 jdk 安装路径 (即在 <b>hadoop-env.sh</b> 中定义 JAVA_HOME 环境变量使之指向 Java 安装目录)
+      <br />
+      <b>export JAVA_HOME=/user/share/jdk</b><br />
+      <br />
+      <b>1、</b>0.20 版本以前： Hadoop 的设置主要包含在 <b>hadoop-default.xml</b> 和 <b>hadoop-site.xml</b> 文件中。 <br />
+      <b>2、</b>hadoop-default.xml 中包含了 Hadoop 会使用的默认设置，除非这些设置在 hadoop-site.xml 中被显示地重新定义。
+      因此实际操作中只需要处理 hadoop-site.xml。<br />
+      <b>3、</b>在 0.20 版本中：hadoop-site.xml 文件被拆分成 3 个 xml 文件。
+      分别是：<b>core-site.xml、hdfs-site.xml、mapred-site.xml</b>。
+      ]]>
+    </c:sourceContent>
 
+    <c:sourceContent type="html" title="单机模式" id="sourceContent1">
+      <![CDATA[
+     这种模式下所有 3 个 xml 文件均为空。当配置文件为空时，Hadoop 将完全运行在本地。
+      ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="伪分布模式" id="sourceContent1" style="border-bottom:none;">
+      <![CDATA[
+     该模式增加了代码调试功能，允许程序员检查内存使用情况、HDFS 输入输出、以及其它的守护进程交互。<br />
+     <br />
+     <b>伪分布模式下 3 个 xml 文件示例：</b><br /><br /><br /><br />
+     <i><b>core-site.xml</b></i>
+      ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="border-bottom:none;border-top:none;"><![CDATA[<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+      <property>
+          <name>fs.default.name</name>
+          <value>hdfs://localhost:9000</value>
+          <description>
+              The name of the default file system. 
+              A URI whose scheme and authority determine the 
+              FileSystem implementation.
+          </description>
+      </property>
+</configuration>]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" style="border-bottom:none;border-top:none;">
+      <![CDATA[<br /><i><b>mapred-site.xml</b></i>]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="border-bottom:none;border-top:none;"><![CDATA[<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+      <property>
+          <name>mapred.job.tracker</name>
+          <value>localhost:9001</value>
+          <description>
+              The host and port that the MapReduce job tracker runs at.
+          </description>
+      </property>
+</configuration>]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" style="border-bottom:none;border-top:none;">
+      <![CDATA[<br /><i><b>hdfs-site.xml</b></i>]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="border-bottom:none;border-top:none;"><![CDATA[<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+      <property>
+          <name>dfs.replication</name>
+          <value>1</value>
+          <description>
+              The actual number of replications can be specified when the file is created.
+          </description>
+      </property>
+</configuration>]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="border-top:none;">
+      <![CDATA[<b style="color:red;">以上 3 个文件的配置中分别在 core-site.xml 和 mapred-site.xml 中指定了 NameNode 和 JobTracker 的主机名与端口。
+      在 hdfs-site.xml 中指定了 HDFS 的默认副本数。</b>
+      <br />
+      <br />
+      接下来需要在 masters 文件中指定 SNN 的位置，并在 slaves 中指定从节点的位置： <br />
+      <b>cat masters<br />
+      localhost
+      <br />
+      cat slaves <br />
+      localhost</b>
+      <br />
+      <br />
+      接下来检查机器是否允许对自己运行 ssh：<br />
+      <b>ssh localhost</b>
+      <br />
+      如果不允许，需要用两行命令来安装：<br />
+      <b>ssh-keygen -t dsa -P '' -f ~/.ssh/id_dsa <br />
+      cat ~/.ssh/id_dsa.pub >> ~/.ssh/authorized_keys </b>
+       <br />
+       <br />
+      接下来输入一个命令格式化 HDFS：<br />
+      <b>bin/hadoop namenode -format</b>
+      <br />
+      <br />
+      接下来使用 start-all.sh 脚本装在守护进程，然后用 Java 的 jps 命令列出所有守护进程来验证安装是否成功：<br />
+      <b>bin/start-all.sh<br />
+      jps</b>
+      <br />
+      <br />
+      <b style="color:gray;">26893 Jps<br />
+      26832 TaskTracker<br />
+      26620 SecondaryNameNode<br />
+      26333 NameNode<br />
+      26484 DataNode<br />
+      26703 JobTracker</b><br />
+      ]]>
+    </c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
