@@ -595,7 +595,7 @@ public class WordCount {
        <br />
        <br />
       接下来输入一个命令格式化 HDFS：<br />
-      <b>bin/hadoop namenode -format</b>
+      <b>bin/hadoop namenode-format</b>
       <br />
       <br />
       接下来使用 start-all.sh 脚本装在守护进程，然后用 Java 的 jps 命令列出所有守护进程来验证安装是否成功：<br />
@@ -611,6 +611,101 @@ public class WordCount {
       26703 JobTracker</b><br />
       ]]>
     </c:sourceContent>
+
+    <c:sourceContent type="html" title="全分布模式" id="sourceContent1" style="border-bottom:none;">
+      <![CDATA[
+      1、master -- 集群的主节点，驻留 NameNode 和 JobTracker 守护进程 <br />
+      2、backup -- 驻留 SNN 守护进程 <br />
+      3、hadoop1、hadoop2、hadoop3、..... -- 集群的从节点，驻留 DataNode 和 TaskTracker 守护进程 <br />
+      <br /><br />
+      在伪分布模式配置文件的基础上做进一步修改：
+      ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="border-bottom:none;border-top:none;">
+      <![CDATA[
+     <i><b>core-site.xml</b></i>
+      ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="border-bottom:none;border-top:none;"><![CDATA[<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+      <property>
+          <name>fs.default.name</name>
+          <value>hdfs://master:9000</value>   <!-- NameNode 所在节点 -->
+          <description>
+              The name of the default file system. 
+              A URI whose scheme and authority determine the 
+              FileSystem implementation.
+          </description>
+      </property>
+</configuration>]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" style="border-bottom:none;border-top:none;">
+      <![CDATA[<br /><i><b>mapred-site.xml</b></i>]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="border-bottom:none;border-top:none;"><![CDATA[<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+      <property>
+          <name>mapred.job.tracker</name>
+          <value>master:9001</value>      <!-- JobTracker 所在节点 -->
+          <description>
+              The host and port that the MapReduce job tracker runs at.
+          </description>
+      </property>
+</configuration>]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" style="border-bottom:none;border-top:none;">
+      <![CDATA[<br /><i><b>hdfs-site.xml</b></i>]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="border-bottom:none;border-top:none;"><![CDATA[<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+      <property>
+          <name>dfs.replication</name>
+          <value>3</value>        <!-- 增大 HDFS 备份数量 -->
+          <description>
+              The actual number of replications can be specified when the file is created.
+          </description>
+      </property>
+</configuration>]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" style="border-top:none;">
+      <![CDATA[接下来更新 masters 和 slaves 文件用以指定其它守护进程的位置：<br />
+      <b>cat master <br />
+      backup<br />
+      cat salves <br />
+      hadoop1<br />
+      hadoop2<br />
+      hadoop3</b><br />
+      <br />
+      接下来将这些文件复制到集群上的所有节点，并格式化 HDFS 以准备存储数据：<br />
+      <b>bin/hadoop namenode-format</b>
+      <br /><br />
+      接下来启动 Hadoop 守护进程：<br />
+      <b>bin/start-all.sh </b><br />
+      <br />
+      接下来验证节点正在运行被指派的任务：<br />
+      <b>[hadoop-user@master]$ jps <br />
+      30879 JobTracker<br />
+      30717 NameNode <br />
+      30965 Jps <br />
+      <br />
+      [hadoop-user@backup]$ jps <br />
+      2099 Jps
+      1679 SecondaryNameNode <br />
+      <br />
+      [hadoop-user@hadoop1] jps <br />
+      7101 TaskTracker <br />
+      7617 Jps <br />
+      6988 DataNode </b><br />
+      <br />
+      
+      <b>至此，一个可用的集群就建成了!</b>]]>
+    </c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
@@ -621,18 +716,33 @@ public class WordCount {
     </c:comment>
   </c:entry>
 
-  
-
   <c:entry style="margin-top:2em;">
-    <c:title>Hadoop 组件</c:title>
+    <c:title>基于 Web 界面的集群用户界面</c:title>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
     <c:sourceContent type="html" title="HDFS" id="sourceContent1">
-      <![CDATA[HDFS 是一种分布式文件系统，专为 MapReduce 这类框架下的大规模分布式数据处理而设计的。可以把一个 100TB 的大数据集在 Hadoop 中存储为单个文件。<br />
-      Hadoop 提供了一套与 Linux 文件命令类似的命令行工具，用于与 HDFS 交互。
+      <![CDATA[。
       ]]>
     </c:sourceContent>
+    
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>Hadoop 组件 &#8212; HDFS</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[HDFS 是一种分布式文件系统，专为 MapReduce 这类框架下的大规模分布式数据处理而设计的。可以把一个 100TB 的大数据集在 Hadoop 中存储为单个文件。<br />
+      <b style="color:red;">Hadoop 提供了一套与 Linux 文件命令类似的命令行工具，用于与 HDFS 交互。</b>]]></c:desc1>
+    </c:desc>
+    
     <c:sourceContent type="html" title="HDFS 文件操作" id="sourceContent1">
       <![CDATA[<b>假设已经完成了 HDFS 格式化，并启动了一个 HDFS 文件系统 (可以使用伪分布模式)。</b>
       <br />  <br />
@@ -661,6 +771,103 @@ public class WordCount {
       ]]>
     </c:sourceContent>
 
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>HDFS Java API 实践 (编程读写 HDFS)</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[Hadoop 的基本文件操作包括： open、read、write、close、delete、exists、mkdirs、rename 等。]]>
+      </c:desc1>
+      <c:desc1>
+        <![CDATA[Hadoop 的文件 API 同时也可以操作本地系统文件。]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="PutMerge 程序" id="sourceContent1"><![CDATA[/*
+    1、Hadoop 中有一个 getmerge 命令，用于把一组 HDFS 文件在复制到本地计算机的过程中进行合并。
+    2、PutMerge 程序用于把一组文件放到 HDFS 的过程中合并文件。
+    3、Hadoop 处理单个大文件比处理许多小文件更有效率。
+*/
+import java.io.IOException;
+      
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+      
+public class PutMerge {
+    public static void main (String[] args) throws IOException {
+        Configuration conf = new Configuration();
+          
+        FileSystem hdfs = FileSystem.get(conf);
+    
+        // 创建一个专用于本地系统文件的 FileSystem 对象
+        FileSystem local = FileSystem.getLocal(conf);
+          
+        Path inputDir = new Path(args[0]);
+        Path hdfsFile = new Path(args[1]);
+          
+        try {
+            // 取得本地文件列表 
+            // (FileStatus 对象用来存储文件和目录的元数据： 如文件长度、权限、修改时间等)
+            FileStatus[] inputFiles = local.listStatus(inputDir);
+              
+            // 生成 HDFS 输出流
+            FSDataOutputStream out = hdfs.create (hdfsFile);
+              
+            for (int i = 0; i < inputFiles.length; i++) {
+                System.out.println (inputFiles[i].getPath().getName());
+                  
+                // 取得本地文件输入流
+                FSDataInputStream in = local.open(inputFiles[i].getPath());
+                  
+                byte buffer[] = new byte[256];
+                int bytesRead = 0;
+                  
+                while ((bytesRead = in.read(buffer)) > 0) {
+                    out.write (buffer, 0, bytesRead);
+                }
+                  
+                in.close();
+            }
+              
+            out.close();
+        } catch (IOException) {
+            e.printStackTrace();
+        }
+    }
+}]]></c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>Hadoop 组件 &#8212; MapReduce</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="剖析 MapReduce 程序" id="sourceContent1">
+      <![CDATA[
+      
+      <img style="width:100%;" src="//c2.staticflickr.com/6/5498/14309905763_a215ed134a_b.jpg" />
+      ]]>
+    </c:sourceContent>
 
 
     <c:comment>
