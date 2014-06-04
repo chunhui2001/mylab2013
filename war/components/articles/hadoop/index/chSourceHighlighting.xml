@@ -14,6 +14,9 @@
     <p>Hadoop 强调把代码向数据迁移，即： 让数据不动，而将可执行代码发送到数据所在的机器上去。
     数据被拆分后在集群中分布，并且尽可能让一段数据的计算发生在同一台机器上，既这段数据驻留的地方。
     这里所说的代码指的就是 MapReduce 程序。</p>
+    <br />
+    <p>Hadoop 使用 MapReduce 做为其数据处理框架。MapReduce 程序的核心是 Map 和 Reduce 操作，但实际上这个框架还包含其它操作，如: 
+    数据分割 (data splitting)、洗牌 (shuffling)、分组 (Partitioning) 和 合并 (Combining)。</p>
     ]]>
   </c:sourceContent>
   <c:sourceContent type="html" title="比较 SQL 数据库和 Hadoop" id="sourceContent1" style="margin-top:1em;">
@@ -864,11 +867,101 @@ public class PutMerge {
 
     <c:sourceContent type="html" title="剖析 MapReduce 程序" id="sourceContent1">
       <![CDATA[
-      
+      MapReduce 程序通过操作键/值对来处理数据，一般形式为：<br /><br />
+      <b style="color:green;font-size:1.3em;">map: (K1,V1) &rarr; list(K2,V2) <br />
+      reduce: (K2, list(V2)) &rarr; list(K3, V3)</b>
+      <br /><br />
       <img style="width:100%;" src="//c2.staticflickr.com/6/5498/14309905763_a215ed134a_b.jpg" />
       ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="Hadoop 数据类型" id="sourceContent1">
+          <![CDATA[
+          <b>因为标准的 Java 数据类型不支持在集群上移动，所以 MapReduce 框架提供了一种序列化键/值对的方法。只有那些支持这种序列化的类能够在这个框架中充当键或者值。</b>
+          ]]>
+    </c:sourceContent>
 
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+<c:entry style="margin-top:2em;">
+    <c:title>编写 MapReduce 基础程序</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="取得数据集" id="sourceContent1">
+      <![CDATA[
+      从美国国家经济研究局取得专利数据集： <a target="_blank" href="http://www.nber.org/patents/">http://www.nber.org/patents/</a> <br />
+      专利引用数据集: <a href="http://www.nber.org/patents/acite75_99.zip">http://www.nber.org/patents/acite75_99.zip</a><br />
+      专利描述数据集: <a href="http://www.nber.org/patents/apat63_99.zip">http://www.nber.org/patents/apat63_99.zip</a> <br />
+      <br />
+      
+      <b>专利引用数据集关系图</b><br />
+      <img src="https://c2.staticflickr.com/4/3894/14157325750_3bac35529f_b.jpg" style="max-width:100%;" />
+      
+      
+      <br />
+      <b>专利描述数据集中前 10 个属性的定义</b>
+      <br />
+      <table>
+          <thead>
+            <tr>
+              <th style="padding:.2em .5em;padding-left:0;font-weight:bold;">属性名</th>
+              <th style="padding:.2em .5em;padding-left:0;font-weight:bold;">内容</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding:.2em .5em;padding-left:0;">PATENT</td>
+              <td style="padding:.2em .5em;padding-left:0;">专利号</td>
+            </tr>
+            <tr>
+              <td style="padding:.2em .5em;padding-left:0;">GTEAR</td>
+              <td style="padding:.2em .5em;padding-left:0;">批准年</td>
+            </tr>
+            <tr>
+              <td style="padding:.2em .5em;padding-left:0;">GDATE</td>
+              <td style="padding:.2em .5em;padding-left:0;">批准日 (自 1960 年 1 月 1 日以来的日期)</td>
+            </tr>
+            <tr>
+              <td style="padding:.2em .5em;padding-left:0;">APPYEAR</td>
+              <td style="padding:.2em .5em;padding-left:0;">申请年 (仅适用于自 1967 年起批准的专利)</td>
+            </tr>
+            <tr>
+              <td style="padding:.2em .5em;padding-left:0;">COUNTRY</td>
+              <td style="padding:.2em .5em;padding-left:0;">第一发明人国家</td>
+            </tr>
+            <tr>
+              <td style="padding:.2em .5em;padding-left:0;">POSTATE</td>
+              <td style="padding:.2em .5em;padding-left:0;">第一发明人所在州 (若国家为美国)</td>
+            </tr>
+            <tr>
+              <td style="padding:.2em .5em;padding-left:0;">ASSIGNEE</td>
+              <td style="padding:.2em .5em;padding-left:0;">专利权人 (即专利拥有者) 数字标识</td>
+            </tr>
+            <tr>
+              <td style="padding:.2em .5em;padding-left:0;">ASSCODE</td>
+              <td style="padding:.2em .5em;padding-left:0;">专利权人类型，1位 (1-9)。(专利权人类型包括: 美国个人、美国政府、美国组织、非美国个人)</td>
+            </tr>
+            <tr>
+              <td style="padding:.2em .5em;padding-left:0;">CLAIMS</td>
+              <td style="padding:.2em .5em;padding-left:0;">声明数目 (仅适用于自 1975 年授权的专利)</td>
+            </tr>
+            <tr>
+              <td style="padding:.2em .5em;padding-left:0;">NCLASS</td>
+              <td style="padding:.2em .5em;padding-left:0;">3位，表示主要专利类型</td>
+            </tr>
+          </tbody>
+      </table>
+      ]]>
+    </c:sourceContent>
+    
 
     <c:comment>
       <c:comment1>
