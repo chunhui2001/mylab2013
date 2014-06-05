@@ -289,7 +289,98 @@ reduce (String token, List<Integer> values) {
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="" title="建立 WordCount.java 源码副本" id="sourceContent1"><![CDATA[mkdir playground
+    <c:sourceContent type="html" title="适应 Hadoop API 的改变" id="sourceContent1" style="border-bottom:none;">
+      <![CDATA[<ul style="list-style:decimal;margin-left:1.5em;font-weight:bold;">
+        <li>在新 API 中 org.apache.hadoop.mapred 下所有的类都被弃用，取而代之的是 org.apache.hadoop.mapreduce。</li>
+        <li>在新 API 中引入了上下文对象 context，context 替换了 map() 和 reduce() 方法中使用的 OutputCollector 和 Reporter 对象。</li>
+        <li>在新 API 中使用 context.write() 输出键/值对，而不是 OutputCollector.collect()。</li>
+        <li>新 API 统一了应用代码和 MapReduce 框架之间的通信，并固定了 Mapper 和 Reducer 的 API，使得添加新功能时不会改变基本方法签名。</li>
+        <li>在新 API 中添加新的功能仅仅是在 context 对象上添加新方法，所以原有程序不会感觉到新方法的存在，它们任然可以在新版本中继续编译和运行。</li>
+        <li>在新 API 中 map() 和 reduce() 方法分别被包含在新的抽象类 Mapper 和 Reducer 中，新的抽象类也替换了 MapReduceBase 类，使之被启用。</li>
+        <li>在新 API 中 map() 和 reduce() 方法可以抛出 InterruptedException 而非单一的 IOException。</li>
+        <li>reduce() 方法用 Iterable 替换 Iterator，这样更容易使用 Java 的 foreach 实现迭代。</li>
+      </ul>
+      <br />]]>
+    </c:sourceContent>
+    
+    <c:sourceContent type="html" title="" id="sourceContent1" style="border-bottom:none;border-top:none;">
+      <![CDATA[<b>原始 API 中 map() 和 reduce() 的签名：</b>]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="border-top:none;border-bottom:none;"><![CDATA[public static class MapClass extends MapReduceBase 
+                             implements Mapper<K1, V1, K2, V2> {
+    public void map(K1 key, V1 value
+                    , OutputCollector<K2, V2> output, Reporter reporter) 
+                    throws IOException { }
+}
+
+
+public static class Reduce extends MapReduceBase 
+                           implements Reducer<K2, V2, K3, V3> {
+    public void reduce(K2 key, Iterator<V2> values
+                       , OutputCollector<K3, V3> output, Reporter reporter) 
+                       throws IOException { }
+}]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" style="border-bottom:none;border-top:none;">
+      <![CDATA[<b>新 API 中 map() 和 reduce() 的签名：</b>]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="border-top:none;border-bottom:none;"><![CDATA[public static class MapClass extends 
+                             Mapper<K1, V1, K2, V2> {
+    public void map(K1 key, V1 value
+                    , Context context) 
+                    throws IOException, InterruptedException { }
+}
+
+
+public static class Reduce extends 
+                           Reducer<K2, V2, K3, V3> {
+    public void reduce(K2 key, Iterable<V2> values
+                    , Context context) 
+                    throws IOException, InterruptedException { }
+}]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="border-top:none;">
+      <![CDATA[<b>还需要改变 driver 中的一些内容来支持新的 API：</b><br /><br />
+      <ul style="list-style:decimal;margin-left:1.5em;font-weight:bold;">
+        <li>在新 API 中 JobConf 和 JobClient 被替换了，它们的功能已经被放入 Configuration 类和一个新的 Job 类中。</li>
+        <li>Configuration 类纯粹是为了配置作业而设，而 Job 类负责定义和控制一个作业的执行。</li>
+        <li>诸如 setOutputKeyClass() 和 setOutputValueClass() 等方法被从 JobConf 转移到了 Job 类。</li>
+        <li>作业的构造和提交执行放在 Job 中。</li>
+      </ul>
+      <br /><br />
+      <b>原本需要使用 JobConf 来构造一个作业：</b><br />
+      <b style="color:green;">
+        JobConf job = new JobConf(conf, MyJob.class); <br />
+        job.setJobName("MyJob");
+      </b>
+      <br />
+      <br />
+      <b>现在可以通过 Job 类完成：</b><br />
+      <b style="color:green;">
+        Job job = new Job(conf, "MyJob"); <br />
+        job.setJarByClass(MyJob.class);
+      </b>
+      <br />
+      <br />
+      <b>以前通过 JobClient 提交作业去执行：</b><br />
+      <b style="color:green;">
+        JobClient.runJob(job);
+      </b>
+      <br />
+      <br />
+      <b>现在同样通过 Job 类完成：</b><br />
+      <b style="color:green;">
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
+      </b>
+      <br />
+      <br />
+      ]]>
+    </c:sourceContent>
+    
+    <c:sourceContent expand="false" type="" title="建立 WordCount.java 源码副本" id="sourceContent1"><![CDATA[mkdir playground
 mkdir playground/src
 mkdir playground/classes
 cp hadoop-2.2.0-src/hadoop-mapreduce-project/hadoop-mapreduce-examples/src/main/java/org/apache/hadoop/examples/WordCount.java
@@ -304,7 +395,7 @@ jar -cvf playground/wordcount.jar -C playground/classes/ .
 // 运行该副本 (如 output 目录存在应先将其删除)
 bin/hadoop jar playground/wordcount.jar org.apache.hadoop.examples.WordCount input output]]></c:sourceContent>
 
-    <c:sourceContent type="" title="修改 WordCount.java 源码" id="sourceContent1"><![CDATA[package org.apache.hadoop.examples;
+    <c:sourceContent expand="false" type="" title="修改 WordCount.java 源码" id="sourceContent1"><![CDATA[package org.apache.hadoop.examples;
 
 import java.io.IOException;
 import java.util.StringTokenizer;
@@ -385,6 +476,8 @@ public class WordCount {
     System.exit(job.waitForCompletion(true) ? 0 : 1);
   }
 }]]></c:sourceContent>
+
+
 
     <c:comment>
       <c:comment1>
@@ -961,8 +1054,153 @@ public class PutMerge {
       </table>
       ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="构建 MapReduce 程序基础模板" id="sourceContent1">
+      <![CDATA[
+      <b>通常在一个现有的 MapReduce 程序基础上撰写新的 MapReduce 程序。</b> <br /><br />
+      编写一个 MapReduce 程序读取专利引用数据集并对它进行排序。对于每一个专利，我们希望找到所有引用它的专利并进行合并。
+      输出大致如下:<br /><br />
+      <b>
+        10000 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4539112 <br />
+        100000 &nbsp;&nbsp;&nbsp; 5031388 <br />
+        1000067 &nbsp; 5312208, 4944640, 5071294 <br />
+        .......
+      </b>
+      <br /><br />
+      通过观察我们可以发现专利 5312208、 4944640 和 5071294 引用了专利 1000067
+        ]]>
+    </c:sourceContent>
+    <c:sourceContent expand="false" type="" title="典型 Hadoop 程序模板 (旧版 API)" id="sourceContent1" style="border-bottom:none;"><![CDATA[public class MyJob extends Configured implements Tool {
+    public static class MapClass extends MapReduceBase
+                                 implements Mapper<Text, Text, Text, Text> {
+        public void map(Text key, Text value
+                        , OutputCollector<Text, Text> output
+                        , Reporter reporter) throws IOException {
+            output.collect(value, key);                 
+        }
+    }
     
-
+    public static class Reduce extends MapReduceBase 
+                               implements Reducer<Text, Text, Text, Text> {
+        public void reduce(Text key, Iterator<Text> values
+                           , OutputCollector<Text, Text> output
+                           , Reporter reporter) throws IOException {
+            String csv = "";
+            while (values.hasNext()) {
+                if (csv.length() > 0) csv += ",";
+                csv += values.next().toString();
+            }
+            
+            output.collect(key, new Text(csv));
+        }
+    }
+    
+    public int run (String[] args) throws Exception {
+        Configuration conf = getConf();
+        JobConf job = new JobConf (conf, MyJob.class);
+        
+        Path in = new Path(args[0]);
+        Path out = new Path(args[1]);
+        
+        FileInputFormat.setInputPaths(job, in);
+        FileOutputFormat.setOutputPath(job, out);
+        
+        job.setJobName("MyJob");
+        job.setMapperClass(MapClass.class);
+        job.setReducerClass(Reduce.class);
+        
+        job.setInputFormat(KeyValueTextInputFormat.class);
+        job.setOutputFormat(TextOutputFormat.class);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(Text.class);
+        job.set("key.value.separator.in.input.line", ",");
+        
+        JobClient.runJob(job);
+        
+        return 0;
+    }
+    
+    public static void main(String[] args) throws Exception {
+        int res = ToolRunner.run(new Configuration(), new MyJob(), args);
+        
+        System.exit(res);
+    }
+}]]></c:sourceContent>
+    <c:sourceContent expand="false" type="" 
+                     title="典型 Hadoop 程序模板 (新版 API 0.20)" 
+                     id="sourceContent1" 
+                     style="border-bottom:none;">
+          <![CDATA[public class MyJob extends Configured implements Tool {
+    public static class MapClass extends Mapper<LongWritable, Text, Text, Text> {
+        public void map(LongWritable key, Text value
+                        , Context context) 
+                        throws IOException, InterruptedException {
+            String[] citation = value.toString().split(",");
+            context.write(new Text(citation[1]), new Text(citation[0]));
+        }
+    }
+    
+    public static class Reduce extends Reducer<Text, Text, Text, Text> {
+        public void reduce(Text key, Iterable<Text> values
+                           , Context context) 
+                           throws IOException, InterruptedException {
+            String csv = "";
+            
+            for (Text val:values) {
+              if (csv.length() > 0) csv += ",";
+              csv += val.toString();
+            }
+            
+            context.write(key, new Text(csv));
+        }
+    }
+    
+    public int run (String[] args) throws Exception {
+        Configuration conf = getConf();
+        
+        Job job = new Job(conf, "MyJob");
+        job.setJarByClass(MyJob.class);
+        
+        Path in = new Path(args[0]);
+        Path out = new Path(args[1]);
+        
+        FileInputFormat.setInputPaths(job, in);
+        FileOutputFormat.setOutputPath(job, out);
+        
+        job.setMapperClass(MapClass.class);
+        job.setReducerClass(Reduce.class);
+        
+        /*
+          
+        */
+        //job.setInputFormat(KeyValueTextInputFormat.class);
+        job.setInputFormatClass(TextInputFormat.class);
+        job.setOutputFormatClass(TextOutputFormat.class);
+        
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(Text.class);
+        
+       // job.set("key.value.separator.in.input.line", ",");
+        
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
+        
+        return 0;
+    }
+    
+    public static void main(String[] args) throws Exception {
+        int res = ToolRunner.run(new Configuration(), new MyJob(), args);
+        
+        System.exit(res);
+    }
+}]]>
+  </c:sourceContent>
+  <c:sourceContent type="html" title="" id="sourceContent1" style="border-top:none;color:green;">
+    <![CDATA[
+     <b>Hadoop 要求 Mapper 和 Reducer 必须是它们自身的静态类。该模板将它们包含在 MyJob 类中作为内部类。</b> <br />
+     <b>这些内部类是独立的，通常不与 MyJob 类进行交互 (放在一个文件中只是为了简化代码管理)。</b> <br />
+     <b>在作业执行期间，采用不同 JVM 的各类节点复制并运行 Mapper 和 Reducer，其它的作业类仅在客户机上执行。</b> <br />
+     <b>run() 方法是框架的核心，也称为 driver。</b> <br />
+        ]]>
+  </c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
