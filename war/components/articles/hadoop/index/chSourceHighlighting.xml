@@ -122,8 +122,6 @@ for each wordCount received from firstPhase {
       <![CDATA[
     <p><b>MapReduce</b> 算法将查询操作和数据集都分解为组件&mdash;这就是<b>映射 (Map)</b>。
     在查询中被映射的组件可以被同时处理 (即<b>规约:Reduce</b> ) 从而快速地返回结果。不幸的是 <b>MapReduce</b>  是一个在概念和实现上都很复杂的想法！</p>
-    <p>MapReduce 算法将查询操作和数据集都分解为组件&mdash;这就是映射 (Map)。
-    在查询中被映射的组件可以被同时处理 (即规约:Reduce) 从而快速地返回结果。不幸的是 MapReduce 是一个在概念和实现上都很复杂的想法！</p>
     <br />
     <p><b>管道</b>和<b>消息队列</b>等数据处理模型，用于数据处理应用的方方面面 (Unix pipes 就是一种常见的管道)。
         <b>管道</b>有助于进程原语的重用，已有模块的简单链接即可组成一个新的模块；<b>消息队列</b>则有助于进程原语的同步。
@@ -314,13 +312,27 @@ reduce (String token, List<Integer> values) {
                     throws IOException { }
 }
 
+/*
+    每一个 map() 方法的调用分别被赋予一个类型为 K1 和 V1 的键/值对。
+    这个键/值对由 mapper 生成，并通过 OutputCollector 对象的 collect() 方法输出。
+*/
+
+
+
+
 
 public static class Reduce extends MapReduceBase 
                            implements Reducer<K2, V2, K3, V3> {
     public void reduce(K2 key, Iterator<V2> values
                        , OutputCollector<K3, V3> output, Reporter reporter) 
                        throws IOException { }
-}]]>
+}
+
+/*
+    reduce() 方法的每次调用均被赋予 K2/V2 类型的一组 键/值，
+    它必须与 Mapper 中使用的 K2 和 V2 类型相同。reduce() 方法可能会循环遍历 V2 类型的所有值。
+    reduce() 还使用 OutputCollector 类来输出键/值，它们的类型为 K3/V3。
+*/]]>
     </c:sourceContent>
 
     <c:sourceContent type="html" title="" id="sourceContent1" style="border-bottom:none;border-top:none;">
@@ -1170,7 +1182,7 @@ public class PutMerge {
         job.setReducerClass(Reduce.class);
         
         /*
-          
+          由于旧版 API 中的 KeyValueTextInputFormat 类没有被移植到新版 API 中，所以新版中不得不使用 TextInputFormat
         */
         //job.setInputFormat(KeyValueTextInputFormat.class);
         job.setInputFormatClass(TextInputFormat.class);
@@ -1198,9 +1210,48 @@ public class PutMerge {
      <b>Hadoop 要求 Mapper 和 Reducer 必须是它们自身的静态类。该模板将它们包含在 MyJob 类中作为内部类。</b> <br />
      <b>这些内部类是独立的，通常不与 MyJob 类进行交互 (放在一个文件中只是为了简化代码管理)。</b> <br />
      <b>在作业执行期间，采用不同 JVM 的各类节点复制并运行 Mapper 和 Reducer，其它的作业类仅在客户机上执行。</b> <br />
-     <b>run() 方法是框架的核心，也称为 driver。</b> <br />
+     <b>run() 方法是框架的核心，也称为 driver。</b> 
         ]]>
   </c:sourceContent>
+
+  <c:sourceContent type="html" title="driver" id="sourceContent1" style="border-top:none;color:green;">
+    <![CDATA[
+    <ul style="list-style:disc;margin-left:1.5em;">
+      <li><b>在 driver 中实例化、配置并传递一个 JobConf 对象命名的作业给 JobClient.runJob() 用以启动 MapReduce 作业。(JobClient 与 JobTracker 通信让该作业在集群上启动。)</b></li>
+      <li><b>Driver 需要在作业中为每个作业定制基本参数，包括输入路径、输出路径、Mapper 类和 Reducer 类。JobConf 对象将保持作业运行所需的全部配置参数。</b></li>
+      <li><b>每个作业可以重置默认的作业属性，例如：InputFormat、OutputFormat 等。也可以调用 JobConf 对象中的 set() 方法填充任意的配置参数。</b></li>
+      <li><b>一旦传递 JobConf 对象到 JobClient.runJob()，它就被视为作业的总体规划，成为决定这个作业如何运行的蓝本。</b></li>
+      
+      <li><b>除了在 Mapper 和 Reducer 之间保持 K2/V2 的类型一致，还需确保在 Mapper 和 Reducer 中使用的键值类型与在 driver 中设置的格式、输出的键/值类保持一致。</b></li>
+      <li><b>使用 KeyValueTextInputFormat 意味着 K1/V1 必须均为 Text 类型。Driver 必须调用 setOutputKeyClass() 和 setOutputValueClass() 分别指定 K2 和 V2 的类。</b></li>
+      <li><b>所有键与值得类型必须是 Writable 的子类型，以确保 Hadoop 的序列化接口可以把数据分布在集群上发送。</b></li>
+    </ul>
+        ]]>
+  </c:sourceContent>
+
+  <c:sourceContent type="html" title="使用 combiner 提升性能" id="sourceContent1" style="border-top:none;color:green;">
+    <![CDATA[。。
+        ]]>
+  </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>在云上运行 Hadoop </c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="" id="sourceContent1">
+      <![CDATA[。。
+        ]]>
+    </c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
