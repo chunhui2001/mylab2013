@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chHtmlContent" componentId="chHtmlContent_1" xmlns:c="http://com.snnmo.website">
+  <c:content>
+    <![CDATA[ 
+      <p style="margin:1em 0;">转自：<a target="_blank" href="http://www.cnblogs.com/gumpeng/archive/2013/05/06/3063159.html">http://www.cnblogs.com/gumpeng/archive/2013/05/06/3063159.html</a></p>
+         
+      <p style="margin:1em 0;margin-top:2em;">
+          <h4>&hearts; 安装 nutch1.6</h4>
+          <br />
+          <span>nutch1.6 的二进制文件，虽然可以成功爬取网页，但用 solr 来搜索下载好的网页时，总是无法成功。
+                后来选择下载 nutch1.6 的源文件自己编译，则可以很好的和 solr 结合，完成搜索操作，并可以利用 Hadoop 平台来存储爬取的结果。</span>
+          <br />          
+          <br />
+          
+          <b style="color:gray;">以下是操作过程: </b> 
+          <br />
+          
+          <ul style="list-style:decimal;margin-left:1.5em;">
+              <li style="margin:.5em 0;">因为 nutch 的源代码是用 svn 来管理的，所以首先需要安装 svn。如果机器中已经安装了 svn，此步骤可以跳过。
+                  <br />
+                  <b style="color:green;">sudo apt-get install subversion</b></li>
+              <li style="margin:.5em 0;">将 nutch 的源代码从网上 checkout。
+                  <br />
+                  <b style="color:green;">svn co https://svn.apache.org/repos/asf/nutch/tags/release-1.6/ nutch</b></li>
+              <li style="margin:.5em 0;">进入 nutch 文件夹下的 conf 文件夹，修改配置文件 nutch-site.xml。在文件的 &lt;configuration&gt; 中加入下面内容
+                  <br />
+                  <b style="color:green;">
+                    &lt;property&gt;<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;    &lt;name>http.agent.name&lt;/name&gt;<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;    &lt;value>My nutch agent&lt;/value&gt;<br />
+                    &lt;/property&gt;
+                  </b>
+                  <br />
+                  
+                  value 值不能为空，否则会报错。
+              </li>
+              <li style="margin:.5em 0;">在 nutch 文件夹下，会发现有一个 build.xml 文件，它是 ant 的工作文件,用来编译、打包。我们在此目录中，用 ant 编译源程序。（若机器上没有安装 ant，则通过命令：sudo apt-get install ant 来安装）
+                  <br />
+                  直接输入命令：ant 
+                  <br />
+                  第一次编译会耗费几分钟时间，因为需要下载该项目依赖的 jar 文件。以后再重新编译时，只需要十几秒就可以完成。编译、打包完后，会生成一个 runtime 文件夹。
+              </li>
+              <li style="margin:.5em 0;">进入到 nutch 目录下的 runtime 目录，会发现里面有两个文件夹：local、deploy。其中，loca l是用来直接爬取网页信息，存储在本地。
+                  而 deploy 是将爬取网页的任务提交给 Hadoop，用 MapReduce 的方式来爬取网页信息，并将结果存储在 HDFS 上。下面会详细介绍如何使用它们。</li>
+          </ul>
+      </p>
+      
+      
+      <p style="margin:1em 0;margin-top:2em;">
+          <h4>&hearts; 基于 Tomcat 的 solr 的安装</h4>
+          <br />
+          
+          <b>安装 solr：</b> 
+          <br />
+          
+          <ul style="list-style:decimal;margin-left:1.5em;">
+              <li style="margin:.5em 0;">首先，执行以下命令，下载 solr3.6.2 <br />
+                  <b style="color:green;">wget http://mirror.bjtu.edu.cn/apache/lucene/solr/3.6.2/apache-solr-3.6.2.tgz </b></li>
+              <li style="margin:.5em 0;">
+                将压缩文件解压后，进入到解压文件的 example 目录，复制 nutch 的 conf 目录中的 schema.xml 文件到 [solr_home]/example/solr/conf 目录。(注：[solr_home] 为解压后的 solr 目录名称，其他以此类推)
+              </li>
+              <li style="margin:.5em 0;">
+                  修改配置文件 solr/conf/solrconfig.xml, 将里面所有的 &lt;strname="df"&gt;text&lt;/str&gt; 都替换为 &lt;strname="df"&gt;content&lt;/str&gt;。
+              </li>
+          </ul>
+          
+          <b style="margin-top:1.5em;display:block;">安装配置 tomcat：</b>           
+          <ul style="list-style:decimal;margin-left:1.5em;">
+              <li style="margin:.5em 0;">去 apache 的官网 http://tomcat.apache.org， 下载 Tomcat 的最新版本 apache-tomcat-7.0.39。</li>
+              <li style="margin:.5em 0;">将压缩文件解压后，拷贝 [solr_home]/example/webapps/solr.war 文件到 [tomcat_home]/webapps 目录下。</li>
+              <li style="margin:.5em 0;">将 [solr_home]/example/ 下的solr目录拷贝到 [tomcat_home]下。</li>
+              <li style="margin:.5em 0;">
+                  在 tomcat 目录下的 conf/Catalina/localhost 目录中（如果没有则手工创建该目录）创建 solr.xml 文件，文件内容如下：
+                  <br />
+                  <b>
+                  &lt;Context docBase="[tomcat_home]/webapps/solr.war" debug="0" crossContext="true"&gt;<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;  &lt;Environment name="solr/home" type="java.lang.String" value="[tomcat_home]/solr" override="true" /&gt;<br />
+                  &lt;/Context&gt;</b>
+              </li>
+              <li style="margin:.5em 0;">
+                  修改 [tomcat_home]/conf下的server.xml 文件，找到 &lt;Connector port="8080" … 项（假设tomcat监听8080端口），添加编码方式，修改后如下：
+                  &lt;Connector port="8080" URIEncoding="UTF-8"…
+              </li>
+              <li style="margin:.5em 0;">
+                  启动 tomcat。然后在浏览器中输入 http://localhost:8080/solr/， 出现欢迎界面则表示配置成功。
+              </li>
+          </ul>
+          
+          <b style="margin-top:1.5em;display:block;">爬取网页并建立索引，用 solr 来进行搜索。：</b>           
+          <ul style="list-style:decimal;margin-left:1.5em;">
+              <li style="margin:.5em 0;">
+                进入到 [nutch_home]/runtime/local/, 新建文件夹, 命名为 urls。
+                在 urls 目录中，新建一个名为 url.txt 的文档，在文档中输入一个或多个要爬取的网页地址并保存（如：http://www.qq.com）。</li>
+              <li style="margin:.5em 0;">
+                在目录 [nutch_home]/runtime/local/ 下，输入如下爬取网页的命令：<br />
+                <b style="color:green;">bin/nutch crawl urls -dir data -threads 20 -depth 3 -topN 100</b>
+              <br />
+              
+              该命令的意思是：爬取存放在目录 urls 中的文件里的网页地址对应的网页信息，启动 20 个线程来完成任务，仅抓取网页上的超链接形成的树形结构中（起始网页为根），深度不超过3层的网页。
+              最终仅保存结果中的前 100 条，保存在当前目录下的 data 文件夹中。</li>
+              <li style="margin:.5em 0;">
+                运行如下命令，将结果映射到 solr 中（Tomcat必须先启动）<br />
+                <b style="color:green;">bin/nutch solrindex http://127.0.0.1:8080/solr/ data/crawldb -linkdb data/linkdb data/segments/* </b>
+              </li>
+              <li style="margin:.5em 0;">
+                  通过网页访问 http://127.0.0.1:8080/solr/admin/， 就可以在 Query String 栏中，输入要搜索的文字进行搜索了。
+              </li>
+          </ul>
+      </p>
+      
+      
+      <p style="margin:1em 0;margin-top:2em;">
+          <h4>&hearts; 伪分布式 Hadoop 爬虫系统</h4>          
+          <ul style="list-style:decimal;margin-left:1.5em;">
+              <li style="margin:.5em 0;">
+                安装单机版的伪分布式 Hadoop 系统。<br />
+                安装过程比较简单，网上有很多资料可以参考。我安装的版本是 Hadoop1.0.4。
+              </li>
+              <li style="margin:.5em 0;">
+                启动 Hadoop 的所有节点，将含有存放网页地址的文档的文件夹上传到 HDFS 上。
+              </li>
+              <li style="margin:.5em 0;">
+                启动 Tomcat。
+              </li>
+              <li style="margin:.5em 0;">
+                进入到 [nutch_home]/runtime/deploy/ 目录下，运行命令：<br />
+                <b style="color:green;">bin/nutch crawl /user/guangpeng/urls/ -solr http://127.0.0.1:8080/solr -dir crawl -depth 3 -topN 100 -threads 5</b><br />
+                其中，/user/guangpeng/urls/ 为存放网页地址的文档在 HDFS 上的地址。
+              </li>
+              <li style="margin:.5em 0;">
+                通过网页访问 http://127.0.0.1:8080/solr/admin/， 就可以在 Query String 栏中，输入要搜索的文字进行搜索了。
+              </li>
+              
+          </ul>
+          
+      </p>
+    ]]>
+  </c:content>
+</c:component>
