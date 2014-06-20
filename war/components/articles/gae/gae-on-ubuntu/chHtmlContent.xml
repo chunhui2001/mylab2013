@@ -1,0 +1,137 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chHtmlContent" componentId="chHtmlContent_1" xmlns:c="http://com.snnmo.website">
+	<c:content>
+    <![CDATA[ 
+       <h4 style="font-weight:bold;margin-bottom:1em;font-size:1.5em;margin-top:1.5em;">一、准备工作</h4>
+       <p>
+         <ul style="list-style:decimal;margin-left:1.5em;">
+            <li>申请 AppID 和 Win 下相同，本文假定已经成功申请到至少一个 AppID ，方法在此不再详述，需要的话请访问：http://blog.howgo.info/archives/3246.html </li>
+            <li>Ubuntu 已经自带 Python ，但是建议还是确认一下。终端 sudo apt-get install python </li>
+            <li>下载 GAE for Linux https://developers.google.com/appengine/downloads?hl=zh-CN </li>
+            <li>下载 GoAgent ，Win 和 Linux 是通用的， Linux 下直接用 .py 脚本运行 https://code.google.com/p/goagent/ </li>
+         </ul>
+       </p>
+       
+       <h4 style="font-weight:bold;margin-bottom:1em;font-size:1.5em;margin-top:1.5em;">二、上传服务端</h4>
+       <p>
+         <span>如果已经在 Win 下或者其他时候上传过 GoAgent 服务端可跳过此步，无需重新上传。在此重新上传不影响其他平台使用。</span>
+         <br />
+         <br />
+         <ul style="list-style:decimal;margin-left:1.5em;">
+            <li>先解压 GAE 和 GoAgent ，将 goAgent 放到 GAE 的 google_appengine 目录下</li>
+            <li>进入 GoAgent目录/server/python ，编辑 app.yaml ，填入 AppID 和 Version （默认是1) </li>
+            <li>进终端，使用  CD 命令进入你的 GAE 目录，然后激活位于你的 GoAgent 目录的上传脚本 </li>
+         </ul>
+         <br />
+         <span style="font-weight:bold;">
+          cd [GoAgent目录]/server <br />
+          python uploader.zip
+         </span>
+         <br /><br />
+         
+         <span>或者使用Python的内置同步脚本：</span>
+         <br /><br />
+         <span style="font-weight:bold;">sudo python appcfg.py update [GoAgent目录]/server/python</span>
+         <br />
+         <br />
+         <span>随后在终端填入你的email和密码就能上传了。</span>
+       </p>
+       
+       <h4 style="font-weight:bold;margin-bottom:1em;font-size:1.5em;margin-top:1.5em;">三、配置客户端环境</h4>
+       <p>
+         <ul style="list-style:decimal;margin-left:1.5em;">
+            <li>
+              安装 Gevent （非必须组件，若后面遇到问题可尝试安装）： 
+              <br />
+              <span style="font-weight:bold;">
+                sudo apt-get install python-dev curl -L -O https://github.com/python-greenlet/greenlet/archive/0.4.0.tar.gz && tar xvzpf 0.4.0.tar.gz && cd greenlet-0.4.0 && <br />
+                sudo python setup.py install curl -L -O https://github.com/downloads/surfly/gevent/gevent-1.0rc2.tar.gz && tar xvzpf gevent-1.0rc2.tar.gz && cd gevent-1.0rc2 && <br />
+                sudo python setup.py install
+              </span>
+            </li>
+            <li style="margin-top:.5em;">
+                要正常使用gtk托盘以在托盘区显示图标，需要安装以下软件包（按需要选择）： 
+                <br />
+                <span style="font-weight:bold;">
+                  sudo apt-get install python-appindicator <br />
+                  sudo apt-get install python-vte
+                </span>
+            </li>
+         </ul>
+       </p>
+       
+       <h4 style="font-weight:bold;margin-bottom:1em;font-size:1.5em;margin-top:1.5em;">四、配置客户端</h4>
+       <p>
+         <ul style="list-style:decimal;margin-left:1.5em;">
+            <li>在 GoAgent 的 local 目录中，有一个 proxy.ini 文件，将你的 AppID 填入 </li>
+            <li>
+                终端 CD 进 GoAgent 目录，激活客户端，如： 
+                <br />
+                <span style="font-weight:bold;">
+                  cd [GoAgent目录]/local
+                  sudo python proxy.py
+                </span>
+            </li>
+            <li style="margin-top:.5em;">也可以赋予 proxy.py 可执行权限之后直接双击 proxy.py 运行，在 proxy.py 上面右击，属性的权限中勾选允许以程序执行文件即可。 </li>
+            <li>运行 goagent-gtk.py 可以使用 GTK 托盘方式即在右上角显示小图标运行 GoAgent 。 </li>
+         </ul>
+       </p>
+       
+       <h4 style="font-weight:bold;margin-bottom:1em;font-size:1.5em;margin-top:1.5em;">五、其他问题</h4>
+       <p>
+         <ul style="list-style:decimal;margin-left:1.5em;">
+            <li>配置好 GoAgent 后使用方法同与Win下相同，只需要浏览器翻墙的话推荐 Chromium + SwitchProxy ，具体方法参见第一步中给出的申请 AppID 教程结尾处。 </li>
+            <li>
+              如果不止在浏览器中翻墙，还需要设置全局代理，可以访问 Ubuntu 系统设置 > 网络 > 代理 在http和https连接处填写 GoAgent 的本地端口地址 127.0.0.1:8087 ，然后点击应用即可。 
+              <br />
+              <br />
+              如果桌面环境没有提供全局代理的设置，也可以手动编辑 /etc/profile 文件，在其中加入：
+              <br />
+              <br />
+              <span style="font-weight:bold;">
+                # 分别指定 HTTP HTTPS FTP 协议使用的代理服务器地址 <br />
+                http_proxy= 127.0.0.1:8087 <br />
+                https_proxy= 127.0.0.1:8087 <br />
+                ftp_proxy= # GoAgent 不支持 FTP <br />
+                # 设置不使用代理的网址或者IP，用逗号分隔 <br />
+                no_proxy= 127.0.0.1, 192.168.1.1 <br />
+                # 设置环境变量 <br />
+                export http_proxy https_proxy ftp_proxy no_proxy
+              </span><br /><br />
+            </li>
+            <li>
+              访问部分网站提示证书不受信任问题与 Win 下相同。
+              解决方法是： Chromium 首选项 > 高级选项 > 管理证书，在 授权中心 导入 GoAgent/local 目录下的 CA.crt 证书，注意不要导入到 服务器 ，否则不起作用。
+              在 授权中心 找到 GoAgent CA 修改信任设置为全部选中，其他浏览器相同。重启浏览器生效。 
+            </li>
+            <li>
+                启动后似乎会自动创建桌面图标，如果没有，可以尝试以下办法（别忘了更改为对应路径）： 
+                <br />
+                <br />
+                在桌面新建一个空白文档，命名为 GoAgent.desktop ，然后使用 gedit 或其他文本编辑器打开，然后输入：
+                <br />
+                <br />
+                <span style="font-weight:bold;">
+                    [Desktop Entry]<br />
+                    Type=Application<br />
+                    Name=GoAgent<br />
+                    Comment=GoAgent Start<br />
+                    Categories=Network;Proxy;<br />
+                    Exec=sudo python [GoAgent目录]/local/goagent-gtk.py<br />
+                    Icon=[GoAgent目录]/local/goagent-logo.png<br />
+                    Terminal=true<br />
+                    StartupNotify=true
+                </span>
+                <br />
+                <br />
+                这是唯一一种可以和Win下一样正常显示代理窗口的方法，不过每次都要输入一遍账户密码。
+                也可以不让 GoAgent 在终端显示，只需要将 Terminal=true 改成 Terminal=false 。最后别忘了更改一下权限：
+                <br />
+                <br />
+                <span style="font-weight:bold;">sudo chmod 777  [GoAgent目录]/local/proxy.py</span>
+            </li>
+         </ul>
+       </p>
+    ]]>
+  </c:content>
+</c:component>
