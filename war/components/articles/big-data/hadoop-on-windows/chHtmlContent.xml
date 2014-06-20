@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chHtmlContent" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:content style="margin-top:1.5em;">
+    <![CDATA[ 
+      <h4 style="font-size:2em;color:gray;margin-bottom:1.5em;margin-top:2em;">cygwin 的安装与配置</h4>
+      <div>
+          <h5 style="font-size:1.5em;margin-bottom:.5em;">什么是 cygwin</h5>
+          <p>
+            cygwin 是一个在 windows 平台上运行的 unix 模拟环境，是 cygnus solutions 公司开发的自由软件（该公司开发了很多好东西，著名的还有 eCos，不过现已被 Redhat 收购）。
+            它对于学习unix/linux操作环境，或者从unix到windows的应用程序移植，或者进行某些特殊的开发工作，尤其是使用gnu工具集在windows上进行嵌入式系统开发，非常有用。
+            随着嵌入式系统开发在国内日渐流行，越来越多的开发者对 cygwin 产生了兴趣。 
+          </p>
+          
+          <h5 style="font-size:1.5em;margin-bottom:.5em;margin-top:1.5em;">cygwin 的安装</h5>
+          <p>
+            下载安装程序，下载地址为： http://www.cygwin.com <br /><br />
+            选择必须安装的包,根据实践有如下包必须选择安 装，否则很可能cygwin安装失败！<br /><br />
+            
+            <b style="color:gray;">
+              Net Category 下的 OpenSSL，OpenSSH;<br />
+              Base Category下的 sed;<br />
+              Editors Category下的 vim,Emacs;<br />
+              Devel Category 下的 subversion,binutils,gcc,gcc-mingw,gdb
+            </b>
+            <br />
+            <br />
+            点击下一步，一直到完成。<br />
+            说明：虽然 cygwin 提供在线安装，建议先完全下载到本地，再进行安装。因为在线安装会出现许多莫名奇妙的问题。
+          </p>  
+          
+          <h5 style="font-size:1.5em;margin-bottom:.5em;margin-top:1.5em;">cygwin 的配置</h5>
+          <p>
+            <br />
+            <b>配置环境变量</b>
+            
+            <br />
+            CLASSPATH= .;C:\Java\jdk1.6.0_11\lib\dt.jar;C:\Java\jdk1.6.0_11\lib\tools.jar <br />
+            CYGWIN=ntsec; <br />
+            JAVA_HOME=C:\Java\JDK1.6.0_11;C:\Java\jre6; <br />
+            在PATH环境变量中加入如下路径C:\cygwin\bin;C:\cygwin\usr\i686-pc-cygwin\bin;C:\Java\jdk1.6.0_11\bin;
+            <br />
+            <br />
+            
+            <b>安装sshd服务</b>
+            
+            <br />
+            启动cygwin输入命令：ssh-host-config;            
+            <br />
+            根据提示进行相应的操作直至安装完成，安装成功后立即启动名称为“CYGWIN sshd”的服务。
+            <br />
+            <br />
+            
+            <b>配置ssh登录</b>
+            
+            <br />
+            执行ssh-keygen命令，然后根据提示按三次回车键，最后输入如下命令：            
+            <br />
+            cd ~/.ssh/;            
+            <br />
+            cp id_rsa.pub authorized_keys            
+            <br />
+            
+            至此，cygwin的安装与配置成功，你可以享受 cygwin 带来的乐趣。
+          </p>  
+      </div>
+      
+      
+      <h4 style="font-size:2em;color:gray;margin-bottom:1.5em;margin-top:2em;">hadoop 多节点的安装与部署</h4>
+      <div>
+        <b>下载 hadoop;</b>
+        <br />
+        本实验用的版本是：hadoop-0.20.1;
+        <br />
+        <br />
+        
+        <b>外部配置</b>
+        <br />
+        选中一台机子做为 jobTracker，namenode, datanode 这个机子为 master,这个机器的 ip 设置为 192.168.1.102。另外两台做 datanode,TaskTracker 为 slave，这个机器的ip为192.168.1.101，192.168.1.103
+        <br />
+        <br />
+        
+        <b>实现无密码登录 ssh 服务器，在 master 机器 cygwin 的控制台中输入如下命令： </b>
+        <br />
+        cd ~/.ssh;<br />
+        chmod 600 authorized_keys;<br />
+        scp authorized_keys  Administrator@192.168.1.102:~/.ssh/ authorized_keys;<br />
+        scp authorized_keys  Administrator@192.168.1.103:~/.ssh/ authorized_keys;
+        <br />
+        <br />
+        假如是所用的客户端计算机是第一次登陆 SSH 服务器，命令行中会提示 “Are you sure you want to continue connecting (yes/no) ?”，只要输入 yes 即可。
+        SSH 服务器会自动将这次的登陆信息存储在 /.ssh/known_host 文件中。
+        当显示 “Fanfare!!! You are successfully logged in to this server!!!” 时，说明已经成功登陆到 ssh 服务器计算机内了。
+        需要注重的是，此时在当前控制台内输入的命令都将在 ssh 服务器计算机里运行。
+        <br />
+        <br />
+        
+        <b>master 机器 Hadoop 机器环境部署：</b>
+        <br />
+        (1)将安装包解压到 F:\hadoop\run 中；<br />
+        (2)修改 conf 目录下的 hadoop-env.sh<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;   <b style="color:gray;">export JAVA_HOME="/cygdrive/c/Java/jdk1.6.0_11" </b><br />
+        (3)修改 conf 目录下的 core-site.xml:<br />
+        <b style="color:gray;">
+            &nbsp;&nbsp;&nbsp;&nbsp;   &lt;property&gt;<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;           &lt;name&gt;fs.default.name&lt;/name&gt;<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;           &lt;value&gt;hdfs://192.168.1.101:9000&lt;value&gt;<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;           ......................................
+        </b>
+        <br />
+        (4)修改 conf 目录下的 hdfs-site.xml:<br />
+        <b style="color:gray;">
+           &nbsp;&nbsp;&nbsp;&nbsp;  &lt;property&gt;<br />
+           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          &lt;name&gt;dfs.datanode.handler.count&lt;/name&gt;<br />
+           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          &lt;value&gt;1&lt;value&gt;<br />
+           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;           ......................................
+        </b>
+         <br />
+           <br />
+           
+        <b style="color:gray;">
+           &nbsp;&nbsp;&nbsp;&nbsp;   &lt;property&gt;<br />
+           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;           &lt;name&gt;dfs.replication&lt;/name&gt;<br />
+           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;           &lt;value&gt;1&lt;value&gt;<br />
+           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;           ......................................
+        </b>   
+        <br />
+        (5)修改 conf 目录下的 mapred-site.xml<br />
+        <b style="color:gray;">
+           &nbsp;&nbsp;&nbsp;&nbsp;   &lt;property&gt;<br />
+           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          &lt;name&gt;mapred.job.tracker&lt;/name&gt;<br />
+           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          &lt;value&gt;192.168.1.101:9001&lt;value&gt;<br />
+           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          ......................................
+        </b>          
+        <br />
+        (6)修改 conf 目录下的 masters 文件 <br />
+         &nbsp;&nbsp;&nbsp;&nbsp;  <b style="color:gray;">输入: 192.168.1.101</b>
+           
+        <br />
+        (7)修改conf目录下的slaves文件<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;  <b style="color:gray;">  输入: 192.168.1.101<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;       192.168.1.102<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;       192.168.1.103
+          </b>         
+        <br />
+        (8)配置 hadoop 在 cygwin 中的环境<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;  <b style="color:gray;">  输入: 192.168.1.101  用vi打开/etc/profile文件，在文件的末尾追加如下代码：<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; export HADOOP_HOME=/cygdrive/f/hadoop/run<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; export PATH=$PATH:$HADOOP_HOME/bin
+          </b>   
+        <br />
+        (9)格式化一个新的分布式文件系统 <br />
+          &nbsp;&nbsp;&nbsp;&nbsp;  <b style="color:gray;">   cd $HADOOP_HOME<br />
+          &nbsp;&nbsp;&nbsp;&nbsp; bin/hadoop namenode -format
+          </b> 
+        <br />
+        <br />
+        
+        
+        <b>slave 机器 Hadoop 机器环境部署</b>
+        <br />
+        把 master 机器上的 F:\hadoop 拷贝到 slave 机器上的F盘的根目录下即可。
+        <br />
+        关闭 master，slave 机器上的 Cygwin, 然后重启 Cygwin。
+        <br />
+        <br />
+        
+        <b>启动master上的hadoop，执行如下命令：</b>
+        <br />
+        ssh localhost 
+        <br />
+        cd $HADOOP_HOME
+        <br />
+        bin/start-dfs.sh
+        <br />
+        bin/start-mapred.sh
+        <br />
+        jps
+        <br />
+        <br />
+        
+        
+        <b>运行wordcount程序</b>
+        <br />
+        $ bin/hadoop dfs -put ./test-in input  
+        <br />
+        $ bin/hadoop jar hadoop-0.16.0-examples.jar wordcount input output
+        <br />
+        $ bin/hadoop dfs -cat output/*
+        <br />
+        <br />        
+        
+        
+        <b>停止hadoop进行</b>
+        <br />
+        $ bin/stop-all.sh 
+        <br />
+        <br />        
+        
+        <b>配置 hadoop 的开发环境</b>
+        <br />
+        <ul style="list-style:decimal;margin-left:1.5em;">
+          <li>下载 hadoop-0.20.1-eclipse-plugin.jar</li>
+          <li>将其复制到 Eclipse 安装目录下的   plugins 子目录下。</li>
+          <li>删除 org.eclipse.update 目录，重启 Eclipse。</li>
+          <li>配置一个 Map/Reduce 对象，即 DFS location ,将 Map/Reduce Master 一栏中的 host 设置为 192.168.101，port 设置为 9001；
+            将 DFS Master 一栏中的 host 设置为 192.168.101，port 设置为 9000；</li>
+          <li>
+            运行 wordcout 程序
+            <br />
+            创建一个 Map/Reduce  Project,将 wordcount.java 拷贝到该工程的 src 目录下，运行程序。 
+          </li>
+        </ul>
+        <br />
+        至此，如果以上没有问题的话，hadoop 多节点的运行环境与开发环境配置完毕了，你可以开发 Map/Reduce 程序了。
+      </div>
+    ]]>
+  </c:content>
+
+</c:component>
