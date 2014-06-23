@@ -3,6 +3,12 @@
   <c:content style="margin-top:1.5em;">
     <![CDATA[ 
       <p style="font-weight:bold;">
+        Hadoop 2.x release involves many changes to Hadoop and MapReduce. 
+        The centralized JobTracker service is replaced with a ResourceManager that manages the resources in the cluster and an ApplicationManager that manages the application lifecycle. 
+        These architectural changes enable hadoop to scale to much larger clusters.
+        <br />
+        <br />
+        
         This tutorial will give the reader instructions to setup Hadoop 2.2.0 on Mac OS X with minimal configurations for exercise and development purposes. 
         I have done the installation on my 13-inc MacBook Pro Retina.
       </p>
@@ -40,17 +46,22 @@
         export HADOOP_MAPRED_HOME=$HADOOP_INSTALL <br />
         export HADOOP_COMMON_HOME=$HADOOP_INSTALL <br />
         export HADOOP_HDFS_HOME=$HADOOP_INSTALL <br />
-        export YARN_HOME=$HADOOP_INSTALL <br />
+        export HADOOP_YARN_HOME=$HADOOP_INSTALL <br />
         export PATH=$PATH:$HADOOP_INSTALL/bin:$HADOOP_INSTALL/sbin
         
         <br />
         <br />
         $ . ~/.profile
+        
+        <br />
+        <br />
+        
+        <span style="color:red;font-weight:bold;">This is very important as if you miss any one variable or set the value incorrectly, it will be very difficult to detect the error and the job will fail.</span>
       </p>
       
       <h4 style="font-size:1.5em;margin-top:2em;">Configure Hadoop</h4>
       <p style="margin-top:1.5em;">
-        <h5 style="font-size:1.2em;font-style:italic;color:gray;">Create directories</h5>
+        <h5 style="font-size:1.2em;font-style:italic;color:gray;">Create two directories to be used by namenode and datanode.</h5>
         <span style="color:green;font-weight:bold;margin-top:.5em;display:block;">
         $ mkdir -p $HOME/data/hdfs/namenode <br />
         $ mkdir -p $HOME/data/hdfs/datanode
@@ -58,7 +69,16 @@
         
         <h5 style="font-size:1.2em;margin-top:1em;font-style:italic;color:gray;">Edit etc/hadoop/hadoop-env.sh</h5>
         <span style="color:green;font-weight:bold;margin-top:.5em;display:block;">
-        export JAVA_HOME=`/usr/libexec/java_home -v 1.6`
+        <span style="color:gray;"># The java implementation to use.</span><br />
+        export JAVA_HOME=`/usr/libexec/java_home -v 1.6` <br />
+         <br />
+         
+        <span style="color:gray;"># Extra Java runtime options.  Empty by default. </span><br />
+        export HADOOP_OPTS=”$HADOOP_OPTS -Djava.net.preferIPv4Stack=true” <br />
+        export HADOOP_OPTS=”$HADOOP_OPTS -Djava.awt.headless=true -Djava.security.krb5.realm=-Djava.security.krb5.kdc=” <br />
+        YARN_OPTS=”$YARN_OPTS -Djava.security.krb5.realm=OX.AC.UK -Djava.security.krb5.kdc=kdc0.ox.ac.uk:kdc1.ox.ac.uk -Djava.awt.headless=true”
+        
+        
         </span>
         
         <h5 style="font-size:1.2em;margin-top:1em;font-style:italic;color:gray;">Edit etc/hadoop/core-site.xml</h5>
@@ -132,8 +152,57 @@
         <h5 style="font-size:1.2em;margin-top:1em;font-style:italic;color:gray;">Start Hadoop Services</h5>        
         <span style="color:green;font-weight:bold;margin-top:.5em;display:block;">
           $ start-dfs.sh<br />
-          $ start-yarn.sh
+          $ start-yarn.sh<br />
+          $ jps
         </span>
+        <br />
+        
+        
+        <h5 style="font-size:1.2em;margin-top:1em;font-style:italic;color:gray;"><span style="color:red;">OR</span> Start Hadoop Services</h5>        
+        <span style="color:green;font-weight:bold;margin-top:.5em;display:block;">
+          $ sbin/hadoop-daemon.sh start namenode <br />
+          $ sbin/hadoop-daemon.sh start datanode <br />
+          $ sbin/yarn-daemon.sh start resourcemanager<br />
+          $ sbin/yarn-daemon.sh start nodemanager <br />
+          $ sbin/mr-jobhistory-daemon.sh start historyserver<br />
+          $ jps
+        </span>
+        <br />
+        
+        
+        <h5 style="font-size:1.2em;margin-top:1em;font-style:italic;color:gray;">Stop the processes</h5>        
+        <span style="color:green;font-weight:bold;margin-top:.5em;display:block;">
+          $ sbin/hadoop-daemon.sh stop namenode <br />
+          $ sbin/hadoop-daemon.sh stop datanode <br />
+          $ sbin/yarn-daemon.sh stop resourcemanager <br />
+          $ sbin/yarn-daemon.sh stop nodemanager <br />
+          $ sbin/mr-jobhistory-daemon.sh stop historyserver
+        </span>
+        <br />
+        
+        
+        If everything is sucessful, you should see following services running
+        <br />
+        <br />
+        
+        <b>2583 DataNode
+        <br />
+        2970 ResourceManager
+        <br />
+        3461 Jps
+        <br />
+        3177 NodeManager
+        <br />
+        2361 NameNode
+        <br />
+        2840 SecondaryNameNode
+        <br />
+        17626 JobHistoryServer
+        </b>
+        <br />
+        <br />
+        
+        If not getting above output on 'jps' then run stop-dfs.sh and stop-yarn.sh and run them manually from /usr/local/hadoop/sbin/start-dfs.sh and start-yarn.sh.
       </p>
       
       
@@ -142,6 +211,86 @@
         $ cd $HADOOP_INSTALL <br />
         $ hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.2.0.jar pi 2 5
       </p>
+      
+      
+      <h4 style="font-size:1.5em;margin-top:2em;">Web interface</h4>
+      <p style="margin-top:1.5em;font-weight:bold;color:green;">
+        Browse HDFS and check health using http://localhost:50070 in the browser:
+        <br />
+        <br />
+        <img src="http://raseshmori.files.wordpress.com/2012/09/hadoop-namenodec2a0hadoop-next-gen-yarn-2-0-1.png?w=584&h=302" />
+        <br />
+        <br />
+        You can check the status of the applications running using http://localhost:8088  in the browser:
+        <br />
+        <br />
+        <img src="http://raseshmori.files.wordpress.com/2012/09/all-applications-hadoop-next-gen-yarn-2-0-1.png?w=584&h=302" />
+      </p>
+      
+      
+      
+      
+      
+      <h4 style="font-size:1.5em;margin-top:2em;">在Mac OS X 64bit系统上编译Hadoop 2.2源码</h4>
+      <p style="margin-top:1.5em;">
+        因为Hadoop2在官网上预编译的包都是在32位下编译的，在64位系统上可能运行出问题，所以需要在64位系统上编译运行。
+        <br />
+        例如：http://apache.osuosl.org/hadoop/common/hadoop-2.2.0/ 
+        <br />
+        下载：<a href="http://apache.osuosl.org/hadoop/common/hadoop-2.2.0/hadoop-2.2.0-src.tar.gz"> hadoop-2.2.0-src.tar.gz</a>
+        <br />
+        <br />
+        解压后运行：
+        <br />
+        <b>
+        $ mvn -version
+        <br />
+        $ mvn clean
+        <br />
+        $ mvn install -DskipTests
+        <br />
+        $ mvn compile -DskipTests
+        <br />
+        $ mvn package -DskipTests
+        <br />
+        $ mvn package -Pdist -DskipTests -Dtar
+        </b>
+        <br />
+        <br />
+        但是在运行过程中出现如下问题：
+        <br />
+        <span style="color:red;font-weight:bold;">Building Hadoop cannot access org.mortbay.component.AbstractLifeCycle error or class file for org.mortbay.component.AbstractLifeCycle not found</span>
+        <br />
+        <br />
+        解决办法：<br />
+        https://issues.apache.org/jira/browse/HADOOP-10110
+        <br />
+        <br />
+        就是修改 hadoop-common-project/hadoop-auth/pom.xml 文件如下：
+        <br />
+        
+        <b style="color:green;">
+        Index: hadoop-common-project/hadoop-auth/pom.xml<br />
+        ===================================================================<br />
+        --- hadoop-common-project/hadoop-auth/pom.xml	(revision 1543124)<br />
+        +++ hadoop-common-project/hadoop-auth/pom.xml	(working copy)<br />
+        @@ -54,6 +54,11 @@<br />
+              &lt;/dependency&gt;<br />
+              &lt;dependency&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;      &lt;groupId&gt;org.mortbay.jetty&lt;/groupId&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;      &lt;artifactId&gt;jetty-util&lt;/artifactId&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;      &lt;scope&gt;test&lt;/scope&gt;<br />
+            &lt;/dependency&gt;<br />
+            &lt;dependency&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;      &lt;groupId&gt;org.mortbay.jetty&lt;/groupId&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;        &lt;artifactId&gt;jetty&lt;/artifactId&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;        &lt;scope&gt;test&lt;/scope&gt;<br />
+              &lt;/dependency&gt;
+        </b>   
+              
+      </p>
+      
+      
     ]]>
   </c:content>
 
