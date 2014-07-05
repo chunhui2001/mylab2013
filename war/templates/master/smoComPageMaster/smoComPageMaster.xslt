@@ -86,7 +86,7 @@
 
       <!-- AddThis Smart Layers BEGIN -->
       <!-- Go to http://www.addthis.com/get/smart-layers to customize -->
-      <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-52cbb19d138551fd"></script>
+      <!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-52cbb19d138551fd"></script>
       <script type="text/javascript">
         addthis.layers({
         'theme' : 'transparent',
@@ -96,7 +96,7 @@
         /*'numPreferredServices' : 6*/
         }
         });
-      </script>
+      </script-->
       <!-- AddThis Smart Layers END -->
 
       <script type="text/javascript">
