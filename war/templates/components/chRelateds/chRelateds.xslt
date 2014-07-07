@@ -9,11 +9,27 @@
   <xsl:output method="html" indent="yes"/>
   <xsl:param name="language" />
   <xsl:param name="APP_ROOT" />
+  <xsl:param name="PAGE_URI" />
 
-  <xsl:template match="c:component[@type='chArticleFilter']">
-    <xsl:variable name="articles" select="document(concat($APP_ROOT,'/RichMedia/blog/smoArticleMaster.xml'))/*/c:article" />
+  <xsl:template match="c:component[@type='chRelateds']">
+    <xsl:variable name="articleMaster" select="document(concat($APP_ROOT,'/RichMedia/blog/smoArticleMaster.xml'))/*" />
+    <xsl:variable name="relatedArticles" select="$articleMaster/c:article[c:articleLink=$PAGE_URI]/c:related/c:r1" />
 
-    <h1>ddd</h1>
+    <h1 style="margin-top:1.5em;">相关文章：</h1>
+    <xsl:if test="count($relatedArticles) &gt; 0">
+      <ul style="list-style:initial;color:#2a6496;margin-left:1.5em;">
+        <xsl:for-each select="$relatedArticles">
+          <li>
+            <a href="{normalize-space(current()/text())}">
+
+
+              <xsl:value-of select="$articleMaster/c:article[c:articleLink=normalize-space(current()/text())]/c:title" />
+              
+            </a>
+          </li>
+        </xsl:for-each>
+      </ul>
+    </xsl:if>
 
   </xsl:template>
-</xsl:stylesheet>  
+</xsl:stylesheet>
