@@ -1,0 +1,543 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chHtmlContent" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:content style="margin-top:1.5em;">
+    <![CDATA[ 
+      <h4 style="margin-bottom:1em;font-size:1.5em;margin-top:2.5em;color:green;">Step 1:</h4>
+      <p>
+        <span>
+        Download Hadoop from Apache: I’ll be using this mirror but I trust that if you’re not in England, you can likely find a more suitable one:
+        <a target="_blank" href="http://mirror.ox.ac.uk/sites/rsync.apache.org/hadoop/common/hadoop-2.4.0/hadoop-2.4.0.tar.gz">http://mirror.ox.ac.uk/sites/rsync.apache.org/hadoop/common/hadoop-2.4.0/hadoop-2.4.0.tar.gz</a>
+        </span>
+        <br />
+        <br />
+        
+        <span>
+          If you’re trying to stick to the terminal/don’t have a GUI then go with this:
+        </span>
+        <br />
+        <br />
+
+        <span>wget <b>http://mirror.ox.ac.uk/sites/rsync.apache.org/hadoop/common/hadoop-2.4.0/hadoop-2.4.0.tar.gz </b></span>
+        <br />
+        <br />
+
+        <span>
+          Find your way to wherever you downloaded the <b>tar.gz</b> file and untar it using the following command:
+        </span>
+        <br />
+        <br />
+
+        <span>
+          <b>tar -xzf hadoop-2.4.0.tar.gz</b>
+        </span>
+      </p>
+      
+      
+      <h4 style="margin-bottom:1em;font-size:1.5em;margin-top:2.5em;color:green;">Has it worked up till here?</h4>
+      <p>
+        <span>
+          Run the following command in the same directory you ran the above tar command:
+        </span>
+        <br />
+        <br />
+
+        <span>
+          <b>ls | grep hadoop | grep -v *.gz</b>
+        </span>
+        <br />
+        <br />
+
+        <span>
+          If there’s at least one line returned (ideally hadoop-2.4.0) then you’re good up till here.
+        </span>
+      </p>
+        </span>
+      </p>
+      
+      
+      <h4 style="margin-bottom:1em;font-size:1.5em;margin-top:2.5em;color:green;">Step 2:</h4>
+      <p>
+        <span>
+          Move everything into a more appropriate directory:
+        </span>
+        <br />
+        <br />
+
+        <span>
+          <b>
+            sudo mv hadoop-2.4.0/ /usr/local <br />
+            cd /usr/local <br />
+            sudo ln -s hadoop-2.4.0/ hadoop
+          </b>
+        </span>
+        <br />
+        <br />
+
+        <span>
+          We create that link to allow us to write scripts/programs that interact with Hadoop that won’t need changing if we upgrade our Hadoop version. All we’ll do is install the new version and point the Hadoop folder to the new version instead. Ace.
+        </span>
+      </p>
+      
+      
+      <h4 style="margin-bottom:1em;font-size:1.5em;margin-top:2.5em;color:green;">Has it worked up to here?</h4>
+      <p>
+        <span>
+          Run this command anywhere:
+        </span>
+        <br />
+        <br />
+
+        <span>
+          <b>whereis hadoop</b>
+        </span>
+        <br />
+        <br />
+
+
+        <span>
+          If the output is: <br />
+          <b>hadoop: /usr/local/hadoop</b>  <br />
+          you may proceed.
+        </span>
+      </p>
+      
+      
+      <h4 style="margin-bottom:1em;font-size:1.5em;margin-top:2.5em;color:green;">Step 3:</h4>
+      <p>
+        <span>
+          Righty, now we’ll be setting up a new user and permissions and all that guff. 
+          I’ll steal directly from Michael Noll’s tutorial here and go with:
+        </span>
+        <br />
+        <br />
+
+        <span>
+          <b>
+            sudo addgroup hadoop <br />
+            sudo adduser --ingroup hadoop hduser <br />
+            sudo adduser hduser sudo <br />
+            sudo chown -R hduser:hadoop /usr/local/hadoop/
+          </b>
+        </span>
+      </p>
+      
+      
+      <h4 style="margin-bottom:1em;font-size:1.5em;margin-top:2.5em;color:green;">Has it worked up to here?</h4>
+      <p>
+        <span>Type:</span>
+        <br />
+        <br />
+
+        <b>ls -l /home/ | grep hadoop</b>
+        <br />
+        <br />
+
+        <span>
+          If you see a line then you’re in the money.
+        </span>
+      </p>
+      
+      
+      <h4 style="margin-bottom:1em;font-size:1.5em;margin-top:2.5em;color:green;">Step 4:</h4>
+      <p>
+        <span>
+          SSH is a biggy – possibly not so much for the single node tutorial but when we were setting up our first cluster, SSH problems probably accounted for about 90% of all head-scratching with the remaining 10% being nits.
+        </span>
+        <br />
+        <br />
+
+        <span>
+          <b>
+            su - hduser <br />
+            sudo apt-get install ssh <br />
+            ssh-keygen -t rsa -P "" <br />
+            cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+          </b>
+        </span>
+        <br />
+        <br />
+
+        <span>
+          So we switch to our newly created user, generate an SSH key and get it added to our authorized keys. Unfortunately, Hadoop and ipv6 don’t play nice so we’ll have to disable it – to do this you’ll need to open up /etc/sysctl.conf and add the following lines to the end:
+        </span>
+        <br />
+        <br />
+
+        <span>
+          <b>
+            net.ipv6.conf.all.disable_ipv6 = 1 <br />
+            net.ipv6.conf.default.disable_ipv6 = 1 <br />
+            net.ipv6.conf.lo.disable_ipv6 = 1
+          </b>
+        </span>
+        <br />
+        <br />
+
+
+        <span>
+          Fair warning – you’ll need sudo privileges to modify the file so might want to open up your file editor like this:
+        </span>
+        <br />
+        <br />
+
+
+        <span>
+          <b>
+            sudo apt-get install gksu <br />
+            gksu gedit /etc/sysctl.conf
+          </b>
+        </span>
+        <br />
+        <br />
+
+        <span>
+          If you’re set on using terminal then this’ll do it:
+        </span>
+        <br />
+        <br />
+
+        <span>
+          <b>
+            echo "net.ipv6.conf.all.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf <br />
+            echo "net.ipv6.conf.default.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf <br />
+            echo "net.ipv6.conf.lo.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf
+          </b>
+        </span>
+        <br />
+        <br />
+        
+        <span>
+          Rumour has it that at this point you can run
+        </span>
+        <br />
+        <br />
+        
+        <span>
+          <b>
+            sudo service networking restart 
+          </b>
+        </span>
+        <br />
+        <br />
+        
+        <span>
+          and kapeesh – ipv6 is gone. However, Atheros and Ubuntu seem to have a strange sort of ‘not working’ thing going on and so that command doesn’t work with my wireless driver. If the restart fails, just restart the computer and you should be good.
+        </span>
+        <br />
+        <br />
+        
+        <span>
+          (if you’re terminal only : <b>sudo shutdown -r now</b>)
+        </span>
+      </p>
+      
+      
+      <h4 style="margin-bottom:1em;font-size:1.5em;margin-top:2.5em;color:green;">Has it worked up to here?</h4>
+      <p>
+        <span>
+          If you’re stout of heart, attempt the following:
+        </span>
+        <br />
+        <br />
+        
+        <span>
+          <b>
+            su - hduser <br />
+            ssh localhost
+          </b>
+        </span>
+        <br />
+        <br />
+
+        <span>
+          If that’s worked you be greeted with a message along the lines of ‘Are you sure you want to continue connecting?’ The answer you’re looking for at this point is ‘yes’.
+        </span>
+        <br />
+        <br />
+
+        <span>
+          If it hasn’t worked at this point run the following command: <br />
+          <b>cat /proc/sys/net/ipv6/conf/all/disable_ipv6</b>
+        </span>
+        <br />
+        <br />
+
+
+        <span>
+          If the value returned is 0 then you’ve still not got ipv6 disabled – have a re-read of that section and see if you’ve missed anything.
+        </span>
+      </p>
+      
+      
+      <h4 style="margin-bottom:1em;font-size:1.5em;margin-top:2.5em;color:green;">Step 5:</h4>
+      <p>
+        <span>
+          I’m going to assume a clean install of Ubuntu on your machine (because that’s what I’ve got) – if this isn’t the case, it’s entirely likely you’ll already have Java installed. If so, find your JAVA_HOME (lots of tutorials on this online) and use that for the upcoming instructions. I’m going to be installing Java from scratch:
+        </span>
+        <br />
+        <br />
+
+        <span>
+          <b>
+            sudo apt-get update <br />
+            sudo apt-get install default-jdk
+          </b>
+        </span>
+        <br />
+        <br />
+
+        <span>
+          Given a bit of luck, you’ll now have Java on your computer (I do on mine) and you’ll be able to set your environment variables. Open up your bashrc file:
+        </span>
+        <br />
+        <br />
+
+
+        <span>
+          <b>
+            su - hduser <br />
+            gksu gedit .bashrc
+          </b>
+        </span>
+        <br />
+        <br />
+
+
+        <span>
+          and add the following lines:
+        </span>
+        <br />
+        <br />
+
+
+        <span>
+          <b>
+            export HADOOP_HOME=/usr/local/hadoop <br />
+            export JAVA_HOME=/usr
+          </b>
+        </span>
+        <br />
+        <br />
+
+        <span>
+          and follow up with this command: <br />   <br />         
+          <b>source ~/.bashrc</b>
+        </span>
+        <br />
+        <br />
+
+        <span>
+          If you’ve deviated from any of the instructions above, those lines are likely to be different. You can find what your java home should be by running the following command:
+          <br /> <br /> 
+          <b>which java | sed -e 's/\(.*\)\/bin\/java/\1/g'</b>
+        </span>
+        <br />
+        <br />
+        
+        <span>
+          Your Hadoop home will be wherever you put it in <b>step 2</b>.
+        </span>
+      </p>
+      
+      
+      <h4 style="margin-bottom:1em;font-size:1.5em;margin-top:2.5em;color:green;">Has it worked up to here?</h4>
+      <p>
+        So many different ways to test – let’s run our first Hadoop command:
+        <br />
+        <br />
+
+        <b>/usr/local/hadoop/bin/hadoop version</b>
+        <br />
+        <br />
+
+        If that worked with no error (and gave you your Hadoop version) then you’re laughing.
+      </p>
+      
+      
+      <h4 style="margin-bottom:1em;font-size:1.5em;margin-top:2.5em;color:green;">Step 6:</h4>
+      <p>
+        Configuration of Hadoop (and associated bits and bobs) – we’re going to be editing a bunch of files so pick your favourite file editor and get to work. First things first though, you’re going to want some place for HDFS to save your files. If you’ve going to be storing anything big/bought external storage for this purpose now is the time to deviate from this tutorial. Otherwise, this should do it:
+        <br />
+        <br />
+        
+        <b>
+          su - hduser <br />
+          mkdir /usr/local/hadoop/data
+        </b>
+        <br />
+        <br />
+
+        Now for the file editing:
+        <br />
+        <br />
+
+        (only necessary when running a multi-node cluster, but let’s do it in case we ever get more nodes to add)
+        <br />
+        <br />
+      </p>
+      
+      <h6 style="margin-bottom:1em;font-size:1em;margin-top:2.5em;color:rgb(209, 81, 9);">
+        <b>1.) /usr/local/hadoop/etc/hadoop/hadoop-env.sh</b>
+      </h6>
+      <p>
+        Change export <b>JAVA_HOME=${JAVA_HOME}</b> to match the JAVA_HOME you set in your bashrc (for us JAVA_HOME=/usr).
+        <br />
+        <br />
+        
+        Also, change this line:
+        <br />
+        <br />
+        
+        <b>export HADOOP_OPTS="$HADOOP_OPTS -Djava.net.preferIPv4Stack=true</b>
+        <br />
+        <br />
+        
+        to be
+        <br />
+        <br />
+
+        <b>export HADOOP_OPTS="$HADOOP_OPTS -Djava.net.preferIPv4Stack=true -Djava.library.path=$HADOOP_PREFIX/lib"</b>
+        <br />
+        <br />
+
+        And finally, add the following line:
+        <br />
+        <br />
+        <b>export HADOOP_COMMON_LIB_NATIVE_DIR=${HADOOP_PREFIX}/lib/native</b>
+      </p>
+      
+      <h6 style="margin-bottom:1em;font-size:1em;margin-top:2.5em;color:rgb(209, 81, 9);">
+        <b>2.) /usr/local/hadoop/etc/hadoop/yarn-env.sh</b>
+      </h6>
+      <p>
+        Add the following lines:
+        <br />
+        <br />
+
+        <b>
+          export HADOOP_CONF_LIB_NATIVE_DIR=${HADOOP_PREFIX:-"/lib/native"} <br />
+          export HADOOP_OPTS="-Djava.library.path=$HADOOP_PREFIX/lib"
+        </b>
+      </p>
+      
+      <h6 style="margin-bottom:1em;font-size:1em;margin-top:2.5em;color:rgb(209, 81, 9);">
+        <b>3.) /usr/local/hadoop/etc/hadoop/core-site.xml</b>
+      </h6>
+      <p>
+        &lt;?xml version="1.0" encoding="UTF-8"?&gt;<br />
+        &lt;?xml-stylesheet type="text/xsl" href="configuration.xsl"?&gt;<br />
+        &lt;configuration&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;  &lt;property&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    &lt;name&gt;fs.default.name&lt;/name&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    &lt;value&gt;hdfs://localhost:9000&lt;/value&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;  &lt;/property&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;  &lt;property&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    &lt;name&gt;hadoop.tmp.dir&lt;/name&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    &lt;value&gt;/usr/local/hadoop/data&lt;/value&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;  &lt;/property&gt;<br />
+        &lt;/configuration&gt;
+      </p>
+      
+      <h6 style="margin-bottom:1em;font-size:1em;margin-top:2.5em;color:rgb(209, 81, 9);">
+        <b>4.) /usr/local/hadoop/etc/hadoop/mapred-site.xml</b>
+      </h6>
+      <p>
+        &lt;?xml version="1.0"?&gt;<br />
+        &lt;?xml-stylesheet type="text/xsl" href="configuration.xsl"?&gt; <br />
+        &lt;configuration&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;    &lt;property&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;name&gt;mapreduce.framework.name&lt;/name&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;value&gt;yarn&lt;/value&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;    &lt;/property&gt;<br />
+        &lt;/configuration&gt;
+      </p>
+      
+      <h6 style="margin-bottom:1em;font-size:1em;margin-top:2.5em;color:rgb(209, 81, 9);">
+        <b>5.) /usr/local/hadoop/etc/hadoop/hdfs-site.xml</b>
+      </h6>
+      <p>
+        &lt;?xml version="1.0" encoding="UTF-8"?&gt; <br />
+        &lt;?xml-stylesheet type="text/xsl" href="configuration.xsl"?&gt; <br /> 
+        &lt;configuration&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;    &lt;property&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;name&gt;dfs.replication&lt;/name&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;value&gt;3&lt;/value&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;    &lt;/property&gt; <br />
+        &lt;/configuration&gt;
+      </p>
+      
+      <h6 style="margin-bottom:1em;font-size:1em;margin-top:2.5em;color:rgb(209, 81, 9);">
+        <b>6.) /usr/local/hadoop/etc/hadoop/yarn-site.xml</b>
+      </h6>
+      <p>
+        &lt;?xml version="1.0"?&gt; <br />
+        &lt;configuration&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;    &lt;property&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;name&gt;yarn.nodemanager.aux-services&lt;/name&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;value&gt;mapreduce_shuffle&lt;/value&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;    &lt;/property&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;    &lt;property&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;name&gt;yarn.nodemanager.aux-services.mapreduce_shuffle.class&lt;/name&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;value&gt;org.apache.hadoop.mapred.ShuffleHandler&lt;/value&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;    &lt;/property&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;    &lt;property&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;name&gt;yarn.resourcemanager.resource-tracker.address&lt;/name&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;value&gt;localhost:8025&lt;/value&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;    &lt;/property&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;    &lt;property&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;name&gt;yarn.resourcemanager.scheduler.address&lt;/name&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;value&gt;localhost:8030&lt;/value&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;    &lt;/property&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;    &lt;property&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;name&gt;yarn.resourcemanager.address&lt;/name&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;value&gt;localhost:8050&lt;/value&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;    &lt;/property&gt; <br />
+        &lt;/configuration&gt;
+      </p>
+      
+      
+      <h4 style="margin-bottom:1em;font-size:1.5em;margin-top:2.5em;color:green;">Has it worked up to here?</h4>
+      <p>
+        Run the following command:
+        <br />
+        <br />
+
+        <b>/usr/local/hadoop/bin/hadoop namenode -format</b>
+        <br />
+        <br />
+
+        If that works, you’re 20% of the way there.
+        <br />
+        <br />
+
+        Then, run:
+        <br />
+        <br />
+
+        <b>/usr/local/hadoop/sbin/start-dfs.sh</b>
+        <br />
+        <br />
+
+        If that seems to work without throwing up a bunch of errors:
+        <br />
+        <br />
+
+        <b>/usr/local/hadoop/sbin/start-yarn.sh</b>
+        <br />
+        <br />
+
+        If that’s worked, you can safely say you’ve got Hadoop running on your computer :) Get it on the LinkedIn as a strength as soon as possible ;)
+      </p>
+      
+      
+      <h4 style="margin-bottom:1em;font-size:1.5em;margin-top:2.5em;color:green;">Conclusion </h4>
+      <p>
+        Now you’ve got Hadoop up and running on your computer, what can you do? 
+        Well, unfortunately with that single node and single hard disk, not much you couldn’t have done without it. 
+        However, if you’re just getting started with Linux and Hadoop you’ll have hopefully learnt a bit on the way to setting up your cluster.
+      </p>
+      
+    ]]>
+  </c:content>
+
+</c:component>

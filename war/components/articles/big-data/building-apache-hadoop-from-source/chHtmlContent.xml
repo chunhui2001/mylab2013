@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chHtmlContent" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:content style="margin-top:1.5em;">
+    <![CDATA[ 
+      <p>
+        In order to build Apache Hadoop from Source, first step is install all required softwares and then checkout latest Apache Hadoop code from trunk and build it.
+      </p>
+      
+      <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
+        Required Softwares
+      </h4>
+      <ul style="margin-left:1.5em;list-style:inherit;">
+        <li>Unix System</li>
+        <li>JDK 1.6</li>
+        <li>Maven 3.1.1</li>
+        <li>ProtocolBuffer 2.4.1+ (for MapReduce and HDFS)</li>
+        <li>CMake 2.6 or newer (if compiling native code)</li>
+        <li>Internet connection for first build (to fetch all Maven and Hadoop dependencies)</li>
+      </ul>
+      
+      <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
+         Install Maven 3.1.1
+      </h4>
+      <ul style="margin-left:.5em;">
+        <li># wget http://www.dsgnwrld.com/am/maven/maven-3/3.1.1/binaries/apache-maven-3.1.1-bin.tar.gz</li>
+        <li># tar xzf apache-maven-3.1.1-bin.tar.gz -C /usr/local</li>
+        <li># cd /usr/local</li>
+        <li># ln -s apache-maven-3.1.1 maven</li>
+        <li># export M2_HOME=/usr/local/maven</li>
+        <li># export PATH=$M2_HOME/bin:$PATH</li>
+      </ul>
+      
+      <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
+         Install Java
+      </h4>
+      <ul style="margin-left:1.5em;list-style:inherit;">
+        <li>Download JDK1.6 <a target="_blank" style="font-weight:bold;" href="http://www.oracle.com/technetwork/java/javase/downloads/jdk6downloads-1902814.html">here</a></li>
+        <li>select - jdk-6u43-linux-x64.bin</li>
+        <li>
+          go to path where downloaded-
+          <br />
+          <b style="color:rgb(116, 167, 61)">
+          # chmod +x jdk-6u43-linux-x64.bin<br />
+          # ./ jdk-6u43-linux-x64.bin
+          </b>
+        </li>
+        <li>
+          Set java home to path where you have downloaded java binary file.
+          <br />
+          <b style="color:rgb(116, 167, 61)">
+          # export JAVA_HOME=/usr/java/jdk1.6.0_43<br />
+          # export PATH=$JAVA_HOME/bin:$PATH
+          </b>
+        </li>
+      </ul>
+      
+      <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
+         Install Open SSL <span style="font-size:.7em;">(This is optional, OpenSSL is used in several Hadoop Security Features.)</span>
+      </h4>
+      <ul style="margin-left:.5em;">
+        <li>Download source of openssl-1.0.1c <a target="_blank" style="font-weight:bold;"  href="http://www.openssl.org/source/">here</a> </li>
+        <li># tar -xvf openssl-1.0.1c.tar.gz</li>
+        <li># make clean</li>
+        <li># ./config shared –prefix=/usr –openssldir=/usr/local/openssl</li>
+        <li># make && make test</li>
+        <li># make install</li>
+        <li># openssl version</li>
+      </ul>
+      
+      <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
+         ProtocolBuffer 2.4.1
+      </h4>
+      <ul style="margin-left:.5em;">
+        <li># yum install zlib</li>
+        <li># yum install zlib-devel</li>
+        <li># wget http://protobuf.googlecode.com/files/protobuf-2.4.1.tar.bz2 </li>
+        <li># tar xfj protobuf-2.4.1.tar.bz2</li>
+        <li># ./configure</li>
+        <li># make</li>
+        <li># make install</li>
+        <li># ldconfig</li>
+      </ul>
+      
+      <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
+          Cmake and Kernal Headers
+      </h4>
+      <ul style="margin-left:.5em;">
+        <li># yum install cmake</li>
+        <li># yum install kernel-headers gcc-c++</li>
+      </ul>
+      
+      <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
+          Download Apache Hadoop Source with SVN client.
+      </h4>
+      <ul style="margin-left:1.5em;list-style:inherit;">
+        <li># svn co http://svn.apache.org/repos/asf/subversion/trunk subversion</li>
+        <li><b>Extact Source -</b> Change directory to checkout directory.<br />
+            if it is zip then &nbsp;<b style="color:rgb(116, 167, 61)"># unzip * </b><br />
+            if it is tar then &nbsp;<b style="color:rgb(116, 167, 61)"># tar -xvf * </b>
+        </li>
+        <li>
+          <b>Build it -</b> (Change directory to top level directory of extracted source where you will find pom.xml, which is build script in case of maven.)
+          <br />
+          <b style="color:rgb(116, 167, 61)"># mvn package -Pdist -Pdoc -Psrc -Dtar -DskipTests</b>
+          <br />
+          It will build package and resulting distribuition is stored in -
+          <br />
+          <b style="color:rgb(116, 167, 61)">hadoop-dist/target/ directory</b>
+        </li>
+        <li>
+          Now can install this distribution and run job over it.
+        </li>
+      </ul>
+      
+      <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
+          Some Alternatives ways of Building distributions:
+      </h4>
+      <ul style="margin-left:1.5em;list-style:inherit;">
+        <li>
+          Create binary distribution without native code and without documentation: 
+          <br />
+          <b style="color:rgb(116, 167, 61)"># mvn package -Pdist -DskipTests -Dtar</b>
+        </li>
+        <li>
+          Create binary distribution with native code and with documentation:
+          <br />
+          <b style="color:rgb(116, 167, 61)"># mvn package -Pdist,native,docs -DskipTests -Dtar</b>
+        </li>
+        <li>
+          Create source distribution:
+          <br />
+          <b style="color:rgb(116, 167, 61)"># mvn package -Psrc -DskipTests</b>
+        </li>
+        <li>
+          Create source and binary distributions with native code and documentation:
+          <br />
+          <b style="color:rgb(116, 167, 61)"># mvn package -Pdist,native,docs,src -DskipTests -Dtar</b>
+        </li>
+        <li>
+          Create a local staging version of the website (in /tmp/hadoop-site)
+          <br />
+          <b style="color:rgb(116, 167, 61)"># mvn clean site; mvn site:stage -DstagingDirectory=/tmp/hadoop-site</b>
+        </li>
+      </ul>
+    ]]>
+  </c:content>
+
+</c:component>
