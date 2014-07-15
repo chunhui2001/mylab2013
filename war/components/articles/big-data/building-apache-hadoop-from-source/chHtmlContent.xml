@@ -5,29 +5,53 @@
       <p>
         In order to build Apache Hadoop from Source, first step is install all required softwares and then checkout latest Apache Hadoop code from trunk and build it.
       </p>
+      <br />
+      
+      <h1>
+       Refer <a target="_blank" href="http://wiki.apache.org/hadoop/HowToContribute#Hardware_Setup">How to Contribute to Hadoop Common</a>
+      </h1>
       
       <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
         Required Softwares
       </h4>
       <ul style="margin-left:1.5em;list-style:inherit;">
-        <li>Unix System</li>
+        <li>Unix System - <a href="http://isoredirect.centos.org/centos/6/isos/x86_64/">CentOS</a> or <b>ubuntu</b> </li>
         <li>JDK 1.6</li>
-        <li>Maven 3.1.1</li>
-        <li>ProtocolBuffer 2.4.1+ (for MapReduce and HDFS)</li>
-        <li>CMake 2.6 or newer (if compiling native code)</li>
+        <li>Maven 3.1.1 and ant</li>
+        <li>ProtocolBuffer 2.5.0+ (for MapReduce and HDFS)</li>
+        <li>CMake 2.6 or newer (if compiling native code) <a href="http://www.cmake.org/cmake/resources/software.html" target="_blank">Download</a> </li>
         <li>Internet connection for first build (to fetch all Maven and Hadoop dependencies)</li>
+        
+        <li>findbugs <a href="http://findbugs.sourceforge.net/downloads.html" target="_blank">Download</a></li>
+        <li>libssl-dev (sudo apt-get update && sudo install libssl-dev)</li>
+        <li>libglib2.0-dev (Option, see <a href="/blog/articles/linux/how-to-install-glib-2-36-3-on-ubuntu-and-linux-mint.shtml">here</a> to be install)</li>
       </ul>
       
       <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
-         Install Maven 3.1.1
+         Update System
       </h4>
-      <ul style="margin-left:.5em;">
-        <li># wget http://www.dsgnwrld.com/am/maven/maven-3/3.1.1/binaries/apache-maven-3.1.1-bin.tar.gz</li>
-        <li># tar xzf apache-maven-3.1.1-bin.tar.gz -C /usr/local</li>
-        <li># cd /usr/local</li>
-        <li># ln -s apache-maven-3.1.1 maven</li>
-        <li># export M2_HOME=/usr/local/maven</li>
-        <li># export PATH=$M2_HOME/bin:$PATH</li>
+      <ul style="margin-left:1.5em;list-style:inherit;">
+        <li><b>sudo update-manager -d</b></li>
+        <li><b>sudo apt-get install update</b></li>
+        <li><b>sudo apt-get install upgrade</b></li>
+      </ul>
+      
+      <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
+         Update varable of environment 
+      </h4>
+      <ul style="margin-left:1.5em;list-style:inherit;">
+        <li><b>sudo vim /etc/profile</b></li>
+        <li><b>JAVA_HOME=/usr/lib/jvm/java-7-sun</b><span style="color:red;"><b> (whereis java)</b></span></li>
+        <li><b>PATH=$PATH:${JAVA_HOME}/bin</b></li>
+        <li><b>CLASSPATH=.:$CLASSPATH:${JAVA_HOME}/lib:${JRE_HOME}/lib</b></li>
+      </ul>
+
+      
+      <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
+         List all versions of JDK
+      </h4>
+      <ul style="margin-left:1.5em;list-style:inherit;">
+        <li><b>sudo update-alternatives --config java</b></li>
       </ul>
       
       <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
@@ -55,6 +79,40 @@
       </ul>
       
       <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
+          Install Java by adding the Webup8 Team Oracle Java (JDK) 6 / 7 / 8 Installer PPA.
+      </h4>
+      <ul style="margin-left:1.5em;list-style:inherit;">
+        <li><b>sudo apt-get purge openjdk*</b></li>
+        <li><b>sudo add-apt-repository ppa:webupd8team/java</b> (Add the PPA)</li>
+        <li><b>sudo apt-get update && sudo apt-get install oracle-java8-installer</b></li>
+      </ul>
+      
+      <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
+         Remove Oracle Java JDK on ubuntu
+      </h4>
+      <ul style="margin-left:1.5em;list-style:inherit;">
+        <li><b>sudo dpkg --list | grep -i jdk</b> (Check which JDK packages are installed)</li>
+        <li><b>sudo apt-get purge (or remove) oracle-java8-installer</b> (Remove Oracle Java 8)</li>
+        <li><b>sudo dpkg --list | grep -i jdk</b> (Check that all JDK packages have been removed)</li>
+      </ul>
+      
+      
+      
+      <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
+         Install Ant and Maven 3.1.1
+      </h4>
+      <ul style="margin-left:.5em;">
+        <li>sudo apt-get install ant</li>
+        <li># wget http://www.dsgnwrld.com/am/maven/maven-3/3.1.1/binaries/apache-maven-3.1.1-bin.tar.gz</li>
+        <li># tar xzf apache-maven-3.1.1-bin.tar.gz -C /usr/local</li>
+        <li># cd /usr/local</li>
+        <li># ln -s apache-maven-3.1.1 maven</li>
+        <li># export M2_HOME=/usr/local/maven</li>
+        <li># export PATH=$M2_HOME/bin:$PATH</li>
+      </ul>
+      
+      
+      <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
          Install Open SSL <span style="font-size:.7em;">(This is optional, OpenSSL is used in several Hadoop Security Features.)</span>
       </h4>
       <ul style="margin-left:.5em;">
@@ -67,32 +125,33 @@
         <li># openssl version</li>
       </ul>
       
+      
       <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
-         ProtocolBuffer 2.4.1
+         Install zlib 和 zlib-devel
+      </h4>
+      <ul style="margin-left:.5em;">
+        <li><b>在 ubuntu 软件源里 zlib 和 zlib-devel 叫做 zlib1g zlib1g.dev</b></li>
+        <li>
+          # sudo apt-get install ruby <br />
+          # sudo apt-get install zlib1g-dev
+        </li>
+      </ul>   
+      
+      
+      
+      <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
+         protobuf-2.5.0.tar.bz2
       </h4>
       <ul style="margin-left:.5em;">
         <li># yum install zlib</li>
         <li># yum install zlib-devel</li>
-        <li># wget http://protobuf.googlecode.com/files/protobuf-2.4.1.tar.bz2 </li>
-        <li># tar xfj protobuf-2.4.1.tar.bz2</li>
+        <li># https://code.google.com/p/protobuf/</li>
+        <li># tar xfj protobuf-2.5.0.tar.bz2</li>
         <li># ./configure</li>
         <li># make</li>
         <li># make install</li>
         <li># ldconfig</li>
-      </ul>
-      
-      <br />
-      <br />
-      <div>
-       在 ubuntu 软件源里 zlib 和 zlib-devel 叫做 zlib1g zlib1g.dev <br />
-       $ sudo apt-get install zlib1g<br />
-       $ sudo apt-get install zlib1g.dev<br />
-       直接输入上述命令后还是不能安装。这就要求我们先装 ruby.<br />
-       在 ubuntu 里，zlib 叫 zlib1g，相应的 zlib-devel 叫 zlib1g.dev。默认的安装源里没有 zlib1g.dev。要在 packages.ubuntu.com 上找。<br />
-       $sudo apt-get install ruby<br />
-       然后再装 zlib1g-dev 就可以了<br />
-       $sudo apt-get install zlib1g-dev<br />
-      </div>
+      </ul>      
       
       <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
           Cmake and Kernal Headers
@@ -155,12 +214,6 @@
           <b style="color:rgb(116, 167, 61)"># mvn clean site; mvn site:stage -DstagingDirectory=/tmp/hadoop-site</b>
         </li>
       </ul>
-      
-      <br />
-      <br />
-      <h1>
-        <a target="_blank" href="http://wiki.apache.org/hadoop/HowToContribute#Hardware_Setup">How to Contribute to Hadoop Common</a>
-      </h1>
     ]]>
   </c:content>
 
