@@ -8,6 +8,8 @@
   <xsl:template match="c:component[@type='chSourceHighlighting']">
     <!--script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js?autoload=true&amp;skin=sunburst&amp;lang=css" defer="defer"></script-->
 
+
+    
     <link rel="stylesheet" type="text/css" href="/RenderingAssets/components/chSourceHighlighting/chSourceHighlighting.css" />
     <div class="chSourceHighlighting">
       <xsl:if test="normalize-space(c:abstract) != ''">
@@ -112,7 +114,14 @@
                 <?prettify lang=html linenums=false?>
                 <pre class="prettyprint" id="current()/@componentId"
                      style="border-radius:0;border:none;padding:1em;">
-                  <xsl:value-of disable-output-escaping="no" select="current()"/>
+
+                  <xsl:variable name="content-code">
+                    <xsl:call-template name="string-trim">
+                      <xsl:with-param name="string" select="current()" />
+                    </xsl:call-template>
+                  </xsl:variable>
+                  
+                  <xsl:value-of disable-output-escaping="no" select="$content-code"/>
                 </pre>
               </xsl:otherwise>
             </xsl:choose>
@@ -191,5 +200,62 @@
         </xsl:otherwise>
       </xsl:choose>
     </span>
+  </xsl:template>
+
+
+
+  <xsl:template name="string-ltrim">
+    <xsl:param name="string" />
+    <xsl:param name="trim" select="'&#09;&#10;&#13; '" />
+
+    <xsl:if test="string-length($string) &gt; 0">
+      <xsl:choose>
+        <xsl:when test="contains($trim, substring($string, 1, 1))">
+          <xsl:call-template name="string-ltrim">
+            <xsl:with-param name="string" select="substring($string, 2)" />
+            <xsl:with-param name="trim"   select="$trim" />
+          </xsl:call-template>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="$string" />
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:if>
+  </xsl:template>
+
+  <xsl:template name="string-rtrim">
+    <xsl:param name="string" />
+    <xsl:param name="trim" select="'&#09;&#10;&#13; '" />
+
+    <xsl:variable name="length" select="string-length($string)" />
+
+    <xsl:if test="$length &gt; 0">
+      <xsl:choose>
+        <xsl:when test="contains($trim, substring($string, $length, 1))">
+          <xsl:call-template name="string-rtrim">
+            <xsl:with-param name="string" select="substring($string, 1, $length - 1)" />
+            <xsl:with-param name="trim"   select="$trim" />
+          </xsl:call-template>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="$string" />
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:if>
+  </xsl:template>
+
+  <xsl:template name="string-trim">
+    <xsl:param name="string" />
+    <xsl:param name="trim" select="'&#09;&#10;&#13; '" />
+
+    <xsl:call-template name="string-rtrim">
+      <xsl:with-param name="string">
+        <xsl:call-template name="string-ltrim">
+          <xsl:with-param name="string" select="$string" />
+          <xsl:with-param name="trim"   select="$trim" />
+        </xsl:call-template>
+      </xsl:with-param>
+      <xsl:with-param name="trim"   select="$trim" />
+    </xsl:call-template>
   </xsl:template>
 </xsl:stylesheet>  

@@ -5,8 +5,8 @@
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
-  <c:sourceContent type="html" title="分布式系统和 Hadoop" id="sourceContent1">
-    <![CDATA[
+    <c:sourceContent type="html" title="分布式系统和 Hadoop" id="sourceContent1">
+      <![CDATA[
     <p style="margin-bottom:1em;">对于一个有 4 个 I/O 通道的高端机，即使每个通道的吞吐量各为 100MB/s，读取 4TB 的数据集也需要 3 个小时。
     而利用 Hadoop，同样的数据集会被划分为较小的块 (通常为 64MB)，通过 Hadoop 分布式文件系统 (HDFS) 分布在集群内多台机器上。
     使用适度的复制，集群可以并行读取数据，进而提供很高的吞吐量。这样一组通用机器比一台高端服务器更加便宜。</p>
@@ -18,16 +18,16 @@
     <p>Hadoop 使用 MapReduce 做为其数据处理框架。MapReduce 程序的核心是 Map 和 Reduce 操作，但实际上这个框架还包含其它操作，如: 
     数据分割 (data splitting)、洗牌 (shuffling)、分组 (Partitioning) 和 合并 (Combining)。</p>
     ]]>
-  </c:sourceContent>
-  <c:sourceContent type="html" title="比较 SQL 数据库和 Hadoop" id="sourceContent1" style="margin-top:1em;">
-    <![CDATA[
+    </c:sourceContent>
+    <c:sourceContent type="html" title="比较 SQL 数据库和 Hadoop" id="sourceContent1" style="margin-top:1em;">
+      <![CDATA[
     <p><span style="font-weight:bold">用横向扩展替代纵向扩展：</span>前者加硬件后者加机器</p>
     <p><span style="font-weight:bold">用键值对替代关系表：</span> Hadoop 的数据来源可以使任意形式，但最终会转换为键值对以供处理。</p>
     <p><span style="font-weight:bold">用函数式编程 (MapReduce) 替代声明式查询 (SQL)：</span>对于习惯 SQL 范式的人，用 MapReduce 来思考是一个挑战。</p>
     <p><span style="font-weight:bold">离线处理代替在线处理：</span>Hadoop 适合一次写入、多次读取的数据存储需求。类似于 SQL 世界中的数据仓库。</p>
-    ]]>    
-  </c:sourceContent>
-  
+    ]]>
+    </c:sourceContent>
+
 
     <c:comment>
       <c:comment1>
@@ -44,10 +44,12 @@
     <c:sourceContent type="html" title="单词统计" id="sourceContent1" style="border-bottom:none;">
       <![CDATA[
     Do as I say, not as I do.
-    ]]></c:sourceContent>
+    ]]>
+    </c:sourceContent>
 
 
-    <c:sourceContent type="" title="" id="sourceContent1" style="border-top:none;border-bottom:none;"><![CDATA[// 实现该程序的伪代码如下;
+    <c:sourceContent type="" title="" id="sourceContent1" style="border-top:none;border-bottom:none;">
+      <![CDATA[// 实现该程序的伪代码如下;
 define wordCount as Multiset;
 for each document in documentSet {
   T = tokenize(document);
@@ -87,7 +89,7 @@ for each wordCount received from firstPhase {
       4、洗牌到这些分区到第二阶段中合适的计算机上。</p>]]>
     </c:sourceContent>
 
-    
+
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
@@ -99,7 +101,7 @@ for each wordCount received from firstPhase {
       </c:comment1>
     </c:comment>
   </c:entry>
-  
+
   <c:entry style="margin-top:2em;">
     <c:title>MapReduce</c:title>
     <c:desc>
@@ -182,8 +184,8 @@ for each wordCount received from firstPhase {
     </ul>
     ]]>
     </c:sourceContent>
-    
-    
+
+
 
     <c:comment>
       <c:comment1>
@@ -197,28 +199,31 @@ for each wordCount received from firstPhase {
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="" title="Do as I say, not as I do." id="sourceContent1"><![CDATA[define wordCount as Multiset;
+    <c:sourceContent type="" title="Do as I say, not as I do." id="sourceContent1">
+      <![CDATA[define wordCount as Multiset;
 for each document in documentSet {
   T = tokenize (document);
   for each token in T {
     wordCount[token]++;
   }
 }
-display(wordCount);]]></c:sourceContent>
-    
+display(wordCount);]]>
+    </c:sourceContent>
+
     <c:comment>
-        <c:comment1>
-            <![CDATA[]]>
-        </c:comment1>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
     </c:comment>
   </c:entry>
-  
+
   <c:entry style="margin-top:2em;">
     <c:title>基于 MapReduce 重写单词统计程序</c:title>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="" title="单词统计中 map 和 reduce 函数的伪代码" id="sourceContent1"><![CDATA[
+    <c:sourceContent type="" title="单词统计中 map 和 reduce 函数的伪代码" id="sourceContent1">
+      <![CDATA[
 /* 因为 map 和 reduce 的输出都是列表，
    所以可以使用 Hadoop 中的 emit 函数生成列表中的元素 */ 
 map (String fileName, String document) {
@@ -235,7 +240,8 @@ reduce (String token, List<Integer> values) {
     sum = sum + value;
   }      
   emit ((String) token, (Integer) sum);
-}]]></c:sourceContent>
+}]]>
+    </c:sourceContent>
 
 
 
@@ -300,12 +306,13 @@ reduce (String token, List<Integer> values) {
       </ul>
       <br />]]>
     </c:sourceContent>
-    
+
     <c:sourceContent type="html" title="" id="sourceContent1" style="border-bottom:none;border-top:none;">
       <![CDATA[<b>原始 API 中 map() 和 reduce() 的签名：</b>]]>
     </c:sourceContent>
 
-    <c:sourceContent type="" title="" id="sourceContent1" style="border-top:none;border-bottom:none;"><![CDATA[public static class MapClass extends MapReduceBase 
+    <c:sourceContent type="" title="" id="sourceContent1" style="border-top:none;border-bottom:none;">
+      <![CDATA[public static class MapClass extends MapReduceBase 
                              implements Mapper<K1, V1, K2, V2> {
     public void map(K1 key, V1 value
                     , OutputCollector<K2, V2> output, Reporter reporter) 
@@ -339,7 +346,8 @@ public static class Reduce extends MapReduceBase
       <![CDATA[<b>新 API 中 map() 和 reduce() 的签名：</b>]]>
     </c:sourceContent>
 
-    <c:sourceContent type="" title="" id="sourceContent1" style="border-top:none;border-bottom:none;"><![CDATA[public static class MapClass extends 
+    <c:sourceContent type="" title="" id="sourceContent1" style="border-top:none;border-bottom:none;">
+      <![CDATA[public static class MapClass extends 
                              Mapper<K1, V1, K2, V2> {
     public void map(K1 key, V1 value
                     , Context context) 
@@ -391,9 +399,9 @@ public static class Reduce extends
       <br />
       ]]>
     </c:sourceContent>
-    
+
     <c:sourceContent expand="false" type="" title="建立 WordCount.java 源码副本" id="sourceContent1">
-  <![CDATA[mkdir playground
+      <![CDATA[mkdir playground
 mkdir playground/src
 mkdir playground/classes
 cp hadoop-2.2.0-src/hadoop-mapreduce-project/hadoop-mapreduce-examples/src/main/java/org/apache/hadoop/examples/WordCount.java
@@ -412,9 +420,11 @@ javac -classpath $HADOOP_HOME/share/hadoop/common/hadoop-common-2.2.0.jar:
 jar -cvf playground/wordcount.jar -C playground/classes/ .
 
 // 运行该副本 (如 output 目录存在应先将其删除)
-bin/hadoop jar playground/wordcount.jar org.apache.hadoop.examples.WordCount input output]]></c:sourceContent>
+bin/hadoop jar playground/wordcount.jar org.apache.hadoop.examples.WordCount input output]]>
+    </c:sourceContent>
 
-    <c:sourceContent expand="false" type="" title="修改 WordCount.java 源码" id="sourceContent1"><![CDATA[package org.apache.hadoop.examples;
+    <c:sourceContent expand="false" type="" title="修改 WordCount.java 源码" id="sourceContent1">
+      <![CDATA[package org.apache.hadoop.examples;
 
 import java.io.IOException;
 import java.util.StringTokenizer;
@@ -494,7 +504,8 @@ public class WordCount {
     FileOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
     System.exit(job.waitForCompletion(true) ? 0 : 1);
   }
-}]]></c:sourceContent>
+}]]>
+    </c:sourceContent>
 
 
 
@@ -504,12 +515,14 @@ public class WordCount {
       </c:comment1>
     </c:comment>
   </c:entry>
-  
+
   <c:entry style="margin-top:2em;">
     <c:title>Hadoop 的构造模块</c:title>
     <c:desc>
-      <c:desc1> <![CDATA[在一个全配置的集群上，运行 Hadoop 意味着在网络分布的不同服务器上运行一组守护进程。
-      这些守护进程有特殊的角色，一些仅存在于单个服务器上，一些运行在多个服务器上。]]></c:desc1>
+      <c:desc1>
+        <![CDATA[在一个全配置的集群上，运行 Hadoop 意味着在网络分布的不同服务器上运行一组守护进程。
+      这些守护进程有特殊的角色，一些仅存在于单个服务器上，一些运行在多个服务器上。]]>
+      </c:desc1>
     </c:desc>
     <c:sourceContent type="html" title="Hadoop 的守护进程" id="sourceContent1">
       <![CDATA[<p style="font-weight:bold;">
@@ -586,8 +599,10 @@ public class WordCount {
     <c:title>组建一个完整的 Hadoop 集群</c:title>
     <c:desc>
       <c:desc1> <![CDATA[1、首先建立主节点以及节点之间的控制通道，即 Secure Shell (SSH) 通道。]]></c:desc1>
-      <c:desc1> <![CDATA[2、SSH 采用标准的公钥加密来生成一对用户验证密钥--一个公钥、一个私钥。
-      公钥存储在集群的每个节点上，私钥则由主节点在试图访问远端节点时发送过来。结合公钥与私钥，目标机可以对这次访问进行验证。]]></c:desc1>
+      <c:desc1>
+        <![CDATA[2、SSH 采用标准的公钥加密来生成一对用户验证密钥--一个公钥、一个私钥。
+      公钥存储在集群的每个节点上，私钥则由主节点在试图访问远端节点时发送过来。结合公钥与私钥，目标机可以对这次访问进行验证。]]>
+      </c:desc1>
       <c:desc1> <![CDATA[3、所有节点的登陆账号应该有相同的用户名 (例如使用：hadoop-user)]]></c:desc1>
       <c:desc1> <![CDATA[4、其次建立单机或者伪分布模式或者标准的集群安装模式 (全分布模式)]]></c:desc1>
     </c:desc>
@@ -663,7 +678,8 @@ public class WordCount {
      <i><b>core-site.xml</b></i>
       ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="border-bottom:none;border-top:none;"><![CDATA[<?xml version="1.0"?>
+    <c:sourceContent type="" title="" id="sourceContent1" style="border-bottom:none;border-top:none;">
+      <![CDATA[<?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
       <property>
@@ -681,7 +697,8 @@ public class WordCount {
     <c:sourceContent type="html" title="" id="sourceContent1" style="border-bottom:none;border-top:none;">
       <![CDATA[<br /><i><b>mapred-site.xml</b></i>]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="border-bottom:none;border-top:none;"><![CDATA[<?xml version="1.0"?>
+    <c:sourceContent type="" title="" id="sourceContent1" style="border-bottom:none;border-top:none;">
+      <![CDATA[<?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
       <property>
@@ -697,7 +714,8 @@ public class WordCount {
     <c:sourceContent type="html" title="" id="sourceContent1" style="border-bottom:none;border-top:none;">
       <![CDATA[<br /><i><b>hdfs-site.xml</b></i>]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="border-bottom:none;border-top:none;"><![CDATA[<?xml version="1.0"?>
+    <c:sourceContent type="" title="" id="sourceContent1" style="border-bottom:none;border-top:none;">
+      <![CDATA[<?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
       <property>
@@ -762,7 +780,8 @@ public class WordCount {
      <i><b>core-site.xml</b></i>
       ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="border-bottom:none;border-top:none;"><![CDATA[<?xml version="1.0"?>
+    <c:sourceContent type="" title="" id="sourceContent1" style="border-bottom:none;border-top:none;">
+      <![CDATA[<?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
       <property>
@@ -780,7 +799,8 @@ public class WordCount {
     <c:sourceContent type="html" title="" id="sourceContent1" style="border-bottom:none;border-top:none;">
       <![CDATA[<br /><i><b>mapred-site.xml</b></i>]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="border-bottom:none;border-top:none;"><![CDATA[<?xml version="1.0"?>
+    <c:sourceContent type="" title="" id="sourceContent1" style="border-bottom:none;border-top:none;">
+      <![CDATA[<?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
       <property>
@@ -796,7 +816,8 @@ public class WordCount {
     <c:sourceContent type="html" title="" id="sourceContent1" style="border-bottom:none;border-top:none;">
       <![CDATA[<br /><i><b>hdfs-site.xml</b></i>]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="border-bottom:none;border-top:none;"><![CDATA[<?xml version="1.0"?>
+    <c:sourceContent type="" title="" id="sourceContent1" style="border-bottom:none;border-top:none;">
+      <![CDATA[<?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
       <property>
@@ -861,7 +882,7 @@ public class WordCount {
       <![CDATA[。
       ]]>
     </c:sourceContent>
-    
+
 
 
 
@@ -875,10 +896,12 @@ public class WordCount {
   <c:entry style="margin-top:2em;">
     <c:title>Hadoop 组件 &#8212; HDFS</c:title>
     <c:desc>
-      <c:desc1> <![CDATA[HDFS 是一种分布式文件系统，专为 MapReduce 这类框架下的大规模分布式数据处理而设计的。可以把一个 100TB 的大数据集在 Hadoop 中存储为单个文件。<br />
-      <b style="color:red;">Hadoop 提供了一套与 Linux 文件命令类似的命令行工具，用于与 HDFS 交互。</b>]]></c:desc1>
+      <c:desc1>
+        <![CDATA[HDFS 是一种分布式文件系统，专为 MapReduce 这类框架下的大规模分布式数据处理而设计的。可以把一个 100TB 的大数据集在 Hadoop 中存储为单个文件。<br />
+      <b style="color:red;">Hadoop 提供了一套与 Linux 文件命令类似的命令行工具，用于与 HDFS 交互。</b>]]>
+      </c:desc1>
     </c:desc>
-    
+
     <c:sourceContent type="html" title="HDFS 文件操作" id="sourceContent1">
       <![CDATA[<b>假设已经完成了 HDFS 格式化，并启动了一个 HDFS 文件系统 (可以使用伪分布模式)。</b>
       <br />  <br />
@@ -926,7 +949,8 @@ public class WordCount {
       </c:desc1>
     </c:desc>
 
-    <c:sourceContent type="" title="PutMerge 程序" id="sourceContent1"><![CDATA[/*
+    <c:sourceContent type="" title="PutMerge 程序" id="sourceContent1">
+      <![CDATA[/*
     1、Hadoop 中有一个 getmerge 命令，用于把一组 HDFS 文件在复制到本地计算机的过程中进行合并。
     2、PutMerge 程序用于把一组文件放到 HDFS 的过程中合并文件。
     3、Hadoop 处理单个大文件比处理许多小文件更有效率。
@@ -981,7 +1005,8 @@ public class PutMerge {
             e.printStackTrace();
         }
     }
-}]]></c:sourceContent>
+}]]>
+    </c:sourceContent>
 
     <c:comment>
       <c:comment1>
@@ -998,7 +1023,7 @@ public class PutMerge {
       </c:desc1>
     </c:desc>
 
-    <c:sourceContent type="html" title="剖析 MapReduce 程序" id="sourceContent1">
+    <c:sourceContent expand="false" type="html" title="剖析 MapReduce 程序" id="sourceContent1">
       <![CDATA[
       MapReduce 程序通过操作键/值对来处理数据，一般形式为：<br /><br />
       <b style="color:green;font-size:1.3em;">map: (K1,V1) &rarr; list(K2,V2) <br />
@@ -1007,12 +1032,138 @@ public class PutMerge {
       <img style="width:100%;" src="//c2.staticflickr.com/6/5498/14309905763_a215ed134a_b.jpg" />
       ]]>
     </c:sourceContent>
-    <c:sourceContent type="html" title="Hadoop 数据类型" id="sourceContent1">
-          <![CDATA[
-          <b>因为标准的 Java 数据类型不支持在集群上移动，所以 MapReduce 框架提供了一种序列化键/值对的方法。只有那些支持这种序列化的类能够在这个框架中充当键或者值。</b>
+    <c:sourceContent expand="false" type="html" title="Hadoop 数据类型" id="sourceContent1">
+      <![CDATA[
+          <b>因为标准的 Java 数据类型不支持在集群上移动，所以 MapReduce 框架提供了一种序列化键/值对的方法。
+          只有那些支持这种序列化的类能够在这个框架中充当键或者值。</b>
+          
+          <br />
+          <br />
+          实现了 Writable 接口的类可以是值，而实现了 WritableComparable<T> 接口的类既可以是值也可以是键。
+          由于在 Reduce 阶段会进行排序，所以对于键而言需要实现 Comparable<T> 接口。
+          
+          <br />
+          <br />
+          Hadoop 实现了所有基本数据类型，这些数据类型支持序列化的方法，所以可以在集群上移动。
+
+          <br />
+          <br />
+          <b>键/值对经常使用的数据类型列表:</b>
+          <table>
+            <thead>
+              <tr>
+                <th style="padding:.3em .8em;padding-left:0;font-weight:bold;">类</th>
+                <th style="padding:.3em .8em;padding-left:0;font-weight:bold;">描述</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding:.3em .8em;padding-left:0;">BooleanWritable</td>
+                <td style="padding:.3em .8em;padding-left:0;">标准布尔变量的封装</td>
+              </tr>
+              <tr>
+                <td style="padding:.3em .8em;padding-left:0;">ByteWritable</td>
+                <td style="padding:.3em .8em;padding-left:0;">单字节数的封装</td>
+              </tr>
+              <tr>
+                <td style="padding:.3em .8em;padding-left:0;">DouableWritable</td>
+                <td style="padding:.3em .8em;padding-left:0;">双字节数的封装</td>
+              </tr>
+              <tr>
+                <td style="padding:.3em .8em;padding-left:0;">FloatWritable</td>
+                <td style="padding:.3em .8em;padding-left:0;">浮点数的封装</td>
+              </tr>
+              <tr>
+                <td style="padding:.3em .8em;padding-left:0;">IntWritable</td>
+                <td style="padding:.3em .8em;padding-left:0;">整数的封装</td>
+              </tr>
+              <tr>
+                <td style="padding:.3em .8em;padding-left:0;">Text</td>
+                <td style="padding:.3em .8em;padding-left:0;">使用 UTF8 格式的文本封装</td>
+              </tr>
+              <tr>
+                <td style="padding:.3em .8em;padding-left:0;">NullWritable</td>
+                <td style="padding:.3em .8em;padding-left:0;">无键/值时的占位符</td>
+              </tr>
+            </tbody>
+          </table>
           ]]>
     </c:sourceContent>
+    <c:sourceContent expand="false" type="" title="自定义 Hadoop 数据类型: Edge" id="sourceContent1">
+      <![CDATA[/*
+  该 Edge 类型代表两个城市之间的航线。
+  该 Edge 类实现了 Writable 接口中的 readFields() 和 write() 方法,
+  它们与 Java 中的 DataInput 和 DataOutput 类一起用于类中内容的串行化。
+  利用该 Edge 自定义数据类型我们可以开始数据处理流程的第一阶段 (即 mapper 阶段)。
+*/
+public class Edge implements WritableComparable<Edge> {
+    private String departureNode;
+    private String arrivalNode;
+  
+    public String getDepartureNode() { return departureNode; }
+    
+    
+    // 说明如何读入数据
+    @Override
+    public void readFields (DataInput in) throws IOException {
+        departureNode = in.readUTF();
+        arrivalNode = in.readUTF();
+    }
+    
+    // 说明如何写出数据
+    @Override 
+    public void write (DataOutput out) throws IOException {
+        out.writeUTF(departureNode);
+        out.writeUTF(arrivalNode);
+    }
+    
+    @Override
+    public int compareTo (Edge o) {
+        int i = departureNode.compareTo(o.departureNode);
+      
+        if (i != 0) {
+            return i;  
+        }
+        
+        return arrivalNode.compareTo(o.arrivalNode);
+    }
+}]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Partitioner: 重定向 Mapper 输出" id="sourceContent1" style="border-bottom:none;">
+      <![CDATA[/*
+    为了进行并行计算, Hadoop 将生成多个 reducer 来处理 mapper 的输出。
+    当使用多个 reducer 时, Hadoop 将对键进行散列来确定 mapper 应该把键/值对输出给谁。
+    Hadoop 通过 HashPartitioner 类来强制执行散列，但有时默认使用的 HashPartitioner 会让你出错，为了避免出错需要自定义 Partitioner。
+      
+    例如: 我们希望具有相同离港地的所有 edge 被送往相同的 reducer。
+*/
+      
+public class EdgePartitioner implements Partitioner<Edge, Writable> {
+    @Override
+    public int getPartition (Edge key, Writable value, int numPartitions) {
+        return key.getDepartureNode().hashCode() % numPartitions;
+    }
+          
+    @Override
+    public void configure (JobConf conf) {  }
+}
 
+/*
+    一个自定义的 Partitioner 只需要实现 configure() 和 getPartition() 两个函数。
+    前者将 Hadoop 对作业的配置应用在 partitioner 上，而后者返回一个介于 0 和 reduce 任务数之间的整数，该整数指向键/值对将要发送到的 reducer。
+*/]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="border-top:none;">
+      <![CDATA[
+      <b>下图展示了 MapReduce 数据流，重点说明了分区 (Partitioning) 和洗牌 (shuffling): </b><br />
+      <img style="max-width:100%;" src="https://c2.staticflickr.com/4/3860/14613855679_4f21435542.jpg" />
+      <br />
+      ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Combiner: 本地 reduce" id="sourceContent1">
+      <![CDATA[Combiner 即在分发 mapper 结果之前做一下 "本地 reduce"。<br />
+      <b>例如: 洗牌一次 (the, 23) 键/值对比洗牌 23 次 (the, 1) 键/值对更为高效。</b>]]>
+    </c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
@@ -1020,7 +1171,7 @@ public class PutMerge {
     </c:comment>
   </c:entry>
 
-<c:entry style="margin-top:2em;">
+  <c:entry style="margin-top:2em;">
     <c:title>编写 MapReduce 基础程序</c:title>
     <c:desc>
       <c:desc1>
@@ -1109,7 +1260,8 @@ public class PutMerge {
       通过观察我们可以发现专利 5312208、 4944640 和 5071294 引用了专利 1000067
         ]]>
     </c:sourceContent>
-    <c:sourceContent expand="false" type="" title="典型 Hadoop 程序模板 (旧版 API)" id="sourceContent1" style="border-bottom:none;"><![CDATA[public class MyJob extends Configured implements Tool {
+    <c:sourceContent expand="false" type="" title="典型 Hadoop 程序模板 (旧版 API)" id="sourceContent1" style="border-bottom:none;">
+      <![CDATA[public class MyJob extends Configured implements Tool {
     public static class MapClass extends MapReduceBase
                                  implements Mapper<Text, Text, Text, Text> {
         public void map(Text key, Text value
@@ -1164,12 +1316,13 @@ public class PutMerge {
         
         System.exit(res);
     }
-}]]></c:sourceContent>
-    <c:sourceContent expand="false" type="" 
-                     title="典型 Hadoop 程序模板 (新版 API 0.20)" 
-                     id="sourceContent1" 
+}]]>
+    </c:sourceContent>
+    <c:sourceContent expand="false" type=""
+                     title="典型 Hadoop 程序模板 (新版 API 0.20)"
+                     id="sourceContent1"
                      style="border-bottom:none;">
-          <![CDATA[public class MyJob extends Configured implements Tool {
+      <![CDATA[public class MyJob extends Configured implements Tool {
     public static class MapClass extends Mapper<LongWritable, Text, Text, Text> {
         public void map(LongWritable key, Text value
                         , Context context) 
@@ -1232,18 +1385,18 @@ public class PutMerge {
         System.exit(res);
     }
 }]]>
-  </c:sourceContent>
-  <c:sourceContent type="html" title="" id="sourceContent1" style="border-top:none;color:green;">
-    <![CDATA[
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="border-top:none;color:green;">
+      <![CDATA[
      <b>Hadoop 要求 Mapper 和 Reducer 必须是它们自身的静态类。该模板将它们包含在 MyJob 类中作为内部类。</b> <br />
      <b>这些内部类是独立的，通常不与 MyJob 类进行交互 (放在一个文件中只是为了简化代码管理)。</b> <br />
      <b>在作业执行期间，采用不同 JVM 的各类节点复制并运行 Mapper 和 Reducer，其它的作业类仅在客户机上执行。</b> <br />
      <b>run() 方法是框架的核心，也称为 driver。</b> 
         ]]>
-  </c:sourceContent>
+    </c:sourceContent>
 
-  <c:sourceContent type="html" title="driver" id="sourceContent1" style="border-top:none;color:green;">
-    <![CDATA[
+    <c:sourceContent type="html" title="driver" id="sourceContent1" style="border-top:none;color:green;">
+      <![CDATA[
     <ul style="list-style:disc;margin-left:1.5em;">
       <li><b>在 driver 中实例化、配置并传递一个 JobConf 对象命名的作业给 JobClient.runJob() 用以启动 MapReduce 作业。(JobClient 与 JobTracker 通信让该作业在集群上启动。)</b></li>
       <li><b>Driver 需要在作业中为每个作业定制基本参数，包括输入路径、输出路径、Mapper 类和 Reducer 类。JobConf 对象将保持作业运行所需的全部配置参数。</b></li>
@@ -1255,12 +1408,12 @@ public class PutMerge {
       <li><b>所有键与值得类型必须是 Writable 的子类型，以确保 Hadoop 的序列化接口可以把数据分布在集群上发送。</b></li>
     </ul>
         ]]>
-  </c:sourceContent>
+    </c:sourceContent>
 
-  <c:sourceContent type="html" title="使用 combiner 提升性能" id="sourceContent1" style="border-top:none;color:green;">
-    <![CDATA[。。
+    <c:sourceContent type="html" title="使用 combiner 提升性能" id="sourceContent1" style="border-top:none;color:green;">
+      <![CDATA[。。
         ]]>
-  </c:sourceContent>
+    </c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
