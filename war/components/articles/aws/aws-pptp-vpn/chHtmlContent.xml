@@ -10,7 +10,7 @@
         需要输入电话号码然后点击”Call Me Now”, 稍等片刻 Amazon 会有电话拨过来.
         <br />
         <br />
-        <img style="max-width:100%" src="http://blog-banban.qiniudn.com/call_me_now.png" />
+        <img style="max-width:100%" src="https://c2.staticflickr.com/6/5585/14636640858_c63fc59fba.jpg" />
         <br />
         <br />
         接到电话后在电话上输入您屏幕上的 “Your Pin:” 后标示的四位数字即可.
@@ -20,7 +20,7 @@
         注册成功之后会进入Thank you页面, 选择启动AWS管理控制台.
         <br />
         <br />
-        <img style="max-width:100%" src="http://blog-banban.qiniudn.com/launch_console.png" />
+        <img style="max-width:100%" src="https://c2.staticflickr.com/4/3895/14843163073_01d9a34833_b.jpg" />
         <br />
         <br />
         之后选择”登录AWS控制台”按钮(右上方, 比较醒目的橙色)
@@ -32,13 +32,7 @@
         <br />
         <br />
         
-        如果不打算用(反正也都收钱的…), 直接忽略即可
-        <br />
-        <br />
-        
-        如果想试一下这2个服务
-        <br />
-        您可以提供 valid business URL 并使用此 URL 向aws-verification@amazon.com发一封确认邮件.
+        如果不打算用(反正也都收钱的…), 直接忽略即可. 如果想试一下这2个服务, 您可以提供 valid business URL 并使用此 URL 向aws-verification@amazon.com发一封确认邮件.
         邮件可用以简单些, 内容如下即可(请注意使用您自己公司的site-url和email-address):
         <br />
         <br />
@@ -55,7 +49,7 @@
         Web Site URL: 的具体位置见下图:
         <br />
         <br />
-        <img style="max-width:100%" src="http://blog-banban.qiniudn.com/web_site_url.png" />
+        <img style="max-width:100%" src="https://c2.staticflickr.com/4/3848/14800354356_38c9d4a9b9_z.jpg" />
         <br />
         <br />
         邮件发送之后稍等片刻, 会收到Amazon的确认信息.
@@ -73,7 +67,7 @@
          <h4>选择region 部署区域, 简易选择东京</h4>
          
          <br />
-         <img style="max-width:100%" src="http://blog-banban.qiniudn.com/select_region.png" />
+         <img style="max-width:100%" src="https://c2.staticflickr.com/6/5591/14636707199_2f4f25ca88.jpg" />
          <br />
          <br />
          
@@ -84,21 +78,175 @@
 <br />
 
          <br />
-         <img style="max-width:100%" src="http://blog-banban.qiniudn.com/key_pairs.png" />
+         <img style="max-width:100%" src="https://c1.staticflickr.com/3/2904/14843205033_5d873f98cb_z.jpg" />
          <br />
          <br />
          完成后会得到一个.pem文件, 把他移动到~/.ssh目录下, 并更改权限为600
          <br />
          <br />
          
-         <b>mv ~/文件所在位置/algo31031.pem ~/.ssh/ chmod 600 ~/.ssh/algo31031.pem</b>
+         <b>mv ~/文件所在位置/algo31031.pem ~/.ssh/ chmod 400 ~/.ssh/algo31031.pem</b>
          <br />
          <br />
          请妥善保管您的.pem文件, 若遗失您可以删除之前的key_pairs并创建新的
          <br />
          如果您希望使用自己的ssh key, 也可以选择”Import Key Pair”
+         <br />
+         <br />
+         <br />
+         <br />
          
+         <h4>启动EC2实例</h4>
+         <br />
+         回到EC2 Dashbord页, 在这里选择Launch instance
+         <br />
+         <br />
+         <img style="max-width:100%" src="https://c1.staticflickr.com/3/2908/14821028494_736c8cc3f7_z.jpg" />
+         <br />
+         <br />
+         
+         选择需要的系统, 这里我们选用64位的 ubuntu 14.04 PV了
+         <br />
+        需要注意下如果没有free tier eligible标志的是需要收费的
+         <br />
+         <br />
+         <img style="max-width:100%" src="https://c2.staticflickr.com/4/3884/14636773318_19249991ed_z.jpg" />
+         <br />
+         <br />
+         选择实例类型时候, 要选择Micro instances
+         <br />
+         没有 Free tier eligible 都是要收钱的 (有这个的用超了也要收钱…) 之后一路 Next (Add Storage 那里可以适当加点, 但是不要超过 30G), 
+         一直到 Configure Security Group 这里除了默认的 ssh 22 端口外, 还要开放 1723 端口, 否则连不上 VPN
+         <br />
+         <br />
+         <img style="max-width:100%" src="https://c2.staticflickr.com/4/3922/14636772949_8118e77612_b.jpg" />
+         <br />
+         <br />
+         在 launch EC2 实例之前, 会有一步让你选择 key pair, 用刚才创建的那个即可
+         <br />
+         <br />
+         <img style="max-width:100%" src="https://c2.staticflickr.com/6/5579/14823446125_be9c8913d5.jpg" />
+         <br />
+         <br />
+         至此, 已经有了一台AWS EC2可以用来折腾了
+         <br />
+         <br />
+         <img style="max-width:100%" src="https://c1.staticflickr.com/3/2899/14636814668_cb9eaedf59_z.jpg" />
+         <br />
+         <br />
         </div>
+        <br />
+        <br />
+        <br />
+        <br />
+        
+        <h3>启动并设置AWS EC2</h3>
+        
+        <div style="margin-top:1em;">
+          <h4>登录 EC2 配置安装 PPTV VPN</h4>
+        <br />
+         <b>为EC2实例绑定Elastic IP</b> 创建完的EC2实例虽然有自己的公网IP, 但是每次重新启动都会变化, 所以需要为其绑定Elastic IP.         
+        <br />
+        <br />
+         <img style="max-width:100%" src="https://c1.staticflickr.com/3/2921/14636883000_065c4b0758.jpg" />
+         <br />
+         <br />
+         申请完之后, 将其与刚才创建的EC2实例关联    
+        <br />
+        <br />
+         <img style="max-width:100%" src="https://c2.staticflickr.com/4/3849/14823597965_fca758bdf7_z.jpg" />
+         <br />
+         <br />
+         <br />
+         <br />
+         <b> 在EC2 实例下安装 PPTP VPN</b> 
+         <br />
+         <br />
+         <b>
+         sudo apt-get update <br />
+         sudo apt-get install pptpd</b>
+         <br />
+         <br />
+         
+         修改 /etc/pptpd.conf 文件, 在最先面添加以下 2 行
+         <br />
+         <br />
+          <b>localip 192.168.117.1 </b>
+         <br />
+         <b>remoteip 192.168.117.2-20,192.168.117.244</b>
+         <br />
+         <br />
+          修改DNS服务器, 编辑:<br />
+         <b>sudo vi /etc/ppp/pptpd-options</b>
+         <br />
+         <br />
+         添加如下内容：<br />
+          ms-dns 8.8.8.8 
+         <br />
+         ms-dns 8.8.4.4
+         <br />
+         <br />
+         
+          接下来修改 /etc/ppp/chap-secrets 文件, 配置你自己 VPN 的用户名/密码 (其中 username 为你要添加的VPN帐号的用户名，password 为你 VPN 帐号的密码), 
+          格式如下:
+         <br />
+
+          username pptpd password *
+         <br />
+         <br />
+          <b>开启IPv4转发</b> 修改 /etc/sysctl.conf 文件, 添加以下内容 (默认里面有这行, 把注释去掉也可)
+         <br />
+         <br />
+
+          net.ipv4.ip_forward=1
+         <br />
+         <br />
+          执行 sudo /sbin/sysctl -p 重新加载配置
+         <br />
+         <br />
+          
+          
+          重启 pptpd 服务
+         <br />
+
+          <b>sudo /etc/init.d/pptpd restart</b>
+         <br />
+         <br />
+
+           安装 iptables 并开启 iptables 转发<br />
+           (其中 eth0 是联网网卡，192.168.117.0/24 是准备使用的网段与第 2 步骤设相同)
+         <br />
+         <br />
+          <b>sudo apt-get install iptables</b>
+          <br />
+          <b>
+          sudo iptables -t nat -A POSTROUTING -s 192.168.117.0/24 -o eth0 -j MASQUERADE</b>
+         <br />
+         <br />
+          如果需要每次 reboot 后都自动生效可以考虑下面步骤<br />
+          首先用vi 编辑下面文件<br />
+          <br />
+          sudo vi /etc/init.d/rc.local<br />
+          <br />
+          加入下面命令<br />
+          <b>iptables -t nat -A POSTROUTING -s 192.168.117.0/24 -o eth0 -j MASQUERADE</b>
+         <br />
+         <br />
+         ubuntu12.04 已经有防火墙了叫 ufw，默认是 disable，如果你把 ufw 开启了，那么需要如下设置来允许 pptp 转发数据包
+         <br />
+         <br />
+         vi /etc/default/ufw
+         <br />
+         将 'DEFAULT_FORWARD_POLICY' 从 'DROP' 改为 'ACCEPT'
+         <br />
+         <br />
+         如果你的服务器有其他防火墙保护，请记得开启 tcp 端口 1723 来公 pptp 服务通过。例如亚马逊的 AWS EC2 instance，需要打开 Security Groups: 1723 端口
+         <br />
+         <br />
+         最后 
+         <br />
+         <b> sudo reboot</b>
+         </div>
     ]]>
   </c:content>
 
