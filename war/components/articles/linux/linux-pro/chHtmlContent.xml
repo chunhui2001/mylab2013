@@ -20,7 +20,7 @@
   
   <b>配置环境变量</b> 
   <br />
-  sudo vi /etc/profile  <br />
+  sudo vi ~/.bashrc  <br />
   <br />
   export JAVA_HOME=/usr/lib/jvm/java/jdk1.6.0_45  <br />
   export JRE_HOME=${JAVA_HOME}/jre  <br />
@@ -28,15 +28,63 @@
   export PATH＝$PATH:${JAVA_HOME}/bin:${JRE_HOME}/bin  <br />
   <br />
   
-  source /etc/profile  <br />
-  source /home/user/.bashrc  
+  source ~/.bashrc  
   <br />
-  <br /><br />
+  <br />
   
   
   
+  <b>配置默认JDK版本</b><br />
+  由于 ubuntu 中可能会有默认的 JDK，如 openjdk，所以，为了将我们安装的 JDK 设置为默认 JDK 版本，还要进行如下工作。<br /><br />
+
+执行代码:<br />
+~$ sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-7-sun/bin/java 300  <br />
+~$ sudo update-alternatives --install /usr/bin/javac javac /usr/lib/jvm/java-7-sun/bin/javac 300  <br />
+~$ sudo update-alternatives --install /usr/bin/jar jar /usr/lib/jvm/java-7-sun/bin/jar 300   <br />
+~$ sudo update-alternatives --install /usr/bin/javah javah /usr/lib/jvm/java-7-sun/bin/javah 300   <br />
+~$ sudo update-alternatives --install /usr/bin/javap javap /usr/lib/jvm/java-7-sun/bin/javap 300  <br />
+  <br />
+
   
+  <b>列出系统安装的所有 JDK 版本</b><br /> 
+  ~$ sudo update-alternatives --config java 
+  <br />
+  <br />
   
+  <b>系统会列出各种JDK版本，如下所示：</b><br /> 
+  <table>
+    <thead>
+      <tr>
+        <th>选择</th><th>路径</th><th>优先级</th><th>状态</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="text-align:right;">* 0</td><td>/usr/lib/jvm/java-6-openjdk/jre/bin/java</td><td>1061</td><td>自动模式</td>
+      </tr>
+      <tr>
+        <td style="text-align:right;">1</td><td>/usr/lib/jvm/java-6-openjdk/jre/bin/java</td><td>1061</td><td>手动模式</td>
+      </tr>
+      <tr>
+        <td style="text-align:right;">2</td><td>/usr/lib/jvm/java-6-sun/jre/bin/java</td><td>63</td><td>手动模式</td>
+      </tr>
+      <tr>
+        <td style="text-align:right;">3</td><td>/usr/lib/jvm/java-7-sun/bin/java</td><td>300</td><td>手动模式</td>
+      </tr>
+    </tbody>
+  </table>
+  <br />    	   	      	  
+
+  <b>要维持当前值[*]请按回车键，或者键入选择的编号：3 </b>
+  <br />
+  <br />
+
+
+  
+  <b>移除 openjdk</b><br /> 
+  sudo apt-get purge openjdk*
+  <br />
+  <br />
   
   <b>切换到 root</b> <br />
   $ su root<br /><br />
