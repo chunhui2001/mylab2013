@@ -483,4 +483,50 @@ public class WebLogReader {
     </c:desc>
 
   </c:entry>
+
+  <c:entry style="margin-top:2em;color:rgb(156, 25, 197);font-weight:bold;">
+    <c:title>Processing XML in Hadoop:</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[
+<p style="color:black;margin-bottom:.5em;font-size:15px;">This is something that I’ve been battling with for a while and tonight, whilst not able to sleep, I finally found a way to crack it! The answer: use an <a href="http://github.com/apache/mahout/blob/ad84344e4055b1e6adff5779339a33fa29e1265d/examples/src/main/java/org/apache/mahout/classifier/bayes/XmlInputFormat.java">XmlInputFormat</a> from a related project. Now for the story.</p>
+
+<p style="color:black;margin-bottom:.5em;font-size:15px;">We process lots of XML documents every day and some of them are pretty large: over 8 gigabytes uncompressed. Each. Yikes!</p>
+
+<p style="color:black;margin-bottom:.5em;font-size:15px;">We’d made significant performance gains by switching the old <a href="http://www.germane-software.com/~ser/Software/rexml/">REXML</a> SAX parser to <a href="http://libxml.rubyforge.org/">libxml</a>. But we’ve suffered from random segfaults on our production servers (seemingly caused by garbage collecting bad objects). Besides, this still was running at nearly an hour for the largest reports.</p>
+
+<p style="color:black;margin-bottom:.5em;font-size:15px;">Hadoop did seem to offer XML processing: the general advice was to use Hadoops’s <a href="http://hadoop.apache.org/common/docs/r0.20.1/api/org/apache/hadoop/streaming/StreamXmlRecordReader.html">StreamXmlRecordReader</a> which can be accessed through using the <a href="http://hadoop.apache.org/common/docs/current/api/org/apache/hadoop/streaming/StreamInputFormat.html">StreamInputFormat</a>.</p>
+
+<p style="color:black;margin-bottom:.5em;font-size:15px;">This seemed to have weird behaviour with our reports (which often don’t have line-endings): lines would be duplicated and processing would jump to 100%+ complete. All a little fishy.</p>
+
+<h3>Hadoop Input Formats and Record Readers</h3>
+
+<p style="color:black;margin-bottom:.5em;font-size:15px;">The <a href="http://hadoop.apache.org/common/docs/current/api/org/apache/hadoop/mapred/InputFormat.html">InputFormat</a> in Hadoop does a couple of things. Most significantly, it provides the Splits that form the chunks that are sent to discrete Mappers.</p>
+
+<p style="color:black;margin-bottom:.5em;font-size:15px;">Splits form the rough boundary of the data to be processed by an individual Mapper. The <a href="http://hadoop.apache.org/common/docs/current/api/org/apache/hadoop/mapred/FileInputFormat.html">FileInputFormat</a> (and it’s subclasses) generate splits on overall file size. Of course, it’s unlikely that all individual Records (a Key and Value that are passed to each Map invocation) lie neatly within these splits: records will often cross splits. The RecordReader, therefore, must handle this</p>
+
+<blockquote class="posterous_short_quote">
+  <p>… on whom lies the responsibilty to respect record-boundaries and present a record-oriented view of the logical InputSplit to the individual task.</p>
+</blockquote>
+
+<p style="color:black;margin-bottom:.5em;font-size:15px;">In short, a RecordReader could scan from the start of a split for the start of it’s record. It may then continue to read past the end of it’s split to find the end. The InputSplit only contains details about the offsets from the underlying file: data is still accessed through the streams.</p>
+
+<p style="color:black;margin-bottom:.5em;font-size:15px;">It seemed like the StreamXmlRecordReader was skipping around the underlying InputStream too much; reading records it wasn’t entitled to read. I tried my best at trying to understand <a href="http://github.com/apache/hadoop-mapreduce/blob/f65782cf83a1a6f02c3204085f8091bd1093cc11/src/contrib/streaming/src/java/org/apache/hadoop/streaming/StreamXmlRecordReader.java">the code</a> but it was written a long while ago and is pretty cryptic to my limited brain.</p>
+
+<p style="color:black;margin-bottom:.5em;font-size:15px;">I started trying to rewrite the code from scratch but it became pretty hairy very quickly. Take a look at the implementation of next() in <a href="http://hadoop.apache.org/common/docs/current/api/org/apache/hadoop/mapred/LineRecordReader.html">LineRecordReader</a> to see what I mean.</p>
+
+<h3>Mahout to the Rescue</h3>
+
+<p style="color:black;margin-bottom:.5em;font-size:15px;">After a little searching around on GitHub I found another <a href="http://github.com/apache/mahout/blob/ad84344e4055b1e6adff5779339a33fa29e1265d/examples/src/main/java/org/apache/mahout/classifier/bayes/XmlInputFormat.java">XmlInputFormat</a> courtesy of the Lucene sub-project: <a href="http://lucene.apache.org/mahout/">Mahout</a>.</p>
+
+<p style="color:black;margin-bottom:.5em;font-size:15px;">I’m happy to say it appears to work. I’ve just run a quick test on our 30 node cluster (via my VPN) and it processed the 8 gig file in about 10 minutes. Not bad.</p>
+
+<p style="color:black;margin-bottom:.5em;font-size:15px;">For anyone trying to process XML with Hadoop: try Mahout’s <a href="http://github.com/apache/mahout/blob/ad84344e4055b1e6adff5779339a33fa29e1265d/examples/src/main/java/org/apache/mahout/classifier/bayes/XmlInputFormat.java">XmlInputFormat</a>.</p>
+
+        
+        ]]>
+      </c:desc1>
+    </c:desc>
+
+  </c:entry>
 </c:component>
