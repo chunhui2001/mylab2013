@@ -13,9 +13,9 @@
     <link rel="stylesheet" type="text/css" href="/RenderingAssets/components/chSourceHighlighting/chSourceHighlighting.css" />
     <div class="chSourceHighlighting">
       <xsl:if test="normalize-space(c:abstract) != ''">
-        <p style="margin: 1em 0;font-weight:bold;">
+        <div style="margin: 1em 0;font-weight:bold;">
           <xsl:value-of disable-output-escaping="yes" select="normalize-space(c:abstract) "/>
-        </p>
+        </div>
       </xsl:if>
     
       <xsl:choose>
@@ -71,7 +71,7 @@
             <xsl:value-of select="'0em'"/>
           </xsl:if>
         </xsl:variable>
-        <div style="color:rgb(78, 12, 247);font-weight:bold;margin-bottom:{$mb};font-size:1.125;">
+        <div style="color:rgb(78, 12, 247);font-weight:bold;margin-bottom:{$mb};font-size:1.125em;">
           <xsl:value-of disable-output-escaping="yes" select="current()"/>
         </div>
       </xsl:if>
@@ -80,7 +80,7 @@
 
 
 
-    <xsl:variable name="style" select="'overflow:hidden;border:none;background-color:rgb(249, 249, 249);border:solid 1px rgb(227, 227, 227);'" />
+    <xsl:variable name="style" select="'overflow:hidden;border:none;background-color:rgb(249, 249, 249);'" />
 
     <xsl:if test="count($entry/c:sourceContent[normalize-space(text()) != '']) &gt; 0">
       <xsl:for-each select="$entry/c:sourceContent">
@@ -140,27 +140,38 @@
         <ul>
           <xsl:attribute name="style">
             <xsl:choose>
-              <xsl:when test="position() != last()">
-                <xsl:value-of select="concat($st, 'margin-top:1em;')"/>
+              <xsl:when test="normalize-space(@style) != ''">
+                <xsl:value-of select="normalize-space(@style)"/>
               </xsl:when>
               <xsl:otherwise>
-                <xsl:value-of select="concat($st, '')"/>
+                <xsl:choose>
+                  <xsl:when test="position() != last()">
+                    <xsl:value-of select="concat($st, 'margin-top:1em;')"/>
+                  </xsl:when>
+                  <xsl:otherwise>
+                    <xsl:value-of select="concat($st, '')"/>
+                  </xsl:otherwise>
+                </xsl:choose>
               </xsl:otherwise>
-            </xsl:choose>
+            </xsl:choose>            
           </xsl:attribute>
           
           <xsl:for-each select="current()/*">
             <xsl:if test="normalize-space(current()) != ''">
-              <!--div>
-              <span style="display:block;float:left;">&#9830;</span>
-              
-              <div class="clear"></div>
-            </div-->
-              <li style="color:rgb(205, 76, 0);">
-                <span style="font-weight:bold;display:block;">
+              <xsl:choose>
+                <xsl:when test="normalize-space(@style) != ''">
                   <xsl:value-of disable-output-escaping="yes" select="current()"/>
-                </span>
-              </li>
+                </xsl:when>
+                <xsl:otherwise>
+                  <li style="color:rgb(205, 76, 0);">
+                    <span style="font-weight:bold;display:block;">
+                      <xsl:value-of disable-output-escaping="yes" select="current()"/>
+                    </span>
+                  </li>
+                </xsl:otherwise>
+              </xsl:choose>
+              
+              
             </xsl:if>
           </xsl:for-each>
         </ul>

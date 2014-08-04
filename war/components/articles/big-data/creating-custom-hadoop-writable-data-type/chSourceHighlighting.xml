@@ -1,0 +1,486 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+      <p>
+        If none of the built-in Hadoop Writable data types matches our requirements some times, then we can create&nbsp;custom Hadoop data type by implementing <b><span style="font-family: georgia, palatino;">Writable </span></b>interface or <b><span style="font-family: georgia, palatino;">WritableComparable </span></b>interface.
+      </p>
+      
+      
+      <div style="margin-top:2em;">
+        <h3 style="color:rgb(156, 25, 197);font-weight:bold;">Common Rules for creating custom Hadoop Writable Data Type:</h3>
+        <ul style="list-style-type: disc;margin-left:1.5em;">
+            <li>
+              A custom hadoop writable data type which needs to be used as <b>value </b>field in Mapreduce programs must implement<b> Writable</b> interface 
+              <span style="font-family: georgia, palatino;"><b>org.apache.hadoop.io.Writable</b></span>.
+            </li>
+            <li>
+              MapReduce key types should have the ability to compare against each other for sorting purposes. 
+              A custom hadoop writable data type that can be used as <b>key </b>field in Mapreduce programs must implement <b>
+              <span style="font-family: georgia, palatino;">WritableComparable</span> </b>interface which intern extends
+              <b><span style="font-family: georgia, palatino;">Writable</span></b> 
+              (<span style="font-weight:bold;">org.apache.hadoop.io.Writable</span>) and 
+              <b><span style="font-family: georgia, palatino;">Comparable</span></b> 
+              (<span style="font-weight:bold;">java.lang.Comparable</span>) interfaces.
+            </li>
+            <li>So, i.e. a data type created by implementing <b>WritableComparable</b> Interface can be used as either key or value field data type.</li>
+        </ul>
+        
+        <p style="margin-top:2em;">
+          <span style="color: #000000;">Since a data type implementing WritableComparable can be used as data type for key or value fields in mapreduce programs, Lets define a custom data type which can used for both key and value fields.</span> 
+          <br />
+          <br />
+          <b><em>In this post,</em></b> Lets create a custom data type to process Web Logs from a server and count the occurrences&nbsp;of each&nbsp;IP&nbsp;address. 
+          <br />
+          <br />In this sample, lets consider a 
+          <b>web log record</b> with five fields – 
+          <br />
+          <b style="color:rgb(221, 83, 29)">Request No, Site URL, Request Date, Request Time and IP address</b>.
+          <br />
+          <br />
+          &nbsp;A sample record from web log file &nbsp;is as shown below.
+          <br />
+          <div style="font-weight:bold;color:rgb(221, 83, 29)">127248 &nbsp;&nbsp;&nbsp;&nbsp; /rr.html &nbsp;&nbsp;&nbsp;&nbsp; 2014-03-10 &nbsp;&nbsp;&nbsp;&nbsp; 12:32:08 &nbsp;&nbsp;&nbsp;&nbsp; 42.416.153.181</div>
+
+        </p>
+          
+        <p style="margin-top:2em;">
+          We can treat the entities of the above record as built-in Writable data types forming a new custom data type. We can consider the Request No as IntWritable and other four fields as Text data types. Complete input file <b><b>Web_Log.txt</b></b> used in this post is <b><span ><a href="http://hadooptutorial.info/wp-content/uploads/2014/04/Web_Log.txt" target="_blank"><span style="font-weight:bold;color:rgb(4, 173, 226);">attached here&nbsp;</span></a></span></b>
+        </p>
+      </div>
+    ]]>
+  </c:abstract>
+
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+    <c:title>Creating Custom Hadoop Writable Data Type:</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[<p style="color:black;margin-bottom:.5em;font-size:15px;">Lets create a WebLogWritable Data type to serialize and deserialize the above mentioned Web Log record.</p>]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="WebLogWritable.java" id="sourceContent1">
+      <![CDATA[public static class WebLogWritable implements WritableComparable<WebLogWritable> {
+    private Text siteURL, reqDate, timestamp, ipaddress;
+    private IntWritable reqNo;
+
+    //Default Constructor
+    public WebLogWritable() {
+        this.siteURL = new Text();
+        this.reqDate = new Text();
+        this.timestamp = new Text();
+        this.ipaddress = new Text();
+        this.reqNo = new IntWritable();
+    }
+
+    //Custom Constructor
+    public WebLogWritable(IntWritable reqno, Text url, Text rdate, Text rtime, Text rip) {
+        this.siteURL = url;
+        this.reqDate = rdate;
+        this.timestamp = rtime;
+        this.ipaddress = rip;
+        this.reqNo = reqno;
+    }
+
+    //Setter method to set the values of WebLogWritable object
+    public void set(IntWritable reqno, Text url, Text rdate, Text rtime, Text rip) {
+        this.siteURL = url;
+        this.reqDate = rdate;
+        this.timestamp = rtime;
+        this.ipaddress = rip;
+        this.reqNo = reqno;
+    }
+
+    //to get IP address from WebLog Record
+    public Text getIp(){
+        return ipaddress; 
+    }
+   
+    @Override
+    //overriding default readFields method. 
+    //It de-serializes the byte stream data
+    public void readFields(DataInput in) throws IOException {
+        ipaddress.readFields(in);
+        timestamp.readFields(in);
+        reqDate.readFields(in);
+        reqNo.readFields(in);
+        siteURL.readFields(in);
+    }
+
+    @Override
+    //It serializes object data into byte stream data
+    public void write(DataOutput out) throws IOException {
+        ipaddress.write(out);
+        timestamp.write(out);
+        reqDate.write(out);
+        reqNo.write(out);
+        siteURL.write(out);
+    }
+   
+    @Override
+    public int compareTo(WebLogWritable o) {
+      if (ipaddress.compareTo(o.ipaddress)==0)
+      {
+        return (timestamp.compareTo(o.timestamp));
+      }
+      else return (ipaddress.compareTo(o.ipaddress));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (o instanceof WebLogWritable) 
+      {
+        WebLogWritable other = (WebLogWritable) o;
+        return ipaddress.equals(other.ipaddress) &amp;&amp; timestamp.equals(other.timestamp);
+      }
+      return false;
+    }
+
+    @Override
+    public int hashCode() {
+      return ipaddress.hashCode();
+    }
+}
+      ]]>
+    </c:sourceContent>
+    <c:comment style="margin-top:2em;">
+      <c:comment1 style="color:black;">
+        <![CDATA[
+          <p>Let’s briefly discuss &nbsp;on the methods written in this WebLogWritable class and their purpose.</p>
+          <br />
+          <p>All&nbsp;Writable implementations must have a <b>default constructor</b> so that the MapReduce framework can instantiate them, then populate their fields by calling <b>readFields()</b> . Writable instances are mutable and often reused so we have provided <b>write()</b> method. We have also provided custom constructor to set the object fields.</p>
+          <br />
+          <p><b>Set() </b>and<b> getIP()</b> methods are setter and getter methods to store or retrieve data. The <b>compareTo()&nbsp;</b>method returns a negative integer, 0,&nbsp;&nbsp;or a positive integer, if our object is less than,&nbsp;equal to, or greater than the object being compared to respectively.</p>
+          <br />
+          <p>In <b>equals() </b>method, we consider the objects equal if both the<b><em> IP addresses</em></b> and the&nbsp;<b><em>time-stamps</em></b> are the same. If the objects are not equal, we decide the sort order first based&nbsp;on the user IP address and then based on the time-stamp.</p>
+          <br />
+          <p>The<b> hashCode()</b> method is used by the HashPartitioner, the default partitioner in MapReduce, to choose a reduce partition. Usage of IP Address in our hashCode() method ensures that the intermediate WebLogWritable data will be&nbsp;partitioned based on the request host name/IP address.</p>
+        ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;color:rgb(156, 25, 197);font-weight:bold;">
+    <c:title>Creating Mapper Class With Custom Data Types:</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[<p style="color:black;margin-bottom:.5em;font-size:15px;">
+        Below is the implementation of <b>WebLogMapper </b>class which read Web_Log.txt records and tokenizes the records and writes each Web Log record with count 1.
+        </p>
+        <p style="color:black;margin-bottom:.5em;font-size:15px;">
+        Here <b>Mapper output key is WebLogWritable</b> and Output value is IntWritable which is a count value.
+        </p>
+        ]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="WebLogMapper.java" id="sourceContent1">
+      <![CDATA[public static class WebLogMapper extends Mapper <LongWritable, Text, WebLogWritable, IntWritable> {
+    private static final IntWritable one = new IntWritable(1);
+  
+    private WebLogWritable wLog = new WebLogWritable();
+
+    private IntWritable reqno = new IntWritable();
+    private Text url = new Text();
+    private Text rdate = new Text();
+    private Text rtime = new Text();
+    private Text rip = new Text();
+
+    public void map(LongWritable key, Text value, Context context) 
+                                        throws IOException, InterruptedException 
+    {
+        String[] words = value.toString().split("\t") ;
+
+        reqno.set(Integer.parseInt(words[0]));
+        url.set(words[1]);
+        rdate.set(words[2]);
+        rtime.set(words[3]);
+        rip.set(words[4]);
+
+        wLog.set(reqno, url, rdate, rtime, rip);
+
+        context.write(wLog, one);
+    }
+}
+      ]]>
+    </c:sourceContent>
+    <c:comment style="margin-top:2em;">
+      <c:comment1 style="color:black;">
+        <![CDATA[
+          
+        ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;color:rgb(156, 25, 197);font-weight:bold;">
+    <c:title>Creating Reducer Class With Custom Data Types:</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[<p style="color:black;margin-bottom:.5em;font-size:15px;">Below is the implementation of&nbsp;<b>WebLogReducer&nbsp;</b>        
+        class which accumulates the count values of each web log record and emits IP Addresses of each web log record along with its total 
+        occurrences in the file <b>Web_Log.txt</b>.</p>
+        <p style="color:black;margin-bottom:.5em;font-size:15px;">Here&nbsp;Reducer<b> Input&nbsp;key is WebLogWritable</b>&nbsp;and Input&nbsp;value is IntWritable but output key is Text and output value is IntWritable.</p>
+        ]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="WebLogReducer.java" id="sourceContent1">
+      <![CDATA[public static class WebLogReducer extends Reducer <WebLogWritable, IntWritable, Text, IntWritable> {
+    private IntWritable result = new IntWritable();
+    private Text ip = new Text();
+
+    public void reduce(WebLogWritable key, Iterable<IntWritable> values, Context context) 
+                            throws IOException, InterruptedException
+    {
+        int sum = 0;
+        ip = key.getIp(); 
+    
+        for (IntWritable val : values) 
+        {
+          sum++ ;
+        }
+        result.set(sum);
+        context.write(ip, result);
+    }
+} ]]>
+    </c:sourceContent>
+    <c:comment style="margin-top:2em;">
+      <c:comment1 style="color:black;">
+        <![CDATA[
+          
+        ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;color:rgb(156, 25, 197);font-weight:bold;">
+    <c:title>Creating Mapreduce driver Class With Custom Data Types:</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[
+        <p style="color:black;margin-bottom:.5em;font-size:15px;">In this example, We have to specify the <b>mapOutputKeyclass</b> as <b>WebLogWritable</b> in the driver class and rest of the implementation is as usual.</p>
+        <p style="color:black;margin-bottom:.5em;font-size:15px;">So, Lets create a <b>WebLogReader.java</b> file with the custom Writable class, Mapper class and Reducer classes as shown below to test the functionality of custom writable data type WebLogWritable.</p>
+        ]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="WebLogReader.java" id="sourceContent1">
+      <![CDATA[//Example Driver class for Word count program
+import java.io.*;
+import org.apache.hadoop.io.*;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+
+public class WebLogReader {
+    public static class WebLogWritable implements WritableComparable<WebLogWritable> {
+      private Text siteURL, reqDate, timestamp, ipaddress;
+      private IntWritable reqNo;
+
+      //Default Constructor
+      public WebLogWritable() {
+          this.siteURL = new Text();
+          this.reqDate = new Text();
+          this.timestamp = new Text();
+          this.ipaddress = new Text();
+          this.reqNo = new IntWritable();
+      }
+
+      //Custom Constructor
+      public WebLogWritable(IntWritable reqno, Text url, Text rdate, Text rtime, Text rip) {
+          this.siteURL = url;
+          this.reqDate = rdate;
+          this.timestamp = rtime;
+          this.ipaddress = rip;
+          this.reqNo = reqno;
+      }
+
+      //Setter method to set the values of WebLogWritable object
+      public void set(IntWritable reqno, Text url, Text rdate, Text rtime, Text rip) {
+          this.siteURL = url;
+          this.reqDate = rdate;
+          this.timestamp = rtime;
+          this.ipaddress = rip;
+          this.reqNo = reqno;
+      }
+
+      //to get IP address from WebLog Record
+      public Text getIp() {
+          return ipaddress; 
+      }
+   
+      @Override
+      //overriding default readFields method. 
+      //It de-serializes the byte stream data
+      public void readFields(DataInput in) throws IOException {
+          ipaddress.readFields(in);
+          timestamp.readFields(in);
+          reqDate.readFields(in);
+          reqNo.readFields(in);
+          siteURL.readFields(in);
+      }
+
+      @Override
+      //It serializes object data into byte stream data
+      public void write(DataOutput out) throws IOException {
+          ipaddress.write(out);
+          timestamp.write(out);
+          reqDate.write(out);
+          reqNo.write(out);
+          siteURL.write(out);
+      }
+   
+      @Override
+      public int compareTo(WebLogWritable o) {
+          if (ipaddress.compareTo(o.ipaddress)==0)
+          {
+            return (timestamp.compareTo(o.timestamp));
+          }
+          else return (ipaddress.compareTo(o.ipaddress));
+      }
+
+      @Override
+      public boolean equals(Object o) {
+          if (o instanceof WebLogWritable) 
+          {
+            WebLogWritable other = (WebLogWritable) o;
+            return ipaddress.equals(other.ipaddress) &amp;&amp; timestamp.equals(other.timestamp);
+          }
+          return false;
+      }
+
+      @Override
+      public int hashCode() {
+          return ipaddress.hashCode();
+      }
+    }
+
+
+    public static class WebLogMapper extends Mapper <LongWritable, Text, WebLogWritable, IntWritable> {
+      private static final IntWritable one = new IntWritable(1);
+  
+      private WebLogWritable wLog = new WebLogWritable();
+
+      private IntWritable reqno = new IntWritable();
+      private Text url = new Text();
+      private Text rdate = new Text();
+      private Text rtime = new Text();
+      private Text rip = new Text();
+
+      public void map(LongWritable key, Text value, Context context) 
+                            throws IOException, InterruptedException {
+          String[] words = value.toString().split("\t") ;
+
+          System.out.printf("Words[0] - %s, Words[1] - %s, Words[2] - %s, length - %d", 
+                              words[0], words[1], words[2], words.length);
+
+          reqno.set(Integer.parseInt(words[0]));
+          url.set(words[1]);
+          rdate.set(words[2]);
+          rtime.set(words[3]);
+          rip.set(words[4]);
+
+          wLog.set(reqno, url, rdate, rtime, rip);
+
+          context.write(wLog, one);
+      }
+    }
+    
+    public static class WebLogReducer extends Reducer <WebLogWritable, IntWritable, Text, IntWritable> {
+        private IntWritable result = new IntWritable();
+        private Text ip = new Text();
+
+        public void reduce(WebLogWritable key, Iterable<IntWritable> values, Context context) 
+                                  throws IOException, InterruptedException {
+            int sum = 0;
+            ip = key.getIp(); 
+    
+            for (IntWritable val : values) 
+            {
+              sum++ ;
+            }
+            result.set(sum);
+            context.write(ip, result);
+        }
+    }
+    public static void main(String[] args) throws Exception {
+        Configuration conf = new Configuration();
+        Job job = new Job();
+        job.setJobName("WebLog Reader");
+
+        job.setJarByClass(WebLogReader.class);
+
+        job.setMapperClass(WebLogMapper.class);
+        job.setReducerClass(WebLogReducer.class);
+
+
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(IntWritable.class);
+
+        job.setMapOutputKeyClass(WebLogWritable.class);
+        job.setMapOutputValueClass(IntWritable.class);
+
+        FileInputFormat.addInputPath(job, new Path(args[0]));
+        FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
+    }
+}]]>
+    </c:sourceContent>
+    <c:comment style="margin-top:2em;">
+      <c:comment1 style="color:black;">
+        <![CDATA[
+          <p>For easy of compilation and maintenance, we have written all <b>WebLogWritable, WebLogMapper and WebLogReducer </b>classes as static and maintained a single <b>WebLogReader</b> public main class in our java source file.</p>
+        ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;color:rgb(156, 25, 197);font-weight:bold;">
+    <c:title>Run WebLogReader.java program:</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[<p style="color:black;margin-bottom:.5em;font-size:15px;">     
+          <b>Compile</b> WebLogReader.java file and <b>create a jar</b> file with classes.
+        </p>
+        <img style="max-width:100%;" src="https://c2.staticflickr.com/4/3923/14826058425_d2577e16ae_z.jpg" />
+        <br />
+        <p style="color:black;margin-bottom:.5em;font-size:15px;">     
+        <b>Copy</b> input file <b>Web_Log.txt into HDFS</b> and <b>execute the jar</b> file with WebLogReader driver class.
+        </p>
+        <img style="max-width:100%;" src="https://c1.staticflickr.com/3/2904/14639426778_d0ccb94616_z.jpg" />
+        <br />
+        <img style="max-width:100%;" src="https://c2.staticflickr.com/4/3864/14826067775_21149cf3ee_z.jpg" />
+        ]]>
+      </c:desc1>
+    </c:desc>
+
+  </c:entry>
+  
+  <c:entry style="margin-top:2em;color:rgb(156, 25, 197);font-weight:bold;">
+    <c:title>Validate the results:</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[<p style="color:black;margin-bottom:.5em;font-size:15px;">     
+          Lets verify the results of the above mapreduce job with the help of <strong>‘head’</strong> unix command to <strong>display only first 10 records</strong> from the output file.
+        </p>
+        <img style="max-width:100%;" src="https://c1.staticflickr.com/3/2927/14823700614_2f4696b204_z.jpg" />
+        <br />
+        <p style="color:black;margin-bottom:.5em;font-size:15px;">     
+          Thus, we have successfully created a custom <b>WebLogWritable</b> data type and used this to read web log records and generated counts of each IP address in the Web log files.
+        </p>
+        
+        ]]>
+      </c:desc1>
+    </c:desc>
+
+  </c:entry>
+</c:component>
