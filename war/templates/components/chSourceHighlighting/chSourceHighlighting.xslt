@@ -88,21 +88,21 @@
           
           <xsl:if test="current()/@title and normalize-space(current()/@title) != ''">
             <h6 style="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em .8em;font-weight:bold;font-size:1em;position:relative;">
-              <xsl:if test="@expand">
+              <!--<xsl:if test="@expand">
                 <xsl:call-template name="build-expand">
                   <xsl:with-param name="isExpand" select="@expand" />
                 </xsl:call-template>
-              </xsl:if>
+              </xsl:if>-->
               <xsl:value-of select="current()/@title"/>
             </h6>
           </xsl:if>
 
           <div class="entryBody">
-            <xsl:if test="current()/@expand = 'false'">
+            <!--<xsl:if test="current()/@expand = 'false'">
               <xsl:attribute name="style">
                 <xsl:value-of select="'display:none;'"/>
               </xsl:attribute>
-            </xsl:if>
+            </xsl:if>-->
             <xsl:choose>
               <xsl:when test="current()/@type = 'html'">
                 <div style="padding:1em;font-size:14px;">
