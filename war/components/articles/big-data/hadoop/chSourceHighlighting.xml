@@ -1174,6 +1174,89 @@ public class EdgePartitioner implements Partitioner<Edge, Writable> {
   </c:entry>
 
   <c:entry style="margin-top:2em;">
+    <c:title>读和写</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[
+        <span style="margin-bottom:.5em;display:block;">输入数据通常驻留在较大的文件中，通常几十或数百 GB，甚至更大。MapReduce 处理的基本原则之一是将输入数据分割成块。这些块可以在多台机器上并行处理。</span>
+        <span style="margin-bottom:.5em;display:block;">在 Hadoop 术语中，这些块被称为输入分片 (Input Split)。每个分片应该足够小以实现更细粒度的并行。</span>
+        <span style="margin-bottom:.5em;display:block;">每个分片也不能太小，否则启动与停止各个分片处理所需的开销将占去很大一部分时间。</span>
+        <span style="margin-bottom:.5em;display:block;">Hadoop 的文件系统实现了 FSDataInputStream 类用于读取文件，该类扩展了 java.io.DataInputStream 并支持随机读取。</span>
+        <span style="margin-bottom:.5em;display:block;">HDFS 按块存储文件并分布在多台机器上，每个文件块为一个分片。由于不同机器会存储不同的块，如果每个分片/块都由它所驻留的机器进行处理，就自动实现了并行。</span>
+        <span style="margin-bottom:.5em;display:block;">MapReduce 操作是基于键/值对的，并且 Hadoop 默认地将输入文件中的每一行视为一个记录，键/值对分别对应该行的字节偏移 (Key) 和内容 (Value)。并不是所有记录都如此记录，所以 Hadoop 允许自定义格式。</span>
+        <br /><span style="margin-bottom:.5em;display:block;font-weight:bold;color:blue;">注意: 输入分片是一种记录的逻辑划分，而 HDFS 数据块是对输入数据的物理划分。
+        当二者一致时效率会非常高，但在实际应用中从未达到完全一致。记录可能会跨过数据块的边界。<br />
+        Hadoop 确保全部记录都被处理，处理特定分片的计算节点会从一个数据块中获取记录的一个片段，该数据块可能不是该记录的 "主" 数据块，而会存放在远端。</span>
+
+        ]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="InputFormat" id="sourceContent1">
+      <![CDATA[
+      <table>
+        <thead>
+            <tr>
+                <th>InputFormat</th>
+                <th>描述</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>TextInputFormat</td>
+                <td>
+                    在文本文件中的每一行都为一个记录。键 (key) 为一行的字节偏移，而值 (Value) 为一行的内容。<br />
+                    Key: LongWritable<br />
+                    Value: Text
+                </td>
+            </tr>
+            <tr>
+                <td>KeyValueTextInputFormat</td>
+                <td>
+                    在文本文件中的每一行都为一个记录。
+                    以每行的第一个分隔符为界，分隔符之前的是键，之后的是值。
+                    分离器在属性 <br />
+                    <b>key.value.separator.in.input.line </b>
+                    <br />
+                    中设定，默认为 \t。
+                    <br />
+                    Key: Text <br />
+                    Value: Text
+                </td>
+            </tr>
+            <tr>
+                <td>SequenceFileInputFormat</td>
+                <td>
+                    用于读取序列文件的 InputFormat，键和值由用户定义。
+                    序列文件为 Hadoop 专用的压缩二进制文件格式。
+                    它专用于一个 MapReduce 作业和其他 MapReduce 作业之间传送数据。
+                    <br />
+                    Key: K (Customer) <br />
+                    Value:  V (Customer)
+                </td>
+            </tr>
+            <tr>
+                <td>NLineInputFormat</td>
+                <td>
+                    与 TextInputFormat 相同，但每个分片一定有 N 行。N 在属性 <br />
+                    <b>mapred.line.input.format.linespermap </b>
+                    <br />中设定，默认为 1。
+                    <br />
+                    Key: LongWritable<br />
+                    Value: Text
+                </td>
+            </tr>
+        </tbody>
+      </table>]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
     <c:title>编写 MapReduce 基础程序</c:title>
     <c:desc>
       <c:desc1>
