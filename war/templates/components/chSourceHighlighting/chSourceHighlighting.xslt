@@ -13,9 +13,9 @@
     <link rel="stylesheet" type="text/css" href="/RenderingAssets/components/chSourceHighlighting/chSourceHighlighting.css" />
     <div class="chSourceHighlighting">
       <xsl:if test="normalize-space(c:abstract) != ''">
-        <div style="margin: 1em 0;font-weight:bold;">
+        <blockquote>
           <xsl:value-of disable-output-escaping="yes" select="normalize-space(c:abstract) "/>
-        </div>
+        </blockquote>
       </xsl:if>
     
       <xsl:choose>
@@ -71,7 +71,7 @@
             <xsl:value-of select="'0em'"/>
           </xsl:if>
         </xsl:variable>
-        <div style="color:rgb(78, 12, 247);font-weight:bold;margin-bottom:{$mb};font-size:1.125em;">
+        <div style="margin-bottom:{$mb};font-size:1.125em;">
           <xsl:value-of disable-output-escaping="yes" select="current()"/>
         </div>
       </xsl:if>
