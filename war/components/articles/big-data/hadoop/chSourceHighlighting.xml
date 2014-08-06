@@ -141,21 +141,21 @@ for each wordCount received from firstPhase {
     <table style="margin-top:.5em;">
       <thead>
         <tr>
-          <th style="padding:.2em .3em;border-right:solid 1px black;"></th>
-          <th style="padding:.2em .3em;font-weight:bold;border-right:solid 1px black;border-top:solid 1px black;background-color:rgb(199, 195, 195);">输入</th>
-          <th style="padding:.2em .3em;font-weight:bold;border-top:solid 1px black;background-color:rgb(199, 195, 195);">输出</th>
+          <th style="padding:.2em .3em;border-right:solid 1px rgb(148, 138, 138);"></th>
+          <th style="padding:.2em .3em;font-weight:bold;border-right:solid 1px rgb(148, 138, 138);border-top:solid 1px rgb(148, 138, 138);background-color:rgb(226, 220, 220);">输入</th>
+          <th style="padding:.2em .3em;font-weight:bold;border-top:solid 1px rgb(148, 138, 138);background-color:rgb(226, 220, 220);">输出</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td style="text-align:right;padding:.2em .3em;border-right:solid 1px black;border-top:solid 1px black;">map</td>
-          <td style="padding:.2em .3em;border-right:solid 1px black;border-top:solid 1px black;">&lt;k1, v1&gt;</td>
-          <td style="padding:.2em .3em;border-top:solid 1px black;">list(&lt;k2, v2&gt;)</td>
+          <td style="text-align:right;padding:.2em .3em;border-right:solid 1px rgb(148, 138, 138);border-top:solid 1px rgb(148, 138, 138);">map</td>
+          <td style="padding:.2em .3em;border-right:solid 1px rgb(148, 138, 138);border-top:solid 1px rgb(148, 138, 138);">&lt;k1, v1&gt;</td>
+          <td style="padding:.2em .3em;border-top:solid 1px rgb(148, 138, 138);">list(&lt;k2, v2&gt;)</td>
         </tr>
         <tr>
-          <td style="text-align:right;padding:0 .3em;border-right:solid 1px black;border-top:solid 1px black;border-bottom:solid 1px black;">reduce</td>
-          <td style="padding:.2em .3em;border-right:solid 1px black;border-top:solid 1px black;border-bottom:solid 1px black;">&lt;k2, list(v2)&gt;</td>
-          <td style="padding:.2em .3em;border-top:solid 1px black;border-bottom:solid 1px black;">list(&lt;k3, v3&gt;)</td>
+          <td style="text-align:right;padding:0 .3em;border-right:solid 1px rgb(148, 138, 138);border-top:solid 1px rgb(148, 138, 138);border-bottom:solid 1px rgb(148, 138, 138);">reduce</td>
+          <td style="padding:.2em .3em;border-right:solid 1px rgb(148, 138, 138);border-top:solid 1px rgb(148, 138, 138);border-bottom:solid 1px rgb(148, 138, 138);">&lt;k2, list(v2)&gt;</td>
+          <td style="padding:.2em .3em;border-top:solid 1px rgb(148, 138, 138);border-bottom:solid 1px rgb(148, 138, 138);">list(&lt;k3, v3&gt;)</td>
         </tr>
       </tbody>
     </table>
@@ -1249,6 +1249,244 @@ public class EdgePartitioner implements Partitioner<Edge, Writable> {
         </tbody>
       </table>]]>
     </c:sourceContent>
+
+    <c:sourceContent type="html" title="KeyValueTextInputFormat" id="sourceContent1" 
+                     style="margin-top:2em;background-color:white;" 
+                     titleStyle="background-color:white;color:black;padding:1em 0;font-size:1.2em;color:rgb(201, 136, 0);font-weight:normal;"
+                     bodyStyle="padding:0;">
+      <![CDATA[KeyValueTextInputFormat 在想对结构化的输入文件中使用，由一个预定义的字符将每行的键与值分开。
+      <br />
+      <br />
+      例如由一个制表符分隔的，有时间戳和 URL 组成的数据文件:
+      <br />
+      17:16:18  http://hadoop.apache.org/ <br />
+      17:16:19  http://hadoop.apache.org/ <br />
+      17:16:20  http://wiki.apache.org/ <br />
+      17:16:21  http://www.maxim.com/ <br />
+      .... <br />
+      <br />
+      设置 JobConf 对象使用 KeyValueTextInputFormat 类读取该文件:
+      <br />
+      <b>conf.setInputFormat(KeyValueTextInputFormat.class);</b>
+      <br />
+      <br />
+      在此种情况下 mapper 将文档的每一行视作一条记录.
+      ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="SequenceFileInputFormat" id="sourceContent1"
+                     style="margin-top:2em;background-color:white;"
+                     titleStyle="background-color:white;color:black;padding:1em 0;font-size:1.2em;color:rgb(201, 136, 0);font-weight:normal;"
+                     bodyStyle="padding:0;">
+      <![CDATA[Hadoop 提供了高效的二进制压缩文件格式，称为序列文件。
+      <br />
+      这个格式为 Hadoop 处理做了优化，当链接多个 MapReduce 作业时，SequenceFileInputFormat 是首选格式。
+      <br />
+      <br />
+      序列文件的键和值均可由用户自定义。输出和输入类型必须匹配，Mapper 实现和 map () 方法均需采用正确的输入类型。
+      ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>自定义 InputFormat &#8212; InputSplit 和 RecordReader </c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[
+        ]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="InputFormat.java" id="sourceContent1">
+      <![CDATA[public interface InputFormat<K, V> {
+    InputSplit[] getSplits (JobConf conf, int numSplits) throws IOException;
+    RecordReader<K, V> getRecordReader (InputSplit split,
+                                        JobConf conf,
+                                        Reporter reporter) throws IOException;
+}]]>
+
+     
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="InputFormat 所需执行的两个功能" id="sourceContent1"
+                        style="margin-top:1em;background-color:white;"
+                        titleStyle="background-color:white;color:black;padding:1em 0;font-size:1.2em;color:rgb(201, 136, 0);font-weight:normal;"
+                        bodyStyle="padding:0;">
+      <![CDATA[
+      <ul style="list-style:decimal;padding-left:1.5em;">
+          <li style="margin-bottom:.5em;">
+              <span style="display:block;margin-bottom:.5em;">确定所有用于输入数据的文件，并将之分割为输入分片。每个 map 任务分配一个分片。</span>
+              <span style="display:block;margin-bottom:.5em;">我们当然不想去考虑如何将文件划分为分片。<b style="color:red;">所以在创建自己的 InputFormat 类时，通常从 FileInputFormat 类中继承一个子类。</b></span>
+              <span style="display:block;margin-bottom:.5em;">FileInputFormat 实现了 getSplits() 方法，但是保留了 getRecordReader() 抽象让子类填写。</span>
+              <span style="display:block;margin-bottom:.5em;">
+                  FileInputFormat 中实现的 getSplits() 方法把输入数据粗略地划分为一组分片，分片数目在 numSplits 中设定，且每个分片的大小必须大于 mapred.min.split.size 个字节，但小于文件系统的块。
+                  
+              </span>
+              <span style="display:block;margin-bottom:.5em;">
+                  FileInputFormat 有一定的 protected 方法，子类可以通过覆盖改变其行为，其中一个就是 boolean isSplitable (FileSystem fs, Path filename) 方法。
+                  
+              </span>
+              <span style="display:block;margin-bottom:.5em;">
+                  该方法决定是否可以将给定文件分片，默认实现总是返回 true，因此大于一个分块 (大于 64M )的文件都要分片。
+                  
+              </span>
+              <span style="display:block;margin-bottom:.5em;">
+                  有时我们希望一个文件就是一个分块，这时你就可以覆盖 isSplitable() 来返回 false。
+                  
+              </span>
+          </li>
+          <li>              
+              <span style="display:block;margin-bottom:.5em;">
+                把一个输入分片解析为记录，再把每个记录解析为一个键/值对。
+              </span>
+
+          </li>
+      </ul>
+      ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="RecordReader&lt;K, V&gt;" id="sourceContent1" style="margin-top:1em;">
+      <![CDATA[public interface RecordReader<K, V> {
+    boolean next (K key, V value) throws IOException;
+    K createKey ();
+    V createValue ();
+    
+    long getPos () throws IOException;
+    public void close () throws IOException;
+    float getProgress () throws IOException;
+}]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="预定义 RecordReader &#8212; LineRecordReader 和 KeyValueLineRecordReader" id="sourceContent1"
+                        style="margin-top:1em;background-color:white;"
+                        titleStyle="background-color:white;color:black;padding:1em 0;font-size:1.2em;color:rgb(201, 136, 0);font-weight:normal;"
+                        bodyStyle="padding:0;">
+      <![CDATA[
+      <span style="display:block;margin-bottom:.5em;">LineRecordReader 实现 RecordReader<LongWritable, Text>, 它在 TextInputFormat 中被用于每次读取一行，以字节偏移为键，以行内容为值。</span>
+      <span style="display:block;margin-bottom:.5em;">KeyValueLineRecordReader 被用在 KeyValueTextInputFormat 中。</span>      
+      <span style="display:block;margin-bottom:.5em;"><b style="color:red;">大多数情况下，自定义 RecordReader 是基于现有实现的封装，并把大多数操作放在 next () 中。</b></span>      
+      ]]>
+    </c:sourceContent>
+    
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title>自定义 InputFormat &#8212; TimeUrlTextInputFormat </c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[用特定的类型读取记录，而不是普通的 Text 类型。<br />
+        它从数据文件中读取以制表符分隔的时间戳和 URL，但是把 URL 作为 URLWritable 类型，把时间戳作为 CalendarWritableComparable 类型。
+        
+        ]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="TimeUrlTextInputFormat.java" id="sourceContent1">
+      <![CDATA[public class TimeUrlTextInputFormat extends FileInputFormat<Text, URLWritable> {
+    public RecordReader<Text, URLWritable> getRecordReader (
+                                  InputSplit input, JobConf job, Reporter reporter)
+                                  throws IOException {
+        return new TimeUrlLineRecordReader (job, (FileSplit) input);                          
+    }
+}]]>
+
+
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="URLWritable.java" id="sourceContent1">
+      <![CDATA[public class URLWritable implements Writable {
+    protected URL url;
+    
+    public URLWritable () {
+        
+    }
+    
+    public URLWritable (URL url) {
+        this.url = url;
+    }
+    
+    public void write (DataOutput out) throws IOException {
+        out.writeUTF (url.toString());
+    }
+    
+    public void readFields (DataInput in) throws IOException {
+        url = new URL (in.readUTF());
+    }
+    
+    public void set (String s) throws MalformedURLException {
+        url = new URL (s);
+    }
+}]]>
+
+
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="TimeUrlLineRecordReader.java" id="sourceContent1">
+      <![CDATA[public class TimeUrlLineRecordReader implements RecordReader<Text, URLWritable> {
+    
+    private KeyValueLineRecordReader lineReader;
+    private Text lineKey, lineValue;
+    
+    public TimeUrlLineRecordReader (JobConf job, FileSplit split) 
+                      throws IOException {
+        lineReader = new KeyValueLineRecordReader (job, split);
+        
+        lineKey = lineReader.createKey();
+        lineValue = lineReader.createValue();
+    }
+    
+    public boolean next (Text key, URLWritable value) 
+                      throws IOException {
+        if (!lineReader.next(lineKey, lineValue)) {
+            return false;
+        }    
+    
+        key.set(lineKey);
+        value.set(lineValue.toString());
+    
+        return true;
+    }
+    
+    public Text createKey () {
+        return new Text ("");
+    }
+    
+    public URLWritable createValue () {
+        return new URLWritable();
+    }
+    
+    public long getPos () throws IOException {
+        return lineReader.getPos();
+    }
+    
+    public float getProgress () throws IOException {
+        return lineReader.getProgress();
+    }
+    
+    public void close () throws IOException {
+        lineReader.close();
+    }
+}]]>
+
+
+    </c:sourceContent>
+    
+
+    
+
+    
+
     <c:comment>
       <c:comment1>
         <![CDATA[]]>

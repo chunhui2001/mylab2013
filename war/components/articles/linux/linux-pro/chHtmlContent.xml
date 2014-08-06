@@ -87,17 +87,123 @@
   <br />
   
   
+  <b>添加 webupd8team/java 安装 JDK</b><br /> 
+  
+$ sudo add-apt-repository ppa:webupd8team/java (Add the PPA) <br />
+$ sudo apt-get update && sudo apt-get install oracle-java8-installer
+  <br />
+  <br />
+  
+  
+    <b> 移除 Oracle Java JDK on ubuntu</b><br /> 
+  
+$ sudo dpkg --list | grep -i jdk (Check which JDK packages are installed)  <br />
+$ sudo apt-get purge (or remove) oracle-java8-installer (Remove Oracle Java 8)  <br />
+$ sudo dpkg --list | grep -i jdk (Check that all JDK packages have been removed)  <br />
+  <br />
+  <br />
+  
+ 
+
+
+  
   
   
   
   
   <b>Install  Apache, MySQL, PHP, and Tomcat 7</b><br /> 
   $ sudo su <br />
-  $ apt-get install apache2 php5 libapache2-mod-php5 mysql-server <br />
+  $ apt-get install apache2 php5 libapache2-mod-php5 mysql-server php5-mysql <br />
   $ service apache2 restart <br />
-  $ mysql_secure_installation 
+  $ mysql_secure_installation <br />
+  <br />
+  $ mysql -u root -p <br />
+  $ CREATE DATABASE S2APP; <br />
+  $ USE S2APP; <br />
+  $ CREATE TABLE COMMENTS ( <br />
+  $ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ID INTEGER NOT NULL AUTO_INCREMENT, <br />
+  $ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NAME VARCHAR (255) NOT NULL, <br />
+  $ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; BODY TEXT NOT NULL, <br />
+  $ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PRIMARY KEY (ID) <br />
+  $ ); <br />
+  <br />
+  <b>创建 mysql 用户并授权 </b> <br />
+  $ CREATE USER 'username_here'@'localhost' IDENTIFIED BY 'password_here'; <br />
+  $ GRANT ALL PRIVILEGES ON S2APP.* TO 'username_here'@'%' IDENTIFIED BY 'password_here'; <br />
+  $ FLUSH PRIVILEGES;
   <br />
   <br />
+  
+  <b>用 php + mysql 添加一个网页 </b> <br />
+  $ cd /var/www/ <br />
+  $ vi index.html <br />
+    &lt;html&gt; <br />
+    &nbsp;&nbsp;&nbsp;&nbsp;  &lt;head&gt; <br />
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      php + mysql <br />
+    &nbsp;&nbsp;&nbsp;&nbsp;  &lt;/head&gt; <br />
+    &nbsp;&nbsp;&nbsp;&nbsp;  &lt;body&gt; <br />
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      &lt;form action="comments.php" methon="POST"&gt; <br />
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          &lt;div&gt; <br />
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            Name: &lt;br /&gt; <br />
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            &lt;input type="text" name="name" /&gt; <br />
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          &lt;/div&gt; <br />
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          &lt;div&gt; <br />
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            Comments: &lt;br /&gt; <br />
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            &lt;textarea rows="10" cols="10" name="body"&gt;&lt;/textarea&gt; <br />
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          &lt;/div&gt; <br />
+              
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          &lt;input type="submit" /&gt; <br />
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      &lt;/form&gt; <br />
+    &nbsp;&nbsp;&nbsp;&nbsp;  &lt;/body&gt; <br />
+    &lt;/html&gt; <br />
+<br />
+  $ vi comments.php <br />
+  &lt;?php <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;    $db_hostname  = "localhost"; <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;    $db_username  = "username"; <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;    $db_password  = "password"; <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;    $db_name      = "s2app"; <br />
+       <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;    $db_hand      = mysql_connect ($db_hostname, $db_username, $db_password) or die ("Error" . mysql_error()); <br />
+       <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;    mysql_select_db($db_name); <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;     <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;    $name = $_POST["name"]; <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;    $body = $_POST["body"]; <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;     <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;    $result = mysql_query ("INSERT INTO COMMENTS (NAME, COMMENTS) VALUES ('$name', '$body')"); <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;     <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;    if ($result) { <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;    &nbsp;&nbsp;&nbsp;&nbsp;    echo "&lt;h1&gt;Thank You :) &lt;/h1&gt;"; <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;    &nbsp;&nbsp;&nbsp;&nbsp;    echo "&lt;span&gt;Your comment was received.&lt;/span&gt;"; <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;    } else { <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;    &nbsp;&nbsp;&nbsp;&nbsp;    echo "&lt;h1&gt;Error! :(&lt;/h1&gt;"; <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;    &nbsp;&nbsp;&nbsp;&nbsp;    echo "&lt;span&gt;We are sorry, but your request could not completed at this time.&lt;/span&gt;"; <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;    } <br />
+  ?&gt;
+  <br />
+  <br />
+  
+  
+  <b>安装 tomcat7</b> <br />
+  $ apt-get remove apache2 <br />
+  $ apt-get install tomcat7 (默认端口是 8080) <br />
+  $ iptables -t nat -I PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080 <br />
+  $ iptables-save <br />
+  <br />
+  $ vi /etc/tomcat7/tomcat-users.xml<br />
+  &lt;tomcat-users&gt;<br />
+  &nbsp;&nbsp;&nbsp;&nbsp;    &nbsp;&nbsp;&nbsp;&nbsp;     &lt;user username="jj" password="sad" roles="manager-gui,admin-gui" /&gt;<br />
+  .......<br />
+  <br />
+  $ apt-get install tomcat7-admin <br />
+  $ /etc/init.d/tomcat7 restart<br />
+  <br />
+  <br />
+  <br />
+  <br />
+  
+  
   <link href="//vjs.zencdn.net/4.6/video-js.css" rel="stylesheet" />
   <script src="//vjs.zencdn.net/4.6/video.js"></script>
       
@@ -106,7 +212,8 @@
     
     poster="https://dl.dropboxusercontent.com/content_link/6qzIF7SebOjBM4Ce5zadZ2ZEXMFk6bRgutm14U8uSpA9cl26BPDyOPvHh5eYc3TO?dl=1"
     data-setup='{"example_option":true}'>
-    <source src="https://dl.dropboxusercontent.com/content_link/vY5s26Fqdt7qJqnwMQInLVxalyisCQrzi4nEypAyArbMDQv8sXj8ShRPeJuoaLnH?dl=1" type='video/mp4' />
+    <source src="https://www.dropbox.com/s/dgx9zoop8o8x8n5/Amazon-EC2-Apache-MySQL-PHP-and-Tomcat-7-Tutorial.mp4" type='video/mp4' />
+                 
        
        
     <p class="vjs-no-js">To view this video please enable JavaScript, and consider upgrading to a web browser that 

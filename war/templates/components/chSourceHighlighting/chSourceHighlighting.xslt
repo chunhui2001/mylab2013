@@ -71,7 +71,7 @@
             <xsl:value-of select="'0em'"/>
           </xsl:if>
         </xsl:variable>
-        <div style="margin-bottom:{$mb};font-size:1.125em;">
+        <div style="margin-bottom:{$mb};font-size:1em;">
           <xsl:value-of disable-output-escaping="yes" select="current()"/>
         </div>
       </xsl:if>
@@ -87,7 +87,7 @@
         <div style="{concat($style,@style)}">
           
           <xsl:if test="current()/@title and normalize-space(current()/@title) != ''">
-            <h6 style="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;">
+            <h6 style="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;{current()/@titleStyle}">
               <!--<xsl:if test="@expand">
                 <xsl:call-template name="build-expand">
                   <xsl:with-param name="isExpand" select="@expand" />
@@ -105,7 +105,7 @@
             </xsl:if>-->
             <xsl:choose>
               <xsl:when test="current()/@type = 'html'">
-                <div style="padding:1em;font-size:14px;">
+                <div style="padding:1em;font-size:14px;{current()/@bodyStyle}">
                   <xsl:value-of disable-output-escaping="yes" select="current()"/>
                 </div>
               </xsl:when>

@@ -529,4 +529,261 @@ public class WebLogReader {
     </c:desc>
 
   </c:entry>
+
+  <c:entry style="margin-top:2em;color:rgb(156, 25, 197);font-weight:bold;">
+    <c:title>Get reducer output as a xml format in hadoop</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[
+        转自: http://stackoverflow.com/questions/24135656/how-to-get-reducer-output-as-a-xml-format-in-hadoop
+        ]]>
+      </c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="MaxTemperature.java" id="sourceContent1">
+      <![CDATA[ import java.io.IOException;
+import java.net.URI;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
+
+public class MaxTemperature extends Configured implements Tool {
+
+    public static class MapMapper extends
+            Mapper<LongWritable, Text, Text, IntWritable> {
+            
+        private static final int MISSING = 9999;
+
+        public void map(LongWritable key, Text value, Context context)
+                throws IOException, InterruptedException {
+
+            String line = value.toString();
+            String year = line.substring(15, 19);
+            
+            int airTemperature;
+            
+            if (line.charAt(87) == '+') { // parseInt doesn't like leading plus signs
+                airTemperature = Integer.parseInt(line.substring(88, 92));
+            } else {
+                airTemperature = Integer.parseInt(line.substring(87, 92));
+            }
+            
+            String quality = line.substring(92, 93);
+            
+            if (airTemperature != MISSING && quality.matches("[01459]")) {
+                context.write(new Text(year), new IntWritable(airTemperature));
+            }
+        }
+    }
+
+    public static class Mapreducers extends
+            Reducer<Text, IntWritable, Text, IntWritable> {
+
+        public void reduce(Text key, Iterable<IntWritable> values
+                           , Context context) 
+                                throws IOException, InterruptedException {
+
+            int maxValue = Integer.MIN_VALUE;
+            
+            for (IntWritable value : values) {
+                maxValue = Math.max(maxValue, value.get());
+            }
+
+            context.write(key, new IntWritable(maxValue));
+        }
+    }
+
+    public int run(String[] args) throws Exception {
+        Job job = new Job();
+        
+        job.setJarByClass(MaxTemperature.class);
+        job.setJobName("MaxTemperature");
+
+        Configuration conf = new Configuration();
+        FileSystem fs = FileSystem.get(URI.create(args[0]), conf);
+
+        if (fs.exists(new Path(args[1]))) {
+            fs.delete(new Path(args[1]), true);
+        }
+
+        FileInputFormat.addInputPath(job, new Path(args[0]));
+        XmlOutputFormat.setOutputPath(job, new Path(args[1]));
+
+        job.setMapperClass(MapMapper.class);
+        job.setCombinerClass(Mapreducers.class);
+        job.setReducerClass(Mapreducers.class);
+
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(IntWritable.class);
+        return job.waitForCompletion(true) ? 0 : 1;
+    }
+
+    public static void main(String[] args) throws Exception {
+        int xx = 1;
+        xx = ToolRunner.run(new MaxTemperature(), args);
+        System.exit(xx);
+    }
+}]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="XmlOutputFormat.java" id="sourceContent1">
+      <![CDATA[import java.io.DataOutputStream;
+import java.io.IOException;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.FSDataOutputStream;
+
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.Text;
+
+import org.apache.hadoop.mapreduce.OutputFormat;
+import org.apache.hadoop.mapreduce.RecordWriter;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+ /** An {@link OutputFormat} that writes plain text files. */
+public class XmlOutputFormat<K, V> extends FileOutputFormat {
+
+    protected static class XmlRecordWriter<K, V> extends RecordWriter<K, V> {
+    
+        private static final String utf8 = "UTF-8";
+        protected DataOutputStream out;
+
+        public XmlRecordWriter(DataOutputStream out) 
+                                  throws IOException {
+            this.out = out;
+            
+            out.writeBytes("<results>\n");
+        }
+
+        /**
+         * Write the object to the byte stream, handling Text as a special case.
+         * @param o: the object to print
+         * @throws IOException
+         *             if the write throws, we pass it on
+         */
+        private void writeObject(Object o) 
+                                  throws IOException {
+            if (o instanceof Text) {
+                Text to = (Text) o;
+                
+                out.write(to.getBytes(), 0, to.getLength());
+            } else {
+                out.write(o.toString().getBytes(utf8));
+            }
+        }
+
+        private void writeKey(Object o, boolean closing) 
+                                throws IOException {
+            out.writeBytes("<");
+            
+            if (closing) {
+                out.writeBytes("/");
+            }
+            
+            writeObject(o);            
+            out.writeBytes(">");
+            
+            if (closing) {
+                out.writeBytes("\n");
+            }
+        }
+
+        public synchronized void write(K key, V value) 
+                                          throws IOException {
+
+            boolean nullKey = key == null || key instanceof NullWritable;
+            boolean nullValue = value == null || value instanceof NullWritable;
+            
+            if (nullKey && nullValue) {
+                return;
+            }
+            
+            Object keyObj = key;
+
+            if (!nullKey) {
+                keyObj = "value";
+            }
+
+            writeKey(keyObj, false);
+            
+            if (!nullValue) {
+                writeObject(value);
+            }
+            
+            writeKey(keyObj, true);
+        }
+
+        public synchronized void close(TaskAttemptContext context)
+                throws IOException {
+            out.close();
+        }
+    }
+
+    public RecordWriter<K, V> getRecordWriter(TaskAttemptContext job)
+            throws IOException, InterruptedException {
+            
+        Path file = FileOutputFormat.getOutputPath(job);
+        
+        Configuration conf = new Configuration();
+        FileSystem fs = file.getFileSystem(conf);
+
+        FSDataOutputStream fileout = fs.create(file);
+        return new XmlRecordWriter<K, V>(fileout);
+    }
+}]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="UPDATE" id="sourceContent1">
+      <![CDATA[@Override
+protected void setup(Context context)
+      throws IOException, InterruptedException {
+  context.write(new Text("<MapReduce>"), null);
+}
+
+
+public static class Mapreducers extends
+        Reducer<Text, IntWritable, Text, IntWritable> {
+
+    public void reduce(Text key, Iterable<IntWritable> values,
+            Context context) throws IOException, InterruptedException {
+        int maxValue = Integer.MIN_VALUE;
+        
+        for (IntWritable value : values) {
+             maxValue = Math.max(maxValue, value.get());
+        }
+        
+        Text out = new Text(constructPropertyXml(key, maxValue));
+        context.write(out, null);
+    }
+}
+
+public static String constructPropertyXml(Text key, Text maxvalue) {
+    StringBuilder sb = new StringBuilder();
+    
+    sb.append("<result><key>").append(key)
+        .append("</key><value>").append(maxvalue)
+        .append("</value></result>");
+        
+    return sb.toString();
+}
+
+@Override
+protected void cleanup(Context context)
+      throws IOException, InterruptedException {
+    context.write(new Text("</MapReduce>"), null);
+}]]>
+    </c:sourceContent>
+  </c:entry>
 </c:component>
