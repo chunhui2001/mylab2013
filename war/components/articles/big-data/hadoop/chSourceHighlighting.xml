@@ -266,7 +266,12 @@ reduce (String token, List<Integer> values) {
       
       <br />
       <br />
-      运行 hadoop 示例程序：<b>bin/hadoop jar $HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.2.0.jar wordcount</b> 
+      运行 hadoop 示例程序：<b>bin/hadoop jar $HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.2.0.jar wordcount input/ output/</b> 
+      <br />
+      <br />
+      如果我们运行作业时仅仅是想看到 mapper 的输出，可以用选项 -D mapred.reduce.tasks=0 将 reducer 的数目设置为 0：<b>
+      <br />
+      bin/hadoop jar $HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.2.0.jar wordcount -D mapred.reduce.tasks=0 input/ output/</b> 
       <br />
       <br />
       将提示 wordcount 程序的参数列表：<br />
@@ -1019,7 +1024,7 @@ public class PutMerge {
     <c:title>Hadoop 组件 &#8212; MapReduce</c:title>
     <c:desc>
       <c:desc1>
-        <![CDATA[]]>
+        <![CDATA[<span style="font-weight:bold;font-size:1.3em;font-style:rgb(241, 91, 20);">通常的 MapReduce 程序都不太大，可以采用特定的结构来简化开发，而把大部分工作放在对数据流的思考上<span>]]>
       </c:desc1>
     </c:desc>
 
@@ -1029,7 +1034,7 @@ public class PutMerge {
       <b style="color:green;font-size:1.3em;">map: (K1,V1) &rarr; list(K2,V2) <br />
       reduce: (K2, list(V2)) &rarr; list(K3, V3)</b>
       <br /><br />
-      <img style="width:100%;" src="//c2.staticflickr.com/6/5498/14309905763_a215ed134a_b.jpg" />
+      <img style="width:70%;" src="//c2.staticflickr.com/6/5498/14309905763_a215ed134a_b.jpg" />
       ]]>
     </c:sourceContent>
     <c:sourceContent type="html" title="Hadoop 数据类型" id="sourceContent1">
@@ -1493,6 +1498,84 @@ public class EdgePartitioner implements Partitioner<Edge, Writable> {
       </c:comment1>
     </c:comment>
   </c:entry>
+  
+  <c:entry style="margin-top:2em;">
+    <c:title>OutputFormat</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[
+              <span style="display:block;margin-bottom:.5em;">当 MapReduce 输出数据到文件时，使用的是 OutputFormat 类，每个 reducer 将它的输出写入自己的文件中，所以输出无需分片。</span>
+              <span style="display:block;margin-bottom:.5em;">
+                  输出文件放在一个公用目录中，通常命名为 part-nnnnn, 这里的 n 是 reducer 的分区 ID。
+              </span>
+              <span style="display:block;margin-bottom:.5em;">
+                  大部分的 OutputFormat 类都是从 FileOutputFormat 抽象类继承来的, 可以通过调用 JobConf 对象中的 setOutputFormat() 定制 OutputFormat。
+              </span>
+        ]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="主要的 OutputFormat 类，默认为 TextOutputFormat " id="sourceContent1"
+                     titleStyle="background-color:white;padding-left:0;color:black;"
+                     bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+      <table>
+          <thead>
+              <tr>
+                  <th>OutputFormat</th>
+                  <th>描述</th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr>
+                <td>TextOutputFormat&lt;K,V&gt; </td>
+                <td>
+                    <span style="display:block;margin-bottom:.5em;">
+                      将每个记录写为一行文本，键和值以字符串的形式写入，并以制表符分隔。这个分隔符可以在属性 <b style="color:green;">mapred.textoutputformat.separator</b> 中修改
+                    </span>
+                    <span style="display:block;margin-bottom:.5em;">
+                      每个记录的键和值通过 toString() 被转换为字符串，并以制表符 (\t) 分隔。  
+                    </span>
+                </td>
+              </tr>
+              <tr>
+                <td>SequenceFileOutputFormat&lt;K,V&gt; </td>
+                <td>
+                    以 Hadoop 专有序列文件格式写入键/值对，与 SequenceFileInputFormat 配合使用。
+                </td>
+              </tr>
+              <tr>
+                <td>NullOutputFormat&lt;K,V&gt; </td>
+                <td>
+                    <span style="display:block;margin-bottom:.5em;">无输出，该类没有继承 FileOutputFormat 而是简单地实现了 OutputFormat 类。</span>
+                    <span style="display:block;margin-bottom:.5em;">
+                      OutputFormat 处理的是数据库而并非文件，在类的层次关系中 OutputFormat (InputFormat) 类是区别于 FileOutputFormat (FileInputFormat) 的一个独立分支 
+                    </span>
+                    <span style="display:block;margin-bottom:.5em;">在 Hadoop 中，处理数据ku的类分别是: DBInputFormat 和 DBOutputFormat。</span>
+                </td>
+              </tr>
+          </tbody>
+      </table>  
+        ]]>
+    </c:sourceContent>
+    <c:comment style="color:black;">
+      <c:comment1>
+        <![CDATA[
+          <span style="display:block;margin-bottom:.5em;">
+              TextOutputFormat 的输出类型可以被 KeyValueTextInputFormat 识别。如果把键的类型设置为 NullWritable 类型，则其输出类型可以被 TextInputFormat 识别。
+              TextOutputFormat 采用可被 KeyValueTextInputFormat 识别的格式输出数据。
+          </span>
+          <span style="display:block;margin-bottom:.5em;">
+              如果想完全禁止输出，应该使用 NullOutputFormat。<br />
+              如果让 reducer 采用自己的方式输出，并且不需要 Hadoop 写任何的附加文件，则可以限制 Hadoop 的输出。
+          </span>
+          <span style="display:block;margin-bottom:.5em;">
+              SequenceFileOutputFormat 以序列文件格式输出数据，使其可以通过 SequenceFileInputFormat 读取。<br />
+              它有助于通过中间数据将 MapReduce 作业串接起来。
+          </span>]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 
   <c:entry style="margin-top:2em;">
     <c:title>编写 MapReduce 基础程序</c:title>
@@ -1715,7 +1798,27 @@ public class EdgePartitioner implements Partitioner<Edge, Writable> {
      <b>这些内部类是独立的，通常不与 MyJob 类进行交互 (放在一个文件中只是为了简化代码管理)。</b> <br />
      <b>在作业执行期间，采用不同 JVM 的各类节点复制并运行 Mapper 和 Reducer，其它的作业类仅在客户机上执行。</b> <br />
      <b>run() 方法是框架的核心，也称为 driver。</b> 
+     <br />
+     <br />
+     <b>Configure 类为作业提供 configure() 和 close() 方法, 用于建立和清除 map (reduce) 任务。除非是更高级的作业，否则不需要覆盖他们。</b> 
+     <br />
+     <br />
+     <b style="color:red;">1. 在 Mapper 和 Reducer 之间保持 K2 和 V2 类型的一致。 <br />
+     2. 确保在 Mapper 和 Reducer 中使用的键值类型与在 driver 中设置的输入格式、输出键的类、输出值得类保持一致。<br />
+     3. 使用 KeyValueTextInputFormat 意味着 K1 和 V1 必须均为 Text 类型。<br />
+     4. driver 必须调用 setOutputKeyClass() 和 setOutputValueClass() 分别指定 K2 和 V2 的类。</b> 
         ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Mapper 类和 Reducer 类的定义如下" id="sourceContent1" style="border-top:none;color:green;">
+      <![CDATA[public static class MapClass extends MapReduceBase implements Mapper<K1, V1, K2, V2> {
+    public void map (K1 key, V1 value, OutputCollector<K2, V2> output, Reporter reporter) 
+                                      throws IOException { }  
+}
+          
+public static class Reduce extends MapReduceBase implements Reducer<K2, V2, K3, V3> {
+    public void reduce (K2 key, Iterator<V2> values, OutputCollector<K3, V3> output, Reporter reporter) 
+                                            throws IOException { }
+}]]>
     </c:sourceContent>
 
     <c:sourceContent type="html" title="driver" id="sourceContent1" style="border-top:none;color:green;">
@@ -1733,7 +1836,202 @@ public class EdgePartitioner implements Partitioner<Edge, Writable> {
         ]]>
     </c:sourceContent>
 
-    <c:sourceContent type="html" title="使用 combiner 提升性能" id="sourceContent1" style="border-top:none;color:green;">
+    <c:sourceContent type="html" title="编译并执行该 Job" id="sourceContent1" style="border-top:none;color:green;">
+      <![CDATA[
+    。。。
+        ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="修改程序模板以实现计数" id="sourceContent1" style="border-top:none;">
+      <![CDATA[public static class Reduce extends MapReduceBase 
+                                          implements Reducer<Text, Text, Text, IntWritable> {
+        public void reduce (Text key, Iterator<Text> values
+                            , OutputCollector<Text, IntWritable> output
+                            , Reporter reporter) 
+                                              throws IOException {
+            int count = 0;
+            
+            while (values.hasNext()) {
+                values.next();
+                count++;
+            }
+            
+            output.collect(key, new IntWritable(count));
+        }
+    }
+        ]]>
+    </c:sourceContent>
+    
+    <c:sourceContent type="html" title="生成引用计数的直方图" id="sourceContent1" 
+                     style="border-top:none;margin-top:3em;background-color:white;margin-bottom:2em;"
+                     titleStyle="color:rgb(156, 0, 230);background-color:white;padding-left:0;font-size:2.5em;margin-bottom:.5em;"
+                     bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+        <span style="display:block;margin-bottom:.3em;">生成一个有趣的引用计数分布，即大多数的专利仅被引用一次，而少部分被引用上百次。</span>
+        <span style="display:block;margin-bottom:.3em;">
+            编写 MapReduce 程序的第一步是了解数据流。在这个例子中，当 mapper 读取一个记录时它忽略专利号并输出一个键/值对 <citation_count, 1> 作为中间结果。<br />
+            Reducer 将所有的 1 加起来算出每种引用次数的和，并将这个和输出。
+        </span>
+        <span style="display:block;margin-bottom:.3em;">
+            基于对数据流的理解, 我们首先为<b>输入(K1、V1)、中间结果 (K2、V2)、输出 (K3、V3)</b> 设定类型。<br />
+            这里使用 KeyValueTextInputFormat，它自动将每个输入记录根据分隔符划分为键/值对，并将 K1、V1 设置为 Text 文本类型。<br />
+            我们选择 K2、V2、K3、V3 的类型为 IntWritable 类型。
+        </span>
+        ]]>
+    </c:sourceContent>
+    
+    <c:sourceContent type="" title="CitationHistogram.java (计算不同引用次数专利的数目)" id="sourceContent1" >
+      <![CDATA[
+public class CititionHistogram extends Configured implements Tool {
+    public static class MapClass extends MapReduceBase 
+                                 implements Mapper<Text, Text, IntWritable, IntWritable> {
+        
+        // 出于对效率的考虑，citationCount 和 uno 被定义在类中而不是在方法中定义   
+        // 因为减少在 map() 方法中生成对象的个数可以提高性能，并减少垃圾回收
+        private final static IntWritable uno = new IntWritable(1);
+        private IntWritable citationCount = new IntWritable(1);
+        
+        // 有多少记录，map 方法就会被调用多少次, 对于每个 JVM 而言就是一个分片中的记录数
+        public void map (Text key, Text value, 
+                         OutputCollector<IntWritable, IntWritable> output,
+                         Reporter reporter) throws IOException {
+            citationCount.set(Integer.parstInt(value.toString());
+            
+            // 按照约定不可以再 output.collect() 方法中修改 citationCount, uno 的值
+            output.collect(citationCount, uno);
+        }
+    }
+    
+    public static class Reduce extends MapReduceBase 
+                               implements Reduce<IntWritable, IntWritable, IntWritable, IntWritable> {
+        public void reduce (IntWritable key, Iterator<IntWritable> values, 
+                            OutputCollector<IntWritable, IntWritable> output,
+                            Reporter reporter) throws IOException {
+            int count = 0;
+            while (values.hasNext()) {
+                count += values.next().get();
+            }
+            
+            output.collect(key, new IntWritable(count));
+        }
+    }
+    
+    public int run (String[] args) throws IOException {
+        Configuration conf = getConf();
+        
+        JobConf job = new JobConf(conf, CitationHistogram.class);
+        
+        Path in = new Path (args[0]);
+        Path out = new Path (args[1]);
+        
+        FileInputFormat.setInputPaths (job, in);
+        FileOutputFormat.setOutputPath (job, out);
+        
+        job.setJobName ("CitationHistogram");
+        job.setMapperClass (MapClass.class);
+        job.setReducerClass (Reduce.class);
+        
+        job.setInputFormat (KeyValueTextInputFormat.class);
+        job.setOutputFormat (TextOutputFormat.class);
+        
+        job.setOutputKeyClass (IntWritable.class);
+        job.setOutputValueClass (IntWritable.class);
+        
+        JobClient.runJob (job);
+        
+        return 0;
+    }
+    
+    public static void main (String[] args) throws IOException {
+        int res = ToolRunner.run (new Configuration(), 
+                                  new CitationHistogram(),
+                                  args);
+                                  
+        System.exit (res);
+    }
+}
+        ]]>
+    </c:sourceContent>
+    
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="border-top:none;margin-top:1em;background-color:white;margin-bottom:2em;"
+                     bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+        <span style="display:block;margin-bottom:.5em;">该程序的输出如下: </span>
+        <span style="display:block;margin-bottom:.5em;">
+              1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            921128 <br />
+              2 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            552246 <br />
+              3 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            380319 <br />
+              4 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            278438 <br />
+              5 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            210814 <br />
+              6 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            163149 <br />
+              7 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            127941 <br />
+              .............<br />
+              411 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          1<br />
+              779 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          1<br />
+        </span><br /><br />
+        <span style="display:block;margin-bottom:.5em;">
+            将以上输出放在图表中并绘制成图，该图形采用双对数坐标系统。
+            在双对数图中，当分布为直线时，可以被认为呈指数分布。<br />
+            引用计数的直方图似乎与此相符，不过其曲率接近于抛物线，也可以被认为呈对数正态分布。<br />
+        </span>
+        <img src="/images/citationhistogram.jpg" style="max-width:100%;" />
+        <br />
+        ]]>
+    </c:sourceContent>
+
+    
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  
+  <c:entry style="margin-top:2em;">
+    <c:title>Hadoop Streaming </c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[Hadoop 也支持用其他语言来编程，这需要用到名为 Streaming 的通用 API。<br />
+        在实际应用中，Streaming 主要用作编写简单、短小的 MapReduce 程序，他们可以通过脚本语言编写，开发更加快捷，并能充分利用非 Java 库。]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="" id="sourceContent1">
+      <![CDATA[。。
+        ]]>
+    </c:sourceContent>
+    
+      <c:sourceContent type="html" title="使用 combiner 提升性能" id="sourceContent1" style="border-top:none;margin-top:2em;">
+      <![CDATA[
+      为了使 combiner 可行， driver 必须为 JobConf 对象指定 combiner 类. 可以使用 setCombinerClass 来实现:<br />
+      job.setMapperClass (MapClass.class); <br />
+      job.setCombinerClass (Combine.class); <br />
+      job.setReducerClass (Reduce.class); <br />
+      
+    <br />
+    Combiner 未必会提高性能，可以监控作业的行为来判断是否由 combiner 输出的记录数明显地少于输入记录数。
+        ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:2em;">
+    <c:title>高阶 MapReduce </c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[链接多个 MapReduce <br />
+        执行多个数据集的联结 <br />
+        生成 Bloom filter]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="安装 AWS" id="sourceContent1">
       <![CDATA[。。
         ]]>
     </c:sourceContent>
@@ -1743,6 +2041,29 @@ public class EdgePartitioner implements Partitioner<Edge, Writable> {
       </c:comment1>
     </c:comment>
   </c:entry>
+
+<c:entry style="margin-top:2em;">
+    <c:title>划分为多个输出文件 </c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[MapReduce 作业默认将所有输出写到一个单一的文件中。<br />
+        MultipleOutputFormat 提供了一个简单的方法，将相似的记录结组为不同的数据集。在写出每条记录之前，这个 OutputFormat 类调用一个内部方法来确定要写入的文件名。<br />
+        ]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="MultiFile.java" id="sourceContent1">
+      <![CDATA[public class MultiFile extends Configured implements Tool {
+    .....  
+}]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
 
   <c:entry style="margin-top:2em;">
     <c:title>在云上运行 Hadoop </c:title>
