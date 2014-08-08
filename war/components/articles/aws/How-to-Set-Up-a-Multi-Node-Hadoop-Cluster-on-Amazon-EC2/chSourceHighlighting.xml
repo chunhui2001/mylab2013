@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[After spending some time playing around on Single-Node pseudo-distributed cluster, it's time to get into real world hadoop.
+    Depending on what works best – Its important to note that there are multiple ways to achieve this and I am going to cover how to setup multi-node hadoop cluster on Amazon EC2. 
+    We are going to setup 4 node hadoop cluster as below.
+    <br />
+    <br />
+    <ul style="padding-left:1.5em;list-style:disc;">
+        <li>NameNode (Master)</li>
+        <li>SecondaryNameNode</li>
+        <li>DataNode (Slave1)</li>
+        <li>DataNode (Slave2)</li>
+    </ul>]]>
+  </c:abstract>
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title>Requirements</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+      <ul style="padding-left:1.5em;list-style:disc;">
+          <li> Amazon AWS Account</li>
+          <li> PuTTy Windows Client (to connect to Amazon EC2 instance)</li>
+          <li> PuTTYgen (to generate private key – this will be used in putty to connect to EC2 instance)</li>
+          <li> WinSCP (secury copy)</li>
+      </ul>
+    ]]>
+    </c:sourceContent>
+    
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.5em;">
+    <c:title>Setting up Amazon EC2 Instances</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[With 4 node clusters and minimum volume size of 8GB there would be an average $2 of charge per day with all 4 running instances. 
+      You can stop the instance anytime to avoid the charge, but you will loose the public IP and host and restarting the instance will create new ones. 
+      You can also terminate your Amazon EC2 instance anytime and by default it will delete your instance upon termination, so just be careful what you are doing.]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Get Amazon AWS Account" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+      <span style="display:block;margin-bottom:.5em;">
+          If you do not already have a account, please create a new one. I already have AWS account and going to skip the sign-up process. Amazon EC2 comes with eligible free-tier instances.
+      </span>
+      <img src="//c2.staticflickr.com/6/5585/14636640858_c63fc59fba.jpg" style="max-width:100%;" />
+    ]]>
+    </c:sourceContent>
+    
+    <c:sourceContent type="html" title="Launch Instance" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+      <span style="display:block;margin-bottom:.5em;">
+          Once you have signed up for Amazon account. Login to Amazon Web Services, click on My Account and navigate to Amazon EC2 Console
+      </span>
+      <img src="//c1.staticflickr.com/3/2908/14821028494_736c8cc3f7_z.jpg" style="max-width:100%;" />
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Select AMI" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+      <span style="display:block;margin-bottom:.5em;">
+          I am picking Ubuntu Server 14.04 LTS 64-bit OS
+      </span>
+      <img src="//c2.staticflickr.com/4/3884/14636773318_19249991ed_z.jpg" style="max-width:100%;" />
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Select Instance Type" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+      <span style="display:block;margin-bottom:.5em;">
+          Select the micro instance
+      </span>
+      <img src="//c2.staticflickr.com/4/3848/14858092935_d75b5f62e6_b.jpg" style="max-width:100%;" />
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Configure Number of Instances" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+      <span style="display:block;margin-bottom:.5em;">
+          As mentioned we are setting up 4 node hadoop cluster, so please enter 4 as number of instances. 
+          Please check Amazon EC2 free-tier requirements, you may setup 3 node cluster with < 30GB storage size to avoid any charges.  
+          In production environment you want to have SecondayNameNode as separate machine
+      </span>
+      <img src="//c2.staticflickr.com/4/3859/14878009273_56b330663e_b.jpg" style="max-width:100%;" />
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Add Storage" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+      <span style="display:block;margin-bottom:.5em;">
+          Minimum volume size is 8GB
+      </span>
+      <img src="//c2.staticflickr.com/4/3863/14671511289_04384ea419_b.jpg" style="max-width:100%;" />
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Instance Description" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+      <span style="display:block;margin-bottom:.5em;">
+         Give your instance name and description
+      </span>
+      <img src="//c2.staticflickr.com/4/3892/14671516679_3dd3286d1c_b.jpg" style="max-width:100%;" />
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Define a Security Group" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+      <span style="display:block;margin-bottom:.5em;">
+         Create a new security group, later on we are going to modify the security group with security rules.
+      </span>
+      <img src="//c2.staticflickr.com/4/3911/14857807722_0a877e6063_b.jpg" style="max-width:100%;" />
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Launch Instance and Create Security Pair" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+      <span style="display:block;margin-bottom:.5em;">
+         Review and Launch Instance. <br />
+         <br />
+         Amazon EC2 uses public–key cryptography to encrypt and decrypt login information. 
+         Public–key cryptography uses a public key to encrypt a piece of data, such as a password, then the recipient uses the private key to decrypt the data. 
+         The public and private keys are known as a <b>key pair</b>. <br />
+         <br />
+         Create a new keypair and give it a name “hadoopec2cluster” and download the keypair (.pem) file to your local machine. Click Launch Instance
+      </span>
+      <img src="//c2.staticflickr.com/6/5596/14878037423_a5a6af75da.jpg" style="max-width:100%;" />
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Launching Instances" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+      <span style="display:block;margin-bottom:.5em;">
+         Once you click “Launch Instance” 4 instance should be launched with “pending” state
+      </span>
+      <img src="//c2.staticflickr.com/6/5593/14671551648_33c5a254c4_b.jpg" style="max-width:100%;" />
+      <br />
+      <span style="display:block;margin-bottom:.5em;">
+         Once in “running” state we are now going to rename the instance name as below.
+         
+      </span>
+      <ul style="padding-left:1.5em;list-style:disc;">
+          <li>HadoopNameNode (Master)</li>
+          <li>HadoopSecondaryNameNode</li>
+          <li>HadoopSlave1 (data node will reside here)</li>
+          <li>HaddopSlave2  (data node will reside here)</li>
+      </ul>
+      <br />
+      <img src="//c2.staticflickr.com/6/5596/14671488210_59d4c2f388_b.jpg" style="max-width:100%;" />
+      <br />
+      <span style="display:block;margin-bottom:.5em;">
+         Please note down the Instance ID, Public DNS/URL (ec2-54-209-221-112.compute-1.amazonaws.com)  and Public IP for each instance for your reference.
+         We will need it later on to connect from Putty client.  Also notice we are using “HadoopEC2SecurityGroup”.
+      </span>
+      <img src="//c2.staticflickr.com/6/5584/14671642597_a4397d0af4_b.jpg" style="max-width:100%;" />
+      <br />
+      <span style="display:block;margin-bottom:.5em;">
+        You can use the existing group or create a new one. 
+        When you create a group with default options it add a rule for SSH at port 22.In order to have TCP and ICMP access we need to add 2 additional security rules.
+        Add ‘All TCP’, ‘All ICMP’ and ‘SSH (22)’ under the inbound rules to “HadoopEC2SecurityGroup”. 
+        This will allow ping, SSH, and other similar commands among servers and from any other machine on internet. 
+        Make sure to “Apply Rule changes” to save your changes.
+        <br />
+        <br />
+        These protocols and ports are also required to enable communication among cluster servers. 
+        As this is a test setup we are allowing access to all for TCP, ICMP and SSH and not bothering about the details of individual server port and security.
+      </span>
+      <img src="//c2.staticflickr.com/6/5557/14855120971_962b579de5.jpg" style="max-width:100%;" />
+    ]]>
+    </c:sourceContent>
+
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.5em;">
+    <c:title>Setting up client access to Amazon Instances</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[
+          Now, lets make sure we can connect to all 4 instances.
+          For that we are going to use Putty client We are going setup password-less SSH access among servers to setup the cluster. 
+          This allows remote access from Master Server to Slave Servers so Master Server can remotely start the Data Node and Task Tracker services on Slave servers.
+            <br /><br />
+          We are going to use downloaded hadoopec2cluster.pem file to generate the private key (.ppk). 
+          In order to generate the private key we need Puttygen client. 
+          You can download the putty and puttygen and various utilities in zip from <a target="_blank" href="http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html">here</a>.
+        ]]>
+      </c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Generating Private Key" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+      <span style="display:block;margin-bottom:.5em;">
+          Let’s launch PUTTYGEN client and import the key pair we created during launch instance step – “hadoopec2cluster.pem”
+          <br /><br />
+          Navigate to Conversions and “Import Key”
+      </span>
+      <img src="//c2.staticflickr.com/4/3875/14855172271_b7ed4ab7db.jpg" style="max-width:100%;" />
+      <br />
+      <img src="//c2.staticflickr.com/4/3902/14671617149_24d3aee25b_z.jpg" style="max-width:100%;" />
+      <br />
+      you import the key You can enter passphrase to protect your private key or leave the passphrase fields blank to use the private key without any passphrase.
+      Passphrase protects the private key from any unauthorized access to servers using your machine and your private key.
+      <br /><br />
+      Any access to server using passphrase protected private key will require the user to enter the passphrase to enable the private key enabled access to AWS EC2 server.
+    ]]>
+    </c:sourceContent>
+    
+    <c:sourceContent type="html" title="Save Private Key" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+      <span style="display:block;margin-bottom:.5em;">
+          Now save the private key by clicking on “Save Private Key” and click “Yes” as we are going to leave passphrase empty.
+      </span>
+      <img src="//c2.staticflickr.com/4/3888/14858236625_e28236b77e_n.jpg" style="max-width:100%;" />
+      <br />
+      Save the .ppk file and give it a meaningful name<br /><br />
+      <img src="//c2.staticflickr.com/6/5574/14671724357_43513dd705.jpg" style="max-width:100%;" />
+      <br />
+      Now we are ready to connect to our Amazon Instance Machine for the first time.
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Connect to Amazon Instance" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+      <span style="display:block;margin-bottom:.5em;">
+          Let’s connect to HadoopNameNode first. Launch Putty client, grab the public URL , import the .ppk private key that we just created for password-less SSH access. 
+          As per amazon documentation, for Ubuntu machines username is “ubuntu”
+      </span>
+    ]]>
+    </c:sourceContent>
+    
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+</c:component>

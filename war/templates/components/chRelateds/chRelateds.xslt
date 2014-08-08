@@ -15,8 +15,8 @@
     <xsl:variable name="articleMaster" select="document(concat($APP_ROOT,'/RichMedia/blog/smoArticleMaster.xml'))/*" />
     <xsl:variable name="relatedArticles" select="$articleMaster/c:article[c:articleLink=$PAGE_URI]/c:related/c:r1" />
 
-    <h1 style="margin-top:1.5em;">相关文章：</h1>
-    <xsl:if test="count($relatedArticles) &gt; 0">
+    <xsl:if test="count($relatedArticles[text() != '']) &gt; 0">
+      <h1 style="margin-top:1.5em;">相关文章：</h1>
       <ul style="list-style:initial;color:#2a6496;margin-left:1.5em;">
         <xsl:for-each select="$relatedArticles">
           <li>
@@ -24,7 +24,7 @@
 
 
               <xsl:value-of select="$articleMaster/c:article[c:articleLink=normalize-space(current()/text())]/c:title" />
-              
+
             </a>
           </li>
         </xsl:for-each>

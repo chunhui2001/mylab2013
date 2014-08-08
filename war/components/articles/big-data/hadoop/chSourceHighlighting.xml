@@ -2031,7 +2031,7 @@ public class CititionHistogram extends Configured implements Tool {
       </c:desc1>
     </c:desc>
 
-    <c:sourceContent type="html" title="安装 AWS" id="sourceContent1">
+    <c:sourceContent type="html" title="" id="sourceContent1">
       <![CDATA[。。
         ]]>
     </c:sourceContent>
@@ -2069,12 +2069,118 @@ public class CititionHistogram extends Configured implements Tool {
     <c:title>在云上运行 Hadoop </c:title>
     <c:desc>
       <c:desc1>
-        <![CDATA[]]>
+        <![CDATA[
+          <span style="display:block; margin-bottom:.3em; font-weight:bold;">将计算资源作为一种远程的服务，以灵活符合成本效益的方式提供出来的模型，被称为云计算。</span>
+          <span style="display:block; margin-bottom:.3em;">云计算中最负盛名的基础架构服务平台当属 Amazon Web Services (AWS)。</span>
+          <span style="display:block; margin-bottom:.3em;">
+              从 AWS 租用一个相当于 1.0GHz 32-bit Operton 处理器、1.7GB 内存、160GB 磁盘的计算单元，话费为 0.10美元/小时。采用 100 个这样的节点构成集群 10美元/小时。
+          </span>
+        ]]>
       </c:desc1>
     </c:desc>
 
-    <c:sourceContent type="html" title="安装 AWS" id="sourceContent1">
-      <![CDATA[。。
+    <c:sourceContent type="html" title="AWS 简介" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="background-color:white;color:black;padding:0;font-size:1.3em;"
+                     bodyStyle="background-color:white;padding:1em 0;">
+      <![CDATA[
+      <span>在所有 AWS 提供的服务中，弹性计算云 (Elastic Compute Cloud, EC2) 和简单存储服务 (Simple Storage Service, S3) 是两个核心服务。</span>
+      <span>EC2 提供了可供 Hadoop 节点运行的计算能力。每个 Hadoop 节点都要占用一个 EC2 实例，可以租用 EC2 实例并按小时付费。 </span>
+      <br />
+      <span>当 EC2 实例终止时，该实例上的所有数据都会被删除。S3 云存储服务提供持久化数据的能力。 </span>
+      <br />
+      <span>AWS 提供预先配置好的运行在 Linux 上的 Hadoop 镜像，而且内置的 Hadoop 同时支持与 EC2 和 S3 一起使用。 </span>
+        ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="AWS 安装" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="background-color:white;color:black;padding:0;font-size:1.3em;"
+                     bodyStyle="background-color:white;padding:1em 0;">
+      <![CDATA[
+        <span style="margin-bottom:.3em;display:block;">激活 AWS 上的 Amazon 账户之后，还需要经历 3 个步骤才能创建并使用实例：</span> 
+        <ul style="padding-left:1.5em;list-style:decimal;">
+            <li style="margin-bottom:.3em;">
+                <span style="display:block;margin-bottom:.3em;">取得账户 ID、认证密钥、证书，把它们安装在本地计算机上，来保证与 AWS 通信的安全。<br />
+                这些安全机制确保只有你可以用该账户租用计算资源。</span>
+                
+                <span style="display:block;margin-bottom:.3em;">
+                    <b style="color:rgb(255, 122, 0);font-size:1.2em;">Security Credentials</b> <br />
+                    <img style="max-width:100%;margin-bottom:.3em;" src="//c2.staticflickr.com/6/5594/14670865278_0d6b123212_z.jpg" /> 
+                    
+                    点击 <b>Create New Access Key</b> 将生一个 .csv 文件并提示下载到本地，其中包含 AWSAccessKeyId (20个字符) 和 AWSSecretKey (40个字符)。
+                    当稍后安装集群时需要设定你的 AWSAccessKeyId 和 AWSSecretKey。
+                </span>
+                
+                <span style="display:block;margin-bottom:.3em;">
+                    <b style="color:rgb(255, 122, 0);font-size:1.2em;">X.509 Certificates</b> <br />
+                    <img style="max-width:100%;margin-bottom:.3em;" src="//c2.staticflickr.com/6/5591/14854465471_70090dd901_c.jpg" /> 
+                    
+                    点击 <b>Create New Certificate Key</b> 将生成两个 .pem 文件并提示下载到本地，其中包含<b>公钥</b>和<b>私钥</b>。<br />
+                    在本机 Home 目录中创建一个名为 .ec2 的文件夹用于保存这两个文件。
+                </span>
+            </li>
+            <li style="margin-bottom:.3em;">
+                <span style="display:block;margin-bottom:.3em;">下载并安装命令行工具来管理你的 EC2 实例，包括在虚拟集群上启动和终止 EC2 实例的一些特殊程序。</span>
+                <span style="display:block;margin-bottom:.3em;">
+                    命令行工具全部包含在一个 ZIP 文件中，可从 AWS EC2 <a target="_blank" href="https://aws.amazon.com/items/351?externalID=351&categoryID=88">资源下载中心</a> 下载：
+                    <br />
+                    <a target="_blank" href="https://aws.amazon.com/items/351?externalID=351&categoryID=88">https://aws.amazon.com/items/351?externalID=351&categoryID=88</a>
+                </span>
+                <span style="display:block;margin-bottom:.3em;">
+                    <b>在使用名行工具之前必须设置几个环境变量：</b><br />
+                    export JAVA_HOME=jdk_install_dir <br />
+                    export EC2_HOME=/usr/local/ec2 <br />
+                    export PATH=${PATH}:${EC2_HOME}/bin:${HADOOP_HOME}/src/contrib/ec2/bin <br />
+                    export EC2_PRIVATE_KEY=~/.ec2/pk-HHHHHHHHHHHHHHHHHH.pem <br />
+                    export EC2_CERT=~/.ec2/cert-kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.pem
+                </span>
+                <span style="display:block;margin-bottom:.3em;">
+                    <span style="display:block;margin-bottom:.3em;">
+                        <b>运行 AWS 命令行工具来列出 Amazon 当前有哪些地区可用：</b><br />
+                        ec2-describe-regions
+                    </span>
+                    <span style="display:block;margin-bottom:.3em;">
+                      将得到类似下面的输出结果:<br />
+                      REGION &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; us-east-1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; us-east-1.ec2.amazonaws.com <br />
+                      REGION &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eu-west-1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eu-west-1.ec2.amazonaws.com  <br />
+                      。。。。。。。。。。。
+                    </span>
+                    
+                    其中第二列为<b>地区名</b>，第三列为<b>服务点</b><br />
+                    默认地区为 us-east-1, 如果想选择不同的服务地区，需要设置环境变量 <b>EC2_URL</b> 为相应的<b>服务点</b>。
+                </span>
+            </li>
+            <li style="margin-bottom:.3em;">
+                <span style="display:block;margin-bottom:.3em;">生成一个 SSH 密钥对，可以使用 SSH 登陆到 EC2 实例。
+                默认的登陆机制使用基于一个密钥对的 SSH，这个密钥对的一半 (公钥) 被签入在 EC2 实例中，而另一半 (私钥) 在本地机器上。
+                这对密钥共同作用以确保本地机器和 EC2 实例之间的通信安全。</span>
+                <span style="display:block;margin-bottom:.3em;">
+                    每个 SSH 密钥对用一个 Key name (密钥名) 来标识。
+                    当请求 EC2 创建一个实例时，你必须通过其对应的密钥名来指定签入在该实例中的一个公钥。
+                    在创建任何 EC2 实例之前，SSH 公钥必须存在且已经在 Amazon 中注册。
+                </span>
+                <span style="display:block;margin-bottom:.3em;">
+                    使用以下命令生成一个 SSH 密钥对，并以 gsg-keypair 为密钥名将公钥注册到 Amazon EC2 中: <br />
+                    <b>ec2-add-keypair gsg-keypair</b> <br />
+                    该命令将生成的内容打印到终端，其中一部分为私钥，使用文本编辑器将生成的内容存储在一个文件中，即: <br />
+                    <b>复制和粘贴如下两行 (包含这两行) 之间的内容，并将其保存为一个名为 id_rsa-gsg_keypair 的新文件: <br />
+                      -----BEGIN RSA PRIVATE KEY----- <br />
+                      -----END RSA PRIVATE KEY-----
+                    </b>
+                </span>
+                <span style="display:block;margin-bottom:.3em;">
+                    将 id_rsa-gsg_keypair 保存在 .ec2 路径下，并使用如下命令锁定文件权限，使得它只能被你读取: <br />
+                    <b>chmod 600 ~/.ec2/id_rsa-gsg_keypair</b>
+                </span>
+            </li>
+        </ul>
+        ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="在 EC2 上安装 Hadoop" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="background-color:white;color:black;padding:0;font-size:1.3em;"
+                     bodyStyle="background-color:white;padding:1em 0;">
+      <![CDATA[
+      。。
         ]]>
     </c:sourceContent>
     <c:comment>
