@@ -35,7 +35,7 @@
     </div>
 
     <script type="text/javascript">
-
+        
       function doExpand(sender) {
       var nextBody = $($(sender).parents("h6")[0]).nextAll(".entryBody")[0];
 
@@ -110,19 +110,27 @@
                 </div>
               </xsl:when>
               <xsl:otherwise>
-                <!-- Language hints can be put in XML application directive style comments. -->
-                <?prettify lang=html linenums=false?>
-                <pre class="prettyprint" id="current()/@componentId"
-                     style="border-radius:0;border:none;padding:1em;">
-
                   <xsl:variable name="content-code">
-                    <xsl:call-template name="string-trim">
-                      <xsl:with-param name="string" select="current()" />
-                    </xsl:call-template>
+                      <xsl:call-template name="string-trim">
+                          <xsl:with-param name="string" select="current()" />
+                      </xsl:call-template>
                   </xsl:variable>
                   
-                  <xsl:value-of disable-output-escaping="no" select="$content-code"/>
-                </pre>
+                  <xsl:choose>
+                      <xsl:when test="current()/@type = 'objective-c'">
+                          <pre class="syntax">
+                              <xsl:value-of disable-output-escaping="no" select="$content-code"/>
+                          </pre>
+                      </xsl:when>
+                      <xsl:otherwise>
+                          <!-- Language hints can be put in XML application directive style comments. -->
+                          <?prettify lang=html linenums=false?>
+                          <pre class="prettyprint" id="current()/@componentId"
+                              style="border-radius:0;border:none;padding:1em;">
+                              <xsl:value-of disable-output-escaping="no" select="$content-code"/>
+                          </pre>
+                      </xsl:otherwise>
+                  </xsl:choose>
               </xsl:otherwise>
             </xsl:choose>
           </div>

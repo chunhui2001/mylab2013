@@ -2,20 +2,55 @@
 <c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
   <c:abstract>
     <![CDATA[
-     ..
+        Objective-C 提供了 4 中基本数据类型: int， float， double， char <br />
+        Objective-C 的限定词: long, long long ,short, unsigned , signed <br />
+        
+        long int: 长整型 <br />
+        long long int: 长长整型 <br />
+        unsigned int: 只能用于存储正整数 <br />
+        
+        <br />
+        <b>复合类型</b> <br />
+        BOOL YES or NO
     ]]>
   </c:abstract>
 
   <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
-    <c:title>..</c:title>
+    <c:title>第一个 Object-C 程序</c:title>
     <c:desc>
       <c:desc1>
         <![CDATA[。。]]>
       </c:desc1>
     </c:desc>
 
-    <c:sourceContent type="" title="WebLogWritable.java" id="sourceContent1">
-      <![CDATA[
+    <c:sourceContent type="" title="FristObjectiveCProgram.m" id="sourceContent1">
+        <![CDATA[//
+//  main.m
+//  Product1
+//
+//  Created by Keesh on 14-8-8.
+//  Copyright (c) 2014年 Chunhui.Zhang. All rights reserved.
+
+#import <Foundation/Foundation.h>
+
+int main (int argc, const char * argv[]) {
+
+    // 自动释放池，即自动释放内存
+    @autoreleasepool {
+        // 如果字符串前面不加 @, 表示创建 C 类型的字符串
+        // 加 @ 表示创建 NSString 类型的字符串
+        NSLog(@"Hello Chunhui!");
+        
+        int i = 6;
+        int b = 5;
+        int c = 8;
+        
+        NSLog(@"6 + 5 = %i, 5 + 8 = %i", i + b, b + c);
+	
+    }
+
+    return 0;
+}
       ]]>
     </c:sourceContent>
     <c:comment style="margin-top:2em;">
@@ -25,5 +60,893 @@
       </c:comment1>
     </c:comment>
   </c:entry>
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>类、对象和方法</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+            <span style="display:block;margin-bottom:.3em;">Objective-C 采用特定的语法对类和实例应用方法。</span>
+            <span style="display:block;margin-bottom:.3em;">
+            <b>[ ClassOrInstance method : paramters]</b>
+            </span>
+            <span style="display:block;margin-bottom:.3em;">
+                左方括号后要紧跟类或实例的名称，后面可以是一个或多个空格，空格后面是将要执行的方法。
+                <br />
+                方法后面可以跟一个冒号， 冒号后面是参数列表。
+            </span>
+            <span style="display:block;margin-bottom:.3em;">
+                请求一个类或者实例执行某个操作时，就是在向<b>接收者</b>发送一条<b>消息</b>，<b>消息</b>就是空格后面的方法，<b>接受者</b>就是空格前面的类或实例的名字。
+            </span>
+            <span style="display:block;margin-bottom:.3em;">
+                <b>Car yourCar = [Car new]; <br />
+                [yourCar run]; <br />
+                [yourCar close]; <br />
+                [yourCar shutdown]; <br />
+                [yourCar shutdown : 5]; <br />
+                </b>
+            </span>
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="" title="一个打印分数的例子" id="sourceContent1">
+          <![CDATA[#import <Foundation/Foundation.h>
+              
+@interface Fraction : NSObject
+
+// 开头的 + 或 － 号说明此处定义的是方法
+// 开头的 － 号说明该方法是一个实例方法，如果开头是 ＋ 号说明该方法是一个类方法
+-(void) print;
+-(void) setNumerator : (int) num;
+-(void) setDenominator : (int) d;
+
+@end
+
+
+
+
+@implementation Fraction  {
+
+  // 开头不带 - 或 + 号说明此处定义的是变量而不是方法
+  int numerator;
+  int denominator;
+}
+
+-(void) print {
+  NSLog(@"The Fraction is %i/%i", numerator, denominator);
+}
+
+-(void) setNumerator : (int) num {
+  numerator = num;
+}
+
+-(void) setDenomanitor : (int) d {
+  denominator = d;
+}
+
+@end
+
+
+
+int main (int argc, char *argv[]) {
+
+  // 在过去，iOS 程序员需要给对象发送 release 消息，通知系统释放内存
+  // 这在内存管理系统中称为手工引用计数
+  // 在 XCode 4.2+ 版本中默认开启 ARC (自动引用计数)
+  @autoreleasepool {
+      Fraction *fraction;               // 根据 Fraction 的定义申请一块内存,
+                                        // 并将该段内存的首地址存储在 fraction 中
+                                        // 此时 fraction 仅仅是一个存储了一个内存地址的指针,
+                                        // 内存中的数据有待填充
+      
+      fraction = [Fraction alloc];      // 向 Fraction 类发送初始化消息，以获得该实例的新实例，
+                                        // alloc 继承自父类是 allocate 的缩写
+      fraction = [fraction init];       // 向类的新实例发送初始化消息，创建对象之后必须进行初始化 init
+      
+      
+      // 以上三行可以简写成 Fraction *fraction = [[Fraction alloc] init]
+      
+      
+      [fraction setNumerator : 1];
+      [fraction setDenomanitor : 3];
+      
+      [fraction print];
+  }
+
+  return 0;
+}
+          ]]>
+          
+          
+      </c:sourceContent>
+      
+      
+      <c:sourceContent type="html" title="基础数据类型" id="sourceContent1">
+          <![CDATA[
+              <img style="max-width:100%;" src="//c2.staticflickr.com/4/3860/14863454924_4830648da7_z.jpg" />
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:sourceContent type="html" title="id 类型" id="sourceContent1">
+          <![CDATA[
+              <b>id 数据类型可以存储任何类型的对象，是 Objective-C 中十分重要的特性，它是 <b style="font-style:italic; color:green;">多态</b>、<b style="font-style:italic; color:green;">动态类型</b> 和 <b style="font-style:italic; color:green;">动态绑定</b> 的基础.</b> <br />
+              例如如下语句将 graphicObject 声明为 id 类型的变量: <br/ >
+              
+              <b>id graphicObject; </b><br />
+              
+              <br />
+              如下语句声明一个方法并具有 id 类型的返回值: <br />
+              <b>-(id) newObject : (int) c ;
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:sourceContent type="html" title="逻辑控制" id="sourceContent1">
+          <![CDATA[
+              <b>for</b> <br />
+              <b>while</b><br />
+              <b>do</b> <br />
+              
+              <br />
+              
+              <b>if</b> <br />
+              <b>switch</b> <br />
+              <b>conditional</b> <br />
+              
+              <br />
+              
+              <b>scanf("%i", &number);</b> &nbsp;&nbsp; scanf 从屏幕读取输入并存入变量 number 中，& 是寻址运算符
+          ]]>
+      </c:sourceContent>
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>类</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[将类的声明和定义放在单独的文件中 <br />
+              把类的声明放在 *.h 文件中 <br />
+              把类的定义放在 *.m 文件中]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="html" title="在 XCode 中添加一个新类" id="sourceContent1">
+          <![CDATA[
+              <img style="max-width:90%;" src="//c2.staticflickr.com/4/3857/14870459004_09a8ec13b4_z.jpg" />
+              <br />
+              <span>
+                单击 Next 并选中 Subclass of NSObject，再次单击 Next。(以 Fraction 类为例)<br />
+                在 Save as 输入框中输入 Fraction.m 做为文件名，其它默认，点击 Save 将生成 Fraction.h 和 Fraction.m 两个文件。
+              </span>
+          ]]>
+      </c:sourceContent>
+      
+      <c:sourceContent type="" title="Fraction.h" id="sourceContent1">
+          <![CDATA[#import <Foundation/Foundation.h>
+              
+@interface Fraction : NSObject
+
+-(void) print;
+-(void) setNumerator:(int) n;
+-(void) setDenominator: (int) d;
+-(void) numerator;
+-(void) denominator;
+-(double) convertToNum;
+
+@end
+          ]]>
+      </c:sourceContent>
+  <c:sourceContent type="" title="Fraction.m" id="sourceContent1">
+      <![CDATA[#import "Fraction.h"
+          
+@implementation Fraction {
+    int numerator;
+    int denominator;
+}
+
+-(void) print {
+    NSLog (@"%i / %i", numerator,denominator)
+}
+
+-(void) setNumerator:(int) n {
+    numerator = n;
+}
+
+-(void) setDenominator: (int) d {
+    denominator = d;
+}
+
+-(void) numerator {
+    return numerator;
+}
+
+-(void) denominator {
+    return denominator;
+}
+
+-(double) convertToNum {
+    if(denominator != 0) {
+        return (double) numerator / denominator;
+    } else {
+        return NAN;
+    }
+}
+
+@end
+      ]]>
+  </c:sourceContent>
+  
+  <c:sourceContent type="html" title="合成存取方法" id="sourceContent1">
+      <![CDATA[
+          <span style="display:block;margin-bottom:.3em;">从 Objective-C 2.0 开始可以自动生成 <b>set</b> 和 <b>get</b> 方法。</span>
+          <ul style="padding-left:1.5em;list-style:decimal;">
+              <li>
+                    <span style="display:block;margin-bottom:.3em;">在接口部分使用 @property 指令标识属性，这些属性的命名与实例变量相同:</span>
+                    <span style="display:block;margin-bottom:.3em;"><b>@property int numerator, denominator;</b> </span>
+                    <span style="display:block;margin-bottom:.3em;">使用 @property 指令就不需要在实现部分声明相应的实例变量</span>
+              </li>
+              <li>
+                    <span style="display:block;margin-bottom:.3em;">在实现部分使用 @synthesize 指令标识实例变量:</span>
+                    <span style="display:block;margin-bottom:.3em;"><b>@synthesize int numerator, denominator;</b> <br /></span>
+                    <span style="display:block;margin-bottom:.3em;">@synthesize 将为实例变量生成赋值和取值方法</span>
+              </li>
+              <li>
+                    <span style="display:block;margin-bottom:.3em;">编译器将自动生成如下方法:</span>
+                    <br />
+                    
+                    -(void) setNumerator:(int) n {<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;    numerator = n;<br />
+                    }<br /><br />
+
+                    -(void) setDenominator: (int) d {<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;    denominator = d;<br />
+                    }<br /><br />
+
+                    -(void) numerator {<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;    return numerator;<br />
+                    }<br /><br />
+
+                    -(void) denominator {<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;    return denominator;<br />
+                    }
+              </li>
+          </ul>
+      ]]>
+  </c:sourceContent>
+  
+  <c:sourceContent type="html" title="使用 . 操作符访问属性" id="sourceContent1">
+      <![CDATA[
+        <span style="display:block;margin-bottom:.3em;">
+            要取得 myFraction 中 numerator 的值，可以使用如下方法：
+        </span>
+        <span style="display:block;margin-bottom:.3em;">
+            <b>[myFraction numerator]; </b>
+        </span>
+        <br />
+        <span style="display:block;margin-bottom:.3em;">
+            用点操作符重写等价的表达式：
+        </span>
+        
+        <span style="display:block;margin-bottom:.3em;">
+            <b>myFraction.numerator;</b>
+            <br />
+            <br />
+            赋值：<br />
+            <b>myFraction.numerator = 6;</b>
+            <br />
+            <br />
+            等价于： <br />
+            <b>[myFraction setNumerator:6];</b>
+            
+        </span>
+        <br />
+        
+        <span style="display:block;margin-bottom:.3em;">
+        注意:
+        </span>
+        
+        <span style="display:block;margin-bottom:.3em;color:red;">
+        点操作符通常用来操作属性，即用来设置或取得实例变量的值。<br />
+        虽然 . 操作符也可以用来执行方法 (方法在 Objective-C 中也可以叫做任务)，但任务通常不是由 . 操作符来执行。<br />
+        在 Objective－C 中，任务的执行是通过使用传统的方括号形式的<b>消息表达式</b>作为首选的语法。
+        
+        </span>
+        
+        <span style="display:block;margin-bottom:.3em;color:red;">
+        使用合成 (synthesize) 的存取方法，属性名称前不要以 new、alloc、copy、init 这些词开头。
+        
+        </span>
+        
+      ]]>
+  </c:sourceContent>
+  
+  <c:sourceContent type="html" title="具有多个参数的任务" id="sourceContent1">
+        <![CDATA[
+            <span style="display:block;margin-bottom:.3em;">
+            通过列出多个连续的参数并用冒号将其连接起来，就可以定义一个接收多个参数的方法。
+            </span>
+            
+            <span style="display:block;margin-bottom:.3em;">
+            命名参数：<br />
+            -(void) setTo: (int) n over: (int) d { <br />
+            &nbsp;&nbsp;&nbsp;&nbsp;    numerator = n;<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;    denominator = d;<br />
+            }
+            </span>
+            
+            
+            <span style="display:block;margin-bottom:.3em;">
+            调用：
+            <br />
+            <b>[myFraction setTo:1 over:3]</b>
+            </span>
+            
+            <br />
+            <br />
+            
+            <span style="display:block;margin-bottom:.3em;">
+            非命名参数：<br />
+            -(void) set: (int) n : (int) d { <br />
+            &nbsp;&nbsp;&nbsp;&nbsp;    numerator = n;<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;    denominator = d;<br />
+            }
+            </span>
+            
+            
+            <span style="display:block;margin-bottom:.3em;">
+            调用：
+            <br />
+            <b>[myFraction setTo:1 :3]</b>
+            </span>
+            <br />
+            <span style="display:block;margin-bottom:.3em;color:red;">
+            <b>注:在编写新方法时省略参数命不是一种良好的编程风格，因为它使程序很难读懂并且很不直观。</b>
+            </span>
+        ]]>
+  </c:sourceContent>
+  
+  
+  <c:sourceContent type="html" title="局部变量" id="sourceContent1">
+      <![CDATA[
+            <span style="display:block;margin-bottom:.3em;">考虑以下方法：</span>
+            <span style="display:block;margin-bottom:.3em;">
+            -(void) reduce { <br />
+            &nbsp;&nbsp;&nbsp;&nbsp;    int u = numerator; <br />
+            &nbsp;&nbsp;&nbsp;&nbsp;    int v = denominator; <br />
+            &nbsp;&nbsp;&nbsp;&nbsp;    int temp; <br />
+                 <br />
+            &nbsp;&nbsp;&nbsp;&nbsp;    while (v != 0) { <br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        temp = u % v; <br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        u = v; <br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        v= temp; <br />
+            &nbsp;&nbsp;&nbsp;&nbsp;    } <br />
+                 <br />
+            &nbsp;&nbsp;&nbsp;&nbsp;    numerator /= u; <br />
+            &nbsp;&nbsp;&nbsp;&nbsp;    denominator /= u; <br />
+            }
+            </span>
+            
+            <br />
+            <br />
+            
+            <span style="display:block;margin-bottom:.3em;">
+                在这个方法中声明了 3 个局部变量, 这些变量对于 reduce 方法来说是局部变量，并且只能在 reduce 方法中访问。<br />并且当方法返回时这些变量的值都消失了。
+            </span>
+            
+            
+            <span style="display:block;margin-bottom:.3em;">
+                局部变量是基本的 C 数据类型，没有默认的初始值，所以在使用前要先赋值。
+            </span>
+      ]]>
+  </c:sourceContent>
+  
+  
+  <c:sourceContent type="html" title="方法的参数" id="sourceContent1">
+      <![CDATA[
+          <span style="display:block;margin-bottom:.3em;">
+            方法的参数命也是局部变量。执行方法时，通过方法传递的任何参数都被复制到局部变量中。<br />
+            因为方法使用的是参数的副本，所以不能改变通过方法传递的参数原始值。
+            <br />
+            <br />
+            如果方法的参数是对象，即当传递一个对象作为方法的参数时，实际上是传递了该对象的指针。<br />
+            正因为如此，你才能修改参数对象的数据。
+          </span>
+      ]]>
+  </c:sourceContent>
+  
+  
+  
+  <c:sourceContent type="html" title="static 关键字" id="sourceContent1">
+      <![CDATA[
+          <span style="display:block;margin-bottom:.3em;">
+          <b>static int i = 0;</b>
+          
+          </span>
+          
+          <span style="display:block;margin-bottom:.3em;">
+          和其它基本数据类型的初始值不同，静态变量的初始值是 0，并且在程序开始执行时初始化一次，在多次调用方法时保存这些数值。
+          <br />
+          通常将静态变量的声明放到 implementation 文件的开始处，这样所有的方法都能访问它们。
+          
+          </span>
+      ]]>
+  </c:sourceContent>
+  
+  
+  
+  <c:sourceContent type="html" title="self 关键字" id="sourceContent1">
+      <![CDATA[
+          <span style="display:block;margin-bottom:.3em;">
+            <b>相当于 this</b>
+          </span>
+      ]]>
+  </c:sourceContent>
+  
+  
+  
+  <c:sourceContent type="" title="在方法中分配和返回对象" id="sourceContent1">
+      <![CDATA[
+          -(Fraction *) add: (Fraction *) f {
+                Fraction *result = [[Fraction alloc] init];
+                
+                // do something...
+                [result reduce];
+                
+                return result ;
+          }
+      ]]>
+  </c:sourceContent>
+  
+  
+
+
+
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>继承</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  <span style="display:block;margin-bottom:.3em;">
+                    父类的非私有实例变量和方法都会成为新类定义的一部分，子类可以直接使用这些实例变量和方法。
+                  </span>
+                  
+                  <span style="display:block;margin-bottom:.3em;">
+                  在类的实现部分声明和合成的实例变量是私有的，子类不能够直接访问。<br />
+                  需要在类的接口文件中明确定义或合成取值方法，才能访问实例变量的值。
+                  </span>
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="html" title="" id="sourceContent1">
+          <![CDATA[
+              .
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>多态、动态类型、动态绑定</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  。。
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="html" title="" id="sourceContent1">
+          <![CDATA[
+              .
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  
+  
+  
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>变量和数据类型</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  。。
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="html" title="" id="sourceContent1">
+          <![CDATA[
+              .
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  
+  
+  
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>分类和协议</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  。。
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="html" title="" id="sourceContent1">
+          <![CDATA[
+              .
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>预处理程序</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  。。
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="html" title="" id="sourceContent1">
+          <![CDATA[
+              .
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>基本的 C 语言特性</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  。。
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="html" title="" id="sourceContent1">
+          <![CDATA[
+              .
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>Foundation 框架</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  。。
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="html" title="" id="sourceContent1">
+          <![CDATA[
+              .
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>数字、字符串、集合</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  。。
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="html" title="" id="sourceContent1">
+          <![CDATA[
+              .
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>使用文件</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  。。
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="html" title="" id="sourceContent1">
+          <![CDATA[
+              .
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>内存管理和自动引用计数</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  。。
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="html" title="" id="sourceContent1">
+          <![CDATA[
+              .
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>复制对象</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  。。
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="html" title="" id="sourceContent1">
+          <![CDATA[
+              .
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>归档</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  。。
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="html" title="" id="sourceContent1">
+          <![CDATA[
+              .
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>复制对象</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  。。
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="html" title="" id="sourceContent1">
+          <![CDATA[
+              .
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>Cocoa 和 Cocoa Touch</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  。。
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="html" title="" id="sourceContent1">
+          <![CDATA[
+              .
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>编写 iOS 应用程序</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  。。
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="html" title="" id="sourceContent1">
+          <![CDATA[
+              .
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+
 
 </c:component>
