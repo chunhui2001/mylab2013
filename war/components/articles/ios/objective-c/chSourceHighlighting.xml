@@ -495,14 +495,14 @@ int main (int argc, char *argv[]) {
   
   <c:sourceContent type="" title="在方法中分配和返回对象" id="sourceContent1">
       <![CDATA[
-          -(Fraction *) add: (Fraction *) f {
-                Fraction *result = [[Fraction alloc] init];
-                
-                // do something...
-                [result reduce];
-                
-                return result ;
-          }
+-(Fraction *) add: (Fraction *) f {
+    Fraction *result = [[Fraction alloc] init];
+    
+    // do something...
+    [result reduce];
+    
+    return result ;
+}
       ]]>
   </c:sourceContent>
   
@@ -537,13 +537,297 @@ int main (int argc, char *argv[]) {
           </c:desc1>
       </c:desc>
       
-      <c:sourceContent type="html" title="" id="sourceContent1">
+      <c:sourceContent type="" title="" id="sourceContent1">
           <![CDATA[
-              .
+#import <Foundation/Foundation.h>
+
+@interface ClassA : NSObject {
+    int x;
+}
+
+-(void) initVar;
+@end
+
+@implementation ClassA {
+    -(void) initVar {
+        x = 100;
+    }
+}
+@end
+
+
+@interface ClassB :ClassA {
+    -(void) initVar;
+}
+@end
+
+
+@implementation ClassB {
+    -(void) printVar {
+        NSLog(@"x is %i", x);
+    }
+}
+@end
           ]]>
       </c:sourceContent>
       
       
+      <c:sourceContent type="html" title="定义一个矩形" id="sourceContent1" style="background-color:white;margin-top:2em;"
+          titleStyle="background-color:white;color:black;padding-left:0;"
+          bodyStyle="display:none;">
+          <![CDATA[
+                        ]]>
+      </c:sourceContent>
+      
+      <c:sourceContent type="" title="Rectangle.h" id="sourceContent1">
+          <![CDATA[
+#import <Foundation/Foundation.h>
+
+@interface Rectangle : NSObject {
+    @property int width, height;
+
+    -(int) area;
+    -(int) perimeter;
+    
+    -(void) setWidth: (int) width : andHeight: (int) height;
+}
+@end
+          ]]>
+      </c:sourceContent>
+
+
+<c:sourceContent type="" title="Rectangle.m" id="sourceContent1">
+    <![CDATA[
+#import <Foundation/Foundation.h>
+
+#import "Rectangle.h"
+
+@implementation Rectangle
+
+@synthesize width, height;
+
+-(void) setWidth:(int) width: andHeight: (int) height {
+    self.width = width;
+    self.height = height;
+}
+
+-(int) area {
+    return width * height;
+}
+
+-(int) perimeter {
+    return (width + height) * 2;
+}
+
+@end
+    ]]>
+</c:sourceContent>
+
+
+<c:sourceContent type="" title="driver" id="sourceContent1">
+    <![CDATA[
+#import "Rectangle.h"
+
+int main (int argc, char *argv[]) {
+    @autoreleasepool {
+        Rectangle *rec = [[Rectangle alloc] init];
+
+        [rec setWidth : 5 andHeight: 6];
+
+        NSLog(@"Rectangle: w = %i, h = %i", rec.width, rec.height);
+        NSLog(@"Area = %i, Perimeter = %i", [rec area], [rec perimeter]);
+    }
+    
+    return 0;
+}
+
+    ]]>
+</c:sourceContent>
+
+
+
+<c:sourceContent type="html" title="定义一个正方形继承自矩形" id="sourceContent1" style="background-color:white;margin-top:2em;"
+    titleStyle="background-color:white;color:black;padding-left:0;"
+    bodyStyle="background-color:white;padding-left:0;">
+    <![CDATA[
+        
+        <span style="display:block;margin-bottom:.3em;">
+            将 Square 定义为 Rectangle 的子类，虽然正方形的四条边都相等，但在内部也可以用两个值表示，对于 Square 的使用者是隐藏的，如果需要可以随时重新定义 Square 类。
+        </span>
+    ]]>
+</c:sourceContent>
+
+<c:sourceContent type="" title="Square.h" id="sourceContent1">
+    <![CDATA[
+#import "Rectangle.h"
+
+
+@interface Square : Rectangle
+
+-(void) setSide : (int) s;
+-(int) side;
+
+@end
+        
+    ]]>
+</c:sourceContent>
+
+
+
+<c:sourceContent type="" title="Square.m" id="sourceContent1">
+    <![CDATA[
+#import "Square.h"
+
+
+@interface Square
+
+-(void) setSide : (int) s {
+    [self setWidth: s andHeight: s];
+}
+-(int) side {
+    // 此处用到的是一个取值方法，而不是实例变量
+    // 此处的 .width 方法是从基类继承而来的
+    // 子类不能调用基类的私有实例变量
+    
+    // 此处是执行取值方法，而不是获取实例变量
+    return self.width;
+}
+
+@end
+
+    ]]>
+</c:sourceContent>
+
+
+<c:sourceContent type="html" title="原点类" id="sourceContent1" style="background-color:white;margin-top:2em;"
+    titleStyle="background-color:white;color:black;padding-left:0;"
+    bodyStyle="background-color:white;padding-left:0;">
+    <![CDATA[
+        
+        <span style="display:block;margin-bottom:.3em;">
+        在开发绘图应用程序的过程中需要处理很多坐标，所以定义一个 XYPoint 类。
+        </span>
+    ]]>
+</c:sourceContent>
+
+<c:sourceContent type="" title="XYPoint.h" id="sourceContent1">
+    <![CDATA[
+#import <Foundation/Foundation.h>
+
+@interface XYPoint : NSObject
+
+@property int x, y;
+
+-(void) setX:(int) xVal andY :(int) yVal;
+
+@end
+
+    ]]>
+</c:sourceContent>
+
+
+<c:sourceContent type="" title="XYPoint.m" id="sourceContent1">
+    <![CDATA[
+#import <Foundation/Foundation.h>
+
+#import "XYPoint.h"
+
+@implementation XYPoint
+
+@synthesize x, y;
+
+-(void) setX:(int) xVal andY :(int) yVal {
+    x = xVal;
+    y = yVal;
+}
+
+@end
+
+    ]]>
+</c:sourceContent>
+
+<c:sourceContent type="" title="Rectangle.h" id="sourceContent1">
+    <![CDATA[
+#import <Foundation/Foundation.h>
+
+#import "XYPoint.h"
+
+@interface Rectangle : NSObject
+
+@property int width, height;
+
+-(XYPoint *) origin;
+-(void) setOrigin : (XYPoint *) point;
+-(void) setWidth : (int) w andHeight : (int) h;
+-(int) area;
+-(int) perimeter;
+
+@end
+
+    ]]>
+</c:sourceContent>
+
+
+<c:sourceContent type="" title="Rectangle.m" id="sourceContent1">
+    <![CDATA[
+#import <Foundation/Foundation.h>
+
+#import "Rectangle.h"
+
+@implementation Rectangle {
+    XYPoint *origin;
+}
+
+@synthesize width, height;
+
+-(XYPoint *) origin {
+    // 此处应该创建一个 origin 的副本，从而避免该实例变量在类的外部被不经意的修改
+    // ....
+    return origin;
+}
+
+-(void) setOrigin : (XYPoint *) point {
+    /*
+        之所以没有使用合成方法来生成 origin 的取值与赋值方法.
+        是因为默认情况下，合成的设置方法只是简单的复制对象指针，而不是对象本身.
+    */
+
+    // 如果 origin 为 0 时，创建和初始化一个新的 XYPoint 对象并存储在 origin 中
+    if (!origin) {
+        origin = [[XYPoint alloc] init];
+    }
+
+    origin.x = point.x;
+    origin.y = point.y;
+}
+
+-(void) setWidth : (int) w andHeight : (int) h {
+    width = w;
+    height = h;
+}
+
+-(int) area {
+    return w * h;
+}
+
+-(int) perimeter {
+    return (width + height) * 2;
+}
+
+@end
+
+    ]]>
+</c:sourceContent>
+
+
+
+<c:sourceContent type="" title="覆写父类的方法" id="sourceContent1">
+    <![CDATA[
+        
+        
+    ]]>
+</c:sourceContent>
+
       <c:comment style="margin-top:2em;">
           <c:comment1 style="color:black;">
               <![CDATA[
