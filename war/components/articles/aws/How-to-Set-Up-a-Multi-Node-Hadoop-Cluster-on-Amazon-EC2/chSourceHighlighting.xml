@@ -518,11 +518,448 @@
         </span>
         <img style="max-width:100%;" src="//c2.staticflickr.com/4/3909/14875817675_768300bd57_z.jpg" />
         <br />
+        <span style="display:block;margin-bottom:.5em;">
+          To fix this problem, we need to issue following commands <br />
+          <br />
+
+          <b>$ chmod 644 authorized_keys</b>
+          <br />
+          <br />
+          <b>Quick Tip: </b>
+          <br />
+          If you set the permissions to ‘chmod 644′, you get a file that can be written by you, but can only be read by the rest of the world.
+          <br />
+          <br />
+
+          <b>$ chmod 400 haddoec2cluster.pem</b>
+          <br />
+          <br />
+
+          <b>Quick Tip: </b>
+          <br />chmod 400 is a very restrictive setting giving only the file onwer read-only access. No write / execute capabilities for the owner, and no permissions what-so-ever for anyone else.
+          <br />
+          <br />
+
+          To use ssh-agent and ssh-add, follow the steps below:
+          <br />
+          <br />
+
+          1. At the Unix prompt, enter: <br />
+          <b>eval `ssh-agent`</b>
+          <br />
+          Note: Make sure you use the backquote ( ` ), located under the tilde ( ~ ), rather than the single quote ( ' ).
+          <br />
+          <br />
+          2. Enter the command: <br />
+          <b>ssh-add hadoopec2cluster.pem</b>
+          <br />
+          <br />
+          if you notice .pem file has “read-only” permission now and this time it works for us.
+         </span>
+                 <img style="max-width:100%;" src="//c2.staticflickr.com/6/5582/14884283275_28c8e80050_z.jpg" />
+        <br />
+        <span style="display:block;margin-bottom:.5em;">
+            Keep in mind ssh session will be lost upon shell exit and you have repeat ssh-agent and ssh-add commands.
+        </span>
     ]]>
 </c:sourceContent>
 
+    <c:sourceContent type="html" title="Remote SSH" id="sourceContent1" style="background-color:white;margin-top:2em;"
+        titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+        bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+        
+        <span style="display:block;margin-bottom:.5em;">
+         Let’s verify that we can connect into SNN and slave nodes from master
+         </span>
+                 <img style="max-width:100%;" src="//c2.staticflickr.com/6/5554/14883977732_76396619eb_b.jpg" />
+        <br />
+        <span style="display:block;margin-bottom:.5em;">
+           <b> $ ssh ubuntu@&lt;your-amazon-ec2-public URL&gt;</b>
+           <br />
+            On successful login the IP address on the shell will change.
+        </span>
+    ]]>
+    </c:sourceContent>
 
-<c:comment>
+    <c:sourceContent type="html" title=" Hadoop Cluster Setup" id="sourceContent1" style="background-color:white;margin-top:2em;"
+        titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+        bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+        
+        <span style="display:block;margin-bottom:.5em;">
+         This section will cover the hadoop cluster configuration.  We will have to modify
+         <br />
+         <br />
+         <ul style="padding-left:1.5em;list-style:disc;">
+            <li>
+                <b>hadoop-env.sh</b> <br />This file contains some environment variable settings used by Hadoop. You can use these to affect some aspects of Hadoop daemon behavior, such as where log files are stored, the maximum amount of heap used etc. The only variable you should need to change at this point is in this file is JAVA_HOME, which specifies the path to the Java 1.7.x installation used by Hadoop.
+            </li>
+            <li><b>core-site.xml</b> <br />key property fs.default.name – for namenode configuration for e.g hdfs://namenode/</li>
+            <li><b>hdfs-site.xml</b> <br />key property – dfs.replication – by default 3</li>
+            <li><b>mapred-site.xml</b>  <br />key property  mapred.job.tracker for jobtracker configuration for e.g jobtracker:8021</li>
+         </ul>
+          <br />
+          <br />
+          We will first start with master (NameNode) and then copy above xml changes to remaining 3 nodes (SNN and slaves)
+          <br />
+          <br />
+
+          Finally, in section 1.6.2 we will have to configure conf/masters and conf/slaves.
+          <br />
+          <br />
+
+          <ul style="padding-left:1.5em;list-style:disc;">
+              <li><b>masters</b> – defines on which machines Hadoop will start secondary NameNodes in our multi-node cluster.</li>
+              <li><b>slaves</b> –  defines the lists of hosts, one per line, where the Hadoop slave daemons (datanodes and tasktrackers) will run.</li>
+          </ul>
+          <br />
+          <br />
+          Lets go over one by one. Start with masters (namenode).
+          <br />
+          <br />
+
+          <b>hadoop-env.sh</b>
+          <br />
+
+          <b>$ vi $HADOOP_CONF/hadoop-env.sh</b>  and add JAVA_HOME shown below and save changes.
+         </span>
+         
+          <img style="max-width:100%;" src="//c2.staticflickr.com/6/5588/14883989642_39447c4c8d_b.jpg" />
+          <br />
+          
+          
+          <span style="display:block;margin-bottom:.5em;">
+           <b>core-site.xml</b>
+           <br />
+
+          This file contains configuration settings for Hadoop Core (for e.g I/O) that are common to HDFS and MapReduce Default file system configuration property – fs.default.name  goes here it could for e.g hdfs / s3 which will be used by clients.
+          <br />
+          <br />
+          <b>$ vi $HADOOP_CONF/core-site.xml</b>
+          <br />
+          <br />
+          We are going t0 add two properties
+          <br />
+          <br />
+          <ul style="padding-left:1.5em;list-style:disc;">
+            <li><b>fs.default.name</b>  <br />
+            will point to NameNode URL and port (usually 8020)</li>
+            <li><b>hadoop.tmp.dir</b>  <br />
+            A base for other temporary directories. Its important to note that every node needs hadoop tmp directory.  I am going to create a new directory “hdfstmp”  as below in all 4 nodes. Ideally you can write a shell script to do this for you, but for now going the manual way.</li>
+          </ul>
+          <br />
+          <br />
+          <b>
+          $ cd
+          <br />
+
+          $ mkdir hdfstmp
+          
+          </b>
+          
+          <br />
+          <br />
+          <b>Quick Tip:  </b>
+          <br />
+          Some of the important directories are <b>dfs.name.dir</b>, <b>dfs.data.dir</b> in <b>hdfs-site.xml</b>. 
+          <br />
+          The default value for the <b>dfs.name.dir</b> is <b>${hadoop.tmp.dir}/dfs/data</b> and <b>dfs.data.dir</b> is <b>${hadoop.tmp.dir}/dfs/data</b>. 
+          <br /> 
+          It is critical that you choose your directory location wisely in production environment.
+          <br />
+          <br />
+          &lt;configuration&gt; <br />
+          &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  &lt;property&gt; <br />
+          &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;    &lt;name&gt;fs.default.name&lt;/name&gt; <br />
+          &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;    &lt;value&gt;hdfs://ec2-54-209-221-112.compute-1.amazonaws.com:8020&lt;/value&gt; <br />
+          &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  &lt;/property&gt; <br /> <br />
+
+          &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  &lt;property&gt; <br />
+          &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;    &lt;name&gt;hadoop.tmp.dir&lt;/name&gt; <br />
+          &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;    &lt;value&gt;/home/ubuntu/hdfstmp&lt;/value&gt; <br />
+          &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  &lt;/property&gt; <br />
+          &lt;/configuration&gt;
+        </span>
+        
+        <br />
+        <br />
+        
+          <span style="display:block;margin-bottom:.5em;">
+           <b>hdfs-site.xml</b>
+           <br />
+          This file contains the configuration for HDFS daemons, the NameNode, SecondaryNameNode  and data nodes.
+          <br />
+          <br />
+
+          We are going to add 2 properties
+          <br />
+          <ul style="padding-left:1.5em;list-style:disc;">
+              <li><b>dfs.permissions.enabled</b>  <br />
+              with value false,  This means that any user, not just the “hdfs” user, can do anything they want to HDFS so do not do this in production unless you have a very good reason. if “true”, enable permission checking in HDFS. If “false”, permission checking is turned off, but all other behavior is unchanged. Switching from one parameter value to the other does not change the mode, owner or group of files or directories. Be very careful before you set this</li>
+              <li><b>dfs.replication</b><br />
+              Default block replication is 3. The actual number of replications can be specified when the file is created. The default is used if replication is not specified in create time. Since we have 2 slave nodes we will set this value to 2.</li>
+          </ul>
+           <br />
+          &lt;configuration&gt; <br />
+          &nbsp;&nbsp;&nbsp;&nbsp; &lt;property&gt; <br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;name&gt;dfs.replication&lt;/name&gt; <br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;value&gt;2&lt;/value&gt; <br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&lt;/property&gt; <br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&lt;property&gt; <br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;name&gt;dfs.permissions&lt;/name&gt; <br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&lt;value&gt;false&lt;/value&gt; <br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&lt;/property&gt; <br />
+          &lt;/configuration&gt;
+          
+        </span>
+        
+          <img style="max-width:100%;" src="//c2.staticflickr.com/4/3896/14697895827_868cf49e44_z.jpg" />
+          <br />
+          <br /><br />
+
+          <span style="display:block;margin-bottom:.5em;">
+           <b>mapred-site.xml</b>
+           <br />
+          This file contains the configuration settings for MapReduce daemons: the job tracker and the task-trackers.
+          <br />
+          The mapred.job.tracker parameter is a hostname (or IP address) and port pair on which the Job Tracker listens for RPC communication. 
+          This parameter specify the location of the Job Tracker for Task Trackers and MapReduce clients.
+          <br />
+          <br />
+          JobTracker will be running on master (NameNode)
+          <br />
+
+          &lt;configuration&gt;<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&lt;property&gt;<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;name&gt;mapred.job.tracker&lt;/name&gt;<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;value&gt;hdfs://ec2-54-209-221-112.compute-1.amazonaws.com:8021&lt;/value&gt;<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&lt;/property&gt;<br />
+          &lt;/configuration&gt;<br />
+          
+        </span>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Move configuration files to Slaves" id="sourceContent1" style="background-color:white;margin-top:2em;"
+    titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+    bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+        <span style="display:block;margin-bottom:.5em;">
+        Now, we are done with hadoop xml files configuration master, lets copy the files to remaining 3 nodes using secure copy (scp)
+        <br />
+        <br />
+        start with SNN, if you are starting a new session, follow ssh-add as per  <b>(Setup Password-less SSH on Servers)</b>
+        <br />
+        <br />
+        from master’s unix shell issue below command
+        <br />
+        <br />
+        $ scp hadoop-env.sh core-site.xml hdfs-site.xml mapred-site.xml ubuntu@ec2-54-209-221-47.compute-1.amazonaws.com:/home/ubuntu/hadoop/conf
+        <br />
+        <br />
+        repeat this for slave nodes
+        </span>
+        <img style="max-width:100%;" src="//c2.staticflickr.com/4/3877/14884160022_e158d1959c_z.jpg" />
+        <br />
+        
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Configure Master and Slaves" id="sourceContent1" style="background-color:white;margin-top:2em;"
+    titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+    bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+        <span style="display:block;margin-bottom:.5em;">
+            Every hadoop distribution comes with master and slaves files. 
+            By default it contains one entry for localhost,
+            we have to modify these 2 files on both “masters” (HadoopNameNode) and “slaves” (HadoopSlave1 and HadoopSlave2) machines – we have a dedicated machine for HadoopSecondaryNamdeNode.
+        </span>
+        <img style="max-width:100%;" src="//c2.staticflickr.com/4/3925/14884514275_f87f516269_z.jpg" />
+        <br />
+        <img style="max-width:100%;" src="//c2.staticflickr.com/6/5560/14881480791_a83620ca34.jpg" />
+        
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Modify masters file on Master machine" id="sourceContent1" style="background-color:white;margin-top:2em;"
+    titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+    bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+        <span style="display:block;margin-bottom:.5em;">
+            conf/masters file defines on which machines Hadoop will start Secondary NameNodes in our multi-node cluster. In our case, there will be two machines HadoopNameNode and HadoopSecondaryNameNode
+            <br />
+            <br />
+            <b>Hadoop HDFS user guide :</b>
+            <br />
+           <blockquote> “The secondary NameNode merges the fsimage and the edits log files periodically and keeps edits log size within a limit. It is usually run on a different machine than the primary NameNode since its memory requirements are on the same order as the primary NameNode. The secondary NameNode is started by “bin/start-dfs.sh“ on the nodes specified in “conf/masters“ file.“</blockquote>
+            <br />
+            $ <b>vi $HADOOP_CONF/masters</b> and provide an entry for the hostename where you want to run SecondaryNameNode daemon. In our case HadoopNameNode and HadoopSecondaryNameNode
+        </span>
+        <img style="max-width:100%;" src="//c2.staticflickr.com/4/3917/14697865530_7f346fa6ea.jpg" />
+        <br />
+        
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="MODIFY THE SLAVES FILE ON MASTER MACHINE" id="sourceContent1" style="background-color:white;margin-top:2em;"
+    titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+    bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+        <span style="display:block;margin-bottom:.5em;">
+            The slaves file is used for starting DataNodes and TaskTrackers
+            <br />
+            <br />
+            <b>$ vi $HADOOP_CONF/slaves</b>
+        </span>
+        <img style="max-width:100%;" src="//c2.staticflickr.com/4/3898/14884550735_b7ce17127c_b.jpg" />
+        <br />
+        
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Copy masters and slaves to SecondaryNameNode" id="sourceContent1" style="background-color:white;margin-top:2em;"
+    titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+    bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+        <span style="display:block;margin-bottom:.5em;">
+            Since SecondayNameNode configuration will be same as NameNode, we need to copy master and slaves to HadoopSecondaryNameNode.
+        </span>
+        <img style="max-width:100%;" src="//c2.staticflickr.com/4/3906/14904437303_006e8bd482_b.jpg" />
+        <br />
+        
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="CONFIGURE MASTER AND SLAVES ON “SLAVES” NODE" id="sourceContent1" style="background-color:white;margin-top:2em;"
+    titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+    bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+        <span style="display:block;margin-bottom:.5em;">
+            Since we are configuring slaves (HadoopSlave1 & HadoopSlave2) , masters file on slave machine is going to be empty
+            <br />
+            <br />
+            <b>$ vi $HADOOP_CONF/masters</b>
+        </span>
+        <img style="max-width:100%;" src="//c2.staticflickr.com/6/5594/14881539651_a7886295cf_z.jpg" />
+        <br />
+        <span style="display:block;margin-bottom:.5em;">
+            Next, update the ‘slaves’ file on Slave server (HadoopSlave1) with the IP address of the slave node. Notice that the ‘slaves’ file at Slave node contains only its own IP address and not of any other Data Node in the cluster.
+            <br />
+            <br />
+            <b>$ vi $HADOOP_CONF/slaves</b>
+        </span>
+        <img style="max-width:100%;" src="//c2.staticflickr.com/6/5569/14697946619_ab517cd357.jpg" />
+        <br />
+        <span>Similarly update masters and slaves for HadoopSlave2</span>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Hadoop Daemon Startup" id="sourceContent1" style="background-color:white;margin-top:2em;"
+    titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+    bodyStyle="background-color:white;padding:0;">
+      <![CDATA[
+        <span style="display:block;margin-bottom:.5em;">
+            The first step to starting up your Hadoop installation is formatting the Hadoop filesystem which runs on top of your , which is implemented on top of the local filesystems of your cluster. You need to do this the first time you set up a Hadoop installation. Do not format a running Hadoop filesystem, this will cause all your data to be erased.
+            <br />
+            <br />
+            To format the namenode
+            <br />
+            <br />
+            <b>$ hadoop namenode format</b>
+        </span>
+        <img style="max-width:100%;" src="//c2.staticflickr.com/6/5594/14697928820_4fc9ccaac4_c.jpg" />
+        <br />
+        <span style="display:block;margin-bottom:.5em;">
+          Lets start all hadoop daemons from HadoopNameNode
+          <br />
+            <br />
+          $ cd $HADOOP_CONF
+          <br />
+            <br />
+          $ start-all.sh
+          This will start
+          <br />
+            <br />
+          NameNode,JobTracker and SecondaryNameNode daemons on HadoopNameNode
+        </span>
+        <img style="max-width:100%;" src="//c2.staticflickr.com/6/5593/14697937330_3230d93cc0_b.jpg" />
+        <br />
+        
+        <span style="display:block;margin-bottom:.5em;">
+        <b>SecondaryNameNode daemons on HadoopSecondaryNameNode</b>
+        </span>
+        <img style="max-width:100%;border:solid 2px red;" src="//c2.staticflickr.com/4/3915/14881581391_bc27b89017_b.jpg" />
+        <br />
+        
+        <span style="display:block;margin-bottom:.5em;">
+        <b>and DataNode and TaskTracker daemons on slave nodes HadoopSlave1 and HadoopSlave2</b>
+        </span>
+        <img style="max-width:100%;border:solid 2px red;" src="//c2.staticflickr.com/4/3920/14698092547_9c6c6278d8_b.jpg" />
+        <br />
+        <img style="max-width:100%;border:solid 2px red;" src="//c2.staticflickr.com/4/3902/14882176764_8ba0bb2edc_b.jpg" />
+        <br />
+        
+        <span style="display:block;margin-bottom:.5em;">
+        <b>We can check the namenode status from http://ec2-54-209-221-112.compute-1.amazonaws.com:50070/dfshealth.jsp</b>
+        </span>
+        <img style="max-width:100%;border:solid 2px red;" src="//c2.staticflickr.com/4/3869/14698030248_7db5f8d0b8_b.jpg" />
+        <br />
+        
+        <span style="display:block;margin-bottom:.5em;">
+        Check Jobtracker status : http://ec2-54-209-221-112.compute-1.amazonaws.com:50030/jobtracker.jsp
+        </span>
+        <img style="max-width:100%;border:solid 2px red;" src="//c2.staticflickr.com/4/3888/14882191944_e9542f6bf6_b.jpg" />
+        <br />
+        
+        <span style="display:block;margin-bottom:.5em;">
+        Slave Node Status for HadoopSlave1 : http://ec2-54-209-223-7.compute-1.amazonaws.com:50060/tasktracker.jsp
+        </span>
+        <img style="max-width:100%;border:solid 2px red;" src="//c2.staticflickr.com/4/3910/14698004609_e43f02ae6d_b.jpg" />
+        <br />
+        
+        <span style="display:block;margin-bottom:.5em;">
+        Slave Node Status for HadoopSlave2 : http://ec2-54-209-219-2.compute-1.amazonaws.com:50060/tasktracker.jsp
+        </span>
+        <img style="max-width:100%;border:solid 2px red;" src="//c2.staticflickr.com/4/3913/14697979930_8e62ac0b4d_b.jpg" />
+        <br />
+        <br />
+        <br />
+        
+        
+        <span style="display:block;margin-bottom:.5em;font-size:2em;color:rgb(175, 0, 190);">
+        To quickly verify our setup, run the hadoop pi example
+        </span>
+        <span style="display:block;margin-bottom:.5em;">
+        <br />
+        <br />
+        <b>ubuntu@ec2-54-209-221-112:~/hadoop$ hadoop jar hadoop-examples-1.2.1.jar pi 10 1000000</b>
+        <br />
+        <br />
+        You can check the job tracker status page to look at complete job status
+        </span>
+        <img style="max-width:100%;border:solid 2px red;" src="//c2.staticflickr.com/4/3841/14904537343_f22bd9eba1_b.jpg" />
+        <br />
+        
+        <span style="display:block;margin-bottom:.5em;">
+        Drill down into completed job and you can see more details on Map Reduce tasks.
+
+        </span>
+        <img style="max-width:100%;border:solid 2px red;" src="//c2.staticflickr.com/6/5571/14882224304_01c86ca7c1_b.jpg" />
+        <br />
+        
+        <span style="display:block;margin-bottom:.5em;">
+        At last do not forget to terminate your amazon ec2 instances or you will be continued to get charged
+        </span>
+        <img style="max-width:100%;border:solid 2px red;" src="//c2.staticflickr.com/6/5560/14882230694_1f1582f623_b.jpg" />
+        <br />
+        <span>That’s it for this article, hope you find it useful
+        <br />
+        Happy Hadoop Year!</span>
+    ]]>
+    </c:sourceContent>
+    
+    <c:comment>
     <c:comment1>
         <![CDATA[]]>
     </c:comment1>
