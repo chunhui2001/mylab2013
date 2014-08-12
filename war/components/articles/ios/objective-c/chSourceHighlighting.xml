@@ -821,12 +821,106 @@ int main (int argc, char *argv[]) {
 
 
 
-<c:sourceContent type="" title="覆写父类的方法" id="sourceContent1">
+<c:sourceContent type="html" title="覆写父类的方法" id="sourceContent1" style="margin-top:3em;"
+                             titleStyle="background-color:white;color:black;padding-left:0;font-size:1.3em;"
+                             bodyStyle="background-color:white;padding-left:0;padding-right:0;">
     <![CDATA[
-        
+        <span>
+            不能通过继承删除或减少方法，但可以利用覆写来改变继承方法的定义
+        </span>
         
     ]]>
 </c:sourceContent>
+
+
+
+<c:sourceContent type="" title="ClassA.h" id="sourceContent1">
+    <![CDATA[
+#import <Foundation/Foundation.h>
+
+@interface ClassA : NSObject {
+    int x;      // 非私有实例变量
+}
+
+-(void) initVar ;
+
+@end
+
+    ]]>
+</c:sourceContent>
+
+<c:sourceContent type="" title="ClassA.m" id="sourceContent1">
+    <![CDATA[
+#import <Foundation/Foundation.h>
+
+#import "ClassA.h"
+
+@implementation ClassA
+
+-(void) initVar {
+    x = 100;
+}
+
+@end
+
+    ]]>
+</c:sourceContent>
+
+<c:sourceContent type="" title="ClassB.h" id="sourceContent1">
+    <![CDATA[
+#import <Foundation/Foundation.h>
+
+#import "ClassA.h"
+
+@interface ClassB : ClassA
+
+-(void) initVar;
+-(void) printVal;       // 子类覆盖父类同名、同参且同返回值的方法
+
+@end
+    ]]>
+</c:sourceContent>
+
+
+<c:sourceContent type="" title="ClassB.M" id="sourceContent1">
+    <![CDATA[
+#import <Foundation/Foundation.h>
+
+#import "ClassB.h"
+
+@implementation ClassB
+
+-(void) initVar {
+    x = 300;
+}
+
+-(void) printVal {
+    NSLog(@"x is %i", x);
+}
+
+@end
+    ]]>
+</c:sourceContent>
+
+
+
+
+<c:sourceContent type="html" title="抽象类" id="sourceContent1" style="margin-top:3em;"
+    titleStyle="background-color:white;color:black;padding-left:0;font-size:1.3em;"
+    bodyStyle="background-color:white;padding-left:0;padding-right:0;">
+    <![CDATA[
+        <span style="display:block;margin-bottom:.3em;">
+        创建抽象类是为了更容易的创建子类，在抽象类中定义方法和实例变量，但不希望任何人从该类创建实例。
+        </span>
+        
+        <span style="display:block;margin-bottom:.3em;">
+        例如: 在 Foundation 中，NSNumber 是为了将数字作为对象处理而创建的抽象类。<br />
+        
+        </span>
+        
+    ]]>
+</c:sourceContent>
+
 
       <c:comment style="margin-top:2em;">
           <c:comment1 style="color:black;">
@@ -845,16 +939,79 @@ int main (int argc, char *argv[]) {
       <c:desc>
           <c:desc1>
               <![CDATA[
-                  。。
+                  <span style="display:block;margin-bottom:.3em;"><b>多态</b> 能使来自不同类的对象定义相同名称的方法。</span>
+                  
+                  <span style="display:block;margin-bottom:.3em;"><b>动态类型</b> 能使程序直到执行时才确定对象所属的类。</span>
+                  
+                  <span style="display:block;margin-bottom:.3em;"><b>动态绑定</b> 能使程序直到执行时才确定实际要调用的方法。</span>
               ]]>
           </c:desc1>
       </c:desc>
       
-      <c:sourceContent type="html" title="" id="sourceContent1">
+      
+      <c:sourceContent type="" title="Complex.h" id="sourceContent1">
           <![CDATA[
-              .
+#import <Foundation/Foundation.h>
+
+@interface Complex : NSObject
+
+@property double real, imaginary;
+
+-(void) print;
+-(void) setReal : (double) a andImaginary: (double) b ;
+-(Complex *) add: (Complex *) f;
+
+@end
+
           ]]>
       </c:sourceContent>
+      
+      <c:sourceContent type="" title="Complex.m" id="sourceContent1">
+          <![CDATA[
+#import <Foundation/Foundation.h>
+
+#import "Complex.h"
+
+@implementation Complex
+
+@synthesize real, imaginary;
+
+-(void) print {
+    NSLog(@"%g + %g", real, imaginary);
+}
+
+-(void) setReal : (double) a andImaginary: (double) b {
+    real = a;
+    imaginary = b;
+}
+
+-(Complex *) add: (Complex *) f {
+    Complex *result = [[Complex alloc] init];
+
+    result.real = real + f.real;
+    result.imaginary = imaginary + f.imaginary;
+
+    return result;
+}
+
+@end
+
+          ]]>
+      </c:sourceContent>
+
+
+
+<c:sourceContent type="html" title="动态绑定和 id 类型" id="sourceContent1" style="margin-top:3em;"
+    titleStyle="background-color:white;color:black;padding-left:0;font-size:1.3em;"
+    bodyStyle="background-color:white;padding-left:0;padding-right:0;">
+    <![CDATA[
+        <span style="display:block;margin-bottom:.3em;">
+        。。
+        </span>
+        
+    ]]>
+</c:sourceContent>
+
       
       
       <c:comment style="margin-top:2em;">
