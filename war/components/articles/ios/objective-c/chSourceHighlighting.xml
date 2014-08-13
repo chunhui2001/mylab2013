@@ -1006,9 +1006,119 @@ int main (int argc, char *argv[]) {
     bodyStyle="background-color:white;padding-left:0;padding-right:0;">
     <![CDATA[
         <span style="display:block;margin-bottom:.3em;">
-        。。
+        id 类型可以用来存储任何类的对象，声明为 id 类型的变量前面不可以加 * 号。
         </span>
         
+        
+        <span style="display:block;margin-bottom:.3em;">
+        编译器将解释 id 类型的动作推迟到程序运行时，也就是说系统在运行时获取 id 对象的具体类型。
+        </span>
+        
+        <br />
+        <span style="display:block;margin-bottom:.3em;">
+        声明一个 id 类型的对象： <br />
+        <b style="color:red;">
+        id obj = [[Fraction alloc] init];
+        <br />
+        [obj print];
+        </b>
+        </span>
+        <br />
+        <span style="display:block;margin-bottom:.3em;">
+        
+        <b>静态类型</b> 将一个变量定义为特定类的对象时，使用的是 "静态类型". 静态类型指的是在定义变量时显示指定类名。使用静态类型可以提高程序可读性。
+        </span>
+        
+    ]]>
+</c:sourceContent>
+
+<c:sourceContent type="html" title="NSObject 提供的处理动态类型的方法" id="sourceContent1">
+    <![CDATA[
+        <img style="max-width:100%;" src="//c2.staticflickr.com/4/3890/14719824349_a1a67f014e_c.jpg" />
+        
+        <br />
+        <br />
+        <span style="display:block;margin-bottom:.3em;">
+            <b>根据类名创建该类的实例</b>
+            <br />
+            <b>Fraction *fraction = [Fraction class];</b>
+        </span>
+        
+        <br />
+        <span style="display:block;margin-bottom:.3em;">
+        <b>根据根据变量命取得该变量所属的类</b>
+        <br />
+        <b>[fraction class];</b>
+        </span>
+        
+        <br />
+        <span style="display:block;margin-bottom:.3em;">
+        <b>比较两个变量是不是同一个类</b>
+        <br />
+        <b>if ([obj1 class] == [obj2 class]) ...</b>
+        </span>
+        
+        
+        <br />
+        <span style="display:block;margin-bottom:.3em;">
+        <b>查看 myFraction 是不是 Fraction 类的实例</b>
+        <br />
+        <b>[myFraction isMemberOfClass : [Fraction class]]</b>
+        </span>
+        
+        
+        <br />
+        <span style="display:block;margin-bottom:.3em;">
+        <b>为名为 alloc 的方法生成一个 SEL 类型的值</b>
+        <br />
+        <b>@selector (alloc)</b>
+        </span>
+        
+        
+        <br />
+        <span style="display:block;margin-bottom:.3em;">
+        <b>为名为 setTo:over: 的方法生成一个 selector</b>
+        <br />
+        <b>@selector (setTo:over:)</b>
+        </span>
+        
+        
+        <br />
+        <span style="display:block;margin-bottom:.3em;">
+        <b>查看 Fraction 类是否能接收 setTo:over: 消息 (消息指的就是方法)</b>
+        <br />
+        <b>[Fraction instancesRespondToSelector : @selector (setTo:over:)]</b>
+        </span>
+        
+        
+        <br />
+        <br />
+        <span style="display:block;margin-bottom:.3em;">
+        一个例子：<br />
+        (SEL 变量 action 所指定的方法被发送到存储在 graphicObject 中的任何图形对象。)
+        </span>
+        
+        <br />
+        <span style="display:block;margin-bottom:.3em;">
+        SEL action; <br />
+        id graphicObject; <br />
+        
+        <br />
+        action = @select (drwa); <br />
+        <br />
+        
+        在程序执行过程中 action 所指向的方法可能会被改变，所以在执行该方法之前需确定对象是否支持该方法<br />
+        performSelector 用于向对象发送消息
+        
+        <br />
+        <br />
+        if ([graphicObject respondsToSelector : action] == YES) <br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;    [graphicObject performSelector : action]; <br/>
+        else <br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;    // 错误处理代码 <br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;    。。。。 <br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;    // 也可以使用 forwardInvocation: 方法将消息转发给其它对象 <br/>
+        </span>
     ]]>
 </c:sourceContent>
 
