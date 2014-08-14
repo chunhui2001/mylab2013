@@ -1122,6 +1122,26 @@ int main (int argc, char *argv[]) {
     ]]>
 </c:sourceContent>
 
+
+<c:sourceContent type="" title="@try 异常处理" id="sourceContent1" style="margin-top:3em;"
+    titleStyle="background-color:white;color:black;padding-left:0;font-size:1.3em;"
+    bodyStyle="background-color:white;padding-left:0;padding-right:0;">
+    <![CDATA[
+@try {
+
+
+
+
+
+} @catch (NDException *exception) {
+
+    NSLog(@"Caught %@%@", [exception name], [exception reason]);
+
+
+}
+    ]]>
+</c:sourceContent>
+
       
       
       <c:comment style="margin-top:2em;">
@@ -1143,16 +1163,98 @@ int main (int argc, char *argv[]) {
       <c:desc>
           <c:desc1>
               <![CDATA[
-                  。。
+                  
               ]]>
           </c:desc1>
       </c:desc>
       
-      <c:sourceContent type="html" title="" id="sourceContent1">
+      <c:sourceContent type="" title="" id="sourceContent1">
           <![CDATA[
-              .
+// 创建对象并初始化
+Fraction *fraction = [[Fraction alloc] init];
+
+// 赋值
+[fraction setTo: 1 over: 3];
+
+
+-(id) init {
+    // 确保继承的实例变量被初始化
+    self = [super init];
+    
+    // 初始化过程将改变对象在内存中的位置，所以必须将父类 init 方法的执行结果赋值给 self
+    // 如果父类的初始化过程成功，返回值将是非空的
+    if(self) {
+        //..
+    }
+
+    return self;
+}
+
+
+
+@interface Printer {
+    @private
+        int pageCount;
+        int tonerLevel;
+    
+    @protected
+        // ..
+        
+    // 将实例变量声明为 public 不是一个良好的编程习惯，因为这违背了数据封装的思想
+    // (即一个类需要隐藏它的实例变量)
+    @public
+        // ..
+}
+
+
+// 合成属性 window 的取值方法和设置方法，并将属性与实例变量 _window 关联起来
+@synthesize window = _window;
+
+
+// 在实现部分显示声明的实例变量 (或者使用 @synthesize 指令隐式声明的实例变量) 是私有的
+// 这意味着不能在子类中通过名字直接获取到实例变量，但是可以使用继承的存取方法获取实例变量的值
+
+
+// 小写 g 作为全局变量的首字母
+// 用于初始化的方法以 init 开头
+
+
+
+// 静态变量
+// 静态变量声明在所有方法之外
+static int gCounter;
+
+@implementation Fraction
+
++(Fraction *) allocF {
+    // 可以省略 extern 声明
+    extern int gCounter;
+    ++gCounter;
+
+    return [Fraction alloc];
+}
+
++(int) count {
+    // 可以省略 extern 声明
+    extern int gCounter;
+
+    return gCounter;
+}
+
+@end
+
+
+
+
+// 枚举类型
+enum flag { false = 0, true = 1 };
+
+enum flag endOfData, matchFound;
           ]]>
       </c:sourceContent>
+      
+      
+     
       
       
       <c:comment style="margin-top:2em;">
@@ -1164,8 +1266,29 @@ int main (int argc, char *argv[]) {
   </c:entry>
   
   
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>typedef</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="" title="typedef" id="sourceContent1">
+          <![CDATA[
+              
+          ]]>
+      </c:sourceContent>
   
-  
+  <c:comment style="margin-top:2em;">
+      <c:comment1 style="color:black;">
+          <![CDATA[
+          ]]>
+      </c:comment1>
+  </c:comment>
+  </c:entry>
   
   
   
