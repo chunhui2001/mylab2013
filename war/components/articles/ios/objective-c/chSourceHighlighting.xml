@@ -1401,14 +1401,150 @@ enum flag endOfData, matchFound;
       
       
       
-      <c:sourceContent type="html" title="协议和代理" id="sourceContent1" style="background-color:white;"
-                       titleStyle="background-color:white;color:black;padding-left:0;font-size:2em;margin-top:2em;">
+      <c:sourceContent type="html" title="协议" id="sourceContent1" style="background-color:white;"
+                       titleStyle="background-color:white;color:black;padding-left:0;font-size:2em;margin-top:2em;"
+                       bodyStyle="padding-left:0;padding-right:0;">
           <![CDATA[
-              <span style="display:block;margin-bottom:.3em;font-size:2em;">...</span>
+              <span style="display:block;margin-bottom:.3em;">协议中列出的方法没有具体实现，它用指定的名称定义了一组多少有点相关的方法。</span>
+              <span style="display:block;margin-bottom:.3em;">协议列出了一组方法，有些是可选实现，有些是必须实现。</span>
+              <br />
+              <span style="display:block;margin-bottom:.3em;"><b>下面是 Foundation 头文件 NSObject.h 中定义 NSCopying 协议的方式: </b></span>
+              <span style="display:block;margin-bottom:.3em;">
+                <b style="color:green;">@protocol NSCopying <br />
+                
+                -(id) copyWithZone : (NSZone *) zone; <br />
+                
+                @end
+                </b>
+              </span>
+              <br />
+              <span style="display:block;margin-bottom:.3em;"><b>下面是 AddressBook 类实现了 NSObject 中的 NSCopying 协议, 可以在尖括号中加 ， (逗号)</b></span>
+              <span style="display:block;margin-bottom:.3em;">
+              <b style="color:green;">@interface AddressBook :NSObject &lt;NSCopying&gt;<br /><br />
+              
+              // 不必在接口部分声明协议中的方法 <br />
+              // 但是需要在实现部分中定义协议中的方法 <br /><br />
+              
+              
+              
+              @end
+              </b>
+              </span>
+              <br />
+              <span style="display:block;margin-bottom:.3em;">
+              <b>如果希望子类实现一些父类的方法，则可以为父类定义一个协议，不必在父类中实现这些方法，但是可以指定一些方法，让子类去实现。<br />
+              例如下面的 Drawing 协议：</b>
+              <br />
+              <b>(协议不引用任何类，它是无类的)</b>
+                </span>
+                <span style="display:block;margin-bottom:.3em;">
+                <b style="color:green;">
+                @protocol Drawing<br /><br />
+                
+                -(void) paint;<br />
+                -(void) erase;<br /><br />
+                
+                @optional<br />
+                -(void) outline;<br /><br />
+                
+                @end</b>
+                </span>
+                
+                <span style="display:block;margin-bottom:.3em;">任何类都可以遵守 Drawing 协议，可以使用 conformsToProtocol : 方法检查一个对象是否遵守某项协议：
+                <br />用 @protocol 指令获取一个 Protocol 对象</span>
+                <br />
+                <span style="display:block;margin-bottom:.3em;">
+                <b style="color:green;">
+                id currentObject;
+                <br />
+                <br />
+                if ([currentObject conformsToProtocol: @protocol (Drawing)] == YES) {<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;    // 给 currentObject 发送 paint、 erase 或  outline 消息<br />
+                
+                <br />
+                
+                &nbsp;&nbsp;&nbsp;&nbsp;// 测试可选的 outline 方法 <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;if ([currentObject respondsToSelector : @selector (outline)] == YES) {<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[currentObject outline];<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;}<br />
+                }
+                </b>
+                </span>
+                <br />
+                <br />
+                <span style="display:block;margin-bottom:.3em;">
+                    定义一个遵守 Drawing 协议的 id 类型：
+                </span>
+                <span style="display:block;margin-bottom:.3em;">
+                <b style="color:green;">id &lt;Drawing&gt; currentObject;</b>
+                </span>
+                <br />
+                <br />
+                <span style="display:block;margin-bottom:.3em;">
+                定义一个协议的同时，扩展现有的协议
+                </span>
+                <span style="display:block;margin-bottom:.3em;">
+                <b style="color:green;">@protocol Drawing3D <Drawing></b>
+                </span>
+
           ]]>
       </c:sourceContent>
       
       
+      
+      
+      <c:sourceContent type="html" title="代理" id="sourceContent1" style="background-color:white;"
+          titleStyle="background-color:white;color:black;padding-left:0;font-size:2em;margin-top:2em;"
+          bodyStyle="padding-left:0;padding-right:0;">
+          <![CDATA[
+              <span style="display:block;margin-bottom:.3em;">
+                定义了协议的类可以看做是将协议定义的方法<b>代理</b>给了实现它们的类。这样类的定义更为通用，因为具体的动作由代理类来承担。<br />
+                父类可以对子类这样说: 你做我的<b>代理</b>人吧，我有一些任务你帮我去做。
+              </span>
+              <br />
+              <span style="display:block;margin-bottom:.3em;">
+              Cocoa 和 iOS 非常依赖代理这个概念，例如当你在 iPhone 上建立一个表格时，会用到 UITableView 类: <br/>
+              <br />
+              1. 这个类不知道表格的标题是什么。 <br/>
+              2. 不知道需要包含多少个区块或多少行。 <br/>
+              3. 不知道单元格的内容是什么。
+              </span>
+              <br />
+              
+              <span style="display:block;margin-bottom:.3em;">
+              UITable 类定义了一个 UITableViewDataSource 协议，用于帮助 UITableView 类填充以上信息。
+              </span>
+              
+          ]]>
+      </c:sourceContent>
+      
+      
+      
+      <c:sourceContent type="html" title="合成 (composite) 对象" id="sourceContent1" style="background-color:white;"
+          titleStyle="background-color:white;color:black;padding-left:0;font-size:2em;margin-top:2em;"
+          bodyStyle="padding-left:0;padding-right:0;">
+          <![CDATA[
+              <b style="color:green;">
+              @interface Square : NSObject
+              { <br />
+              &nbsp;&nbsp;&nbsp;&nbsp;// 需要在实现部分覆写 init 方法或添加 initWithSide: 方法为包含的对象分配内存空间 <br />
+              &nbsp;&nbsp;&nbsp;&nbsp;// 一旦包含的对象创建成功，就可以在实现部分使用 [rect some_methods] <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;Rectangle * rect; <br />
+              } <br /> <br />
+              
+              -(int) setSide : (int) s; <br />
+              -(int) side ; <br />
+              -(int) area ; <br />
+              -(int) perimeter; <br /> <br />
+              
+              @end
+              </b>
+              
+          ]]>
+      </c:sourceContent>
+
+
+
       <c:comment style="margin-top:2em;">
           <c:comment1 style="color:black;">
               <![CDATA[
@@ -1421,19 +1557,36 @@ enum flag endOfData, matchFound;
   
   
   
-  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;"
+      >
       <c:title>预处理程序</c:title>
       <c:desc>
           <c:desc1>
               <![CDATA[
-                  。。
+                  预处理程序使用井号作为一行的第一个字符，是 Object-C 编译过程的一部分
               ]]>
           </c:desc1>
       </c:desc>
       
-      <c:sourceContent type="html" title="" id="sourceContent1">
+      <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:white;"
+          bodyStyle="padding-left:0;padding-right:0;background-color:white;">
           <![CDATA[
-              .
+              <b>#define FALSE 0</b> <b style="color:red;">\</b> (如果有多行需要用 <b style="color:red;">\</b> 换行)<br />
+              在程序编译阶段，#define 预定义名称右边的所有字符都会被预处理程序自动替换到程序中。
+              <br />
+              <br />
+              <b>
+              #define IPAD 1
+              <br />
+              <br />
+              #ifdef IPAD<br />
+              # define kImageFile @"barnHD.png"<br />
+              #else<br />
+              # define kImageFile @"barn.png"<br />
+              #endif<br />
+              </b>
+              <br />
+              <b>#import &lt;Foundation/Foundation.h&gt;</b>
           ]]>
       </c:sourceContent>
       
@@ -1455,14 +1608,72 @@ enum flag endOfData, matchFound;
       <c:desc>
           <c:desc1>
               <![CDATA[
-                  。。
+                  
               ]]>
           </c:desc1>
       </c:desc>
       
-      <c:sourceContent type="html" title="" id="sourceContent1">
+      <c:sourceContent type="html" title="" id="sourceContent1"
+          bodyStyle="background-color:white;padding-left:0;padding-right:0;">
           <![CDATA[
-              .
+              
+              <span style="display:block;margin-bottom:.3em;">
+              对于大型数组数据可以使用 C 语言内置的数据结构而不是 NSArray
+              </span>
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:sourceContent type="html" title="" id="sourceContent1"
+          bodyStyle="background-color:white;padding-left:0;padding-right:0;">
+          <![CDATA[
+              
+              <span style="display:block;margin-bottom:.3em;font-size:2em;">
+              指针
+              </span>
+              <br />
+              <span style="display:block;margin-bottom:.3em;">
+              <b>int i = 9; <br />
+              int *iPtr = &i;</b>
+              </span>
+              
+              
+              <br />
+              <span style="display:block;margin-bottom:.3em;">
+              <b>
+              #import <Foundation/Foundation.h>
+              <br />
+              <br />
+              
+              int main(int argc, char *argv[]) { <br />
+              &nbsp;&nbsp;&nbsp;&nbsp;    @autoreleasepool { <br />
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        int count = 10, x; <br />
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        int *intPtr = &count; <br />
+                      
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        intPtr = &count;<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        x = *intPtr;<br />
+                      
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        NSLog(@"count = %i, x = %i", count, x);<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;   } <br />
+              }<br />
+              </b>
+              </span>
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:sourceContent type="html" title="" id="sourceContent1"
+          bodyStyle="background-color:white;padding-left:0;padding-right:0;">
+          <![CDATA[
+              
+              <span style="display:block;margin-bottom:.3em;font-size:2em;">
+              函数指针
+              </span>
+              <br />
+              <span style="display:block;margin-bottom:.3em;">
+              <b>int (*fnPtr) (void); </b>
+              </span>
+              
           ]]>
       </c:sourceContent>
       
