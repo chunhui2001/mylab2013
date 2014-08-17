@@ -542,7 +542,7 @@ int main (int argc, char *argv[]) {
 #import <Foundation/Foundation.h>
 
 @interface ClassA : NSObject {
-    int x;
+    int x;      // 非私有实例变量，子类可以使用
 }
 
 -(void) initVar;
@@ -557,7 +557,7 @@ int main (int argc, char *argv[]) {
 
 
 @interface ClassB :ClassA {
-    -(void) initVar;
+    -(void) printVar;
 }
 @end
 
@@ -700,7 +700,7 @@ int main (int argc, char *argv[]) {
 
 
 <c:sourceContent type="html" title="原点类" id="sourceContent1" style="background-color:white;margin-top:2em;"
-    titleStyle="background-color:white;color:black;padding-left:0;"
+    titleStyle="background-color:white;color:black;padding-left:0;font-size:2em;"
     bodyStyle="background-color:white;padding-left:0;">
     <![CDATA[
         
@@ -1690,19 +1690,45 @@ enum flag endOfData, matchFound;
   
   
   
-  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+  <c:entry style="margin-top:3em;color:rgb(156, 25, 197);font-weight:bold;">
       <c:title>Foundation 框架</c:title>
       <c:desc>
           <c:desc1>
               <![CDATA[
-                  。。
+                  <span style="display:block;margin-bottom:.3em;">
+                    Objective-C 有 90 多个框架：<br />
+                  </span>
+                  <span style="display:block;margin-bottom:.3em;">
+                    <b style="color:red;">Foundation</b> 框架为开发 Objective-C 程序奠定基础。 <br />
+                    它包含一些基本对象，如：数字、字符串、数组、字典、集合、日期、时间、ARC 、文件系统、存储 (或归档) 对象、处理几何数据结构 (如点和长方形)。
+                    </span>
+                    <span style="display:block;margin-bottom:.3em;">
+                    <b style="color:red;">Application Kit</b> 框架包含广泛的类和方法，用于开发交互式图形应用程序。 <br />
+                    使得开发文本、菜单、工具栏、表、文档、剪贴板、窗口的过程变得简单。
+                    </span>
+                    
+                    <br />
+                    <span style="display:block;margin-bottom:.3em;font-weight:bold;color:green;">
+                    在 Mac OS X 系统中，术语 <b style="color:blue;">Cocoa</b> 总的来说指的是 Foundation 框架、Application Kit 框架和名为 Core Data 的第三方框架。
+                    </span>
+                    <span style="display:block;margin-bottom:.3em;font-weight:bold;color:green;">
+                    术语 <b style="color:blue;">Cocoa Touch</b> 指的是 Foundation、Core Data、UIKit 框架。
+                    </span>
               ]]>
           </c:desc1>
       </c:desc>
       
-      <c:sourceContent type="html" title="" id="sourceContent1">
+      <c:sourceContent type="html" title="使用帮助文档" id="sourceContent1">
           <![CDATA[
-              .
+              <span style="display:block;margin-bottom:.3em;">XCode <b>&rarr;</b> Help <b>&rarr;</b> Document </span>
+              <img style="max-width:100%" src="//c2.staticflickr.com/4/3843/14754616720_19ecd26783_z.jpg" />
+              <br />
+              
+              
+              <span style="display:block;margin-bottom:.3em;">将鼠标放在类、变量或方法上，按住 Option 键，同时单击鼠标: </span>
+              <img style="max-width:100%" src="//c2.staticflickr.com/4/3843/14938242501_9fff9e8059_z.jpg" />
+              <br />
+
           ]]>
       </c:sourceContent>
       
@@ -1723,17 +1749,139 @@ enum flag endOfData, matchFound;
       <c:desc>
           <c:desc1>
               <![CDATA[
-                  。。
+                  <span style="display:block;margin-bottom:.3em;">所有的基础数据对象都可以通过 <b>&lt;Foundation/Foundation.h&gt;</b> 一次性导入</span>
+                  <span style="display:block;margin-bottom:.3em;">int、float、long、double 都是基本数据类型，它们都不是对象，不能向它们发送消息。</span>
+                  <span style="display:block;margin-bottom:.3em;">NSArray 对象可以创建一个数组，并要求存储的值必须是对象。所以不能将任何基础数据类型存入 NSArray 中。</span>
+                  <span style="display:block;margin-bottom:.3em;">NSNumber 可以存储基础数据类型，它会根据这些数据的类型创建<b style="color:blue;">对象</b>。</span>
               ]]>
           </c:desc1>
       </c:desc>
       
-      <c:sourceContent type="html" title="" id="sourceContent1">
+      <c:sourceContent type="" title="Number" id="sourceContent1">
           <![CDATA[
-              .
+#import <Foundation/Foundation.h>
+
+int main (int argc, char *argv[]) {
+    @autoreleasepool {
+        NSNumber *myNumber, *floatNumber, *intNumber;
+        NSInteger myInt;
+
+        // integer 类型
+        intNumber = [NSNumber numberWithInteger : 100];
+        myInt = [intNumber integerValue];
+        NSLog(@"%li", myInt);
+        
+        
+        // long 类型
+        myNumber = [NSNumber numberWithLong : 0xabcdef];
+        NSLog(@"%lx", [myNumber longValue]);
+        
+        // char 类型
+        myNumber = [NSNumber numberWithChar : 'Y'];
+        NSLog(@"%c", [myNumber charValue]);
+        
+        // float 类型
+        floatNumber = [NSNumber numberWithFloat : 0.25];
+        NSLog(@"%g", [floatNumber floatValue]);
+        
+        // double 类型
+        myNumber = [NSNumber numberWithDouble : 12345+15];
+        NSLog(@"%lg", [myNumber doubleValue]);
+        
+        
+        // 发生错误 (将输出 0, 并且不会有错误消息)
+        NSLog (@"%li", (long) [myNumber integerValue]);
+        
+        
+        // 验证两个 number 是否相等
+        if ([intNumber isEqualToNumber : floatNumber] == YES) {
+            // equal
+        } else {
+            // not equal
+        }
+        
+        // 比较大小
+        if ([intNumber compare : myNumber ] == NSOrderedAscending) {
+            // first less than second
+            
+        } elsif ([intNumber compare : myNumber ] == NSOrderSame) {
+            // equals
+            
+        } else ([intNumber compare : myNumber ] == NSOrderedDescending){
+            //
+            
+        }
+        
+        
+        
+        NSNumber *testNumber = [[NSNumber alloc] initWithInt : 50];
+        
+        // 不能修改前面创建的 NSNumber 对象的值，如一下语句将导致程序崩溃
+        [testNumber initWith : 100];
+        
+        
+        // numberWithInt 和 numberWithInteger 在使用上存在差别：
+        // 1. numberWithInt 创建的整数需要使用 intValue 取值，使用 %i 作为格式化字符串显示它的值
+        // 2. numberWithInteger 创建的整数需要使用 integerValue 取值，使用 %li 作为格式化字符串
+    }
+
+    return 0;
+}
           ]]>
       </c:sourceContent>
       
+      
+      <c:sourceContent type="html" title="NSNumber 的创建方法和检索方法" id="sourceContent1">
+          <![CDATA[
+              
+              <img style="max-width:100%" src="//c2.staticflickr.com/4/3867/14755084647_ef65bdf30f_b.jpg" />
+          ]]>
+      </c:sourceContent>
+      
+      
+      
+      <c:sourceContent type="html" title="NSString 对象" id="sourceContent1">
+          <![CDATA[
+               <span style="display:block;margin-bottom:.3em;">
+                NSString 对象由 unichar 字符组成，unichar 字符是符合 unicode 标准的多字节字符，可以处理包含数百万字符的字符集。
+               </span>
+          ]]>
+      </c:sourceContent>
+      
+      
+      
+      
+      <c:sourceContent type="" title="" id="sourceContent1">
+          <![CDATA[
+#import <Foundation/Foundation.h>
+
+int main (int argc, char *argv[]) {
+    @autoreleasepool {
+        NSString *str = @"This is a String";
+        NSLog(@"%@", str);
+        
+        
+        NSNumber *intNumber = [NSNumber numberWithInteger : 100];
+        NSLog(@"%@", intNumber);
+    }
+
+    return 0;
+}
+          ]]>
+      </c:sourceContent>
+
+
+
+<c:sourceContent type="" title="description" id="sourceContent1">
+    <![CDATA[
+// 子类可以覆写父类的 description 方法
+
+-(NSString *) description {
+    return [NSString stringWithFormat : @"%i / %i", numerator, denominator];
+}
+    ]]>
+</c:sourceContent>
+
       
       <c:comment style="margin-top:2em;">
           <c:comment1 style="color:black;">
@@ -1745,6 +1893,195 @@ enum flag endOfData, matchFound;
   
   
   
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>可变对象与不可变对象</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  <span><b>@"Programming is fun"</b> 创建了一个内容不可更改的对象，可以使用 NSString 处理不可变对象。</span>
+                  
+                  <img style="max-width:100%" src="//c2.staticflickr.com/4/3862/14943557491_856bcf071b_b.jpg" />
+                  <br />
+                  <img style="max-width:100%" src="//c2.staticflickr.com/4/3915/14946380252_f27fbc1481_z.jpg" />
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="" title="在程序中处理不可变字符串的基本方式" id="sourceContent1">
+          <![CDATA[
+#import <Foundation/Foundation.h>
+
+int main (int argc, char *argv[]) {
+    @autoreleasepool {
+        // str1 和 str2 所引用的字符串对象的字符不可以改变
+        // 但是 str1 和 str2 是可以改变的，也就是说可以重新为它们指定其它不可变的字符串
+        NSString *str1 = @"This is String A";
+        NSString *str2 = @"This is String B";
+
+        NSString *res;
+
+        NSComparisonResult compareResult;
+
+        // 取得字符串的长度
+        NSLog (@"%lu", [str1 length]);
+
+        // 将一个字符串复制到另一个字符串
+        res = [NSString stringWithString : str1];
+        NSLog (@"%@", res);
+
+        // 将一个字符串复制到另一个字符串的末尾
+        str2 = [str1 stringByAppendingString : str2];
+        NSLog (@"Concatentation %@", str2);
+
+        // 验证两个字符串是否相等
+        if ([str1 isEqualToString : res] == YES) {
+            NSLog (@"str1 == str2");
+        } else {
+            NSLog (@"str1 != str2");
+        }
+
+        // 验证一个字符串是否小于、等于、大于另一个字符串
+        // caseInsensitiveCompare 比较时忽略大小写
+        compareResult = [str1 compare : str2];
+        
+        if (compareResult == NSOrderedAscending) {
+            NSLog (@"str1 < str2");
+        } else if (compareResult == NSOrderedSame) {
+            NSLog (@"str1 == str2");
+        } else {
+            // NSOrderedDescending
+            NSLog (@"str1 > str2");
+        }
+        
+        // 将字符串转成小写
+        res = [str1 lowercaseString];
+        
+        // 转小写
+        res ＝ [str1 uppercaseString];
+        
+        
+        
+        
+        NSRange subRange;
+        
+        res = [str1 substringToIndex : 3];
+        res = [str1 substringFromIndex : 5];
+        
+        res = [[str1 substringFromIndex : 5] substringToIndex : 3];
+        res = [str1 substringWithRange : NSMakeRange (8, 6)];
+        
+        
+        subRange = [str1 rangeOfString : @"String A"];
+        
+        if(subRange.location != NSNotFound)
+            NSLog (@"String is at index %lu, length is %lu"
+                    , subRange.location, subRange.length);
+    }
+
+    return 0;
+}
+          ]]>
+      </c:sourceContent>
+      
+      
+      
+      <c:sourceContent type="" title="可变字符串" id="sourceContent1">
+          <![CDATA[
+/*
+  NSMuTableString 类可以用来创建可以更改字符的字符串对象。
+*/
+
+#import <Foundation/Foundation.h>
+
+int main (int argc, char *argv[]) {
+    @autoreleasepool {
+        NSString *str1 = @"This is String A";
+        NSString *str2 = @"This is String B";
+
+        NSString *search, *replace;
+
+        NSMutableString *mstr;
+
+        NSRange substr;
+
+        // 从不可变字符串创建可变字符串
+        mstr = [NSMutableString stringWithString : str1];
+        
+        // 插入字符
+        [mstr insertString : @" mutable" atIndex : 7];
+        
+        // 插入末尾
+        [mstr insertString : @" mutable" atIndex : [mstr length]];
+        
+        // appendString
+        [mstr appendString : @" mutable"];
+        
+        // 根据范围删除子字符串
+        [mstr deleteCharactersInRange : NSMakeRange (16 , 3)];
+        
+        // 查找人后删除
+        substr = [mstr rangeOfString : @" String A"];
+        
+        if (substr.location != NSNotFound) {
+            [mstr deleteCharactersInRange :substr];
+        }
+        
+        
+        // 直接设置为可变字符串
+        [mstr setString : str1];
+        
+        // 替换字符
+        [mstr replaceCharactersInRange : NSMakeRange ( 8,8) withString : @"a mutable string"];
+        
+        
+        // 查找和替换
+        search = @"This is";
+        replace = @"An example of";
+        
+        substr = [mstr rangeOfString : search];
+        
+        if (substr.location != NSNotFound) {
+            [mstr replaceCharactersInRange : substr withString : replace];
+        }
+        
+        
+        // 查找和替换所有匹配项
+        search = @"a";
+        replace = @"X";
+        
+        substr = [mstr rangeOfString : search];
+        while (substring.location != NSNotFound) {
+            [mstr replaceCharactersInRange : substr withString : replac];
+            substr = [mstr rangeOfString : search];
+        }
+        
+        
+        // 查找和替换所有匹配项
+        [mstr replaceOccurrencesOfString : search
+              withString: replace
+              options: nil
+              range : NSMakeRange (0, [mstr length])];
+    }
+    
+    return 0;
+}
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:sourceContent type="html" title="数组对象" id="sourceContent1">
+          <![CDATA[
+              .
+          ]]>
+      </c:sourceContent>
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
   
   
   <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
