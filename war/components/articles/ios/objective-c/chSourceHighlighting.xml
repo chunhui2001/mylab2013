@@ -2069,9 +2069,270 @@ int main (int argc, char *argv[]) {
       </c:sourceContent>
       
       
-      <c:sourceContent type="html" title="数组对象" id="sourceContent1">
+      <c:sourceContent type="" title="数组对象" id="sourceContent1">
           <![CDATA[
-              .
+/*
+在 Foundation 框架中，NSArray 处理不可变数组，NSMutableArray 处理可变数组。
+*/
+
+#import <Foundation/Foundation.h>
+
+int main (int argc, char *argv[] ) {
+    int i ;
+    @autoreleasepool {
+    
+        // 最后一个 nil 用于标记数组已经结束， 实际上并不会存储在数组中
+        NSArray *monthNames = [NSArray arrayWithObjects :
+                                 @"January", @"February", @"March"
+                               , @"April", @"May", @"June", @"July"
+                               , @"August", @"September", @"October"
+                               , @"November", @"December", nil];
+
+        for (i=0; i < 12; ++i) {
+            NSLog (@"%2i %@", [monthNames objectAtIndex : i]);
+        }
+    }
+
+    return 0;
+}
+
+
+
+
+
+// 可变数组
+#import <Foundation/Foundation.h>
+
+
+int main (int argc, char *argv[] ) {
+
+    @autoreleasepool {
+        NSMutableArray *array = [NSMutableArray array];
+        NSNumber *number;
+
+        int i = 0;
+
+        for (i=0; i<10; ++i) {
+            number = [NSNumber numberWithInteger : i];
+            [array addObject : number];
+        }
+
+        for ( i=0; i< 10; ++i) {
+            NSLog (@"%i", [array objectAtIndex: i]);
+        }
+
+    }
+
+    return 0;
+
+}
+          ]]>
+      </c:sourceContent>
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:2em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>地址卡片</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="" title="AddressCard.h" id="sourceContent1">
+          <![CDATA[
+#import <Foundation/Foundation.h>
+
+@interface AddressCard : NSObject
+
+-(void ) setName : (NSString *) name;
+-(void ) setEmail : (NSString *) email;
+-(NSString *) name;
+-(NSString *) email;
+-(void) print;
+
+@end
+          ]]>
+      </c:sourceContent>
+      
+      <c:sourceContent type="" title="AddressCard.m" id="sourceContent1">
+          <![CDATA[
+#import AddressCard.h
+
+@implementation AddressCard {
+    NSString *name;
+    NSString *email;
+}
+
+-(void ) setName : (NSString *) name {
+    if (name != name)
+        name = [NSString stringWithString : name];
+}
+
+-(void ) setEmail : (NSString *) email {
+    if (email != email)
+        email = [NSString stringWithString : email];
+}
+
+-(NSString *) name {
+    retur name;
+}
+
+-(NSString *) email {
+    return email;
+}
+
+-(void ) print {
+    // 打印 31 个字符，做对齐
+    NSLog (@"%-31s", [name UTF8String]);
+    NSLog (@"%-31s", [email UTF8String]);
+}
+
+-(BOOL) isEqual : (AddressCard *) theCard {
+    if ([name isEqualToString : theCard.name] == YES
+        && [email isEqualToString : theCard.email] == YES) {
+        return YES;
+    }
+
+    return NO;
+}
+
+@end
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:sourceContent type="" title="使用合成实例变量" id="sourceContent1">
+          <![CDATA[
+@property (copy, nonatomic) NSString *name, *email;
+/*
+copy 特性会在 setter 方法内生成实例变量的副本，默认的方法不会生成副本，仅仅是进行赋值 (默认为 assign 特性)
+nonatomic 特性表明不必担心在竞争条件下，多个线程试图同时读取同一个变量
+*/
+
+
+// 增加一个设置方法用于初始化实例变量的值
+-(void) setName : (NSString *) theName andEmail : (NSString *) theEmail {
+    // self.name 使用了 setter 方法为实例变量赋值， 等价于 [self setName : theName];
+    // 而 name = theName 的写法绕过了 setter 方法，即：直接为实例变量赋值
+    self.name = theName;
+    self.email = theEmail;
+}
+
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:sourceContent type="" title="AddressBook.h" id="sourceContent1">
+          <![CDATA[
+// AddressBook 用于存储多个 AddressCard
+// 1. 创建新的地址薄
+// 2. 添加地址卡片
+// 3. 计算地址薄的记录数
+// 4. 列出地址薄内容
+// 5. 搜索地址薄
+// 6. 删除记录
+// 7. 编辑现有记录
+// 8. 排序记录
+// 9. 复制记录
+
+#import <Foundation/Foundation.h>
+
+#import "AddressCard.h"
+
+@interface AddressBook : NSObject
+
+@property (nonatomic, copy) NSString *bookName;
+@property (nonatomic, strong) NSMutalbeArray *book;
+
+
+-(id) initWithName : (NSString *) theBookName;  // 初始化地址数组并设置地址薄名字
+-(void) addCard : (AddressCard *) theCard;
+-(int) entries;                                 // 取得卡片数量
+-(void) list;
+-(AddressCard *) lookup : (NSString *) theName; // 查询
+-(void) removeCard : (AddressCard *) theCard;   // 删除
+-(void) sort;                                   // 排序
+
+@end
+
+
+          ]]>
+      </c:sourceContent>
+      
+      
+      
+      <c:sourceContent type="" title="AddressBook.m" id="sourceContent1">
+          <![CDATA[
+#import "AddressBook.h"
+
+@implentation AddressBook
+
+@synthesize bookName, book;
+
+
+
+-(id) initWithName : (NSString *) theBookName {
+    self = [self init];
+
+    if(self) {
+        bookName = [NSString stringWithString : theBookName];
+        book = [NSMutableArray array];
+    }
+
+    return self;
+}
+
+-(id) init {
+    return [self initWithName : @"NoName"];
+}
+
+-(void) addCard : (AddressCard *) theCard {
+    [book addObject : theCard];
+}
+
+-(int) entries {
+    return [book count];
+}
+
+-(void) list {
+    for (AddressCard *theCard in book ) {
+        NSLog (@"%-20s %-30s", [theCard.name UTF8String], [theCard.email UTF8String]);
+    }
+}
+
+-(AddressCard *) lookup : (NSString *) theName {
+    for (AddressCard *theCard in book) {
+        if ([theCard.name caseInsensitiveCompare : theName] == NSOrderedSame) {
+            return theCard;
+        }
+    }
+
+    return nil;
+}
+
+-(void) removeCard : (AddressCard *) theCard {
+    // 移除同一对象，removeObjectIdenticalTo 会调用 isEqual 方法判断两个对象是否相等，
+    // 并且默认的 isEqual 通过内存地址判断两个对象是否相等
+    // 一个更好的办法是覆写 NSObject 的 isEqual 方法判断两个对象是否相等
+    [book removeObjectIdenticalTo : theCard];
+}
+
+-(void) sort {
+    // TODO
+}
+
+@end
+
+              
           ]]>
       </c:sourceContent>
       
