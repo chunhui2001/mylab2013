@@ -2157,6 +2157,7 @@ int main (int argc, char *argv[] ) {
 -(void ) setEmail : (NSString *) email;
 -(NSString *) name;
 -(NSString *) email;
+-(NSComparisonResult) compareName : (id) element;
 -(void) print;
 
 @end
@@ -2188,6 +2189,10 @@ int main (int argc, char *argv[] ) {
 
 -(NSString *) email {
     return email;
+}
+
+-(NSComparisonResult) compareName : (id) element {
+    return [name compare : element.name];
 }
 
 -(void ) print {
@@ -2261,6 +2266,7 @@ nonatomic 特性表明不必担心在竞争条件下，多个线程试图同时�
 -(AddressCard *) lookup : (NSString *) theName; // 查询
 -(void) removeCard : (AddressCard *) theCard;   // 删除
 -(void) sort;                                   // 排序
+-(void) sortByBlock;                            // 区块排序
 
 @end
 
@@ -2327,7 +2333,31 @@ nonatomic 特性表明不必担心在竞争条件下，多个线程试图同时�
 }
 
 -(void) sort {
-    // TODO
+    // 利用 NSMutableArray 类的 sortUsingSelector: 可以很容易实现排序
+    // sortUsingSelector: 会使用 selector 比较两个元素
+    // 由于数组可以包含任何类型的对象，所以需要由实现者来决定数组中的元素是否有序
+    // 添加一个方法比较数组中的两个元素，该方法的返回类性是 NSComparisonResult
+
+    [book sortUsingSelector : @selector (compareName:)];
+}
+
+-(void) sortByBlock {
+    /*
+        NSArray
+        -(NSArray *) sortedArrayUsingComparator: (NSComparator) block;
+        
+        
+        NSMutableArray
+        -(void) sortUsingComparator: (NSComparator) block;
+        
+        NSComparator 是一个区块，使用两个对象作为参数， 并返回 NSComparisonResult 类型的结果
+        该方法对大数组排序具有高性能
+        
+    */
+    
+    ［book sortUsingComparator: ^(id obj1, id obj2) {
+                                    return [obj1.name compare: obj2.name];
+                                }];
 }
 
 @end
@@ -2339,10 +2369,41 @@ nonatomic 特性表明不必担心在竞争条件下，多个线程试图同时�
       <c:comment style="margin-top:2em;">
           <c:comment1 style="color:black;">
               <![CDATA[
+                  <img style="max-width:100%;" src="//c2.staticflickr.com/6/5573/14793557788_cf2c1c24fb_b.jpg" />
+                  <br />
+                  
+                  <img style="max-width:100%;" src="//c2.staticflickr.com/6/5589/14793491789_6d2ee11176_b.jpg" />
               ]]>
           </c:comment1>
       </c:comment>
   </c:entry>
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>数组排序</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  。。
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="html" title="" id="sourceContent1">
+          <![CDATA[
+              .
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
   
   
   <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
