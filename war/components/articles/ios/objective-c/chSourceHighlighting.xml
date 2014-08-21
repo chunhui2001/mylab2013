@@ -2380,18 +2380,130 @@ nonatomic 特性表明不必担心在竞争条件下，多个线程试图同时�
   
   
   <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
-      <c:title>数组排序</c:title>
+      <c:title>NSValue</c:title>
       <c:desc>
           <c:desc1>
               <![CDATA[
-                  。。
+                  
+                  <span style="display:block;margin-bottom:.3em;">
+                  在开发 iOS 程序时，需要在集合中存储非对象类型 (源于 C 语言数据类型) 的数据。
+                  </span>
+                  
+                  <span style="display:block;margin-bottom:.3em;">
+                  因为存储在集合中的数据必须是对象类型，所以 NSValue 可以将非对象类型的数据转换成为对象。
+                  </span>
+                  
+                  <span style="display:block;margin-bottom:.3em;">
+                  将结构转化为对象的方式，简称为包装 (wrapping)，逆向的处理叫展开 (unwrapping).
+                  </span>
               ]]>
           </c:desc1>
       </c:desc>
       
-      <c:sourceContent type="html" title="" id="sourceContent1">
+      <c:sourceContent type="" title="" id="sourceContent1">
           <![CDATA[
-              .
+/* 将 CGPoint 结构加入到可变数组中 */
+CGPoint *myPoint;
+NSValue *pointObject;
+
+NSMutableArray *touchPoints = [NSMutableArray array];
+
+myPoint.x = 100;
+myPoint.y = 150;
+
+pointObject = [NSValue valueWithPoint : myPoint];     // wrapping
+[touchPoints addObject : pointObject];
+
+
+
+// 取出最后一个并 unwrapping
+myPoint = [[touchPoint lastObject] pointValue];
+              
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+                  <img src="//c2.staticflickr.com/6/5569/14986785121_3d770d3e6f_b.jpg" style="max-width:100%;" />
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>词典对象</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  
+                  <span style="display:block;margin-bottom:.3em;">
+                  词典中的键必须是单值的，通常是字符串，但也可以是其它对象类型。和键关联的值可以是任何对象类型，但不能是 nil.
+                  </span>
+                  <span style="display:block;margin-bottom:.3em;">
+                  词典中的数据是无序的，第一个放入的不一定第一个取出。如果想按照顺序取出数据，可以先取出所有键，然后对键排序，然后在按照键的顺序取出数据
+                  </span>
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="" title="" id="sourceContent1">
+          <![CDATA[
+#import <Foundation/Foundation.h>
+
+int main (int argc, char *argv[]) {
+
+    @autoreleastpool {
+        //可变词典
+        NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+
+        [dict setObject: @"A class defined so other classes can inherit from it"
+                         , forKey : @"abstract class"];
+        [dict setObject: @"To implement all the methods defined in protocol"
+                         , forKey : @"adopt"];
+        [dict setObject: @"Storing an object for later user"
+                         , forKey: @"archiving"];
+
+
+        NSLog (@"%@", [dict objectForKey: @"abstract class"]);
+        
+        
+        
+        
+        // 不可变词典
+        // 用字符串数组初始化 NSDictionary，键值对用逗号隔开，数组必须以 nil 结尾，
+        NSDictionary *dict2 = [NSDictionary dictionaryWithObjectsAndKeys :
+                                      @"A class defined so other classes can inherit from it"
+                                    , @"abstract class"
+                                    , @"To implement all the methods defined in protocol"
+                                    , @"adopt"
+                                    , @"Storing an object for later user"
+                                    , @"archiving"
+                                    , nil];
+                                    
+        for (NSString *key in dict2)
+            NSLog(@"%@", [dict2 objectForKey : key]);
+            
+            
+        // 取出所有键
+        NSArray *keys = [dict2 : allKeys];
+        
+        // 对键排序
+        keys = [keys sortedArrayUsingComparator :
+                        ^(id obj1, id obj2) {
+                            return [obj1 compare : obj2];
+                            }];
+                            
+        // 按顺序显示
+        for (NSString *key in keys)
+            NSLog(@"%@", [dict2 objectForKey : key]);
+    }
+
+    return 0;
+}
           ]]>
       </c:sourceContent>
       
@@ -2403,7 +2515,6 @@ nonatomic 特性表明不必担心在竞争条件下，多个线程试图同时�
           </c:comment1>
       </c:comment>
   </c:entry>
-  
   
   
   <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
