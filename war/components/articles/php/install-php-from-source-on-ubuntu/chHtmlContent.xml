@@ -2,21 +2,309 @@
 <c:component type="chHtmlContent" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
   <c:content style="margin-top:1.5em;">
     <![CDATA[ 
-        <h4 style="font-size:1.5em;color:crimson;">&#9829; 信息隐藏</h4>
+      <h4 style="font-size:1.5em;color:black;margin-top:2em;">&#9829; Overview</h4>
       <p style="margin-top:1em;">
-        当信息被隐藏后, 每个类 (或者包和子程序) 都代表了某种对其他类保密的设计或者构建决策.
-        隐藏起来的秘密可能是某个易变的区域, 或者某种文件格式, 或者某种数据类型的实现方式, 某个需要隔离的区域, 在这个区域中发生的错误不会给程序其余部分带来太大损失.
-        对系统的重大改动可能会影响到某个类中的几个子程序, 但它们不应该波及到类接口的外面.
-        <br />
-        <br />
-        类的接口应该尽可能少地暴露其内部工作机制.
-        设计类的接口与设计其它环境一样, 都是一个迭代的过程.
-        如果你第一次没有得到合适的接口, 那么就多试几次, 直到设计稳定下来.
-        如果设计仍不稳定, 那你就需要换种思路再试!
+          <span style="display:block;margin-bottom:.3em;">
+              In many cases, it may be desirable to upgrade PHP to a more recent version than what is available in the Ubuntu repositories. For example, you may want to upgrade PHP in order to get the most recent security updates.
+          </span>
+          <span style="display:block;margin-bottom:.3em;">
+              This guide describes the steps you can take to install the latest version of PHP on Ubuntu from source, while maintaining compatibility with pre-installed extensions and configuration settings. Although this guide is geared primarily towards Ubuntu installations, it is easily-adaptable to other Linux distributions.
+          </span>  
+          <span style="display:block;margin-bottom:.3em;">
+              The below instructions were tested on a Ubuntu 10.04 machine with PHP 5.3.2 installed via the Ubuntu repositories. The latest stable release of PHP at the time of writing is PHP 5.3.3.
+          </span>
       </p>
       
       
+ 
+      <h4 style="font-size:1.5em;color:black;margin-top:2em;">&#9829; Pre-installation</h4>
+      <p style="margin-top:1em;">
+          <span style="display:block;margin-bottom:.3em;">
+              Before beginning the installation, it is a good idea to keep some records how your existing PHP installation is configured. If you do not already have a copy of PHP installed on your system, you can skip this step. Create a script that calls "phpinfo()", and save the output as HTML, PS, or a PDF. This is useful to see what settings PHP used, and which extensions were detected.
+          </span>
+          <span style="display:block;margin-bottom:.3em;">
+              Alternatively, you can also run:
+          </span>  
+          <span style="display:block;margin:.6em 0;color:rgb(204, 65, 0);font-size:1em;">
+              <b>php -i > php-info.txt</b>
+          </span> 
+          <span style="display:block;margin-bottom:.3em;">
+              to capture the same information from the command line.
+          </span>
+      </p>
+      
+ 
+      <h4 style="font-size:1.5em;color:black;margin-top:2em;">&#9829; Getting the latest version of PHP</h4>
+      <p style="margin-top:1em;">
+          <span style="display:block;margin-bottom:.3em;">
+              Download latest stable release of PHP can be downloaded from <a target="_blank" href="http://www.php.net/downloads.php">here</a> and extract the contents to a temporary directory:
+          </span>
+          <span style="display:block;margin:.6em 0;color:rgb(204, 65, 0);font-size:1em;">
+              <b>tar xzvpf php-5.3.3.tar.gz -C /tmp</b>
+          </span> 
+      </p>
+      
+      
+ 
+      <h4 style="font-size:1.5em;color:black;margin-top:2em;">&#9829; Apply Suhosin patch <b>(skip this step)</b></h4>
+      <p style="margin-top:1em;">
+          <span style="display:block;margin-bottom:.3em;">
+              The version of PHP that ships is a modified version which has been <a target="_blank" href="http://www.hardened-php.net/suhosin/index.html">patched for extra security</a>. 
+              In order to apply the same patch, first go to the <a target="_blank" href="http://www.hardened-php.net/suhosin/download.html">Suhosin download page</a> and download the patch that corresponds to the version of PHP you are compiling. 
+              Next, extract the patch into the PHP source code directory:
+          </span>
+          <span style="display:block;margin:.6em 0;color:rgb(204, 65, 0);font-size:1em;">
+              <b>
+                gunzip suhosin-patch-5.3.3-0.9.10.patch.gz <br />
+                mv suhosin-patch-5.3.3-0.9.10.patch /tmp/php-5.3.3/
+              </b>
+          </span> 
+          <span style="display:block;margin-bottom:.3em;">
+              Change directories to the source code directory, here /tmp/php-5.3.3, and apply the patch using the command:
+          </span>
+          <span style="display:block;margin:.6em 0;color:rgb(204, 65, 0);font-size:1em;">
+              <b>
+                patch -p 1 -i suhosin-patch-5.3.3-0.9.10.patch
+              </b>
+          </span> 
+          <span style="display:block;margin-bottom:.3em;">
+              For more information see <a target="_blank" href="http://www.hardened-php.net/suhosin/how_to_install_or_upgrade.html">the Suhosin installation article</a>.
+          </span>
+      </p>
+      
+      <h4 style="font-size:1.5em;color:black;margin-top:2em;">&#9829; Install Dependencies</h4>
+      <p style="margin-top:1em;">
+          <span style="display:block;margin:.6em 0;color:rgb(204, 65, 0);font-size:1em;">
+              <b>
+                sudo apt-get install \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             libxml2-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             libpcre3-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             libbz2-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             libcurl4-openssl-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             libdb4.8-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             libjpeg-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             libpng12-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             libxpm-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             libfreetype6-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             libmysqlclient-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             postgresql-server-dev-9.1 \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             libt1-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             libgd2-xpm-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             libgmp-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             libsasl2-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             libmhash-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             unixodbc-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             freetds-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             libpspell-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             libsnmp-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             libtidy-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             libxslt1-dev \ <br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;             libmcrypt-dev
+              </b>
+          </span> 
+      </p>
+      
+ 
+      <h4 style="font-size:1.5em;color:black;margin-top:2em;">&#9829; Install pre-requisites</h4>
+      <p style="margin-top:1em;">
+          <span style="display:block;margin-bottom:.3em;">
+              Install the necessary development headers for compiling PHP from source:
+          </span>
+          <span style="display:block;margin:.6em 0;color:rgb(204, 65, 0);font-size:1em;">
+              <b>
+                sudo aptitude build-dep php5
+              </b>
+          </span> 
+      </p>
+      
+      <h4 style="font-size:1.5em;color:black;margin-top:2em;">&#9829; Run configure</h4>
+      <p style="margin-top:1em;">
+          <span style="display:block;margin-bottom:.3em;">
+              While still in the PHP source directory, run:
+          </span>
+          <span style="display:block;margin:.6em 0;color:rgb(204, 65, 0);font-size:1em;">
+              <b>
+                ./configure --with-config-file-path=/etc/php5/apache2 \ <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--with-pear=/usr/share/php \<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--with-bz2 \<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--with-curl \<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--with-gd \<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--enable-calendar \<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--enable-mbstring \<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--enable-bcmath \<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--enable-sockets \<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--with-libxml-dir=/usr \<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--with-mysqli \<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--with-mysql \<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--with-openssl=/usr \<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--with-regex=php \<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--with-zlib \<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--with-apxs2=/usr/bin/apxs2<br />
 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i style="color:red;font-weight:bold;">--enable-ftp</i> \                             <i style="color:blue;font-weight:bold;">(Enable ftp extension)</i><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i style="color:red;font-weight:bold;">--with-libdir=/lib/x86_64-linux-gnu</i> \      <i style="color:blue;font-weight:bold;">(To fix ERROR: CANNOT FIND OPENSSL'S LIBRARIES)</i><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i style="color:red;font-weight:bold;">--with-freetype-dir=shared,/usr</i>
+              </b>
+          </span> 
+          <span style="display:block;margin-bottom:.3em;">
+              This will setup the build to do several things:
+          </span>
+          
+          <ul style="list-style:decimal;margin-left:1.5em;">
+            <li>Your existing PHP configuration will be used ("--with-config-file-path=/etc/php5/apache2")</li>
+            <li>Support will be enabled for: <a target="_blank" href="http://curl.haxx.se/">cURL</a>, <a target="_blank" href="http://www.boutell.com/gd/">GD</a>, <a target="_blank" href="http://php.net/manual/en/book.mbstring.php">Multibyte strings</a>, <a target="_blank" href="http://www.mysql.com/">MySQL</a>, <a target="_blank" href="http://pear.php.net/">PEAR</a> and <a target="_blank" href="http://www.zlib.net/">zlib</a></li>
+            <li>An Apache module will be created ("--with-apxs2=/usr/bin/apxs2")</li>
+          </ul>
+      </p>
+      
+      
+      
+      <h4 style="font-size:1.5em;color:black;margin-top:2em;">&#9829; Make and install</h4>
+      <p style="margin-top:1em;">
+          <span style="display:block;margin-bottom:.3em;">
+              Finally, we are read to make and install the new version of PHP:
+          </span>
+          <span style="display:block;margin:.6em 0;color:rgb(204, 65, 0);font-size:1em;">
+             <b> make <br />
+sudo make install</b>
+          </span> 
+         
+      </p>
+      
+      <h4 style="font-size:1.5em;color:black;margin-top:2em;">&#9829; Configuration</h4>
+      <p style="margin-top:1em;">
+          <span style="display:block;margin-bottom:.3em;">
+              Once you have built and installed PHP, you will need to modify your configuration so that previously installed extensions can be found. The location where extensions are stored for the version of PHP in the Ubuntu repositories may be different from the extension directory after compilation. For example, in my case the extension directory used by the base Ubuntu version of PHP was "/usr/lib/php5/20090626". After compiling PHP from source, the directory scanned became "/usr/local/lib/php/extensions/no-debug-non-zts-20090626". This means that modules that are located in /usr/lib/php5/20090626 but not in /usr/local/lib/php/extensions/no-debug-non-zts-20090626 will not be found and any attempts to use functionality provided by those modules will fail.
+          </span>
+          <span style="display:block;margin-bottom:.3em;">
+              To determine the location of the extension directory, you can either look for the "extension_dir" parameter in phpinfo(), or the command-line tool "php-config", e.g.:
+          </span>
+          <span style="display:block;margin:.6em 0;color:rgb(204, 65, 0);font-size:1em;">
+             <b>php-config --extension-dir</b>
+          </span>          
+          <span style="display:block;margin-bottom:.3em;">
+              If there are modules which need are no longer available after compilation, depending on whether the extensions were install via the PECL or the Ubuntu repositories or elsewhere, you can take one of several steps to enable PHP to find the pre-existing extensions.
+          </span>
+      </p>
+      
+      
+      
+      <h4 style="font-size:1.5em;color:black;margin-top:2em;">&#9829; Using symbolic links</h4>
+      <p style="margin-top:1em;">
+          <span style="display:block;margin-bottom:.3em;">
+              The easiest solution to enable support for extensions installed using either apt-get or by hand is to create symbolic links from the old extension directory to the new one. If there are no files in the "new" extension directory, or if that directory does not exist, then you can simply create a link to the old extension directory, e.g.:
+          </span>
+          
+          <span style="display:block;margin:.6em 0;color:rgb(204, 65, 0);font-size:1em;">
+             <b>sudo ln -s /usr/lib/php5/20090626/ /usr/local/lib/php/extensions/no-debug-non-zts-20090626</b>
+          </span>          
+          <span style="display:block;margin-bottom:.3em;">
+              Otherwise, if there are already files in the new extension directory, you will need to create links for each individual shared library.
+              For example, if you installed the PHP ImageMagick extension using "apt-get install php-imagick", you can create a link to the library in the new extension directory using:
+          </span>
+          <span style="display:block;margin:.6em 0;color:rgb(204, 65, 0);font-size:1em;">
+             <b>sudo ln -s /usr/lib/php5/20090626/imagick.so /usr/local/lib/php/extensions/no-debug-non-zts-20090626/imagick.so</b>
+          </span>       
+          <span style="display:block;margin-bottom:.3em;">
+              Do this for each extension you plan to use that exists in the old extension directory, but not the new one.
+          </span>
+      </p>
+      
+      
+      <h4 style="font-size:1.5em;color:black;margin-top:2em;">&#9829; Reinstalling extensions using PECL</h4>
+      <p style="margin-top:1em;">
+          <span style="display:block;margin-bottom:.3em;">
+              For extensions installed through PECL, simply upgrading any packages which have updates available will cause the updated shared libraries to be placed in the new extension directory:
+          </span>
+          
+          <span style="display:block;margin:.6em 0;color:rgb(204, 65, 0);font-size:1em;">
+             <b>sudo pecl update-channels && sudo pecl upgrade</b>
+          </span>          
+          <span style="display:block;margin-bottom:.3em;">
+              If the extensions were installed through PECL, but no new version is available, you can reinstall the extension using:
+          </span>
+          <span style="display:block;margin:.6em 0;color:rgb(204, 65, 0);font-size:1em;">
+             <b>sudo pecl uninstall EXTNAME && sudo pecl install EXTNAME</b>
+          </span>       
+          <span style="display:block;margin-bottom:.3em;">
+              Note that for extensions installed this way any old versions of the extension are removed so if you wish to go back to an older version of PHP in the future you will need to either reinstall or link to the new location of the extensions.
+          </span>
+      </p>
+      
+      <h4 style="font-size:1.5em;color:black;margin-top:2em;">&#9829; Manually specifying the extension directory location</h4>
+      <p style="margin-top:1em;">
+          <span style="display:block;margin-bottom:.3em;">
+              Finally, if all of the extensions you wish to use are in a single location, you can edit your PHP configuration and specify the directory to use. To do this, edit /etc/php5/apache/php.ini, and find the line with "extension_dir". Uncomment and adjust the parameter to point to the directory where you extensions (the files ending in .so) are installed, e.g.:
+          </span>
+          
+          <span style="display:block;margin:.6em 0;color:rgb(204, 65, 0);font-size:1em;">
+             <b>extension_dir = /usr/lib/php5/20090626</b>
+          </span>  
+      </p>
+      
+      <h4 style="font-size:1.5em;color:black;margin-top:2em;">&#9829; Restart Apache</h4>
+      <p style="margin-top:1em;">
+          
+          <span style="display:block;margin:.6em 0;color:rgb(204, 65, 0);font-size:1em;">
+             <b>sudo service apache2 restart</b>
+          </span>  
+          <span style="display:block;margin-bottom:.3em;">
+              You should now be running the latest version of PHP. Check <b>/var/log/apache/error.log</b> and try out some of the different Helioviewer API calls to make sure all of the functionality is working properly.
+          </span>
+      </p>
+      
+      <h4 style="font-size:1.5em;color:black;margin-top:2em;">&#9829; Print phpinfo()</h4>
+      <p style="margin-top:1em;">
+          
+          <span style="display:block;margin:.6em 0;color:rgb(204, 65, 0);font-size:1em;">
+             <b>&lt;?php <br />
+               &nbsp;&nbsp;&nbsp;&nbsp; phpinfo(); <br />
+               <br />
+              &nbsp;&nbsp;&nbsp;&nbsp; echo "&lt;hr /&gt;";
+              <br />
+               <br />
+              &nbsp;&nbsp;&nbsp;&nbsp; $gdInfoArray  = gd_info();<br />
+              &nbsp;&nbsp;&nbsp;&nbsp; $gdVersion    = $gdInfoArray["GD Version"];<br />
+              
+              &nbsp;&nbsp;&nbsp;&nbsp; echo "Your GD version is: " .$gdVersion;<br />
+              
+              ?&gt;
+              
+              
+              
+               </b>
+          </span>  
+          
+      </p>
+      
+      <h4 style="font-size:1.5em;color:black;margin-top:2em;">&#9829; Timezone complaints</h4>
+      <p style="margin-top:1em;">
+          <span style="display:block;margin-bottom:.3em;">
+              If you find that after installing the new version of PHP you are getting warnings along the lines of:
+          </span>
+          
+          <span style="display:block;margin:.6em 0;color:rgb(204, 65, 0);font-size:1em;">
+             <b>date() [function.date]: It is not safe to rely on the system's timezone settings. 
+             Please use the date.timezone setting, the TZ environment variable or the date_default_timezone_set() function. 
+             In case you used any of those methods and you are still getting this warning, you most likely misspelled the timezone identifier.</b>
+          </span>  
+          <span style="display:block;margin-bottom:.3em;">
+              Edit your PHP configuration (/etc/php5/apache/php.ini) and specify the timezone you wish to use. For example:
+          </span>
+          
+          <span style="display:block;margin:.6em 0;color:rgb(204, 65, 0);font-size:1em;">
+             <b>date.timezone=America/New_York</b>
+          </span>  
+      </p>
+      
+      <h4 style="font-size:1.5em;color:black;margin-top:2em;">&#9829; Getting Xdebug working</h4>
+      <p style="margin-top:1em;">
+          <span style="display:block;margin-bottom:.3em;">
+              If you installed Xdebug either through the Ubuntu repositories or using PECL, you may not be able to load it using the recommended "zend_extension" setting. 
+              To get Xdebug to work properly, download and compile the extension from source. 
+              To simplify the process, follow the directions from the <a target="_blank" href="http://xdebug.org/find-binary.php">Xdebug tailored installation instructions</a> tool.
+          </span>  
+      </p>
     ]]>
   </c:content>
 
