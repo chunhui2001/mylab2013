@@ -2511,6 +2511,208 @@ int main (int argc, char *argv[]) {
       <c:comment style="margin-top:2em;">
           <c:comment1 style="color:black;">
               <![CDATA[
+                  <img style="max-width:100%;" src="//c2.staticflickr.com/6/5561/14817930110_def3f7e5e1_b.jpg" />
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>集合对象：NSSet、NSMutableSet、NSIndexSet、NSCountedSet</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  
+                  
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="" title="集合的一些基本操作" id="sourceContent1">
+<![CDATA[
+#import <Foundation/Foundation.h>
+
+// 定义一个宏，用于方便的创建一个整数对象
+@define INTOBJ (v) [NSNumber numberWithInteger : v];
+
+// 使用 Printing 类，将打印方法添加到 NSSet
+@interface NSSet (Printing)
+
+-(void) print ;
+
+@end
+
+
+
+
+
+@implementation NSSet (Printing)
+
+
+// 该方法只适合打印整数类型的集合，所以它并不通用
+-(void) print {
+    printf ("{");
+
+    for (NSNumber *element in self) {
+        printf ("%li", (long) [element intergateValue]);
+    }
+
+    printf ("}");
+}
+
+@end
+
+
+
+
+
+int main (int argc, char *argv[]) {
+
+    @autoreleasepool {
+        NSMutableSet *set1 = [NSMutableSet setWithObjects :
+                                                INTOBJ(1), INTOBJ(3), INTOBJ(6), nil];
+        NSSet *set2 = [NSSet setWithObjects :
+                                    INTOBJ(-5), INTOBJ(3), INTOBJ(6), INTOBJ(7), nil];
+        NSSet *set3 = [NSSet setWithObjects :
+                                    INTOBJ(100), INTOBJ(4), INTOBJ(6), INTOBJ(7), nil];
+
+
+        NSLog(@"set1:");
+        [set1 print];
+
+        NSLog(@"set2:");
+        [set2 print];
+
+
+        // 判断相等
+        if ( [set1 isEqualToSet : set2] == YES) {
+            NSLog(@"set1 is equals set2");
+        }
+
+
+        // 成员测试
+        if ([set1 containsObject : INTOBJ(3)] == YES) {
+            NSLog(@"set1 contains 3");
+        }
+
+
+        // 添加
+        [set1 addObject : INTOBJ(4)];
+        [set1 removeObject : INTOBJ(6)];
+
+        [set1 print];
+
+
+        // 取得交集 (将运算的结果赋值给消息的接收者)
+        [set1 intersectSet : set2];
+        [set1 print];
+
+        //  取得并集
+        [set1 unionSet : set3];
+        [set1 print];
+        
+        
+        /*
+        
+        NSCountedSet 中的同一个元素可以出现多次，然而并非在集合中存放多次同一对象，而是维护一个次数计数器。
+        当第一次添加对象到集合中时，对象的 count 值被置为 1，删除时减 1，当 count 值为 0 时，该对象将被删除。
+        使用 countForObject 可以在集合中检索某个对象的 count 值
+        
+        */
+    }
+
+    return 0;
+}
+
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+                  <img style="max-width:100%;" src="//c2.staticflickr.com/4/3899/15004476342_b3bf0af105_b.jpg" />
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>NSIndexSet</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  该类用于存储<b>一组有序的索引</b>，比如数组的索引
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="" title="" id="sourceContent1">
+          <![CDATA[
+// 找到一个匹配的元素
+-(AddressCard) lookup : (NSString *) theName {
+
+    NSUInteger theIndex =
+                [book indexOfObjectPassingTest :
+                    ^(id obj, NSUInteger idx, BOOL *stop) {
+                        if ([[obj.name] caseInsensitiveCompare : theName] == NSOrderedSame) {
+                            *stop = YES;
+                            return YES;
+                        } else return NO;
+                    }
+                ];
+                
+    if (theIndex != NSNotFound) {
+        return [book objectAtIndex : theIndex];
+    } else return nil;
+}
+
+
+// 查找所有匹配项
+-(NSMutableArray *) lookupAll : (NSString *) theName{
+    NSMutableArray *theResults = [NSMutableArray array];
+
+    NSUInteger theIndex =
+                [book indexOfObjectPassingTest :
+                    ^(id obj, NSUInteger idx, BOOL *stop) {
+                        if ([[obj.name] caseInsensitiveCompare : theName] == YES) {
+                            [theResults addObject : obj];
+                            return YES;
+                        } else return NO;
+                    }
+                ];
+                
+    if ([theResult count]) {
+        return theResults;
+    } else return nil;
+}
+
+
+// 使用 indexesOfObjectsPassingTest 查找多个匹配项， 该方法返回 NSIndexSet
+-(NSIndexSet *) lookupAll : (NSString *) theName {
+    NSIndexSet *result = [book indexesOfObjectsPassingTest :
+                                ^(id obj, NSUInteger idx, BOOL *stop) {
+                                    if ([[obj.name] caseInsensitiveCompare : theName]
+                                                    == NSOrderedSame) {
+                                        return YES;
+                                    } else return NO;
+                                }];
+
+    // 将匹配的元素的所以放入返回结果中
+    return result;
+}
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+                  <img style="max-width:100%;" src="//c2.staticflickr.com/4/3850/14818467360_e561b07d19_b.jpg" />
               ]]>
           </c:comment1>
       </c:comment>

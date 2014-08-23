@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xsl:stylesheet version="1.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:c="http://com.snnmo.website"
@@ -168,7 +168,9 @@
             <xsl:if test="normalize-space(current()) != ''">
               <xsl:choose>
                 <xsl:when test="normalize-space(@style) != ''">
-                  <xsl:value-of disable-output-escaping="yes" select="current()"/>
+                      <li style="{@style}">
+                        <xsl:value-of disable-output-escaping="yes" select="current()"/>
+                      </li>
                 </xsl:when>
                 <xsl:otherwise>
                   <li style="color:rgb(205, 76, 0);">
