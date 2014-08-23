@@ -2724,6 +2724,365 @@ int main (int argc, char *argv[]) {
       <c:desc>
           <c:desc1>
               <![CDATA[
+                  
+                  <span style="display:block;margin-bottom:.3em;">
+                  在 Foundation 框架中处理文件或目录的类是 NSFileManager: 创建、读取、写入、重命名、删除、exists、复制、测试相等、读取大小和属性
+                  </span>
+                  
+                  <span style="display:block;margin-bottom:.3em;">
+                  NSFileHandle 提供的操作: 读文件、写文件、更新、查找指定位置、读取或写入指定数目的字节。该类也可以处理各种设备或套接字。
+                  </span>
+                  
+                  
+                  <span style="display:block;margin-bottom:.3em;">
+                  NSURL 可以从互联网读取数据
+                  </span>
+                  
+                  <span style="display:block;margin-bottom:.3em;">
+                  NSBundle 类提供了在应用中使用包 (Bundle) 的方法
+                  </span>
+                  
+                  
+                  <span style="display:block;margin-bottom:.3em;margin-top:.3em;">
+                  <img style="max-width:100%;" src="//c2.staticflickr.com/6/5564/14819164108_0d88fa5454_b.jpg" />
+                  </span>
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="" title="NSFileManager 管理文件和目录" id="sourceContent1">
+          <![CDATA[
+/*
+copy1.m 表示当前路径，也可以写成 ./copy1.m
+/copy1.m 绝对路径: /代表系统跟目录
+～/copy1.m 用户主目录
+
+尽量使用方法和函数来获取当前目录、用户主目录、创建林书文件的目录
+*/
+
+// 创建 NSFileManager 对象实例
+NSFileManager *fm = [NSFileManager defaultManager];
+
+// 删除文件并测试返回结果
+if ([fm removeItemAtPath : @"filename" error: NULL] == NO) {
+    NSLog(@"Couldn't remove file!");
+    return 1;
+}
+
+/*
+    属性字典允许你指定要创建的文件的权限，以便获取或者更改现有文件的信息。
+    对于文件的创建，如果将该参数指定为 nil，该文件会被设置为默认权限
+    
+    attributesOfItemAtPath:traverseLink: 方法返回一个包含指定文件属性的字典，
+    traverseLink: 参数的值为 YES 或 NO, 如果该文件是一个链接, 则指定 YES.
+*/
+
+
+
+// 基本的文件操作
+// 假设在当前目录有一个 testfile 的文件
+#import <Foundation/Foundation.h>
+
+int main (int argc, char *argv[]) {
+
+    @autoreleasepool {
+        NSString        *fName      = "testfile";
+        NSFileManager   *fm         = [NSFileManager defaultManager];
+        NSDictionary    *attr;
+
+
+        // 确定文件是否存在
+        if ([fm fileExistsAtPath : fName] == NO) {
+            NSLog(@"File not exists!");
+            return 1;
+        }
+
+        // 创建文件副本
+        if ([fm copyItemAtPath : fName toPath : @"newfile" error : NULL] == NO) {
+            NSLog(@"Copy file faild!");
+            return 2;
+        }
+
+        // 测试两个文件是否一致
+        if ([fm contentsEqualAtPath : fName andPath : @"newfile" error: NULL] == NO) {
+            NSLog (@"Files are not equal!");
+            return 3;
+        }
+
+        // 重命名
+        if ([fs moveItemAtPath : @"newfile" toPath : @"newfile2" error: NULL] == NO) {
+            NSLog(@"File rename failed!");
+            return 4;
+        }
+
+        // 取得文件大小
+        if ((attr = [fs attributesOfItemAtPath : @"newfile" error: NULL]) == nil) {
+            NSLog(@"Couldn't get file attributes!");
+            return 5;
+        }
+
+        NSLog(@"File size is %llu bytes.",
+                    [[attr objectForKey : NSFileSize] unsignedLongLongValue]);
+                    
+                    
+        // 删除文件
+        if ( [fs removeItemAtPath : fName error: NULL] == NO) {
+            NSLog(@"remove item failed!");
+            return 6;
+        }
+        
+        // 显示文件内容
+        NSLog(@"%@", [NSString stringWithContentsOfFile :
+                        @"newfile" encoding : NSUTF8StringEncoding error : NULL]);
+
+    }
+
+    return 0;
+}
+
+
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:sourceContent type="" title="NSData" id="sourceContent1">
+          <![CDATA[
+/*
+使用文件时，需要频繁地将数据读入到一个临时存储区，这个临时存储区通常称为缓冲区
+
+既可以定义不可变缓冲区 NSData, 也可以定义可变缓冲区 NSMutableData
+*/
+
+
+#import <Foundation/Foundation.h>
+
+int main (int argc, char *argv[]) {
+
+    @autoreleasepool {
+
+        NSFileManager *fm = [NSFileManager defaultManager];
+        NSData *data ;
+
+
+        data = [fm contentsAtPath : @"filename"];
+
+        if (data == nil) {
+            NSLog (@"File read failed!");
+            return 1;
+        }
+
+        if ([fs createFileAtPath : @"newfile" contents : data attributes: nil] == NO) {
+            NSLog(@"Couldn't create the copy!");
+            return 2;
+        }
+
+        NSLog (@"File copy was successful!");
+    }
+
+    return 0;
+}
+          ]]>
+      </c:sourceContent>
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>使用目录</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  <img style="max-width:100%;" src="//c2.staticflickr.com/4/3855/14820609228_73e05e8252_b.jpg" />
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="" title="" id="sourceContent1">
+          <![CDATA[
+#import <Foundation/Foundation.h>
+
+int main (int argc, char *argv[]) {
+
+    @autoreleastpool {
+        NSString *dirName = @"testDir";
+        NSString *path ;
+
+        NSFileManager *fm = [NSFileManager defaultManager];
+
+        // 取得当前目录
+        path = [fs currentDirectoryPath];
+        NSLog (@"Current directory is %@.", path);
+
+        // 创建一个新目录
+        if([fs createDirectoryAtPath : dirName
+                        withIntermediateDirectories : YES
+                        attributes : nil error : NULL] == NO) {
+            NSLog (@"Couldn't create folder!");
+            return 1;
+        }
+
+
+        // 重命名
+        if ([fs moveItemAtPath : dirName toPath : @"newDir" error: nil] == NO) {
+            NSLog (@"Couldn't not move directory!");
+            return 2;
+        }
+
+        // 转到新的目录
+        if ([fs changeCurrentDirectoryPath : @"newDir"] == NO) {
+            NSLog (@"Couldn't change dictory!");
+            return 3;
+        }
+
+        // 取得当前目录
+        NSLog (@"Current directory is %@", [fs currentDirectoryPath]);
+        
+        
+        
+        // 遍历文件夹及子文件夹 enumeratorAtPath
+        NSDirectoryEnumerator *dirEnum;
+        dirEnum = [fs enumeratorAtPath : @"newDir"];
+        while ((path = [dirEnum nextObject]) != nil) {
+        
+            // 忽略自文件夹
+            if([fs fileExistsAtPath : path isDirectory : &flag]) {
+                if (flag == YES) [dirEnum skipDescendents];
+            }
+            
+            NSLog(@"%@", path);
+        }
+        
+        
+        // 遍历文件夹但是忽略子文件夹
+        NSArray *dirArray;
+        dirArray = [fs contentsOfDirectoryAtPath : [fs currentDirectoryPath] error : NULL];
+        
+        for (path in dirArray)
+        NSLog (@"%@", path);
+    }
+
+    return 0;
+}
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>使用路径 NSPathUtilities.h</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  NSPathUtilities.h 包含了 NSString 的函数和分类扩展，可以操作路径名。
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="" title="路径的基本操作" id="sourceContent1">
+          <![CDATA[
+#import <Foundation/Foundation.h>
+
+int main(int argc, char *argv[]) {
+
+    @autoreleastpool {
+        NSString *fName = "path.m";
+        NSFileManager *fs ;
+
+        NSString *path, *tempdir, *extension, *homeDir, *fullPath;
+
+        NSArray *components;
+
+
+        // 取得系统临时工作目录 (如果在这个目录中创建临时文件，一定要在任务完成之后将之删除，并确保文件名是唯一的)
+        tempDir = NSTemporaryDirectory();
+
+        // 取得当枪路径
+        path = [fs currentDirectoryPath];
+        
+        // 取得路径的最后一部分 (通常是文件名)
+        NSLog (@"%@", [path lastPathComponent]);
+        
+
+        // 创建文件名和当前路径完整路径
+        fullPath = [path stringByAppendingPathComponent : fName];
+
+        // 取得文件扩展名 (如果没有扩展名则返回一个空字符串)
+        extension = [path pathExtension];
+
+        // 取得用户主目录
+        homeDir = NSHomeDirectory();
+
+        // 拆分路径为各组成部分
+        components = [homeDir pathComponents];
+
+        // 打印各组成部分
+        for (path in components)
+            NSLog (@"%@", path);
+            
+            
+            
+        // 查找系统的特殊目录，如: Application、Documents
+        // NSSearchPathForDirectoriesInDomains 用于查找系统的特殊目录
+        NSArray *dirList = NSSearchPathForDirectoriesInDomains (NSDocumentDirectory, NSUserDomainMask, YES);
+        NSString *docDir = [dirList objectAtIndex : 0];
+        
+        // 取得文件在 Documents 目录中的全名称
+        NSString *fileFullNameAtDocuments = [docDir stringByAppendingPathComponent : @"fileName"];
+        
+        /*
+            为了保存数据，直到下次运行程序仍能使用，可以使用 Documents 目录。
+            每个 iOS 应用都有自己的 Documents 目录供数据写入。
+            应用中的 Caches 目录也可以存储一些输入。但是在 iOS5+ 来说，Apple 鼓励开发者将数据存储到云端。
+            
+            
+            NSSearchPathForDirectoriesInDomains ：
+            第一个参数是指定要查找目录的路径，
+            第二个参数可以是多个值，用于指定要列出的目录，如: 用户的、系统的、或所有目录，
+            第三个参数用于指定是否展开路径中的 ~ 字符，
+            返回类型是一组路径的数组，如果第二个参数指定多个值，则返回的数组中将包含多个值
+            
+        */
+    }
+
+return 0;
+}
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+                  <img style="max-width:100%;" src="//c2.staticflickr.com/6/5562/14821095567_6871877eb9_b.jpg" />
+                  <br />
+                  
+                  <img style="max-width:100%;" src="//c2.staticflickr.com/6/5555/14821027499_498971c87e_z.jpg" />
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+  
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>复制文件和使用 NSProcessInfo </c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
                   。。
               ]]>
           </c:desc1>
@@ -2743,8 +3102,6 @@ int main (int argc, char *argv[]) {
           </c:comment1>
       </c:comment>
   </c:entry>
-  
-  
   
   
   <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
