@@ -3079,18 +3079,74 @@ return 0;
   
   
   <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
-      <c:title>复制文件和使用 NSProcessInfo </c:title>
+      <c:title>NSProcessInfo </c:title>
       <c:desc>
           <c:desc1>
               <![CDATA[
-                  。。
+                  NSProcessInfo 类中包含一些方法，可以设置或检索正在运行的应用程序 (进程)。
+                  
+                  <br />
+                  
+                  <img style="max-width:100%;" src="//c2.staticflickr.com/6/5561/14993432516_bbbb1b2722_b.jpg" />
               ]]>
           </c:desc1>
       </c:desc>
       
-      <c:sourceContent type="html" title="" id="sourceContent1">
+      <c:sourceContent type="" title="基本的复制工具" id="sourceContent1">
           <![CDATA[
-              .
+#import <Foundation/Foundation.h>
+
+int main (int argc, char *argv[]) {
+
+    @autoreleasepool {
+        NSFileManager *fm ;
+        NSString *source, *dest;
+        BOOL isDir;
+        NSProcessInfo *proc = [NSProcessInfo processInfo];
+        NSArray *args = [proc arguments];
+
+        fs = [NSFileManager defaultManager];
+
+        // 检查命令行的两个参数
+        if ([args count] != 3) {
+            NSLog(@"Usage: %@ src dest", [proc processName]);
+            return 1;
+        }
+
+        source = [args objectAtIndex : 1];
+        dest = [args objectAtIndex : 2];
+
+        // 确定能够读取源文件
+        if ([fm isReadableFileAtPath : source] == NO) {
+            NSLog ("Can't read %@", source);
+            return 2;
+        }
+
+        // 目标文件是否是一个目录
+        // 若是添加到目标的结尾
+        [fm fileExistsAtPath : dest isDirectory : &isDir];
+
+        if (isDir == YES) {
+            dest = [dest stringByAppendingPathComponent : [source lastPathComponent]];
+        }
+
+
+        // 若目标已存在则将其删除
+        [fm removeItemAtPath : dest error : NULL];
+
+
+        // 执行复制
+        if ([fm copyItemPath : source toPath : dest error: NULL] == NO) {
+            NSLog (@"Copy failed!");
+            return 3;
+        }
+
+        NSLog (@"Copy of %@ to %@ successed!", source, dest);
+
+    }
+
+    return 0;
+}
           ]]>
       </c:sourceContent>
       
@@ -3104,6 +3160,238 @@ return 0;
   </c:entry>
   
   
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+      <c:title>基本的文件操作：NSFileHandle</c:title>
+      <c:desc>
+          <c:desc1>
+              <![CDATA[
+                  利用 NSFileHandle 类更有效地处理文件。
+                  
+                  <br />
+                  
+                  <img style="max-width:100%;" src="//c2.staticflickr.com/4/3874/14830105187_eddbcd5256_b.jpg" />
+                  
+                  <br />
+                  
+                  <span style="display:block;margin-bottom:.3em;margin-top:.3em;">
+                  这里没有列出异步读取或写入的方法。
+                  </span>
+                  <span style="display:block;margin-bottom:.3em;margin-top:.3em;">
+                  NSFileHandle 没有提供创建文件的方法，必须使用 NSFileManager 类创建文件。
+                  </span>
+              ]]>
+          </c:desc1>
+      </c:desc>
+      
+      <c:sourceContent type="" title="文件的一些基本操作" id="sourceContent1">
+          <![CDATA[
+/*
+    假设在当前目录存在一个 "testfile" 文件
+*/
+
+#import <Foundation/Foundation.h>
+
+int main (int argc, char *argv[]) {
+
+    @autoreleasepool {
+
+        NSFileHandle *inFile, *outFile;
+        NSData *buffer;
+
+        // 打开文件并读取
+        inFile = [NSFileHandle fileHandleForReadingAtPath : @"testFile"];
+
+        if  (inFile == nil) {
+            NSLog (@"Open of testfile for reading failed!");
+            return 1;
+        }
+
+        // 创建输出文件
+        [[NSFileManager defaultManager] createFileAtPath : @"testout"
+                                        contents : nil
+                                        attributes : nil];
+
+        // 打开文件待写入
+        outFile = [NSFileHandle fileHandleForWritingAtPath : @"testout"];
+
+        if ( outFile == nil) {
+            NSLog (@"Open of testout for writing failed!");
+            return 2;
+        }
+
+        // 因为输出文件可能包含数据，截断输出文件
+        [outFile truncateFileAtOffset : 0];
+
+        // 从 inFile 中读取数据，并写入到 outFile
+        /*
+         readDataToEndOfFile 每次从文件中读取最多 UINT_MAX 字节的数据，
+         这个量定义在 <limits.h> 中，该值已经足够大。
+         
+         利用 readDataOfLength 可以设置循环读取，可以判断 NSData 的 length 确定文件是否已经读完。
+        */
+        buffer = [inFile readDataToEndOfFile];
+
+        [outFile writeData : buffer];
+
+        [inFile closeFile];
+        [outFile closeFile];
+
+        // 输出文件内容
+        NSLog (@"%@", [NSString stringWithContentsOfFile : @"testout"
+                                encoding : NSUTF8StringEncoding
+                                error : NULL]);
+
+    }
+
+    return 0;
+}
+          ]]>
+      </c:sourceContent>
+      
+      
+      <c:sourceContent type="" title="将文件 fileA 追加到 fileB" id="sourceContent1">
+          <![CDATA[
+#import <Foundation/Foundation.h>
+
+int main (int argc, char *argv[]) {
+
+    @autoreleasepool {
+
+        NSFileHandle *inFile, *outFile;
+        NSData *buffer;
+
+        // 打开文件 fileA 待读
+        inFile = [NSFileHandle fileHandleForReadingAtPath : @"fileA"];
+
+        if (inFile == nil) {
+            // failed
+            return 1;
+        }
+
+        // 打开文件 fileB 待写
+        outFile = [NSFileHandle fileHandleForWritingAtPath : @"fileB"];
+
+        if (outFile == nil) {
+            // failed
+            return 2;
+        }
+
+        // 定位到文件的末尾 (seekToEndOfFile 可以返回当前文件的偏移量，可以使用该值获取文件的大小)
+        [outFile seekToEndOfFile];
+
+        buffer = [inFile readDataToEndOfFile];
+
+        [outFile writeData : buffer];
+
+        // 关闭文件
+        [inFile closeFile];
+        [outFile closeFile];
+
+        // 输出内容
+        NSLog (@"%@", [NSString stringWithContentsOfFile : @"fileB"
+                                encoding : NSUTF8StringEncoding
+                                error : null]);
+
+    }
+
+    return 0;
+}
+          ]]>
+      </c:sourceContent>
+      
+      <c:comment style="margin-top:2em;">
+          <c:comment1 style="color:black;">
+              <![CDATA[
+              ]]>
+          </c:comment1>
+      </c:comment>
+  </c:entry>
+
+
+<c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+    <c:title>NSURL</c:title>
+    <c:desc>
+        <c:desc1>
+            <![CDATA[
+                
+            ]]>
+        </c:desc1>
+    </c:desc>
+    
+    <c:sourceContent type="" title="利用 NSURL 抓去网页内容" id="sourceContent1">
+        <![CDATA[
+#import <Foundation/Foundation.h>
+
+int mian (int argc, char *argv[]) {
+
+    @autoreleasepool {
+        NSURL *myURL = [NSURL URLWithString : @"http://www.snnmo.com"];
+        NSString *pageContent = [NSString stringWithContentsOfURL : myURL
+                                          encoding : NSASCIIStringEncoding
+                                          error : NULL];
+
+        NSLog (@"%@", pageContent);
+    }
+
+    return 0;
+}
+        ]]>
+    </c:sourceContent>
+    
+    
+    <c:comment style="margin-top:2em;">
+        <c:comment1 style="color:black;">
+            <![CDATA[
+            ]]>
+        </c:comment1>
+    </c:comment>
+</c:entry>
+
+
+<c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+    <c:title>NSBundle</c:title>
+    <c:desc>
+        <c:desc1>
+            <![CDATA[
+                
+                <span style="display:block;margin-bottom:.3em;margin-top:.3em;">
+                NSBundle 可以访问与应用相关的一些资源，例如：图片、本地化字符串、图标等等。
+                </span>
+                <span style="display:block;margin-bottom:.3em;margin-top:.3em;">
+                将需要添加的资源拖拽到 Xcode 的左边窗格中，当出现对话框时选择复制资源文件到项目目录中。
+                </span>
+            ]]>
+        </c:desc1>
+    </c:desc>
+    
+    <c:sourceContent type="" title="" id="sourceContent1">
+        <![CDATA[
+// 返回存储在应用包中 instructions.txt 文件的内容
+NSString *filePath = [[NSBundle mainBundle] pathForResource : @"instructions"
+                                            ofType : @"txt"];
+
+NSString *fileContent = [NSString stringWithContentsOfFile : filePath
+                                  encoding : NSUTF8StringEncoding
+                                  error : NULL];
+
+// 列出应用中所有以 .jpg 为文件结尾的 JPEG 图片
+NSArray *jpgList = [NSBundle mainBundle] pathsForResourcesOfType : @"jpg" inDirectory : @""];
+        ]]>
+    </c:sourceContent>
+    
+    
+    <c:comment style="margin-top:2em;">
+        <c:comment1 style="color:black;">
+            <![CDATA[
+            ]]>
+        </c:comment1>
+    </c:comment>
+</c:entry>
+
+
+
   <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
       <c:title>内存管理和自动引用计数</c:title>
       <c:desc>
@@ -3242,7 +3530,7 @@ return 0;
       <c:desc>
           <c:desc1>
               <![CDATA[
-                  。。
+                  <img style="max-width:100%;" src="//c2.staticflickr.com/4/3910/14832896137_5361774340_b.jpg" />
               ]]>
           </c:desc1>
       </c:desc>
