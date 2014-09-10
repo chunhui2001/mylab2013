@@ -146,9 +146,56 @@
     <b style="color:rgb(195, 18, 219);font-size:2em;line-height:2em;">处理文件</b> <br />
     <ul>
       <li><b style="color:green;">$fo = fopen("$_SERVER['DOCUMENT_ROOT']/../orders/orders.txt", "w");</b> </li>
-      <li>fopen() 需要两个或 3、4 个参数， 通常使用两个。</li>
-      <li>$_SERVER['DOCUMENT_ROOT'] 返回当前 web 服务器的跟目录</li>
+      <li><b>fopen()</b> 需要两个或 3、4 个参数， 通常使用两个。</li>
+      <li><b>$_SERVER['DOCUMENT_ROOT']</b> 返回当前 web 服务器的跟目录</li>
     </ul>
+    <br />
+    <br />
+    <br />
+    <b style="color:rgb(195, 18, 219);font-size:2em;line-height:2em;">返回多个值</b> <br />
+    <ul>
+      <li>使用 php 特有的语言构造 <b>list()</b>, 可以接收函数返回的多个值。 </li>
+    </ul>
+    <br />
+    <div>
+      &lt;?php <br />
+      &nbsp;&nbsp;&nbsp;&nbsp;  $colors = array ("red", "green", "blue"); <br />
+      &nbsp;&nbsp;&nbsp;&nbsp;  list ($red, $green, $blue) = $colors; <br />
+      ?&gt; <br />
+    </div>
+    <br />
+    <ul>
+      <li>根据这个构造可以联想到怎样从函数返回多个值.</li>
+    </ul>
+    <br />
+    <br />
+    <br />
+    <b style="color:rgb(195, 18, 219);font-size:2em;line-height:2em;">函数库</b> <br />
+    <div>
+      &lt;?php? <br />
+      &nbsp;&nbsp;&nbsp;&nbsp;    function localTax ($grossIncome, $taxRate) { <br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        // .. <br />
+      &nbsp;&nbsp;&nbsp;&nbsp;    } <br />
+      &nbsp;&nbsp;&nbsp;&nbsp;     <br />
+      &nbsp;&nbsp;&nbsp;&nbsp;    function stateTax ($grossIncome, $taxRate, $age) { <br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        // .. <br />
+      &nbsp;&nbsp;&nbsp;&nbsp;    } <br />
+      &nbsp;&nbsp;&nbsp;&nbsp;     <br />
+      &nbsp;&nbsp;&nbsp;&nbsp;    function medicare ($grossIncome, $medicateRate) { <br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        // .. <br />
+      &nbsp;&nbsp;&nbsp;&nbsp;    } <br />
+      ?&gt;
+       <br />
+      <br />
+      可以将该库保存到 taxes.libraty.php 文件中, 然后使用 <b>include(), include_once(), require(), require_once()</b> 将该函数插入到脚本中，
+      也可以使用 PHP 的 <b>auto_prepend</b> 配置指令自动完成文件插入.
+      <br />
+      <br />
+      &lt;?php  <br />
+      &nbsp;&nbsp;&nbsp;&nbsp;     require_once("taxes.libraty.php"); <br />
+      ?&gt;
+      
+    </div>
     ]]>
     </c:sourceContent>
 
@@ -253,7 +300,7 @@ class Article extends Document {
     
     /*
       继承构造函数在很多时候可能不是一个好的主意，
-      如果集成的层次太深，可能会让重构的工作更加困难。
+      如果继承的层次太深，可能会让重构的工作更加困难。
       最好将所有父类构造函数中的代码复制到子类中，这可以增加代码可读性，而且改起来也方便。
       这种小范围的重复不会带来什么问题。
     */
