@@ -1,0 +1,590 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chHtmlContent" componentId="chHtmlContent_1" xmlns:c="http://com.snnmo.website">
+	<c:content>
+    <![CDATA[ 
+      
+      <p style="margin-bottom:1em;">
+        In this tutorial we will learn about,how to install own git server with ssh and http access by using gitolite and gitweb in Ubuntu.
+        For user management in Git Server,we will use the Gitolite.
+        For showing the repository list on web interface,we will use Gitweb. 
+        And Smart HTTP is configured in Apache, to access the Git server via HTTP.
+      </p>
+      
+      <blockquote>
+      <p style="padding:0;font-weight:bold;font-family:sans-serif;">Operating System: <span>Ubuntu 12.04 LTS</span></p>
+      <p style="padding:0;font-weight:bold;font-family:sans-serif;">Arch : <span>i686</span></p>
+      <p style="padding:0;font-weight:bold;font-family:sans-serif;">Git Server IP Address: <span>10.10.0.16</span></p>
+      </blockquote>
+      
+    
+      <h2 style="font-size:1.5em;font-weight:bold;font-family:sans-serif;">Why Gitolite ?</h2>
+      <p style="margin-bottom:1em;">
+        Answer: Easy to setup,have user management through command line,very less memory and cpu usage.
+      </p>
+    
+      <h2 style="font-size:1.5em;font-weight:bold;font-family:sans-serif;">Why Gitweb?</h2>
+      <p style="margin-bottom:1em;">
+        Answer: To display repositories in web interface and view can be manage from Gitolite also.
+      </p>
+      
+      
+      <h2 style="font-size:1.5em;font-weight:bold;font-family:sans-serif;">Enable SSH connection on Server</h2>
+      <p style="margin-bottom:1em;">
+        <blockquote>
+          sudo apt-get update <br />
+          sudo apt-get install openssh-server <br />
+          sudo ufw allow 22
+        </blockquote>
+      </p>
+      
+      <h2 style="font-size:1.5em;font-weight:bold;font-family:sans-serif;">To setup the gitolite and gitweb follow given below steps</h2>
+      <div style="margin-bottom:1em;">
+        <span style="font-size:1.1em;"><b>Step 1:</b> Login into your server and become superuser root</span>
+        <br />
+        <span><b style="color:rgb(56, 208, 56);">$ sudo su -</b></span>
+        <br />
+        <br />
+        
+        <span style="font-size:1.1em;"><b>Step 2:</b> Now install git</span>
+        <br />
+        <span><b style="color:rgb(56, 208, 56);">$ apt-get install git</b></span>
+        <br />
+        <br />
+        
+        <span style="font-size:1.1em;"><b>Step 3:</b> create user git with disabled password and login shell bash <b>(Do not set password for user git)</b>
+          And then add the user of git to ssh group.
+        </span>
+        <br />
+        <span><b style="color:rgb(56, 208, 56);">$ adduser \ <br />
+    --system \ <br />
+    --shell /bin/bash \ <br />
+    --gecos 'git version control' \ <br />
+    --group \ <br />
+    --disabled-password \ <br />
+    --home /home/git \ <br />
+    git <br />
+        <br />
+        $ adduser git ssh
+        </b>
+        
+        
+        </span>
+        <br />
+        <br />
+        
+        <span style="font-size:1.1em;"><b>Step 4:</b>Now login with user git</span>
+        <br />
+        <span><b style="color:rgb(56, 208, 56);">$ su -l git</b></span>
+        <br />
+        <br />
+        
+        <span style="font-size:1.1em;"><b>Step 5:</b>In git directory means /home/git get clone of gitolite with help of git command</span>
+        <br />
+        <span>
+        <b style="color:rgb(56, 208, 56);">
+        $ cd /home/git <br />
+        $ git clone git://github.com/sitaramc/gitolite
+        </b>
+        </span>
+        <br />
+        <br />
+        
+        <span style="font-size:1.1em;"><b>Step 6:</b>Create a directory called bin in /home/bin (you are still log in as user git)</span>
+        <br />
+        <span>
+          <b style="color:rgb(56, 208, 56);">
+            $ mkdir $HOME/bin
+          </b>
+        </span>
+        <br />
+        <br />
+        
+        <span style="font-size:1.1em;"><b>Step 7:</b> Now install the git (After git clone, the directory gitolite you can see in /home/git. It has the setup files)</span>
+        <br />
+        <span>
+          <b style="color:rgb(56, 208, 56);">
+            $ gitolite/install -ln
+          </b>
+        </span>
+        <br />
+        <br />
+        
+        <span style="font-size:1.1em;"><b>Step 8:</b> After hitting the command “gitolite/install -ln” , just check in bin directory.Is new gitolite file created itself or not</span>
+        <br />
+        <span>
+          <b style="color:rgb(56, 208, 56);">
+            $ ls bin/gitolite  <br />
+bin/gitolite
+          </b>
+        </span>
+        <br />
+        <br />
+        
+        <span style="font-size:1.1em;"><b>Step 9:</b> Now login into your linux system or pc from where you want to manage the Git Server as Git-Admin. 
+        Here we will create RSA key and this RSA key we will move to gitolite server.
+        If you already have RSA key in $HOME/.ssh ,you can skip this step.
+          <br />
+          <br />
+          Create RSA key, after hiting the command just <b>press enter</b> when it ask for passphrase.
+        </span>
+        <br />
+        <span>
+          <b style="color:rgb(56, 208, 56);">
+            $ ssh-keygen -t rsa -C "Git-Admin"   <br />
+            <br />
+            ( adds your private key identities to the authentication agent) <br />
+            $ eval `ssh-agent -s' <br />
+            $ ssh-add "your private key name which is just generated" 
+          </b>
+        </span>
+        <br />
+        <br />
+        
+        <span style="font-size:1.1em;"><b>Step 10:</b> Now from your system scp the key into git server.</span>
+        <br />
+        <span>
+          <b style="color:rgb(56, 208, 56);">
+            scp ~/.ssh/id_rsa.pub username@git-server-FQDN-or-its-ip-address:~         
+          </b>
+        </span>
+        <br />
+        <br />
+        
+        <span style="font-size:1.1em;"><b>Step 11:</b> 
+        Now login back to <b>git server</b> and become superuser , 
+        <b>move & rename the id_rsa.pub to /home/git as Git-Admin.pub</b>,
+        change its ownership and group to git and and then login with user git again.
+        </span>
+        <br />
+        <span>
+          <b style="color:rgb(56, 208, 56);">
+            $ sudo mv id_rsa.pub /home/git/Git-Admin.pub <br />
+            $ sudo chown git:git /home/git/Git-Admin.pub   <br />
+            <br />
+            $ su -l git <br />
+            $ whoami
+          </b>
+        </span>
+        <br />
+        <br />
+        
+        <span style="font-size:1.1em;"><b>Step 12:</b> 
+        Now setup the Git Admin. See the below files and directories are also created.
+        </span>
+        <br />
+        <span>
+          <b style="color:rgb(56, 208, 56);">
+            $ bin/gitolite setup -pk Git-Admin.pub <br />
+            Initialized empty Git repository in /home/git/repositories/gitolite-admin.git/ <br />
+            Initialized empty Git repository in /home/git/repositories/testing.git/ <br />
+            WARNING: /home/git/.ssh missing; creating a new one <br />
+            WARNING: /home/git/.ssh/authorized_keys missing; creating a new one
+          </b>
+        </span>
+        <br />
+        <br />
+        
+        <blockquote>
+        We renamed the id_rsa.pub file to Git-Admin.pub ,
+        the reason is the Gitolite will provide same name of user in gitolite.conf file as the name of .pub file.
+        for eg. if I use only id_rsa.pub then “id_rsa” user will be created.
+        Hence if you are adding any user in Git Server by using its ssh key, rename the user’s id_rsa.pub key with user-name.pub .
+        like joe’s rsa file should be change into joe.pub (id_rsa.pub –rename–> joe.pub)
+        </blockquote>
+        <br />
+        <br />
+        
+        <span style="font-size:1.1em;"><b>Step 13:</b> 
+        See some more important files and folder are created but they are hidden.
+        </span>
+        <br />
+        <span>
+          <b style="color:rgb(56, 208, 56);">
+            $ ls -la <br />
+          </b>
+        </span>
+        <table>
+          <tbody>
+            <tr>
+              <td>-rw-------</td><td>7</td><td>git</td><td>git</td><td>160</td><td>May 31 22:03</td><td>.bash_history</td>
+            </tr>
+            <tr>
+              <td>drwxrwxr-x</td><td>7</td><td>git</td><td>git</td><td>4096</td><td>May 31 22:03</td><td>bin </td>
+            </tr>
+            <tr>
+              <td>-rw-r--r--</td><td>7</td><td>git</td><td>git</td><td>391</td><td>May 31 22:03</td><td> Git-Admin.pub </td>
+            </tr>
+            <tr>
+              <td>drwxr-xr-x</td><td>7</td><td>git</td><td>git</td><td>4096</td><td>May 31 22:03</td><td>gitolite </td>
+            </tr>
+            <tr>
+              <td>drwxrwxr-x</td><td>7</td><td>git</td><td>git</td><td>4096</td><td>May 31 22:03</td><td>.gitolite</td>
+            </tr>
+            <tr>
+              <td>-rw-rw-r--</td><td>7</td><td>git</td><td>git</td><td>5179</td><td>May 31 22:03</td><td>.gitolite.rc </td>
+            </tr>
+            <tr>
+              <td>-rw-rw-r--</td><td>7</td><td>git</td><td>git</td><td>12</td><td>May 31 22:03</td><td> projects.list</td>
+            </tr>
+            <tr>
+              <td>drwxrwxr-x</td><td>7</td><td>git</td><td>git</td><td>4096</td><td>May 31 22:03</td><td>repositories </td>
+            </tr>
+            <tr>
+              <td>drwx------</td><td>7</td><td>git</td><td>git</td><td>4096</td><td>May 31 22:03</td><td>.ssh</td>
+            </tr>
+          </tbody>
+        </table>
+        <br />
+        <br />
+        
+        <span style="font-size:1.1em;"><b>Step 14:</b> 
+        If you do <b>“ls -la repositories”</b> you can find two repo bydefault created. <br />
+        One is for git admin purpose and second is testing repo
+        </span>
+        <br />
+        <span>
+          <b style="color:rgb(56, 208, 56);">
+            $ ls -la repositories/ 
+          </b>
+        </span>
+        
+         <table>
+          <tbody>
+            <tr>
+              <td>drwxrwxr-x</td><td>8</td><td>git</td><td>git</td><td>4096</td><td>May 31 22:03</td><td>gitolite-admin.git</td>
+            </tr>
+            <tr>
+              <td>drwxrwxr-x</td><td>7</td><td>git</td><td>git</td><td>4096</td><td>May 31 22:03</td><td>testing.git</td>
+            </tr>
+          </tbody>
+        </table>
+        <br />
+        <br />
+        
+        
+        
+        <span style="font-size:1.1em;"><b>Step 15:</b> 
+        Login back to your system where you created for the Git-Admin RSA key.
+        <br />
+        In youremail@example.com replace with your email id.
+        </span>
+        <br />
+        <span>
+          <b style="color:rgb(56, 208, 56);">
+            $ apt-get install git <br />
+            $ cd ~/Desktop <br />
+            $ git config --global user.name "Git-admin" <br />
+            $ git config --global user.email "youremail@example.com" <br />
+            $ <br />
+            $ git config --list <br />
+            user.name=Git-admin <br />
+            user.email=youremail@example.com
+          </b>
+        </span>
+        <br />
+        <br />
+        
+        
+        
+        <span style="font-size:1.1em;"><b>Step 16:</b> 
+        Now clone the gitolite-admin.git from git server
+        </span>
+        <br />
+        <span>
+          <b style="color:rgb(56, 208, 56);">
+            $ git clone git@10.10.0.16:gitolite-admin.git
+          </b>
+        </span>
+        <br />
+        <br />
+        
+        
+      <blockquote>
+      Now gitolite-admin directory will be present after cloneing from git server. <br />
+The gitolite.conf is mainly use for User and group ACL for git server. <br />
+Now from your system you can easily manage the user group ACL. But for this you have to do “git push”
+      </blockquote>
+      
+        <br />
+        <span>
+          <b style="color:rgb(56, 208, 56);">
+            $ cd gitolite-admin/conf/ <br />
+            $ cat gitolite.conf <br /> <br />
+            
+            repo gitolite-admin <br />
+            &nbsp;&nbsp;&nbsp;&nbsp;    RW+     =   Git-Admin <br /> <br />
+
+            repo testing <br />
+            &nbsp;&nbsp;&nbsp;&nbsp;    RW+     =   @all <br />
+          </b>
+        </span>
+        <br />
+        <br />
+        
+        
+        
+        
+        <span style="font-size:1.1em;"><b>Step 17:</b> 
+        How to push new changes of gitolite.conf into git server from my system
+        </span>
+        <br />
+        <span>
+          <b style="color:rgb(56, 208, 56);">
+            $ cd ~/Desktop/gitolite-admin/conf
+            <br />
+            $ git add gitolite.conf<br />
+            $ git commit -m "first commit"<br />
+            $ git push origin master
+          </b>
+        </span>
+        <br />
+        <br />
+        <span><b>Note:</b> “git pull” command is for pull the Version files/directory from Git Server.</span>
+        <br />
+        <br />
+      </div>
+      
+      <br />
+      <br />
+      
+      <h2 style="font-size:1.5em;font-weight:bold;font-family:sans-serif;">Install and Configure Gitweb</h2>
+      <div>
+        <span style="font-size:1.1em;"><b>Step 18:</b> 
+        Login back to git server and become super user root
+        </span>
+        <br />
+        <span>
+        <span style="color:red;">(To resolved GitWeb - 404 - No projects found)</span><br />
+        $ sudo usermod -a -G git www-data <br />
+        $ sudo chmod g+r /home/git/projects.list <br />
+        $ sudo chmod -R g+rx /home/git/repositories
+        
+        <br />
+        <br />
+        
+          <b style="color:rgb(56, 208, 56);">
+          
+        
+            $ sudo su <br />
+            $ apt-get install gitweb apache2
+          </b>
+          <br /><br />
+          It will install gitweb in /usr/share. <br />
+          In below details you can notice the index.cgi is symlink of gitweb.cgi
+          <br />
+          <br />
+          <b style="color:rgb(56, 208, 56);">
+            $ ls -l /usr/share/gitweb/
+          </b>
+        </span>
+        <br />
+        <table>
+          <tbody>
+            <tr>
+              <td>-rwxr-xr-x</td><td>1</td><td>root</td><td>root</td><td>236227 </td><td>May 31 22:03</td><td>gitweb.cg</td>
+            </tr>
+            <tr>
+              <td>lrwxrwxrwx </td><td>1</td><td>root</td><td>root</td><td>10</td><td>May 31 22:03</td><td>index.cgi -&gt; gitweb.cgi</td>
+            </tr>
+            <tr>
+              <td>drwxr-xr-x </td><td>1</td><td>root</td><td>root</td><td>4096 </td><td>May 31 22:03</td><td>static</td>
+            </tr>
+          </tbody>
+        </table>
+        <br />
+        <br />
+        
+        <span style="font-size:1.1em;"><b>Step 19:</b> 
+        Edit the /home/git/.gitolite.rc and change the UMASK value as <b>0027</b>
+        </span>
+        <br />
+        <span>
+          <b style="color:rgb(56, 208, 56);">
+            $ vi /home/git/.gitolite.rc
+          </b>
+          <br /><br />
+          <b>Change UMASK => 0077 to UMASK => 0027</b>
+        </span>
+        <br />
+        <br />
+        
+        <span style="font-size:1.1em;"><b>Step 20:</b> 
+        This one is important ,now edit <b>/etc/gitweb.conf</b> file and change the given below two lines only
+        </span>
+        <br />
+        <span>
+          <b style="color:rgb(56, 208, 56);">
+            $ vi /etc/gitweb.conf
+          </b>
+          <br /><br />
+          <b>
+            $projectroot = "/home/git/repositories/"; <br />
+            $projects_list = $projectroot;
+          </b>
+        </span>
+        <br />
+        <br />
+        
+        <blockquote>
+          <b>NOTE:</b> <br />Below given step is deleted and should not be followed with new gitweb version 1:1.7.9.5-1. 
+          If you have older version you can try this step.
+        </blockquote>
+        <br />
+        <br />
+      
+       <span style="font-size:1.1em;"><del><b>Step 21:</b> 
+        Edit /usr/share/gitweb/gitweb.cgi and change the value of $projectroot as “/home/git/repositories” and $projects_list as “/home/git/projects.list”
+        </del>
+        </span>
+        <br />
+        <br />
+        <span><del>
+          $ vi /usr/share/gitweb/gitweb.cgi <br />
+          our $projectroot = “/home/git/repositories/”; <br />
+          our $projects_list = “/home/git/projects.list”; <br /> <br />
+
+          edit /etc/gitweb.conf file and change the given below two lines only <br /> <br />
+
+          root@ubuntu:~# vi /etc/gitweb.conf <br />
+          $projectroot = “/home/git/repositories/”; <br />
+          $projects_list = “/home/git/projects.list”; </del>
+        </span>
+        <br />
+        <br />
+      
+       <span style="font-size:1.1em;"><b>Step 22:</b> 
+        Enable gitweb site in apache2
+        
+        </span>
+        <br />
+        <br />
+        <span>
+          <b>$ cp /etc/apache2/conf.d/gitweb /etc/apache2/conf-available/gitweb.conf</b>
+          <br />
+          <br />
+          Edit <b>gitweb.conf</b> adding <b>"+"</b> before FollowSymLinks, as described in the original report.
+          
+          <br />
+          <br />
+          <b>$ a2enconf </b><br />
+          choose gitweb
+          
+          <br />
+          <br />
+          <b>$ a2enmod cgi</b>
+          <b>$ service apache2 restart</b>
+        </span>
+      <br />
+      <br />
+      
+       <span style="font-size:1.1em;"><b>Step 23:</b> 
+        Now restart the apache2 and open the web browser and type http://git-server-ip/gitweb . In my practical case I will type http://10.10.0.16/gitweb
+        <br />
+        <br />
+        <b>Note:</b> gitweb apache config file is located in /etc/apache2/conf.d/gitweb
+        
+        </span>
+        <br />
+        <br />
+        <span>
+          $ /etc/init.d/apache2 restart 
+        </span><br />
+        <br />
+        <img style="max-width:100%;" src="/images/1323x743xgitweb.png.pagespeed.ic.CoaUwkFzU_.png" />
+        <br />
+        <br />
+      </div>
+      <br />
+      <br />
+      
+    
+      <h2 style="font-size:1.5em;font-weight:bold;font-family:sans-serif;">Securing Gitweb with htpasswd</h2>
+      <blockquote>
+        With above screenshot we can see the gitweb web page is accessable to all. 
+        To configure it more secure and make as ,it will ask user name and password, we will use htpasswd in apache.
+      </blockquote>
+      
+      <p>
+        configure htpasswd access in gitweb. Edit the file /etc/apache2/conf.d/gitweb
+      </p>
+      <br />
+      <p>
+        $ vi /etc/apache2/conf.d/gitweb <br />
+        Alias /gitweb /usr/share/gitweb <br /> <br />
+ 
+        &lt;Directory /usr/share/gitweb&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;     Options FollowSymLinks +ExecCGI <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;     AddHandler cgi-script .cgi <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;     AllowOverride None <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;     Order allow,deny <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;     Allow from all <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;     AuthType Basic <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;     AuthName "Git Access" <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;     Require valid-user <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;     AuthUserFile /etc/apache2/gitweb-htpasswd <br />
+        &lt;/Directory&gt;
+      </p>
+      <br />
+      <p>
+      Create htpasswd username and passwd.
+      in below eg. admin is user name.
+      </p>
+      <br />
+      
+      <b>
+      $ htpasswd -mc /etc/apache2/gitweb-htpasswd admin <br />
+      New password:  <br />
+      Re-type new password:  <br />
+      Adding password for user admin <br />
+      </b>
+      
+      <br />
+      <b>/etc/init.d/apache2 restart</b>
+      <br />
+      <br />
+      <p>
+        Now open the browser and type once again http://gitserver-ip-address/gitweb <br />
+        eg. http://10.10.0.16/gitweb
+      </p>
+      <br />
+      <img src="/images/gitweb-login.png" style="max-width:100%;" />
+      
+      
+    
+      <h2 style="font-size:1.5em;font-weight:bold;font-family:sans-serif;">Add a new user in Gitolite server</h2>
+      <div>
+        1. login to the user's computer <br />
+        2. $ cd ~/.ssh && ssh-keygen -t rsa -C "Git-[New-UserName]" <br />
+        3. choose a file path to save the ssh keys, e.g.: /home/username/.ssh/id_rsa_git_new-username <br />
+        &nbsp;&nbsp;&nbsp; Option: eval `ssh-agent -s'<br />
+        &nbsp;&nbsp;&nbsp; Option: ssh-add id_rsa_git_new-username (adds your private key identities to the authentication agent) <br />
+        
+        4. upload the public key (*.pub) to the git server: /home/git/new-username.pub <br />
+        5. $ chown git:git /home/git/new-username.pub <br />
+        6. $ cd /home/git/ && bin/gitolite setup -pk username.pub (append the new-user's public key to authorized_keys) <br />
+      </div>
+      
+      <br />
+    
+      <h2 style="font-size:1.5em;font-weight:bold;font-family:sans-serif;">Add a new repository to Gitolite server</h2>
+      <div>
+        1. login to the Git-Admin's computer <br />
+        2. go to folder which is gitolite-admin.git <br />
+        3. $ vi gitolite-admin/conf/gitolite.conf <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; append a new repo name <br />
+        4. $ git add gitolite.conf && git commit -m 'msg' && git push origin master <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The repos will be created auto.
+      </div>
+      
+      <style type="text/css">
+        tr td:nth-child(1) {
+          font-weight: normal;
+        }
+        tr th, tr td {
+          padding-top:0;
+          padding-bottom:0
+        }
+      </style>
+    ]]>
+  </c:content>
+</c:component>

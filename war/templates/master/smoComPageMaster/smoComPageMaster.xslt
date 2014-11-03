@@ -151,10 +151,6 @@
       <script type="text/javascript" src="/RenderingAssets/lib/jCarousel/jquery.jcarousel.min.js"></script>
       <script src="/RenderingAssets/lib/caroufredsel/jquery.caroufredsel.js" type="text/javascript"></script>
 
-      <script type="text/javascript">
-        var _bdhmProtocol = (("https:" == document.location.protocol) ? " https://" : " http://");
-        document.write(unescape("%3Cscript src='" + _bdhmProtocol + "hm.baidu.com/h.js%3Fc391cc106195b827e9f28ae74dde1aa8' type='text/javascript'%3E%3C/script%3E"));
-      </script>
     </body>
   </html>
   </xsl:template>
