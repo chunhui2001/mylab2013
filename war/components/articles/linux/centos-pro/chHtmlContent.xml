@@ -3,421 +3,587 @@
 
   <c:content>
     <![CDATA[
-  <b>ubuntu 安装 jdk 全过程</b> <br />
-  <br />
-  修改bin文件权限，使其可执行<br />
-  sudo chmod u+x /usr/lib/jvm/java/jdk-6u45-linux-x64.bin  <br />
-  <br />
+        
+        <h2 style="color:rgb(189, 21, 208);font-size:2.5em;">Install Development Tools</h2>
+        
+        <h2 style="color:green;font-size:1.5em;">&diams; groupsinstall</h2>
+        <div style="margin-bottom:2.5em;">
+        <b style="color:rgb(211, 98, 49);"># yum groupinstall "Development Tools"</b>
+        </div>
+        
+        <h2 style="color:green;font-size:1.5em;">&diams; JDK Download</h2>
+        <div style="margin-bottom:2.5em;">
+        <b># wget   <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;          --no-cookies \   <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;          --no-check-certificate \   <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;          --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F;oraclelicense=accept-securebackup-cookie" \   <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;          http://download.oracle.com/otn-pub/java/jdk/7u55-b13/jdk-7u55-linux-x64.rpm
+</b>
+  </div>
   
-  然后，执行<br />
-  sudo /usr/lib/jvm/java/jdk-6u45-linux-x64.bin  <br />
-  <br />
-  
-  将会出现字幕，持续按回车键，直至屏幕显示要求输入 yes/no，此时输入 y 回车，将会把 jdk 解压到文件夹，得到 jdk1.6.0_45 目录。
-  此时，jdk 已安装完毕。<br />  
-  <br />  
-  
-  
-  <b>配置环境变量</b> 
-  <br />
-  sudo vi ~/.bashrc  <br />
-  <br />
-  export JAVA_HOME=/usr/lib/jvm/java/jdk1.6.0_45  <br />
-  export JRE_HOME=${JAVA_HOME}/jre  <br />
-  export CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib  <br />
-  export PATH＝$PATH:${JAVA_HOME}/bin:${JRE_HOME}/bin  <br />
-  <br />
-  
-  source ~/.bashrc  
-  <br />
-  <br />
+  <h2 style="color:green;font-size:1.5em;">&diams; JDK Install and Settings</h2>
+  <div style="margin-bottom:2.5em;">
+  <b style="color:rgb(211, 98, 49);"># rpm -Uvh jdk-7u55-linux-x64.rpm <br />
+  # alternatives --install /usr/bin/javaws javaws /usr/java/latest/bin/javaws 2 <br />
+  # alternatives --install /usr/bin/java java /usr/java/latest/bin/java 2 <br />
+  # alternatives --install /usr/bin/javac javac /usr/java/latest/bin/javac 2
+  </b>
+  </div>
   
   
   
-  <b>配置默认JDK版本</b><br />
-  由于 ubuntu 中可能会有默认的 JDK，如 openjdk，所以，为了将我们安装的 JDK 设置为默认 JDK 版本，还要进行如下工作。<br /><br />
+  
+  
+  
+  
+  <h2 style="color:rgb(189, 21, 208);font-size:2.5em;">CentOS SSH Installation And Configuration</h2>
+  <h2 style="color:green;font-size:1.5em;">&diams; SSH Install</h2>
+  <div style="margin-bottom:2.5em;">
+  <span><b style="color:rgb(211, 98, 49);"># yum -y install openssh-server openssh-clients</b></span>
+  </div>
+  
+  <h2 style="color:green;font-size:1.5em;">&diams; Start Service </h2>
+  <div style="margin-bottom:2.5em;">
+  <span><b style="color:rgb(211, 98, 49);"># chkconfig sshd on <br />
+  # service sshd start</b></span>
+  <br />
+  <br />
+  
+  <span>Make sure port 22 is opened:<br />
+  <b style="color:rgb(211, 98, 49);"># netstat -tulpn | grep :22</b></span>
+  </div>
+  
+  <h2 style="color:green;font-size:1.5em;">&diams; Firewall Settings</h2>
+  <div style="margin-bottom:2.5em;">
+  <span><b style="color:rgb(211, 98, 49);"># vi /etc/sysconfig/iptables</b></span>
+  <br />
+  <br />
+  <span>Add the line<br />
+  <b style="color:rgb(211, 98, 49);">-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT</b></span>
+  <br />
+  <br />
+  <span>If you want to restict access to 192.168.1.0/24, edit it as follows:<br />
+  <b style="color:rgb(211, 98, 49);">-A RH-Firewall-1-INPUT -s 192.168.1.0/24 -m state --state NEW -p tcp --dport 22 -j ACCEPT</b></span>
+  <br />
+  <br />
+  <span>If your site uses IPv6, and you are editing ip6tables, use the line:<br />
+  <b style="color:rgb(211, 98, 49);">-A RH-Firewall-1-INPUT -m tcp -p tcp --dport 22 -j ACCEPT</b></span>
+  <br />
+  <br />
+  <span>Save and close the file. Restart iptables:<br />
+  <b style="color:rgb(211, 98, 49);"># service iptables restart</b></span>
+  </div>
+  
+  <h2 style="color:green;font-size:1.5em;">&diams; OpenSSH Server Configuration</h2>
+  <div style="margin-bottom:2.5em;">
+  <span><b style="color:rgb(211, 98, 49);"># vi /etc/ssh/sshd_config</b></span>
+  <br />
+  <br />
+  <span>To disable root logins, edit or add as follows:<br />
+  <b style="color:rgb(211, 98, 49);">PermitRootLogin no</b></span>
+  <br />
+  <br />
+  <span>Restrict login to user tom and jerry only over ssh:<br />
+  <b style="color:rgb(211, 98, 49);">AllowUsers tom jerry</b></span>
+  <br />
+  <br />
+  <span>Restart sshd:<br />
+  <b style="color:rgb(211, 98, 49);">service sshd restart</b></span>
 
-执行代码:<br />
-~$ sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-7-sun/bin/java 300  <br />
-~$ sudo update-alternatives --install /usr/bin/javac javac /usr/lib/jvm/java-7-sun/bin/javac 300  <br />
-~$ sudo update-alternatives --install /usr/bin/jar jar /usr/lib/jvm/java-7-sun/bin/jar 300   <br />
-~$ sudo update-alternatives --install /usr/bin/javah javah /usr/lib/jvm/java-7-sun/bin/javah 300   <br />
-~$ sudo update-alternatives --install /usr/bin/javap javap /usr/lib/jvm/java-7-sun/bin/javap 300  <br />
-  <br />
 
+  </div>
   
-  <b>列出系统安装的所有 JDK 版本</b><br /> 
-  ~$ sudo update-alternatives --config java 
-  <br />
-  <br />
-  
-  <b>系统会列出各种JDK版本，如下所示：</b><br /> 
-  <table>
-    <thead>
-      <tr>
-        <th>选择</th><th>路径</th><th>优先级</th><th>状态</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td style="text-align:right;">* 0</td><td>/usr/lib/jvm/java-6-openjdk/jre/bin/java</td><td>1061</td><td>自动模式</td>
-      </tr>
-      <tr>
-        <td style="text-align:right;">1</td><td>/usr/lib/jvm/java-6-openjdk/jre/bin/java</td><td>1061</td><td>手动模式</td>
-      </tr>
-      <tr>
-        <td style="text-align:right;">2</td><td>/usr/lib/jvm/java-6-sun/jre/bin/java</td><td>63</td><td>手动模式</td>
-      </tr>
-      <tr>
-        <td style="text-align:right;">3</td><td>/usr/lib/jvm/java-7-sun/bin/java</td><td>300</td><td>手动模式</td>
-      </tr>
-    </tbody>
-  </table>
-  <br />    	   	      	  
-
-  <b>要维持当前值[*]请按回车键，或者键入选择的编号：3 </b>
-  <br />
-  <br />
-
-
-  
-  <b>移除 openjdk</b><br /> 
-  sudo apt-get purge openjdk*
-  <br />
-  <br />
-  
-  
-  <b>添加 webupd8team/java 安装 JDK</b><br /> 
-  
-$ sudo add-apt-repository ppa:webupd8team/java (Add the PPA) <br />
-$ sudo apt-get update && sudo apt-get install oracle-java8-installer
-  <br />
-  <br />
-  
-  
-    <b> 移除 Oracle Java JDK on ubuntu</b><br /> 
-  
-$ sudo dpkg --list | grep -i jdk (Check which JDK packages are installed)  <br />
-$ sudo apt-get purge (or remove) oracle-java8-installer (Remove Oracle Java 8)  <br />
-$ sudo dpkg --list | grep -i jdk (Check that all JDK packages have been removed)  <br />
-  <br />
-  <br />
-  
- 
-
 
   
   
   
   
   
-  <b>Install  Apache, MySQL, PHP, and Tomcat 7</b><br /> 
-  $ sudo su <br />
-  $ apt-get install apache2 php5 libapache2-mod-php5 mysql-server php5-mysql <br />
-  $ service apache2 restart <br />
-  $ mysql_secure_installation <br />
-  <br />
-  $ mysql -u root -p <br />
-  $ CREATE DATABASE S2APP; <br />
-  $ USE S2APP; <br />
-  $ CREATE TABLE COMMENTS ( <br />
-  $ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ID INTEGER NOT NULL AUTO_INCREMENT, <br />
-  $ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NAME VARCHAR (255) NOT NULL, <br />
-  $ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; BODY TEXT NOT NULL, <br />
-  $ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PRIMARY KEY (ID) <br />
-  $ ); <br />
-  <br />
-  <b>创建 mysql 用户并授权 </b> <br />
-  $ CREATE USER 'username_here'@'localhost' IDENTIFIED BY 'password_here'; <br />
-  $ GRANT ALL PRIVILEGES ON S2APP.* TO 'username_here'@'%' IDENTIFIED BY 'password_here'; <br />
-  $ FLUSH PRIVILEGES;
-  <br />
-  <br />
   
-  <b>用 php + mysql 添加一个网页 </b> <br />
-  $ cd /var/www/ <br />
-  $ vi index.html <br />
-    &lt;html&gt; <br />
-    &nbsp;&nbsp;&nbsp;&nbsp;  &lt;head&gt; <br />
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      php + mysql <br />
-    &nbsp;&nbsp;&nbsp;&nbsp;  &lt;/head&gt; <br />
-    &nbsp;&nbsp;&nbsp;&nbsp;  &lt;body&gt; <br />
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      &lt;form action="comments.php" methon="POST"&gt; <br />
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          &lt;div&gt; <br />
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            Name: &lt;br /&gt; <br />
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            &lt;input type="text" name="name" /&gt; <br />
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          &lt;/div&gt; <br />
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          &lt;div&gt; <br />
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            Comments: &lt;br /&gt; <br />
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            &lt;textarea rows="10" cols="10" name="body"&gt;&lt;/textarea&gt; <br />
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          &lt;/div&gt; <br />
-              
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          &lt;input type="submit" /&gt; <br />
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      &lt;/form&gt; <br />
-    &nbsp;&nbsp;&nbsp;&nbsp;  &lt;/body&gt; <br />
-    &lt;/html&gt; <br />
-<br />
-  $ vi comments.php <br />
-  &lt;?php <br />
-  &nbsp;&nbsp;&nbsp;&nbsp;    $db_hostname  = "localhost"; <br />
-  &nbsp;&nbsp;&nbsp;&nbsp;    $db_username  = "username"; <br />
-  &nbsp;&nbsp;&nbsp;&nbsp;    $db_password  = "password"; <br />
-  &nbsp;&nbsp;&nbsp;&nbsp;    $db_name      = "s2app"; <br />
-       <br />
-  &nbsp;&nbsp;&nbsp;&nbsp;    $db_hand      = mysql_connect ($db_hostname, $db_username, $db_password) or die ("Error" . mysql_error()); <br />
-       <br />
-  &nbsp;&nbsp;&nbsp;&nbsp;    mysql_select_db($db_name); <br />
-  &nbsp;&nbsp;&nbsp;&nbsp;     <br />
-  &nbsp;&nbsp;&nbsp;&nbsp;    $name = $_POST["name"]; <br />
-  &nbsp;&nbsp;&nbsp;&nbsp;    $body = $_POST["body"]; <br />
-  &nbsp;&nbsp;&nbsp;&nbsp;     <br />
-  &nbsp;&nbsp;&nbsp;&nbsp;    $result = mysql_query ("INSERT INTO COMMENTS (NAME, COMMENTS) VALUES ('$name', '$body')"); <br />
-  &nbsp;&nbsp;&nbsp;&nbsp;     <br />
-  &nbsp;&nbsp;&nbsp;&nbsp;    if ($result) { <br />
-  &nbsp;&nbsp;&nbsp;&nbsp;    &nbsp;&nbsp;&nbsp;&nbsp;    echo "&lt;h1&gt;Thank You :) &lt;/h1&gt;"; <br />
-  &nbsp;&nbsp;&nbsp;&nbsp;    &nbsp;&nbsp;&nbsp;&nbsp;    echo "&lt;span&gt;Your comment was received.&lt;/span&gt;"; <br />
-  &nbsp;&nbsp;&nbsp;&nbsp;    } else { <br />
-  &nbsp;&nbsp;&nbsp;&nbsp;    &nbsp;&nbsp;&nbsp;&nbsp;    echo "&lt;h1&gt;Error! :(&lt;/h1&gt;"; <br />
-  &nbsp;&nbsp;&nbsp;&nbsp;    &nbsp;&nbsp;&nbsp;&nbsp;    echo "&lt;span&gt;We are sorry, but your request could not completed at this time.&lt;/span&gt;"; <br />
-  &nbsp;&nbsp;&nbsp;&nbsp;    } <br />
-  ?&gt;
-  <br />
-  <br />
+  <h2 style="color:rgb(189, 21, 208);font-size:2.5em;">LAMP</h2>
+  <h2 style="color:green;font-size:1.5em;">&diams; MySQL Install</h2>
+  <div style="margin-bottom:2.5em;">
+    <span><b style="color:rgb(211, 98, 49);"># yum -y install mysql-server </b> (The MySQL server and related files)</span><br />
+    <span><b style="color:rgb(211, 98, 49);"># yum -y install mysql</b> (MySQL client programs and shared libraries)</span>
+  </div>
   
-  
-  <b>彻底解决mysql中文乱码的办法 (mysql 5.5+)</b> <br />
-  vim /etc/mysql/my.cnf  <br /> <br />
-  [client] <br />
-default-character-set=utf8 <br /> <br />
-[mysqld] <br />
-default-storage-engine=INNODB <br />
-character-set-server=utf8 <br />
-collation-server=utf8_general_ci <br /><br />
-
-/etc/init.d/mysql stop  <br />
-/etc/init.d/mysql  start<br /><br />
-
-进入mysql查看字符集 <br />
-show variables like 'character_set_%'; <br />
-<br />
-
-创建数据库的时候 <br />
-CREATE DATABASE 'test' <br />
-CHARACTER SET 'utf8' <br />
-COLLATE 'utf8_general_ci'; <br />
-<br />
-建表的时候<br />
-CREATE TABLE 'database_user' (<br />
-ID varchar(40) NOT NULL default '',<br />
-UserID varchar(40) NOT NULL default '',<br />
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;<br />
-<br />
-查看数据库的编码格式<br />
-show create database test; <br />
-<br />
-查看表的编码格式<br />
-show create table tableName;<br />
-<br />
-
-解决网页中乱码的问题 <br />
-
-将网站编码设为 utf-8,这样可以兼容世界上所有字符。
-　　如果网站已经运作了好久,已有很多旧数据,不能再更改简体中文的设定,那么建议将页面的编码设为 GBK, GBK与GB2312的区别就在于:GBK能比GB2312显示更多的字符,要显示简体码的繁体字,就只能用GBK。
-  <br />
-1.编辑/etc/my.cnf　,在[mysql]段加入default_character_set=utf8;<br />
-2.在编写Connection URL时，加上?useUnicode=true&characterEncoding=utf-8参;<br />
-3.在网页代码中加上一个"set names utf8"或者"set names gbk"的指令，告诉MySQL连线内容都要使用 utf8 或者 gbk;
-
-  <br />
-  <br />
-  <br />
-  <br />
-  
-  
-  
-  
-  <b>安装 tomcat7</b> <br />
-  $ apt-get remove apache2 <br />
-  $ apt-get install tomcat7 (默认端口是 8080) <br />
-  $ iptables -t nat -I PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080 <br />
-  $ iptables-save <br />
-  <br />
-  $ vi /etc/tomcat7/tomcat-users.xml<br />
-  &lt;tomcat-users&gt;<br />
-  &nbsp;&nbsp;&nbsp;&nbsp;    &nbsp;&nbsp;&nbsp;&nbsp;     &lt;user username="jj" password="sad" roles="manager-gui,admin-gui" /&gt;<br />
-  .......<br />
-  <br />
-  $ apt-get install tomcat7-admin <br />
-  $ /etc/init.d/tomcat7 restart<br />
-  <br />
-  <br />
-  <br />
-  <br />
-  
-  
-  <link href="//vjs.zencdn.net/4.6/video-js.css" rel="stylesheet" />
-  <script src="//vjs.zencdn.net/4.6/video.js"></script>
-      
-  <video id="example_video_1" class="video-js vjs-default-skin"
-    controls preload="auto" width="636" height="356"
+  <h2 style="color:green;font-size:1.5em;">&diams; MySQL Configuration files</h2>
+  <div style="margin-bottom:2.5em;">
+    <span>1. Mysql server config file: <b>/etc/my.cnf</b></span> <br />
+    <span>2. Mysql default tcp port: <b>3306 (TCP/UDP)</b></span> <br />
+    <span>3. Mysql server log file: <b>/var/log/mysqld.log</b></span> <br />
+    <span>4. Mysql database storage directory: <b>/var/lib/mysql/</b></span> <br />
+    <span>5. Mysql rc script to start/stop/restart server: <b>/etc/init.d/mysqld {start|stop|restart|reload|status|try-restart}</b></span>
+    </div>
     
-    poster="https://dl.dropboxusercontent.com/content_link/6qzIF7SebOjBM4Ce5zadZ2ZEXMFk6bRgutm14U8uSpA9cl26BPDyOPvHh5eYc3TO?dl=1"
-    data-setup='{"example_option":true}'>
-    <source src="https://www.dropbox.com/s/dgx9zoop8o8x8n5/Amazon-EC2-Apache-MySQL-PHP-and-Tomcat-7-Tutorial.mp4" type='video/mp4' />
-                 
-       
-       
-    <p class="vjs-no-js">To view this video please enable JavaScript, and consider upgrading to a web browser that 
-                        <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a></p>
-  </video>    
-  <br />
-  <br />
-  
-  
-  
-  
-  
-  <b>切换到 root</b> <br />
-  $ su root<br /><br />
-  
-  <b>修改 root 密码</b><br />
-  $ sudo passwd root<br /><br />
-  
-  
-  
-  
-  
-  
-  
-  <b>.vimrc</b> <br />
-  将以下代码copy到用户目录下并新建文件为 .vimrc保存即可生效; 如果想所有用户生效请修改 /etc/vimrc ( 建议先cp一份 )<br />
-<table style="margin-top:.8em;">
-  <tbody>
-    <tr>
-      <td>set syntax=on</td>
-      <td>/* 语法高亮 */</td>
-    </tr>
-    <tr>
-      <td>colorscheme torte</td>
-      <td>/* 颜色主题 */</td>
-    </tr>
-    <tr>
-      <td>set autoindent</td>
-      <td>/* 自动缩进 */</td>
-    </tr>
-    <tr>
-      <td>set smartindent</td>
-      <td>/* 开启新行时使用智能自动缩进 */</td>
-    </tr>
-    <tr>
-      <td>set guioptions+=l</td>
-      <td>/* 增加滚动条 */</td>
-    </tr>
-    <tr>
-      <td>set fenc=utf-8</td>
-      <td>/* 设定默认解码 */</td>
-    </tr>
-    <tr>
-      <td>set number</td>
-      <td>/* 显示行号 */</td>
-    </tr>
-    <tr>
-      <td>set cursorline </td>
-      <td>/* 突出显示当前行 */</td>
-    </tr>
-    <tr>
-      <td>set ruler</td>
-      <td>/* 打开状态栏标尺 */</td>
-    </tr>
-    <tr>
-      <td>set nowrapscan</td>
-      <td>/* 禁止在搜索到文件两端时重新搜索 */</td>
-    </tr>
-    <tr>
-      <td>set hlsearch</td>
-      <td>/* 搜索时高亮显示被找到的文本 */</td>
-    </tr>
-    <tr>
-      <td>set laststatus=2</td>
-      <td>/* 显示状态栏 (默认值为 1, 无法显示状态栏) */</td>
-    </tr>
-  </tbody>  
-</table>
-						 
-					<br />
-          plugin – ZenCoding.vim 很酷的插件，HTML代码生成: <a target="_blank" href="https://github.com/mattn/emmet-vim">https://github.com/mattn/emmet-vim</a>
-						
-       <br />  
-       <br />   <br />            	
-					
-						
-            
-            
-            
-            
-            
-            
-  <b>vi Command</b> <br /><br />
-             			
-                   			
-<em><b>插入: </b></em><br />
-<b>i</b> 在光标之前插入<br />
-<b>a</b> 在光标之后追加<br />
-<b>A</b> 在一行的结尾处追加<br />
-<b>I</b> 在一行的开头处插入<br />
-<b>o</b> 在光标所在位置的下一行打开新行插入<br />
-<b>O</b> 在光标所在位置的上一行打开新行插入<br /><br />
+    <h2 style="color:green;font-size:1.5em;">&diams; Access mysql using various programming languages</h2>
+    <div style="margin-bottom:2.5em;">
+    <span>1. <b>php-mysql:</b> A module for PHP applications that use MySQL databases.</span> <br />
+    <span>2. <b>perl-DBD-MySQL:</b> A MySQL interface for perl.</span> <br />
+    <span>3. <b>MySQL-python:</b> An interface to MySQL.</span>
+    </div>
+    
+    <h2 style="color:green;font-size:1.5em;">&diams; MySQL Secure installation and Turn on mysql service</h2>
+    <div style="margin-bottom:2.5em;">
+    <span><b style="color:rgb(211, 98, 49);"># mysql_secure_installation</b> </span> <br />
+    <span><b style="color:rgb(211, 98, 49);"># chkconfig --levels 235 mysqld on</b> </span>
+    </div>
+    
+    <h2 style="color:green;font-size:1.5em;">&diams; Allow access from other machines</h2>
+    <div style="margin-bottom:2.5em;">
+    <span>If you have iptables enabled and want to connect to the MySQL database from another machine, you need to open a port in your server's firewall (the default port is 3306).
+    You don't need to do this if the application using MySQL is running on the same machine.
+    <br />
+    <br />
+    If you do need to open a port, you can use the following rules in iptables to open port 3306:
+    </span> <br />
+    <br />
+    <span>Edit /etc/sysconfig/iptables file, enter: <br />
+    <b style="color:rgb(211, 98, 49);"># vi /etc/sysconfig/iptables</b>
+    </span>
+    <br />
+    <br />
+    <span>Append the following code to <b>open tcp port 3306 on CentOS base server: </b><br />
+    <b style="color:rgb(211, 98, 49);">-A INPUT -m state --state NEW,ESTABLISHED -m tcp -p tcp --dport 3306 -j ACCEPT</b> </span>
+    <br />
+    <br />
+    <span>Save and close the file. To <b>restart the firewall on CentOS/RHEL</b>, enter:<br />
+    <b style="color:rgb(211, 98, 49);"># service iptables restart</b> </span>
+    </div>
+    
+    <h2 style="color:green;font-size:1.5em;">&diams; View mysql server logs</h2>
+    <div style="margin-bottom:2.5em;">
+    <span><b style="color:rgb(211, 98, 49);"># tail -f /var/log/mysqld.log</b></span>
+    </div>
+    
+    <h2 style="color:green;font-size:1.5em;">&diams; Connect to mysql server</h2>
+    <div style="margin-bottom:2.5em;">
+    <span><b style="color:rgb(211, 98, 49);"># mysql -u USER-NAME-HERE -p'PASSWORD-HERE' <br />
+    # mysql -u USER-NAME-HERE -p'PASSWORD-HERE' -h 'SERVER-NAME-HOST-NAME-HERE' <br />
+    # mysql -u USER-NAME-HERE -p'PASSWORD-HERE' -h 'SERVER-NAME-HOST-NAME-HERE' DB-NAME_HERE <br />
+    # mysql -u root -p</b></span>
+    </div>
+    
+    
+    <br />
+    <br />
+    <br />
+    <br />
+    
+    
+    
+    <h2 style="color:green;font-size:1.5em;">&diams; Apache2 Install</h2>
+    <div style="margin-bottom:2.5em;">
+    <span><b style="color:rgb(211, 98, 49);"># yum -y install httpd </b></span><br />
+    <span><b style="color:rgb(211, 98, 49);"># chkconfig --levels 235 httpd on</b></span>
+    </div>
+    
+    <h2 style="color:green;font-size:1.5em;">&diams; Apache2 Configuration files</h2>
+    <div style="margin-bottom:2.5em;">
+    <span>1. <b>/var/www/html</b> Apache's default document root </span> <br />
+    <span>2. <b>/etc/httpd/conf/httpd.conf</b> configuration file</span> <br />
+    <span>3. <b>/etc/httpd/conf.d/</b> Additional configurations which stored</span>
+    </div>
+    
+    <h2 style="color:green;font-size:1.5em;">&diams; Set Up Apache Virtual Hosts on CentOS 6</h2>
+    <div style="margin-bottom:2.5em;">
+    <span>
+    <a target="_blank" href="https://www.digitalocean.com/community/tutorials/how-to-set-up-apache-virtual-hosts-on-centos-6">
+        https://www.digitalocean.com/community/tutorials/how-to-set-up-apache-virtual-hosts-on-centos-6
+        </a>
+    </span>
+    </div>
+    
+    
+    <br />
+    <br />
+    <br />
+    <br />
+    
+    
+    
+    <h2 style="color:green;font-size:1.5em;">&diams; PHP5 Install</h2>
+    <div style="margin-bottom:2.5em;">
+    <span>We can install PHP5 and the Apache PHP5 module as follows: <br />
+    <b style="color:rgb(211, 98, 49);"># yum -y install php</b><br />
+    <b style="color:rgb(211, 98, 49);"># /etc/init.d/httpd restart</b></span><br />
+    <br />
+    <b>More about for installation: <br />
+    <a href="/blog/articles/php/install-php-from-source-on-ubuntu.shtml">Install PHP from source on Ubuntu</a></b>
+    </div>
+    
+    <h2 style="color:green;font-size:1.5em;">&diams; Testing PHP5 / Getting Details About Your PHP5 Installation</h2>
+    <div style="margin-bottom:2.5em;">
+    <span>&lt;?php <br />
+    &nbsp;&nbsp;&nbsp;&nbsp; phpinfo(); <br />
+    ?&gt;
+    </span>
+    </div>
+    
+    <h2 style="color:green;font-size:1.5em;">&diams; Getting MySQL Support In PHP5</h2>
+    <div style="margin-bottom:2.5em;">
+    <span><b style="color:rgb(211, 98, 49);"># yum install --enablerepo=remi php-mysql</b></span> <br /> <br />
+    <span> install some common PHP modules that are required by CMS Systems like Wordpress, Joomla and Drupal: <br />
+        <b style="color:rgb(211, 98, 49);"># yum install --enablerepo=remi php-gd php-imap php-ldap php-odbc php-pear php-xml php-xmlrpc php-mbstring php-mcrypt php-mssql php-snmp php-soap php-tidy curl curl-devel</b>
+    </span>
+    <br /><br />
+    <span>APC is a free and open PHP opcode cacher for caching and optimizing PHP intermediate code. It's similar to other PHP opcode cachers, such as eAccelerator and Xcache. It is strongly recommended to have one of these installed to speed up your PHP page.
+    <br /><b style="color:rgb(211, 98, 49);"># yum install --enablerepo=remi php-pecl-apc</b></span>
+    </div>
+    
+    <h2 style="color:green;font-size:1.5em;">&diams; Install FreeTDS via Yum Package Manager</h2>
+    <div style="margin-bottom:2.5em;">
+    <span><b style="color:rgb(211, 98, 49);"># rpm -ivh ftp://fr2.rpmfind.net/linux/dag/redhat/el6/en/x86_64/dag/RPMS/rpmforge-release-0.5.2-2.el6.rf.x86_64.rpm</b></span><br />
+    <span><b style="color:rgb(211, 98, 49);"># cd /etc/yum.repos.d/</b></span><br />
+    <span><b style="color:rgb(211, 98, 49);"># wget http://rpms.famillecollet.com/enterprise/remi.repo</b></span><br />
+    <br />
+    <span><b style="color:rgb(211, 98, 49);"># yum install freetds</b></span><br />
+    <span><b style="color:rgb(211, 98, 49);"># yum install freetds-devel</b></span><br />
+    <span><b style="color:rgb(211, 98, 49);"># yum install --enablerepo=remi php-mssql</b></span>
+    </div>
+    
+    <h2 style="color:green;font-size:1.5em;">&diams; Install the MongoDB PHP Driver (Extension) on CentOS 6</h2>
+    <div style="margin-bottom:2.5em;">
+    <span><b style="color:rgb(211, 98, 49);"># yum -y update</b></span><br />
+    <br />
+    <span>Then let’s install a compiler, the PHP Extension and Application Repository (PEAR), and PHP development tools: <br />
+    <b style="color:rgb(211, 98, 49);"># yum install --enablerepo=remi php-pear php-devel</b></span><br />
+    <br />
+    <span>Install the MongoDB PHP driver (extension) with PECL: <br />
+    <b style="color:rgb(211, 98, 49);"># pecl install mongo</b></span><br />
+    <br />
+    <span>Configure PHP: <br />
+    <b style="color:rgb(211, 98, 49);"># vim /etc/php.ini </b><br />
+    <br />
+    Find Dynamic Extensions and insert the following in that section:<br />
+    <b style="color:rgb(211, 98, 49);">extension=mongo.so</b></span><br />
 
-<em><b>合并行: J </b></em><br />
-你只需要把光标移动到首行，然后按 <b>3</b> 次 <b>J</b> 即可<br />
-让我感觉奇怪的是，我直接使用 <b>3J</b> 却只能合并两行，<b>4J</b> 才能合并3行<br /><br />
-
-<em><b>字符移动:  </b></em><br />
-<b>k</b>            上移   <br />           
-<b>h</b>            左移   <br />                
-<b>l</b>            右移   <br />            
-<b>j</b>            下移   <br />
-<b>5k</b>，表示上移5行      <br />
-可以使用键盘上的方向键来移动，之所以使用 <b>h j k l</b> 来控制方向，其主要目的是让你的手不离开键盘中心，从而提高效率<br /><br />
-
-<em><b>屏幕移动:</b></em><br />
-<b>H:</b> 屏幕顶行             <br />
-<b>L:</b> 屏幕底行             <br />
-<b>M:</b> 屏幕中间行           <br />
-<b>Ctrl+u:</b> 向上翻半屏      <br />
-<b>Ctrl+d:</b> 向下翻半屏      <br />
-<b>Ctrl+b:</b> 向上翻一屏      <br />
-<b>Ctrl+f:</b> 向下翻一瓶      <br />
-<b>nz:</b> 将第 <b>n</b> 行滚至屏幕顶部, 不指定 <b>n</b> 时将当前行滚至屏幕顶部<br /><br />
-
-<em><b>整行移动: </b></em><br />
-<b>0:</b> 光标移至行首(零)             <br />
-<b>$:</b> 光标移至行尾                 <br />
-<b>{:</b> 光标移至上一个空行(段首)      <br />
-<b>}:</b> 光标移至下一个空行(段尾)      <br />
-<b>nG:</b> 光标移至第 n 行首           <br />
-<b>n$:</b> 光标移至第 n 行尾           <br />
-<b>+</b>  移动到下一行开头             <br />
-<b>-</b>  移动到上一行开头             <br />
-
-
-<b>/pattern:</b> 从光标开始处向下搜索 pattern<br />
-<b>?pattern:</b> 从光标开始处向上搜索 pattern<br /><br />
-
-<em><b>tar:</b></em><br />                			
-tar xvf  &lt;.tar file&gt; <br />  
-tar xzvf &lt;.tar.gz file&gt; <br />  
-tar xjvf &lt;.tar.bz2 file&gt; <br />  
-tar -xzf hadoop-2.4.0.tar.gz           <br /><br />
+    </div>
 
 
-<em><b>删除命令 </b></em><br />
-<b>do</b>：删至行首                                                             <br />  
-<b>d$</b>：删至行尾                                                             <br />  
-<b>ndd</b>：删除当前行及其后n-1行                                                <br />  
-<b>x或X</b>：删除一个字符，x删除光标后的，而X删除光标前的                          <br />  
-<b>Ctrl+u</b>：删除输入方式下所输入的文本 
+
+
+
+
+
+<h2 style="color:rgb(189, 21, 208);font-size:2.5em;margin-top:2em;">Nginx on CentOS 6<br />
+<span style="font-size:.45em;line-height:1.2em;display:block;margin-top:.3em;">
+    https://www.digitalocean.com/community/tutorials/how-to-install-linux-nginx-mysql-php-lemp-stack-on-centos-6 </span>
+</h2>
+<h2 style="color:green;font-size:1.5em;">&diams; Install the Required Repositories</h2>
+<div style="margin-bottom:2.5em;">
+<span>However, because neither nginx nor php-fpm are available straight from CentOS, we need to download two extra repositories to our virtual private server first. <br />
+<b style="color:rgb(211, 98, 49);">
+# rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm <br />
+# rpm -Uvh http://rpms.famillecollet.com/enterprise/remi-release-6.rpm
+</b></span>
+</div>
+
+<h2 style="color:green;font-size:1.5em;">&diams; Install Nginx</h2>
+<div style="margin-bottom:2.5em;">
+<span>
+<b style="color:rgb(211, 98, 49);">
+# yum -y install nginx  <br />
+# /etc/init.d/nginx start </b></span>
+<br />
+<br />
+<span>Run the following command to reveal your server’s IP address.<br />
+<b style="color:rgb(211, 98, 49);">
+# ifconfig eth0 | grep inet | awk '{ print $2 }' </b></span>
+</div>
+
+
+<h2 style="color:green;font-size:1.5em;">&diams; Check the listening 80 port using netstat command</h2>
+<div style="margin-bottom:2.5em;">
+<span>
+<b style="color:rgb(211, 98, 49);">
+# netstat -ntl | grep :80</b></span>
+<br />
+<br />
+<span>
+Now open <b>/etc/sysconfig/iptables</b> file and add the following line.<br />
+<b style="color:rgb(211, 98, 49);">
+-A INPUT -m state --state NEW -p tcp --dport 80 -j ACCEPT</b></span>
+<br />
+<br />
+<span>
+Which should be before reject line looks below<br />
+<b style="color:rgb(245, 157, 119);">
+-A INPUT -i lo -j ACCEPT </b><br />
+<b style="color:rgb(211, 98, 49);">-A INPUT -m state --state NEW -p tcp --dport 80 -j ACCEPT </b><br />
+<b style="color:rgb(245, 157, 119);">-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT</b></span>
+<br />
+<br />
+<span>
+restart iptables service<br />
+<b style="color:rgb(211, 98, 49);">
+# service iptables restart</b></span>
+<br />
+<br />
+
+
+</div>
+
+<h2 style="color:green;font-size:1.5em;">&diams; Enable php-fpm for nginx</h2>
+<div style="margin-bottom:2.5em;">
+<span>
+<b style="color:rgb(211, 98, 49);">
+# yum --enablerepo=remi install php-fpm</b></span>
+</div>
+
+<h2 style="color:green;font-size:1.5em;">&diams; Config PHP for Nginx</h2>
+<div style="margin-bottom:2.5em;">
+<span>
+<b style="color:rgb(211, 98, 49);">
+# vi /etc/php.ini</b>
+<br />
+<br />
+Find the line, cgi.fix_pathinfo=1, and change the 1 to 0. <br />
+<b>cgi.fix_pathinfo=0</b>
+</span>
+</div>
+
+<h2 style="color:green;font-size:1.5em;">&diams; Configure nginx</h2>
+<div style="margin-bottom:2.5em;">
+<span>
+<b style="color:rgb(211, 98, 49);">
+# vi /etc/nginx/nginx.conf</b>
+<br />Raise the number of worker processes to 4 then save and exit that file.</span>
+</div>
+
+<h2 style="color:green;font-size:1.5em;">&diams; Configure the nginx virtual hosts</h2>
+<div style="margin-bottom:2.5em;">
+<span>
+<b style="color:rgb(211, 98, 49);"># vi /etc/nginx/conf.d/default.conf</b></span>
+<pre style="margin:.3em 0;color:gray;background-color:rgb(236, 236, 236);padding:1em;">
+#
+# The default server
+#
+server {
+    listen       80;
+    server_name example.com;
+
+
+    location / {
+        root   /usr/share/nginx/html;
+        index index.php  index.html index.htm;
+    }
+
+    error_page  404              /404.html;
+        location = /404.html {
+        root   /usr/share/nginx/html;
+        }
+
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /usr/share/nginx/html;
+    }
+
+    # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
+    #
+    location ~ \.php$ {
+        root           /usr/share/nginx/html;
+        fastcgi_pass   127.0.0.1:9000;
+        fastcgi_index  index.php;
+        fastcgi_param  SCRIPT_FILENAME   $document_root$fastcgi_script_name;
+        include        fastcgi_params;
+    }
+}
+</pre>
+<br />
+<p>
+    <span>Here are the details of the changes:</span><br />
+    <ul style="list-style:decimal;margin-left:2em;">
+    <li>Add index.php within the index line.</li>
+    <li>Change the server_name to your domain name or IP address (replace the example.com in the configuration)</li>
+    <li>Change the root to /usr/share/nginx/html;</li>
+    <li>Uncomment the section beginning with "location ~ \.php$ {",</li>
+    <li>Change the root to access the actual document root, /usr/share/nginx/html;</li>
+    <li>Change the fastcgi_param line to help the PHP interpreter find the PHP script that we stored in the document root home.</li>    </ul>
+</p>
+</div>
+
+<h2 style="color:green;font-size:1.5em;">&diams;  php-fpm configuration</h2>
+<div style="margin-bottom:2.5em;">
+<span>
+<b style="color:rgb(211, 98, 49);">
+# vi vi /etc/php-fpm.d/www.conf</b>
+<br />
+<br />Replace the apache in the user and group with nginx:</span>
+<br />
+
+<pre style="margin:.3em 0;color:gray;background-color:rgb(236, 236, 236);padding:1em;">
+[...]
+; Unix user/group of processes
+; Note: The user is mandatory. If the group is not set, the default user's group
+;	will be used.
+; RPM: apache Choosed to be able to access some dir as httpd
+user = nginx
+; RPM: Keep a group allowed to write in log dir.
+group = nginx
+[...]
+</pre>
+<br />
+
+<span>
+Restarting php-fpm<br />
+<b style="color:rgb(211, 98, 49);">
+# service php-fpm restart</b>
+</span>
+</div>
+
+<h2 style="color:green;font-size:1.5em;">&diams; Set Up Autostart</h2>
+<div style="margin-bottom:2.5em;">
+<span>
+<b style="color:rgb(211, 98, 49);">
+# chkconfig --levels 235 nginx on <br />
+# chkconfig --levels 235 php-fpm on</b>
+</span>
+</div>
+
+<h2 style="color:green;font-size:1.5em;">&diams; How To Install Nginx With PHP And MySQL (LEMP Stack) On CentOS 7</h2>
+<div style="margin-bottom:2.5em;">
+<span>
+<b style="color:rgb(211, 98, 49);">http://www.howtoforge.com/how-to-install-nginx-with-php-and-mysql-lemp-stack-on-centos-7</b>
+</span>
+</div>
+
+<h2 style="color:green;font-size:1.5em;">&diams; PHP 5.5 on CentOS/RHEL 7.0, 6.5 and 5.10 via Yum</h2>
+<div style="margin-bottom:2.5em;">
+<span>
+<b style="color:rgb(211, 98, 49);">https://webtatic.com/packages/php55/</b>
+</span>
+</div>
+
+
+
+
+
+
+
+
+
+
+<h2 style="color:rgb(189, 21, 208);font-size:2.5em;margin-top:2em;">VIM in CentOS</h2>
+<h2 style="color:green;font-size:1.5em;">&diams; Install</h2>
+<div style="margin-bottom:2.5em;">
+<span><b style="color:rgb(211, 98, 49);"># yum install vim-X11 vim-common vim-enhanced vim-minimal</b></span><br />
+</div>
+
+<h2 style="color:green;font-size:1.5em;">&diams; Set Vi Command Pointing to Vim</h2>
+<div style="margin-bottom:2.5em;">
+<span>We can set vi pointing to vim and enable also vi syntax highlighting with following command:
+<br />
+<b style="color:rgb(211, 98, 49);"># alias vi=vim</b></span>
+<br />
+<br />
+<span>If you want make it permanent alias then add it <b>/etc/profile</b> file or maybe <b>/etc/profile.d/vi-vim.sh</b> file or user <b>~/.bashrc</b> file.
+<br />
+<b>.bashrc example:</b>
+</span>
+<br />
+
+<pre style="margin:.3em 0;color:gray;background-color:rgb(236, 236, 236);padding:1em;">
+...
+# User specific aliases and functions
+alias vi=vim</pre>
+</div>
+
+
+<h2 style="color:green;font-size:1.5em;">&diams; Configuration</h2>
+<div style="margin-bottom:2.5em;">
+<span><b style="color:rgb(211, 98, 49);"># vi /etc/vimrc</b></span><br />
+<pre style="margin:.3em 0;color:gray;background-color:rgb(236, 236, 236);padding:1em;">
+set history=700				" Sets how many lines of history VIM has to remember
+
+set nocampatible
+colo delek
+syntax on
+
+set showmode
+
+set autoindent
+set smartindent
+set backspace=eol,start,indent
+
+set expandtab
+set tabstop=4
+set shiftwidth=4
+set ruler
+
+set number
+set ignorecase
+set smartcase
+set hlsearch
+set backup
+set backupdir=~/vim/tmp/
+set nowrap
+set laststatus=2
+set cmdheight=2
+</pre>
+</div>
+
+
+
+
+<h2 style="color:rgb(189, 21, 208);font-size:2.5em;margin-top:2em;">How to install own git server with ssh and http access by using gitolite and gitweb in CentOS</h2>
+<h2 style="color:green;font-size:1.5em;">&diams; More about:</h2>
+<div style="margin-bottom:2.5em;">
+<span>
+<a target="_blank" href="http://sharadchhetri.com/2013/06/01/how-to-install-own-git-server-with-ssh-and-http-access-by-using-gitolite-and-gitweb-in-centos/">
+http://sharadchhetri.com/2013/06/01/how-to-install-own-git-server-with-ssh-and-http-access-by-using-gitolite-and-gitweb-in-centos/
+</a>
+</span><br />
+</div>
+
+
+
+<h2 style="color:rgb(189, 21, 208);font-size:2.5em;margin-top:2em;">Cron Jobs on Linux</h2>
+<h2 style="color:green;font-size:1.5em;">&diams; More about:</h2>
+<div style="margin-bottom:2.5em;">
+<span>
+http://zh.wikipedia.org/wiki/Cron
+</span>
+</div>
+
+
+
+<h2 style="color:rgb(189, 21, 208);font-size:2.5em;margin-top:2em;">Install Vmware Tools for CentOS</h2>
+<h2 style="color:green;font-size:1.5em;">&diams; Installation</h2>
+<div style="margin-bottom:2.5em;">
+<span>
+<b style="color:rgb(211, 98, 49);">yum install gcc gcc-c++ gcc-gfortran -y</b>
+</span>
+<br />
+<br />
+<span>
+Going to <br />
+<b style="color:rgb(211, 98, 49);">VM &rarr; Install Vmware Tools</b>
+</span>
+<br />
+<br />
+<span>
+The system will be mount a driver local is<b> /media</b> <br />
+<b style="color:rgb(211, 98, 49);"># cd /media/VMware Tools <br />
+<br />
+# cp VMwareTools-8.8.0-471268.tar.gz  /home <br />
+# tar xzvf VMwareTools-8.8.0-471268.tar.gz <br />
+# cd vmware-tools-distrib <br />
+# ./vmware-install.pl (press Enter in many times.)</b>
+</span>
+
+</div>
 
 ]]>
     </c:content>
 </c:component>
+
+
+
+
+
+
+
+
+
+
