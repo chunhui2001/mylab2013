@@ -268,7 +268,8 @@
 
 <h2 style="color:rgb(189, 21, 208);font-size:2.5em;margin-top:2em;">Nginx on CentOS 6<br />
 <span style="font-size:.45em;line-height:1.2em;display:block;margin-top:.3em;">
-    https://www.digitalocean.com/community/tutorials/how-to-install-linux-nginx-mysql-php-lemp-stack-on-centos-6 </span>
+    https://www.digitalocean.com/community/tutorials/how-to-install-linux-nginx-mysql-php-lemp-stack-on-centos-6 <br />
+  http://truongtx.me/2014/03/16/config-nginx-for-https-proxy-server/ </span>
 </h2>
 <h2 style="color:green;font-size:1.5em;">&diams; Install the Required Repositories</h2>
 <div style="margin-bottom:2.5em;">
@@ -574,6 +575,49 @@ The system will be mount a driver local is<b> /media</b> <br />
 
 </div>
 
+
+
+
+<h2 style="color:rgb(189, 21, 208);font-size:2.5em;margin-top:2em;">wkhtmltopdf 
+<h3>http://wkhtmltopdf.org/</h2>
+</h3>
+<h2 style="color:green;font-size:1.5em;">&diams; 1. 下载相关 rpm: </h2>
+<div style="margin-bottom:2.5em;">
+    1): xorg-x11-fonts-75dpi-7.5-9.el7.noarch.rpm <a href="ftp://ftp.muug.mb.ca/mirror/centos/7.1.1503/os/x86_64/Packages/xorg-x11-fonts-75dpi-7.5-9.el7.noarch.rpm">Download</a> <br />
+    2): wkhtmltox-0.12.2.1_linux-centos6-amd64.rpm: <a href="http://downloads.sourceforge.net/wkhtmltopdf/wkhtmltox-0.12.2.1_linux-centos6-amd64.rpm">Download</a>
+  </div>
+
+<h2 style="color:green;font-size:1.5em;">&diams; 2. 安装: </h2>
+<div style="margin-bottom:2.5em;">
+    1): sudo yum install lsb_release <br />
+    2): sudo yum install xorg-x11-server-Xvfb <br />
+    3): sudo rpm -Uvh xorg-x11-fonts-75dpi-7.5-9.el7.noarch.rpm<br />
+    4): sudo rpm -Uvh wkhtmltox-0.12.2.1_linux-centos6-amd64.rpm  <br />
+    5): sudo yum install urw-fonts <br />
+    6): sudo yum groupinstall "Chinese Support"
+  </div>
+
+<h2 style="color:green;font-size:1.5em;">&diams; 3. 修改 php.ini 文件, 启用 exec function</h2>
+<div style="margin-bottom:2.5em;">
+  <pre>
+$osName = 'lsb_release -d 2>&1';
+exec('lsb_release -d', $osName);
+$isCentOS   = strrpos(strtolower($osName[0]), 'centos'); 
+
+$cmd = '/usr/local/bin/wkhtmltopdf http://www.google.com /tmp/google.pdf  2>&1';
+if ($isCentOS === false) {
+     $cmd = '/usr/bin/xvfb-run --server-args="-screen 0, 1920x1080x24" \
+            /usr/local/bin/wkhtmltopdf http://www.google.com /tmp/google.pdf  2>&1';
+} 
+
+$var = array();
+$res = 0;
+
+exec($cmd, $var, $res);  
+
+echo $var;
+</pre>
+    </div>
 ]]>
     </c:content>
 </c:component>
