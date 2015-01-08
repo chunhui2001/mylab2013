@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+    I recently encountered some websites that restrict which content I could view based on the region I am located in. 
+    This is a brief tutorial on using Amazon EC2 and Squid to bypass those restrictions.
+]]>
+  </c:abstract>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>STARTING A NEW EC2 INSTANCE</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      I chose to use Ubuntu 12.10 Server for my instance. 
+      AMI identifiers vary per-region, so if you want a different operating system or are creating an instance in a different region, 
+      you should search the Ubuntu Amazon EC2 AMI Locator for a different AMI.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>ACCESSING THE EC2 INSTANCE</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      Determine the external address of your instance and then SSH to it. The default username on an Ubuntu instance is ubuntu.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>INSTALL SQUID</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <pre style="font-weight:bold;">sudo apt-get -y install squid3 squid3-common</pre>
+      
+      <div style="margin:.8em 0;">
+        This configuration is specifically tailored to consume very few resources. 
+        Also, the configuration limits which headers will be passed through the proxy in an effort to anonymize the origin of the request.
+        <br />
+        <br />
+        Add the following code block to <b>/etc/squid3/squid.conf</b>:
+      </div>
+      <pre style="background-color:rgb(234, 234, 234);padding:1.5em;font-size:.85em;line-height:1.3em;">http_port 3128
+      
+<span style="color:gray;">
+....
+....
+acl Safe_ports port 210         # wais
+acl Safe_ports port 1025-65535  # unregistered ports
+acl Safe_ports port 280         # http-mgmt
+acl Safe_ports port 488         # gss-http
+acl Safe_ports port 591         # filemaker
+acl Safe_ports port 777         # multiling http
+acl CONNECT method CONNECT
+....
+....</span>
+<b>
+acl to_localhost dst 127.0.0.0/8 0.0.0.0/32 ::1
+
+acl allowed_hosts src 127.0.0.1/32 ::1
+#acl allowed_hosts src 10.10.10.10/32
+
+http_access deny to_localhost
+#http_access deny !allowed_hosts
+http_access allow all</b>
+
+...
+...
+...
+
+<b>
+visible_httphost DansProxyServer</b>    # Update the TAG: visible_httphost
+</pre>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>PROXY AUTO-CONFIGURATION (OPTIONAL)</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>
+        Proxy auto-configuration works by serving a file to your browser periodically that tells the browser which destinations should use the proxy and which should bypass the proxy. 
+        Proxy auto-configuration is not a requirement, however it does allow for changing proxy rules without modifying the client.
+        <br />
+        <br />
+        If you don’t want to use proxy auto-configuration, skip this section.
+        <br />
+        <br />
+        <br />
+        Install nginx:
+      </div>
+      
+      <pre style="font-weight:bold;margin:.2em 0;">sudo apt-get -y install nginx</pre>
+      <br />
+      <div>
+        Replace <b>/usr/share/nginx/www/proxy.pac</b> with the following code block.
+
+        You will also need to modify the PROXY line to reflect the public IP address of your instance. 
+        You can fine the current public IP address of your instance by using curl (see the comment in the proxy.pac file below).
+      </div>
+      
+      <pre style="margin:.8em 0;background-color:rgb(234, 234, 234);padding:1.5em;">function FindProxyForURL(url, host) {
+  if ( shExpMatch(host, "*.netflix.com") ||
+       shExpMatch(host, "*.nflxext.com") ||
+       shExpMatch(host, "*.nflxvideo.net") ||
+       isInNet(host, "37.77.0.0",  "255.255.0.0") )
+  {
+    // to get the public ipv4 address of this instance:
+    // curl http://169.254.169.254/latest/meta-data/public-ipv4
+    return "PROXY 46.137.55.57:8080; DIRECT";
+  }
+
+  return "DIRECT";
+}</pre>
+<br />
+<br />
+<div>
+  Replace <b>/etc/nginx/sites-enabled/default</b> with the following code block:
+</div>
+
+<pre style="margin:.8em 0;background-color:rgb(234, 234, 234);padding:1.5em;">server {
+  server_name localhost;
+  root /usr/share/nginx/www;
+
+  location = /favicon.ico {
+    return 204;
+    access_log off;
+    log_not_found off;
+  }
+
+  location ~ /\.ht {
+    deny all;
+  }
+
+  location / {
+    allow 127.0.0.1;
+    allow 10.10.10.10;
+    deny all;
+
+    try_files $uri $uri/ /index.html;
+  }
+}</pre>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>LOCK IT DOWN!</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      Having an open proxy server on the internet is probably not your intention.
+<br />
+<br />
+
+You will need to change the allowed_hosts ACL in the /etc/squid3/squid.conf file to add your clients IP address/netmask so they can access the proxy.
+<br />
+<br />
+
+If you are using proxy auto-configuration, you will need to change the location / directive in the /etc/nginx/sites-enabled/default to add your clients IP address/netmask so they can access the proxy auto-configuration file.
+<br />
+<br />
+
+You should probably also delete the example references to 10.10.10.10 from both locations.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>MODIFY THE INSTANCE SECURITY GROUP</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      By default, instances only permit inbound. In addition to telling our applications which clients to allow, we must tell EC2 as well.
+      <br />
+      <br />
+      Determine which security group your instance is using. You are specifically looking for a label that looks like sg-12345678.
+      <br />
+      <br />
+      Assuming you are using the security group sg-12345678, you need to open the proxy port in security group!
+      <br />
+      <br />
+      If you are using proxy auto-configuration, you need to open up tcp/80 as well.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>CLIENTS USING PROXY AUTO-CONFIGURATION</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <img src="http://blog.ef.net/images/ec2-squid/proxy_auto.png" style="max-width:100%;" />
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>CLIENTS USING MANUAL PROXY SETTINGS</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <img src="http://blog.ef.net/images/ec2-squid/proxy_manual.png" style="max-width:100%;" />
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+</c:component>
