@@ -20,11 +20,16 @@
       <ul style="list-style:initial;color:#2a6496;margin-left:1.5em;">
         <xsl:for-each select="$relatedArticles">
           <li>
-            <a href="{normalize-space(current()/text())}">
+            <a target="_blank" href="{normalize-space(current()/text())}">
 
-
-              <xsl:value-of select="$articleMaster/c:article[c:articleLink=normalize-space(current()/text())]/c:title" />
-
+              <xsl:choose>
+                <xsl:when test="current()/@title">
+                  <xsl:value-of select="current()/@title"/>
+                </xsl:when>
+                <xsl:otherwise>
+                  <xsl:value-of select="$articleMaster/c:article[c:articleLink=normalize-space(current()/text())]/c:title" />
+                </xsl:otherwise>
+              </xsl:choose>
             </a>
           </li>
         </xsl:for-each>

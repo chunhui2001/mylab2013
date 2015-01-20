@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[Sphinx is a great open source package for implementing a full text search. Before we can use it to search, we first must inject all of our data into it. There are two primary ways of loading that data in – directly accessing the data via a sql query, or using the xmlpipe2 format. Although using the database as a direct data source is very fast, it can sometimes be difficult to craft a query that will contain normalized data for all the fields you require in an index. The XML option gives us much more flexibility at the cost of speed(although it is still very fast). This article will deal with show you how to generate that XML. It assumed to have a basic understanding of how Sphinx works, if not browse the docs first.]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>An example xmlpipe2 format looks like this:</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[<pre style="background-color:rgb(223, 223, 223);padding:1.5em;">&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;sphinx:docset&gt; 
+  &lt;sphinx:schema&gt;
+    &lt;sphinx:field name="subject"/&gt; 
+    &lt;sphinx:field name="content"/&gt;
+    &lt;sphinx:attr name="published" type="timestamp"/&gt;
+    &lt;sphinx:attr name="author_id" type="int" bits="16" default="1"/&gt;
+  &lt;/sphinx:schema&gt;
+ 
+  &lt;sphinx:document id="1234"&gt;
+    &lt;content&gt;this is the main content &lt;![CDATA[[and this <cdata> entry must be handled properly by xml parser lib]]&gt;&lt;/content&gt;
+    &lt;published&gt;1012325463&lt;/published&gt;
+    &lt;subject&gt;
+      note how field/attr tags can be in &lt;b class="red"&gt;randomized&lt;/b&gt; order
+    &lt;/subject&gt;
+    &lt;misc&gt;some undeclared element&lt;/misc&gt;
+  &lt;/sphinx:document&gt;
+  &lt;!-- ... more documents here ... --&gt;
+&lt;/sphinx:docset&gt;</pre>
+<br />
+<div>First we define the schema, which contains fields and attributes. Fields will be processed for fulltext searches, and attributes will be used to help filter those search results. More information about attributes and their options can be found in the docs. Once the schema is defined, we start adding our document data. A document contains elements that will map to the previously defined fields and attributes.
+<br />
+<br />
+Lets try and encapsulate some of that logic into a PHP class:</div>
+<br />
+<pre style="background-color:rgb(223, 223, 223);padding:1.5em;">&lt;?php 
+class SphinxXMLFeed
+{
+  private $fields = array();
+  private $attributes = array();
+  private $documents = array();
+ 
+  public function setFields($fields) {
+    $this->fields = $fields;
+  }
+ 
+  public function setAttributes($attributes) {
+    $this->attributes = $attributes;
+  }
+ 
+  public function addDocument($doc) {
+    $this->documents[] = $doc;
+  }
+ 
+  public function render() {
+ 
+    // create a new XML document
+    $dom = new DomDocument('1.0');
+    $dom->encoding = "utf-8";
+    $dom->formatOutput = true;
+ 
+    // create root node
+    $root = $dom->createElement('sphinx:docset');
+    $root = $dom->appendChild($root);
+ 
+    // create the schema
+    $schema = $dom->createElement('sphinx:schema');
+ 
+    // common fields we will be cloning
+    $tmp_field = $dom->createElement('sphinx:field');
+    $tmp_attr  = $dom->createElement('sphinx:attr');
+ 
+    // add fields to the schema
+    foreach($this->fields as $field) {
+      $new_field = clone($tmp_field);
+      $new_field->setAttribute('name', $field);
+      $schema->appendChild($new_field);
+    }
+ 
+    // add attributes to the schema
+    foreach($this->attributes as $attributes) {
+      $new_attr = clone($tmp_attr);
+      foreach($attributes as $key => $value) {
+        $new_attr->setAttribute($key, $value);
+        $schema->appendChild($new_attr);
+      }
+    }
+ 
+    // add the schema to the document
+    $root->appendChild($schema);
+ 
+    // go through each document
+    foreach($this->documents as $doc) {
+      $node = $dom->createElement('sphinx:document');
+      $node->setAttribute('id', $doc['id']);
+ 
+      foreach($doc as $key => $value) {
+        if($key == 'id') continue;
+        $tmp = $dom->createElement($key);
+        $tmp->appendChild($dom->createTextNode($value));
+ 
+        $node->appendChild($tmp);
+      }
+ 
+      // add the document to the dom
+      $root->appendChild($node);
+    }
+ 
+    // return xml text
+    return $dom->saveXML();
+  }
+}
+?&gt;</pre>
+<br />
+<div>The previous code uses PHP’s DomDocument interface because that is less error prone than manually echo’ing out XML tags. 
+One downside of using DomDocument is we must build the entire XML tree before we can output it. 
+This means we must keep each document in memory, so if you are indexing a large amount of data you will probably hit PHP’s memory limit. 
+We will fix this in the next article. For now, you can use this class as follows:</div>
+<br />
+<pre style="background-color:rgb(223, 223, 223);padding:1.5em;">// instantiate the class
+$doc = new SphinxXMLFeed();
+ 
+// set the fields we will be indexing
+$doc->setFields(array(
+  'title',
+  'teaser',
+  'content',
+));
+ 
+// set any attributes
+$doc->setAttributes(array(
+  array('name' => 'blog_id', 'type' => 'int', 'bits' => '16', 'default' => '0'),
+));
+ 
+// generate some random document. These would usually be pulled from a database
+// or other data source
+foreach(range(1, 3) as $id) {
+  $doc->addDocument(array(
+    'id' => $id,
+    'blog_id' => rand(1, 10),
+    'title' => "Article Part {$id}",
+    'teaser' => "Article {$id} teaster",
+    'content' => "Article {$id} content",
+  ));
+}
+ 
+// Render the XML
+$doc->render();</pre>
+<br />
+<div>That code will generate the following XML:</div>
+<br />
+<pre style="background-color:rgb(223, 223, 223);padding:1.5em;">&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;sphinx:docset&gt;
+  &lt;sphinx:schema&gt;
+    &lt;sphinx:field name="title"/&gt;
+    &lt;sphinx:field name="teaser"/&gt;
+    &lt;sphinx:field name="content"/&gt;
+    &lt;sphinx:attr name="blog_id" type="int" bits="16" default="0"/&gt;
+  &lt;/sphinx:schema&gt;
+  &lt;sphinx:document id="1"&gt;
+    &lt;blog_id&gt;6&lt;/blog_id&gt;
+    &lt;title&gt;Article Part 1&lt;/title&gt;
+    &lt;teaser&gt;Article 1 teaster&lt;/teaser&gt;
+    &lt;content&gt;Article 1 content&lt;/content&gt;
+  &lt;/sphinx:document&gt;
+  ...
+&lt;/sphinx:docset&gt;</pre>
+<br />
+<div>You would setup you datasource in sphinx.conf something like this:</div>
+<br />
+<pre style="background-color:rgb(223, 223, 223);padding:1.5em;">source xml_blog_posts
+{
+    type = xmlpipe
+    xmlpipe_command = /usr/bin/php /home/example.com/lib/tasks/sphinx_blogs.php
+}</pre>
+<br />
+<br />
+<br />
+<div>Don’t forget to checkout the next article where we optimize this class to handle millions of records!</div>
+<br />
+<div>In the prev section we successfully created a PHP class that outputs XML as input for Sphinx’s indexer. However it was incredibly inefficient as we had to hold everything in memory. Here is an updated class that extends XMLWriter, which is a built in PHP class that is essentially undocumented and works great for creating memory efficient streams of XML data. Rather than keeping each document in memory, XMLWriter will allow us to immediately flush that document’s XML elements to standard output.</div>
+<br />
+<pre style="background-color:rgb(223, 223, 223);padding:1.5em;">&lt;?php
+/*
+  *  SphinxXMLFeed - efficiently generate XML for Sphinx's xmlpipe2 data adapter
+  *  (c) 2009 Jetpack LLC http://jetpackweb.com
+  */
+class SphinxXMLFeed extends XMLWriter
+{
+  private $fields = array();
+  private $attributes = array();
+ 
+  public function __construct($options = array())
+  {
+    $defaults = array(
+      'indent' => false,
+    );
+    $options = array_merge($defaults, $options);
+ 
+    // Store the xml tree in memory
+    $this->openMemory();
+ 
+    if($options['indent']) {
+      $this->setIndent(true);
+    }
+  }
+ 
+  public function setFields($fields) {
+    $this->fields = $fields;
+  }
+ 
+  public function setAttributes($attributes) {
+    $this->attributes = $attributes;
+  }
+ 
+  public function addDocument($doc) {
+    $this->startElement('sphinx:document');
+    $this->writeAttribute('id', $doc['id']);
+ 
+    foreach($doc as $key => $value) {
+      // Skip the id key since that is an element attribute
+      if($key == 'id') continue;
+ 
+      $this->startElement($key);
+      $this->text($value);
+      $this->endElement();
+    }
+ 
+    $this->endElement();
+    print $this->outputMemory();
+  }
+ 
+  public function beginOutput() {
+ 
+    $this->startDocument('1.0', 'UTF-8');
+    $this->startElement('sphinx:docset');
+    $this->startElement('sphinx:schema');
+ 
+    // add fields to the schema
+    foreach($this->fields as $field) {
+      $this->startElement('sphinx:field');
+      $this->writeAttribute('name', $field);
+      $this->endElement();
+    }
+ 
+    // add attributes to the schema
+    foreach($this->attributes as $attributes) {
+      $this->startElement('sphinx:attr');
+      foreach($attributes as $key => $value) {
+        $this->writeAttribute($key, $value);
+      }
+      $this->endElement();
+    }
+ 
+    // end sphinx:schema
+    $this->endElement();
+    print $this->outputMemory();
+  }
+ 
+  public function endOutput()
+  {
+    // end sphinx:docset
+    $this->endElement();
+    print $this->outputMemory();
+  }
+}
+?&gt;</pre>
+<br />
+<div>We can use it as follows:</div>
+<br />
+<pre style="background-color:rgb(223, 223, 223);padding:1.5em;">$doc = new SphinxXMLFeed();
+ 
+$doc->setFields(array(
+  'title',
+  'teaser',
+  'content',
+));
+ 
+$doc->setAttributes(array(
+  array('name' => 'blog_id', 'type' => 'int', 'bits' => '16', 'default' => '0'),
+));
+ 
+$doc->beginOutput();
+ 
+foreach(range(1, 1000) as $id) {
+  $doc->addDocument(array(
+    'id' => $id,
+    'blog_id' => rand(1, 10),
+    'title' => "Article Part {$id}",
+    'teaser' => "Article {$id} teaster",
+    'content' => "Article {$id} content",
+  ));
+}
+ 
+$doc->endOutput();</pre>
+<br />
+<div>As you can see the first thing we need to do is populate the fields and attributes. Once that is done, we call beginOutput, that will create the head of the XML document. After each document is added, the document’s xml markup is immediately outputted and the memory buffer is cleared.
+<br />
+<br />
+Finally we call endOutput, which will close the sphinx:docset element.
+<br />
+<br />
+I have used this class in production to index millions of records that take up dozens of gigabytes. Keep in mind if you are working with that much data, you will probably need to bach your queries so you are not loading all the records at once!</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  
+</c:component>

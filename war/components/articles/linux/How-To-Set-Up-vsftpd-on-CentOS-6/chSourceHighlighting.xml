@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+   <b> Warning: FTP is inherently insecure. If you must use FTP, consider securing your FTP connection with SSL/TLS. Otherwise, it is best to use SFTP, a secure alternative to FTP.</b>
+<br />
+<br />
+The first two letters of vsftpd stand for "very secure" and the program was built to have strongest protection against possible FTP vulnerabilities.
+]]>
+  </c:abstract>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Step One—Install vsftpd</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>
+      You can quickly install vsftpd on your virtual private server in the command line:
+      </div>
+      <pre style="font-weight:bold;padding:.2em 0 1em 0;">sudo yum install vsftpd</pre>
+      <div>
+      We also need to install the FTP client, so that we can connect to an FTP server:
+      </div>
+      <pre style="font-weight:bold;padding:.2em 0 1em 0;">sudo yum install ftp</pre>
+      <div>
+      Once the files finish downloading, vsftpd will be on your VPS. Generally speaking, the virtual private server is already configured with a reasonable amount of security. However, it does provide access to anonymous users.
+      </div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Step Two—Configure VSFTP</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>
+      Once VSFTP is installed, you can adjust the configuration.
+      <br />
+      <br />
+      Open up the configuration file:
+      </div>
+      <pre style="font-weight:bold;padding:.2em 0 1em 0;">sudo vi /etc/vsftpd/vsftpd.conf</pre>
+      <div>
+      One primary change you need to make is to change the Anonymous_enable to No:
+      </div>
+      <pre style="font-weight:bold;padding:.2em 0 1em 0;">anonymous_enable=NO</pre>
+      <div>
+      Prior to this change, vsftpd allowed anonymous, unidentified users to access the VPS's files. This is useful if you are seeking to distribute information widely, but may be considered a serious security issue in most other cases. After that, uncomment the local_enable option, changing it to yes.
+      </div>
+      <pre style="font-weight:bold;padding:.2em 0 1em 0;">local_enable=YES</pre>
+      <div>
+      Finish up by uncommenting command to chroot_local_user. When this line is set to Yes, all the local users will be jailed within their chroot and will be denied access to any other part of the server.
+      </div>
+      <pre style="font-weight:bold;padding:.2em 0 1em 0;">chroot_local_user=YES</pre>
+      <div>
+      Finish up by restarting vsftpd:
+      </div>
+      <pre style="font-weight:bold;padding:.2em 0 1em 0;">sudo service vsftpd restart</pre>
+      <div>
+      In order to ensure that vsftpd runs at boot, run chkconfig:
+      </div>
+      <pre style="font-weight:bold;padding:.2em 0 1em 0;">chkconfig vsftpd on</pre>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Step Three—Create a user to access FTP server</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <ul style="list-style-type:decimal;margin-left:2.5em;">
+        <li>mkdir /var/www/mydomain.com</li>
+        <li>mkdir /var/www/mydomain.com/html</li>
+        <li>useradd <-username> </li>
+        <li>passwrd <-username></li>
+        <li>chown –R <-username> /var/www/mydomain.com</li>
+        <li>groupadd <-groupname></li>
+        <li>gpasswd -a <-username> <-groupname></li>
+        <li>chgrp -R <-groupname> /var/www/mydomain.com</li>
+        <li>chmod -R g+rw /var/www/mydomain.com</li>
+      </ul>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Step Four—Access the FTP server</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>
+      Once you have installed the FTP server and configured it to your liking, you can now access it.
+      <br />
+      <br />
+      You can reach an FTP server in the browser by typing the domain name into the address bar and logging in with the appropriate ID. Keep in mind, you will only be able to access the user's home directory.
+      </div>
+      <pre style="font-weight:bold;padding:.2em 0 1em 0;">ftp://example.com</pre>
+      <div>
+     Alternatively, you can reach the FTP server through the command line by typing:
+      </div>
+      <pre style="font-weight:bold;padding:.2em 0 1em 0;">ftp example.com</pre>
+      <div>
+     Then you can use the word, "exit," to get out of the FTP shell.
+      </div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+</c:component>
