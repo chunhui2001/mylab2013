@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+    <b>
+    Rsync, which stands for "remote sync", is a remote and local file synchronization tool. It uses an algorithm that minimizes the amount of data copied by only moving the portions of files that have changed.
+
+In this guide, we will cover the basic usage of this powerful utility. We will be using an Ubuntu 12.04 VPS in the examples, but you can use any modern Linux distribution to follow along.
+
+
+<br />
+<br />
+yum install rsync
+
+<br />
+<br />
+Demo:
+<br />
+<i style="color:red;">rsync --bwlimit=200 -azP /home/siteroot/www/uploadfile root@8.8.8.8:/home/siteroot/www/</i>
+
+<br />
+<br />
+Screen:
+<br />
+<i style="color:red;">start a screen: screen, get back screen -r</i>
+</b>
+]]>
+  </c:abstract>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>What Is Rsync?</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      Rsync is a very flexible network-enabled syncing tool. It can also refer to the network protocol developed to utilize this tool.
+<br />
+<br />
+When we reference rsync in this guide, we are mainly referring to the utility, and not the protocol.
+<br />
+<br />
+Due to its ubiquity on Linux and Unix-like systems and its popularity as a tool for system scripts, it is included on most Linux distributions by default.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Basic Syntax</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>
+      The basic syntax of rsync is very straight forward, and operates in a way that is similar to ssh, scp, and cp.
+<br />
+<br />
+We will create two test directories and some test files with the following commands:
+</div>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">cd ~
+mkdir dir1
+mkdir dir2
+touch dir1/file{1..100}</pre>
+<div>We now have a directory called dir1 with 100 empty files in it.</div>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">ls dir1</pre>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">file1    file18  file27  file36  file45  file54  file63  file72  file81  file90
+file10   file19  file28  file37  file46  file55  file64  file73  file82  file91
+file100  file2   file29  file38  file47  file56  file65  file74  file83  file92
+file11   file20  file3   file39  file48  file57  file66  file75  file84  file93
+file12   file21  file30  file4   file49  file58  file67  file76  file85  file94
+file13   file22  file31  file40  file5   file59  file68  file77  file86  file95
+file14   file23  file32  file41  file50  file6   file69  file78  file87  file96
+file15   file24  file33  file42  file51  file60  file7   file79  file88  file97
+file16   file25  file34  file43  file52  file61  file70  file8   file89  file98
+file17   file26  file35  file44  file53  file62  file71  file80  file9   file99</pre>
+<div>We also have an empty directory called dir2.
+<br />
+<br />
+To sync the contents of dir1 to dir2 on the same system, type:</div>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">rsync -r dir1/ dir2</pre>
+<div>The -r option means recursive, which is necessary for directory syncing.
+<br />
+<br />
+We could also use the -a flag instead:</div>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">rsync -a dir1/ dir2</pre>
+<div>The -a option is a combination flag.
+<br />
+<br />
+It stands for "archive" and syncs recursively and preserves symbolic links, special and device files, modification times, group, owner, and permissions.
+
+<br />
+<br />
+It is more commonly used than -r and is usually what you want to use.</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>An Important Note</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>You may have noticed that there is a trailing slash (/) at the end of the first argument in the above commands:</div>
+      <pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">rsync -a dir1/ dir2</pre>
+      <div>This is necessary to mean "the contents of dir1".
+<br />
+<br />
+The alternative, without the trailing slash, would place dir1, including the directory, within dir2. This would create a hierarchy that looks like:</div>
+      <pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">~/dir2/dir1/[files]</pre>
+<div>Always double-check your arguments before executing an rsync command.
+<br />
+<br />
+Rsync provides a method for doing this by passing the -n or --dry-run options. The -v flag (for verbose) is also necessary to get the appropriate output:</div>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">rsync -anv dir1/ dir2</pre>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">sending incremental file list
+./
+file1
+file10
+file100
+file11
+file12
+file13
+file14
+file15
+file16
+file17
+file18
+. . .</pre>
+<div>Compare this output to the output we get when we remove the trailing slash:</div>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">rsync -anv dir1 dir2</pre>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">sending incremental file list
+dir1/
+dir1/file1
+dir1/file10
+dir1/file100
+dir1/file11
+dir1/file12
+dir1/file13
+dir1/file14
+dir1/file15
+dir1/file16
+dir1/file17
+dir1/file18
+. . .</pre>
+<div>You can see here that the directory itself is transfered.</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>How To Use Rsync to Sync with a Remote System</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>Syncing to a remote system is trivial if you have SSH access to the remote machine and rsync installed on both sides. If you need to set up SSH keys, click here.
+<br />
+Once you have SSH access verified on between the two machines, you can sync the dir1 folder from earlier to a remote computer by using this syntax (note that we want to transfer the actual directory in this case, so we omit the trailing slash):</div>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">rsync -a ~/dir1 username@remote_host:destination_directory</pre>
+<div>This is called a "push" operation because it pushes a directory from the local system to a remote system.
+<br />
+<br />
+The opposite operation is "pull". It is used to sync a remote directory to the local system. If the dir1 were on the remote system instead of our local system, the syntax would be:</div>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">rsync -a username@remote_host:/home/username/dir1 place_to_sync_on_local_machine</pre>
+<div>Like "cp" and similar tools, the source is always the first argument, and the destination is always the second.</div>
+
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Useful Options for Rsync</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>Rsync provides many options for altering the default behavior of the utility. We have already discussed some of the more necessary flags.
+<br />
+<br />
+If you are transferring files that have not already been compressed, like text files, you can reduce the network transfer by adding compression with the -z option:</div>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">rsync -az source destination</pre>
+<div>The -P flag is very helpful. It combines the flags --progress and --partial. The first of these gives you a progress bar for the transfers and the second allows you to resume interrupted transfers:</div>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">rsync -azP source destination</pre>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">sending incremental file list
+./
+file1
+           0 100%    0.00kB/s    0:00:00 (xfer#1, to-check=99/101)
+file10
+           0 100%    0.00kB/s    0:00:00 (xfer#2, to-check=98/101)
+file100
+           0 100%    0.00kB/s    0:00:00 (xfer#3, to-check=97/101)
+file11
+           0 100%    0.00kB/s    0:00:00 (xfer#4, to-check=96/101)
+. . .</pre>
+<div>If we run the command again, we will get a shorter output, because no changes have been made.
+<br />
+<br />
+This illustrates rsync's ability to use modification times to determine if changes have been made.</div>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">rsync -azP source destination</pre>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">sending incremental file list
+
+sent 818 bytes received 12 bytes 1660.00 bytes/sec
+total size is 0 speedup is 0.00</pre>
+<div>We can update the modification time on some of the files and see that rsync intelligently re-copies only the changed files:</div>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">touch dir1/file{1..10}
+rsync -azP source destination</pre>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">sending incremental file list
+file1
+           0 100%    0.00kB/s    0:00:00 (xfer#1, to-check=99/101)
+file10
+           0 100%    0.00kB/s    0:00:00 (xfer#2, to-check=98/101)
+file2
+           0 100%    0.00kB/s    0:00:00 (xfer#3, to-check=87/101)
+file3
+           0 100%    0.00kB/s    0:00:00 (xfer#4, to-check=76/101)
+. . .</pre>
+<div>In order to keep two directories truly in sync, it is necessary to delete files from the destination directory if they are removed from the source. By default, rsync does not delete anything from the destination directory.
+<br />
+<br />
+We can change this behavior with the --delete option. Before using this option, use the --dry-run option and do testing to prevent data loss:</div>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">rsync -a --delete source destination</pre>
+<div>If you wish to exclude certain files or directories located inside a directory you are syncing, you can do so by specifying them in a comma-separated list following the --exclude= option:</div>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">rsync -a --exclude=pattern_to_exclude source destination</pre>
+<div>If we have specified a pattern to exclude, we can override that exclusion for files that match a different pattern by using the --include= option.</div>
+<pre style="padding:1em; border-width:1px; background-color:rgb(221, 221, 221);margin:1em 0;margin-top:.5em;">rsync -a --exclude=pattern_to_exclude --include=pattern_to_include source destination</pre>
+
+
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Conclusion</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      Rsync can simplify file transfers over networked connections and add robustness to local directory syncing. The flexibility of rsync makes it a good option for many different file-level operations.
+<br />
+<br />
+A mastery of rsync allows you to design complex backup operations and obtain fine-grained control over what is transferred and how.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+</c:component>
