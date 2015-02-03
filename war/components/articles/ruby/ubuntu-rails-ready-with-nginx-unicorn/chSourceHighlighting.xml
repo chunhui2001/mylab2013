@@ -1,0 +1,612 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+    We'll be using Digital Ocean to set up the Ubuntu virtural box, a droplet in their terms. 
+    Give the droplet a hostname, select a size, a region, Ubuntu 14.04 x64 for the image, than click Create Droplet. 
+    In a few minutes, you'll get an email with the IP address and root password.
+]]>
+  </c:abstract>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Add a sudo user</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>
+        With great power comes great responsibility. 
+        I prefer to authenticate with a sudo user (an user with administrator rights), 
+        instead of the root user and prefix commands with sudo and get prompted to enter the password, when required.
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">ssh <IP address provided>
+adduser &lt;username&gt;
+adduser &lt;username&gt; sudo
+exit</pre>
+<div>
+At this point, we should be able to log in back with newly created sudo user.
+
+<br />
+<br />
+You shouldn’t use root user often, but you will need root privileges for performing many tasks, like installing stuff, 
+so it is quite useful to edit sudo configuration - 
+it will give deploy user an ability to perform all tasks which require root privileges by preceding command with sudo. 
+Run:
+</div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">visudo</pre>
+      <div>find section that looks like that:</div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">## Allow root to run any commands anywhere
+root    ALL=(ALL)       ALL</pre>
+      <div>and add the following line:</div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">deploy    ALL=(ALL)       ALL</pre>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Enhance security - configure SSH" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>
+        You can easily make your server more secure by editing SSH configuration. Type:
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">vi /etc/ssh/sshd_config</pre>
+      <div>
+        Here are some default options which you may change:
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">#Port 22
+#PermitRootLogin yes</pre>
+      <div>
+        Default 22 port for SSH is not insecure, but changing it to some other value will make it more difficult to compromise your server by automated attacks. Pick any number less than 65536 and uncomment this line.
+<br />
+<br />
+Another option is PermitRootLogin - change it to no to disable logging as root through ssh. You have root privileges by using sudo, so you don’t need to login as root anyway.
+<br />
+<br />
+If you are going to create some more users, but you don’t want them to login through ssh, add following line:
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">AllowUsers deploy</pre>
+      <div>
+        When you are finished type:
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">/etc/init.d/sshd reload</pre>
+      <div>
+       Now, open NEW terminal window and check if everything works:
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">ssh -p new-port deploy@your-ip</pre>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Update Ubuntu with latest packages</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>
+        Let's make sure we have latest packages installed:
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">sudo apt-get update
+sudo apt-get upgrade</pre>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Install PostgreSQL</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>
+        This step is optional, as we prefer PostreSQL, especially in production.
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">sudo apt-get install postgresql postgresql-contrib
+
+# switch to user of postgres
+sudo su postgres
+psql
+
+#Now, you are in psql console. To change password, enter:
+alter user postgres with password 'postgres-user-password';</pre>
+
+      <div>
+        Logout from postgres user and modify <b>/etc/postgresql/9.3/main/pg_hba.conf</b>, At the bottom of the file change authentication method to md5:
+      </div>
+      
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;"># TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+# "local" is for Unix domain socket connections only
+local   all             all                                     md5
+# IPv4 local connections:
+host    all             all             127.0.0.1/32            md5
+# IPv6 local connections:
+host    all             all             ::1/128                 md5</pre>
+
+      <div>
+        and restart Postgres:
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">sudo service postgresql restart</pre>
+      <div>
+        and create a new user and database:
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">create user username with password 'secretPassword';
+create database testdb owner=username;</pre>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Install Ruby &amp; Ruby on Rails</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>
+        First of all, let's see, do we have a Ruby pre-installed?
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">ruby -v</pre>
+      <div>
+        Nope, and here it comes the suggestion, which packages we may use to bring ruby on board.
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">The program 'ruby' can be found in the following packages:
+ * ruby
+ * ruby1.8
+Try: sudo apt-get install &lt;selected package&gt;</pre>
+      <div>
+        We all have fond memories of RVM. Well, I have some fond memories, but mostly memories or RVM acting crazy and putting crap all over my system.
+        “Is there a better way?”, you ask. Yes. Yes, there is. Please use <b>Rbenv</b>. Let’s get it installed for your deployer user.
+        <br />
+        <br />
+        First, some dependencies:
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">$ sudo apt-get update
+$ sudo apt-get install curl git-core build-essential zlib1g-dev libssl-dev libreadline-dev libyaml-dev libsqlite3-dev sqlite3 libcurl4-openssl-dev libxml2-dev libxslt1-dev python-software-properties</pre>
+      <div>
+       Now, we’ll install rbenv into your home directory and add some commands to your .bashrc for completution and shims.
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">$ git clone https://github.com/sstephenson/rbenv.git ~/.rbenv
+$ echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
+$ echo 'eval "$(rbenv init -)"' >> ~/.bashrc</pre>
+
+<div>
+       Now, let’s restart the shell and make sure Rbenv is install:
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">$ exec $SHELL
+$ type rbenv
+#=> "rbenv is a function"</pre>
+
+
+
+<div>
+       Time to install Ruby!
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">$ git clone https://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build
+$ rbenv install 2.2.0
+$ rbenv global 2.2.0</pre>
+
+
+
+<div>
+       Let’s make sure all is well…
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">$ ruby -v
+ruby 2.1.2p95 (2014-05-08 revision 45877) [x86_64-linux]</pre>
+
+
+<br />
+
+      <div>
+        Rails will also need a JavaScript runtime. For this, we're going to install... node.js, yep.
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">sudo apt-get install nodejs
+Or: <a href="https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-an-ubuntu-14-04-server" target="_blank">
+How To Install Node.js on an Ubuntu 14.04 server</a></pre>
+      <div>
+        At this point you may quickly create a Rails app and check how it runs on port 3000. Next on our list: nginx.
+      </div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Install a source code versioning manager</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>
+        Nowdays, almost everyone goes with git. It will help manage your source code whilst developing, and may come useful when you deploy, too.
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">sudo apt-get install git</pre>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Install nginx</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">sudo apt-get install nginx</pre>
+      <div>
+        Start your browser, and head to http://<IP address>. Default nginx page should prompt you.
+<br />
+<br />
+It is managed by sites-available / sites-enabled conf files. Let's take a look:
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">/etc/nginx/sites-available
+ls
+cat default</pre>
+      <div>
+      We'll come back later to change this file, or if you prefer, create a secondary sites-available conf file and link it to sites-enables. 
+      But now, it is the time to give some attention to our unicorns.
+      </div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Install Unicorn</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>
+       First of all, what are ruby gems?
+<br />
+<br />
+RubyGems is a package manager for the Ruby programming language that provides a standard format for distributing Ruby programs and libraries (in a self-contained format called a "gem"), a tool designed to easily manage the installation of gems, and a server for distributing them.  -- Wikipedia
+<br />
+<br />
+Yes, you guess it right, we'll be using ruby's package manager to install unicorn:
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">gem install unicorn</pre>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Configurations</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>
+       /var/www/ is one of the prefered location to install/deploy our apps and I would like to have access to it without having to sudo each time. For this, let's change the owner of www folder.
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">mkdir ~/wwwroot/your_app_name
+chmod -R 755 wwwroot</pre>
+      <div>
+       Let's try an application:
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">cd ~/wwwroot/your_app_name
+rails new demo-app
+cd demo-app
+bundle install
+rake db:migrate
+rails server</pre>
+      <div>
+       It should work and have access to it, however, let's start our unicorns... As a first step, we'll need to add gem 'unicorn' to our Gemfile and re-run bundle install command. Let's start the server again, using unicorn_rails. And, it works, or at least it should be!
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">unicorn_rails</pre>
+      <div>
+       Now, let's create a configuration file for unicorn, in conf/unicorn.rb.
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;"># config/unicorn.rb
+
+# Set the working application directory
+# working_directory '/path/to/your/app'
+working_directory '/var/www/demo-app'
+
+# Unicorn PID file location
+# pid '/path/to/pids/unicorn.pid'
+pid '/var/www/demo-app/pids/unicorn.pid'
+
+# Path to logs
+# stderr_path '/path/to/log/unicorn.log'
+# stdout_path '/path/to/log/unicorn.log'
+stderr_path '/var/www/demo-app/log/unicorn.log'
+stdout_path '/var/www/demo-app/log/unicorn.log'
+
+# Unicorn socket
+# listen '/tmp/unicorn.[application name].sock'
+listen '/tmp/unicorn.demo-app.sock'
+
+# Number of processes
+# worker_processes 4
+worker_processes 2
+
+# Time-out
+timeout 30</pre>
+      <div>
+       ... and the pids folder (full path in our case /var/www/demo-app/pids) ...
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">mkdir pids</pre>
+      <div>
+      Remember the default file we talked about earlier? Backup the original, and let's edit it:
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">sudo vim /etc/nginx/sites-available/default</pre>
+      <div>
+      Its content should read now:
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">upstream app {
+    # Path to Unicorn SOCK file, as defined previously
+    server unix:/tmp/unicorn.demo-app.sock fail_timeout=0;
+}
+
+server {
+    listen 80;
+    server_name localhost;
+
+    # Application root, as defined previously
+    root /var/www/demo-app/public;
+
+    try_files $uri/index.html $uri @app;
+
+    location @app {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        proxy_pass http://app;
+
+    }
+
+    error_page 500 502 503 504 /500.html;
+    client_max_body_size 4G;
+    keepalive_timeout 10;
+}</pre>
+      <div>
+       Let's try it out:
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">cd /var/www/demo-app
+unicorn_rails -c config/unicorn.rb -D
+sudo service nginx restart</pre>
+      <div>
+       And it should work. There is one last step, and this is to create init.d script for unicorn, to start up automatically on system reboot. Let's create a file config/unicorn_init.sh.
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">#!/bin/sh
+set -e
+# Example init script, this can be used with nginx, too,
+# since nginx and unicorn accept the same signals
+
+# Feel free to change any of the following variables for your app:
+TIMEOUT=${TIMEOUT-60}
+APP_ROOT=/var/www/demo-app
+PID=$APP_ROOT/var/www/demo-app/pids/unicorn.pid
+CMD="$APP_ROOT/bin/unicorn -D -c $APP_ROOT/config/unicorn.rb -E production"
+action="$1"
+set -u
+
+old_pid="$PID.oldbin"
+
+cd $APP_ROOT || exit 1
+
+sig () {
+        test -s "$PID" && kill -$1 `cat $PID`
+}
+
+oldsig () {
+        test -s $old_pid && kill -$1 `cat $old_pid`
+}
+
+case $action in
+start)
+        sig 0 && echo >&2 "Already running" && exit 0
+        su -c "$CMD" - &lt;username&gt;
+        ;;
+stop)
+        sig QUIT && exit 0
+        echo >&2 "Not running"
+        ;;
+force-stop)
+        sig TERM && exit 0
+        echo >&2 "Not running"
+        ;;
+restart|reload)
+        sig HUP && echo reloaded OK && exit 0
+        echo >&2 "Couldn't reload, starting '$CMD' instead"
+        su -c "$CMD" - &lt;username&gt;
+        ;;
+upgrade)
+        if sig USR2 && sleep 2 && sig 0 && oldsig QUIT
+        then
+                n=$TIMEOUT
+                while test -s $old_pid && test $n -ge 0
+                do
+                        printf '.' && sleep 1 && n=$(( $n - 1 ))
+                done
+                echo
+
+                if test $n -lt 0 && test -s $old_pid
+                then
+                        echo >&2 "$old_pid still exists after $TIMEOUT seconds"
+                        exit 1
+                fi
+                exit 0
+        fi
+        echo >&2 "Couldn't upgrade, starting '$CMD' instead"
+        su -c "$CMD" - &lt;username&gt;
+        ;;
+reopen-logs)
+        sig USR1
+        ;;
+*)
+        echo >&2 "Usage: $0 "
+        exit 1
+        ;;
+esac</pre>
+      <div>
+       We need to make this file executable:
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">sudo chmod +x config/unicorn_init.sh</pre>
+      <div>
+       Copy this file as /etc/init.d/unicorn or symlink it.
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">sudo update-rc.d unicorn defautls</pre>
+      <div>
+       to start automatically at default levels.
+       <br />
+       <br />
+       And here we are... our server is fully configured. Go ahead, create your own app and deploy it. Comments on how to improve the above procedure will be appreciated.
+      </div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>ImageMagick</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      <div style="font-size:1.2em;line-height:1.3em;color:gray;">
+      This part is optional, but you will probably need ImageMagick in some applications - it is a powerful software for creating, 
+      editing and converting images. 
+      The ImageMagick version available in repositories is probably outdated, so we will compile it from source. <br /><br />
+      </div>]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      
+      <div>
+      Start with installing some delegates (you have to install them before compiling ImageMagick).
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">For CentOS:
+sudo yum install libjpeg libjpeg-devel libpng-devel libpng-devel freetype freetype-devel libtiff-devel jasper-devel bzip2-devel giflib-devel ghostscript-devel
+
+For Ubuntu:
+apt-get install build-essential checkinstall && apt-get build-dep imagemagick -y
+
+</pre>
+      <div>And compile it:</div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">wget http://www.imagemagick.org/download/ImageMagick.tar.gz
+tar xvfz ImageMagick.tar.gz
+cd ImageMagick-6.8.8-2
+./configure
+make
+sudo make install
+sudo ldconfig /usr/local/lib
+make check</pre>
+
+      <div>
+      Export PATH variable:
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">export PATH=$PATH:/usr/local/bin</pre>
+      <div>
+      And check if everything works:
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">convert -version</pre>
+      <div>
+      You should get output similar to this:
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">Version: ImageMagick 6.8.8-2 2013-07-18 Q16 http://www.imagemagick.org
+Copyright: Copyright (C) 1999-2013 ImageMagick Studio LLC
+Features: DPC OpenMP
+Delegates: bzlib freetype jng jp2 jpeg png ps tiff xml zlib</pre>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>First Rails Controller</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[
+      ]]>
+      </c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[  
+      
+       <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">bin/rails generate controller Demo index</pre>      
+      <div>
+      Restart Server:
+      </div>
+       <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">unicorn_rails -c config/unicorn.rb -D
+sudo service nginx restart</pre>     
+      <div>
+      Access the action:
+      </div>
+      
+       <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">http://172.28.7.142/demo/index</pre>  
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+</c:component>
