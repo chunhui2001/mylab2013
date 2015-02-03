@@ -2,12 +2,13 @@
 <c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
   <c:abstract>
     <![CDATA[
-    
+        
+        
 ]]>
   </c:abstract>
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title>Introduction</c:title>
+    <c:title></c:title>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
@@ -15,91 +16,29 @@
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
       <![CDATA[
-      NFS, or Network File System, is a distributed filesystem protocol that allows you to mount remote directories on your server. 
-      This allows you to leverage storage space in a different location and to write to the same space from multiple servers easily. 
-      NFS works well for directories that will have to be accessed regularly.
-      <br />
-      <br />
-      In this guide, we'll cover how to configure NFS mounts on an Ubuntu 14.04 server.
-    ]]>
-    </c:sourceContent>
-    <c:comment>
-      <c:comment1>
-        <![CDATA[]]>
-      </c:comment1>
-    </c:comment>
-  </c:entry>
-  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title>Prerequisites</c:title>
-    <c:desc>
-      <c:desc1> <![CDATA[]]></c:desc1>
-    </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1"
-                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
-      <![CDATA[
-      <div>
-      In this guide, we will be configuring directory sharing between two Ubuntu 14.04 servers.
-      These can be of any size. 
-      For each of these servers, you will have to have an account set up with sudo privileges. 
-      You can learn how to configure such an account by following steps 1-4 in our <a target="_blank" href="https://www.digitalocean.com/community/articles/initial-server-setup-with-ubuntu-14-04">initial setup guide for Ubuntu 14.04 servers.</a>
-      <br />
-      <br />
-      
-      For the purposes of this guide, we are going to refer to the server that is going to be sharing its directories the host and the server that will mount these directories as the client.
-      <br />
-      <br />
+          <div>I had a need to convert XML services that my rails app was providing into customizable html widgets tht could then be in-jested by some sort of server side includes(like NGINX's SSI). So I needed to use XSLT.
+          <br />
+          <br />
+          When the W3C wrote the XML specification they also developed the Extensible Stylesheet Language for Transformations. XSLT provides a powerful, flexible language for transforming XML documents into something else. In this case, we're going to use it to create HTML documents.
+          <br />
+          <br />
+          So to quickly look at how we're rendering xml currently.</div>
+          <pre style="margin:1em 0;color:green;">def show
+    @event = Event.find(params[:id])
+    render :xml => @event
+end</pre>
 
-      In order to keep these straight throughout the guide, 
-      I will be using the following IP addresses as stand-ins for the host and server values:
-      </div>
-      <br />
-      <ul style="font-weight:bold;">
-        <li><b>Host: 1.2.3.4</b></li>
-        <li><b>Client: 111.111.111.111</b></li>
-      </ul>
-      <br />
-      <div>
-      You should substitute the values above with your own host and client values.
-      </div>
-    ]]>
-    </c:sourceContent>
-    <c:comment>
-      <c:comment1>
-        <![CDATA[]]>
-      </c:comment1>
-    </c:comment>
-  </c:entry>
-  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title>Download and Install the Components</c:title>
-    <c:desc>
-      <c:desc1> <![CDATA[]]></c:desc1>
-    </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1"
-                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
-      <![CDATA[
-      <div>Before we can begin, we need to install the necessary components on both our host and client servers.
-      <br />
-      <br />
-      On the host server, we need to install the nfs-kernel-server package, which will allow us to share our directories. 
-      Since this is the first operation that we're performing with apt in this session, 
-      we'll refresh our local package index before the installation:
-      </div>
-      <br />
-      <pre style="font-weight:bold;">sudo apt-get update
-sudo apt-get install nfs-kernel-server</pre>
-<br />
-<div>
-  Once these packages are installed, you can switch over to the client computer.
+<div>OK so we are simply rendering only xml back from this request. Now of course we can react to any registered mime-type we want, obviously HTML is one of those. So we do something like....</div>
+<pre style="margin:1em 0;color:green;">def show
+    @event = Event.find(params[:id])
+    responds_to do |format|
+        format.html
+        format.xml { render :xml => @event }
+    end
+end</pre>
 
-On the client computer, we're going to have to install a package called nfs-common, 
-which provides NFS functionality without having to include the server components. 
-Again, we will refresh the local package index prior to installation to ensure that we have up-to-date information:
+<div>So, I'm going to assume that you've seen this responds to block before and you know that it's just going to render the show.html.erb template in our views, when html is requested.
 </div>
-      <br />
-      <pre style="font-weight:bold;">sudo apt-get update
-sudo apt-get install nfs-common</pre>
     ]]>
     </c:sourceContent>
     <c:comment>
@@ -108,340 +47,149 @@ sudo apt-get install nfs-common</pre>
       </c:comment1>
     </c:comment>
   </c:entry>
+  
+  
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title>Create the Share Directory on the Host Server</c:title>
-    <c:desc>
-      <c:desc1> <![CDATA[]]></c:desc1>
-    </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1"
-                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
-      <![CDATA[
-      <div>
-      We're going to experiment with sharing two separate directories during this guide. The first directory we're going to share is the /home directory that contains user data.
-<br />
-<br />
-The second is a general purpose directory that we're going to create specifically for NFS so that we can demonstrate the proper procedures and settings. This will be located at /var/nfs.
-<br />
-<br />
-Since the /home directory already exists, go ahead and start by creating the /var/nfs directory:
-      </div>
-      <br />
-      <pre style="font-weight:bold;">sudo mkdir /var/nfs</pre>
-      <br />
-      <div>
-        Now, we have a new directory designated specifically for sharing with remote hosts. 
-        However, the directory ownership is not ideal. 
-        We should give the user ownership to a user on our system named nobody. 
-        We should give the group ownership to a group on our system named nogroup as well.
-        <br />
-        <br />
-        We can do that by typing this command:
-      </div>
-      <br />
-      <pre style="font-weight:bold;">sudo chown nobody:nogroup /var/nfs</pre>
-      <br />
-      <div>
-        We only need to change the ownership on our directories that are used specifically for sharing. 
-        We wouldn't want to change the ownership of our /home directory, for instance, 
-        because it would cause a great number of problems for any users we have on our host server.
-      </div>
-    ]]>
-    </c:sourceContent>
-    <c:comment>
-      <c:comment1>
-        <![CDATA[]]>
-      </c:comment1>
-    </c:comment>
+      <c:title>Installing Ruby's XSLT Library</c:title>
+      <c:desc>
+          <c:desc1> <![CDATA[]]></c:desc1>
+      </c:desc>
+      <c:sourceContent type="html" title="" id="sourceContent1"
+          titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+          bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+          <![CDATA[
+              <div>I'm on Mac OS-X 10.5.2 and haven't tested this install on anything else, but it's pretty simple really, unfortunately it's not a gem, but hey, it's not that hard
+              <br />
+              <br />
+              First you'll need to download the library, you can get it from <a target="_blank" href="http://gregoire.lejeune.free.fr/ruby-xslt_0.9.2.tar.gz">here</a>
+              <br />
+              <br />
+              Unzip that guy and in your terminal navigate to that directory, then execute the following commands(You'll need Make installed so ensure you've XCode installed on OS-X, or some sort of GCC/Make):</div>
+              <pre style="margin:1em 0;color:green;">ruby extconf.rb
+make
+make test
+make doc
+sudo make install</pre>
+              
+              <div>Fire up irb and ensure you return true from require 'xml/xslt' if you get a false, the library hasn't installed properly, you can probably find help at http://greg.rubyfr.net/pub/packages/ruby-xslt/files/README.html</div>          ]]>
+      </c:sourceContent>
+      <c:comment>
+          <c:comment1>
+              <![CDATA[]]>
+          </c:comment1>
+      </c:comment>
   </c:entry>
+  
+  
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title>Configure the NFS Exports on the Host Server</c:title>
-    <c:desc>
-      <c:desc1> <![CDATA[]]></c:desc1>
-    </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1"
-                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
-      <![CDATA[
-      <div>
-        Now that we have our directories created and assigned, we can dive into the NFS configuration file to set up the sharing of these resources.
-<br />
-<br />
-Open the /etc/exports file in your text editor with root privileges:
-      </div>
-      <br />      
-      <pre style="font-weight:bold;">sudo nano /etc/exports</pre>
-      <br />
-      <div>
-        The files that you see will have some comments that will show you the general structure of each configuration line. 
-        Basically, the syntax is something like:
-      </div>
-      <br />      
-      <pre style="font-weight:bold;">directory_to_share       client(share_option1,...,share_optionN)</pre>
-      <br />
-      <div>
-        So we want to create a line for each of the directories that we wish to share. 
-        Since in this example or client has an IP of 111.111.111.111, our lines will look like this:
-      </div>
-      <br />      
-      <pre style="font-weight:bold;">/home       111.111.111.111(rw,sync,no_root_squash,no_subtree_check)
-/var/nfs    111.111.111.111(rw,sync,no_subtree_check)</pre>
-      <br />
-      <div>
-        We've explained everything here but the specific options we've enabled. Let's go over those now.
-      </div>
-      <br />
-      <ul style="list-style-type:disc;margin-left:1.5em;">
-        <li><b>rw:</b> This option gives the client computer both read and write access to the volume.</li>
-        <li><b>sync:</b> This option forces NFS to write changes to disk before replying. This results in a more stable and consistent environment, since the reply reflects the actual state of the remote volume.</li>
-        <li><b>nosubtreecheck:</b> This option prevents subtree checking, which is a process where the host must check whether the file is actually still available in the exported tree for every request. This can cause many problems when a file is renamed while the client has it opened. In almost all cases, it is better to disable subtree checking.</li>
-        <li><b>norootsquash:</b> By default, NFS translates requests from a root user remotely into a non-privileged user on the server. This was supposed to be a security feature by not allowing a root account on the client to use the filesystem of the host as root. This directive disables this for certain shares.</li>
-      </ul>
-      <br />
-      <div>
-        When you are finished making your changes, save and close the file.
-        <br />
-        <br />
-        Next, you should create the NFS table that holds the exports of your shares by typing:
-      </div>
-      <br />      
-      <pre style="font-weight:bold;">sudo exportfs -a</pre>
-      <br />
-      <div>
-        However, the NFS service is not actually running yet. You can start it by typing:
-      </div>
-      <br />      
-      <pre style="font-weight:bold;">sudo service nfs-kernel-server start</pre>
-      <br />
-      <div>
-        This will make your shares available to the clients that you configured.
-      </div>
-    ]]>
-    </c:sourceContent>
-    <c:comment>
-      <c:comment1>
-        <![CDATA[]]>
-      </c:comment1>
-    </c:comment>
+      <c:title>Getting Rails to render:</c:title>
+      <c:desc>
+          <c:desc1> <![CDATA[]]></c:desc1>
+      </c:desc>
+      <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+          titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+          bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+          <![CDATA[
+              <div>Firstly, include your new friend in environment.rb
+              require 'xml/xslt'
+              
+              In my application controller I've added a private method</div>
+              <pre style="margin:1em 0;color:green;">def xslt(_xml, _xslt)
+    xlt = XML::XSLT.new
+    xlt.xml = render_to_string :xml => _xml
+    xlt.xsl = _xslt
+    xlt.serve
+end</pre>
+              
+              <div>Now in your controller method(I'll use the example from above)</div>
+              <pre style="margin:1em 0;color:green;">def show
+    @event = Event.find(params[:id])
+    respond_to do |format|
+        format.html { render :inline => xslt(@event,
+                      "#{RAILS_ROOT}/xslt_template/show.xslt") }
+        format.xml { render :xml => @event }
+    end
+end</pre>
+         ]]>
+      </c:sourceContent>
+      <c:comment>
+          <c:comment1>
+              <![CDATA[]]>
+          </c:comment1>
+      </c:comment>
   </c:entry>
+  
+  
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title>Create the Mount Points and Mount Remote Shares on the Client Server</c:title>
-    <c:desc>
-      <c:desc1> <![CDATA[]]></c:desc1>
-    </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1"
-                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
-      <![CDATA[
-      <div>Now that your host server is configured and making its directory shares available, we need to prep our client.
-<br />
-<br />
-We're going to have to mount the remote shares, so let's create some mount points. We'll use the traditional /mnt as a starting point and create a directory called nfs under it to keep our shares consolidated.
-<br />
-<br />
-The actual directories will correspond with their location on the host server. We can create each directory, and the necessary parent directories, by typing this:
-</div>
-      <br />      
-      <pre style="font-weight:bold;">sudo mkdir -p /mnt/nfs/home
-sudo mkdir -p /mnt/nfs/var/nfs</pre>
-      <br />
-      <div>
-        Now that we have some place to put our remote shares, we can mount them by addressing our host server, which in this guide is 1.2.3.4, like this:
-      </div>
-      <br />      
-      <pre style="font-weight:bold;">sudo mount 1.2.3.4:/home /mnt/nfs/home
-sudo mount 1.2.3.4:/var/nfs /mnt/nfs/var/nfs</pre>
-      <br />
-      <div>
-        These should mount the shares from our host computer onto our client machine. We can double check this by looking at the available disk space on our client server:
-      </div>
-      <br />      
-      <pre><b>df -h</b> <br /><br />
-Filesystem            Size  Used Avail Use% Mounted on
-/dev/vda               59G  1.3G   55G   3% /
-none                  4.0K     0  4.0K   0% /sys/fs/cgroup
-udev                  2.0G   12K  2.0G   1% /dev
-tmpfs                 396M  324K  396M   1% /run
-none                  5.0M     0  5.0M   0% /run/lock
-none                  2.0G     0  2.0G   0% /run/shm
-none                  100M     0  100M   0% /run/user
-<b>1.2.3.4:/home          59G  1.3G   55G   3% /mnt/nfs/home</b></pre>
-      <br />
-      <div>
-        As you can see at the bottom, only one of our shares has shown up. This is because both of the shares that we exported are on the same filesystem on the remote server, meaning that they share the same pool of storage. In order for the Avail and Use% columns to remain accurate, only one share may be added into the calculations.
-<br />
-<br />
-If you want to see all of the NFS shares that you have mounted, you can type:
-      </div>
-      <br />      
-      <pre><b>mount -t nfs</b>
-      
-1.2.3.4:/home on /mnt/nfs/home type nfs (rw,vers=4,addr=1.2.3.4,clientaddr=111.111.111.111)
-1.2.3.4:/var/nfs on /mnt/nfs/var/nfs type nfs (rw,vers=4,addr=1.2.3.4,clientaddr=111.111.111.111)
-      </pre>
-      <br />
-      <div>
-        This will show all of the NFS mounts that are currently accessible on your client machine.
-      </div>
-    ]]>
-    </c:sourceContent>
-    <c:comment>
-      <c:comment1>
-        <![CDATA[]]>
-      </c:comment1>
-    </c:comment>
+      <c:title>Create an XSLT Style</c:title>
+      <c:desc>
+          <c:desc1> <![CDATA[]]></c:desc1>
+      </c:desc>
+      <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+          titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+          bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+          <![CDATA[
+              <div>You're of course going to need XSLT styles to apply to pages.
+              I'll start with the XML I'm using. It's just rendered by the show method from above:</div>
+              <pre style="margin:1em 0;color:green;">&lt;event&gt;
+    &lt;created-at type="datetime"&gt;2008-04-23T18:36:28+10:00&lt;/created-at&gt;
+    &lt;date type="date"&gt;2008-04-23&lt;/date&gt;
+    &lt;id type="integer"&gt;1&lt;/id&gt;
+    &lt;location&gt;Camperdown Park&lt;/location&gt;
+    &lt;title&gt;Cardboard Tube Fighting&lt;/title&gt;
+    &lt;updated-at type="datetime"&gt;2008-04-23T18:36:28+10:00&lt;/updated-at&gt;
+&lt;/event&gt;</pre>
+              
+              <div>And this is the XSLT template I'll use to style this.</div>
+              <pre style="margin:1em 0;color:green;">&lt;xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;
+&lt;xsl:output method="html" /&gt;
+              
+&lt;xsl:template match="/"&gt;
+    &lt;xsl:apply-templates select="event/location" /&gt;
+    &lt;xsl:apply-templates select="event/title" /&gt;
+&lt;/xsl:template&gt;
+              
+&lt;xsl:template match="title"&gt;
+    &lt;h4&gt;
+        &lt;xsl:value-of select="." /&gt;
+    &lt;/h4&gt;
+&lt;/xsl:template&gt;
+
+&lt;xsl:template match="location"&gt;
+    &lt;h1&gt;
+        &lt;xsl:value-of select="." /&gt;
+    &lt;/h1&gt;
+&lt;/xsl:template&gt;
+&lt;/xsl:stylesheet&gt;</pre>
+          ]]>
+      </c:sourceContent>
+      <c:comment>
+          <c:comment1>
+              <![CDATA[]]>
+          </c:comment1>
+      </c:comment>
   </c:entry>
+  
+  
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title>Test NFS Access</c:title>
-    <c:desc>
-      <c:desc1> <![CDATA[]]></c:desc1>
-    </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1"
-                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
-      <![CDATA[
-      <div>You can test the access to your shares by writing something to your shares. You can write a test file to one of your shares like this:
-      </div>
-      <br />     
-      <pre style="font-weight:bold;">sudo touch /mnt/nfs/home/test_home</pre>
-      <br />
-      <div>
-      Let's write test file to the other share as well to demonstrate an important difference:
-      </div>
-      <br />     
-      <pre style="font-weight:bold;">sudo touch /mnt/nfs/var/nfs/test_var_nfs</pre>
-      <br />
-      <div>
-      Look at the ownership of the file in the mounted home directory:
-      </div>
-      <br />     
-      <pre><b>ls -l /mnt/nfs/home/test_home</b>
-      
--rw-r--r-- 1 root   root      0 Apr 30 14:43 test_home</pre>
-      <br />
-      <div>
-        As you can see, the file is owned by root. This is because we disabled the root_squash option on this mount that would have written the file as an anonymous, non-root user.
-<br />
-<br />
-On our other test file, which was mounted with the root_squash enabled, we will see something different:
-      </div>
-      <br />     
-      <pre><b>ls -l /mnt/nfs/var/nfs/test_var_nfs</b>
-      
--rw-r--r-- 1 nobody nogroup 0 Apr 30 14:44 test_var_nfs</pre>
-      <br />
-      <div>
-      As you can see, this file was assigned to the "nobody" user and the "nogroup" group. This follows our configuration.
-      </div>
-    ]]>
-    </c:sourceContent>
-    <c:comment>
-      <c:comment1>
-        <![CDATA[]]>
-      </c:comment1>
-    </c:comment>
+      <c:title>Smile like a bandit!</c:title>
+      <c:desc>
+          <c:desc1> <![CDATA[]]></c:desc1>
+      </c:desc>
+      <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+          titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+          bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+          <![CDATA[
+              terminal: script/server
+              Navigate to the path of your method and voila you've just applied an XSLT style to your XML stream dynamically.
+          ]]>
+      </c:sourceContent>
+      <c:comment>
+          <c:comment1>
+              <![CDATA[]]>
+          </c:comment1>
+      </c:comment>
   </c:entry>
-  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title>Make Remote NFS Directory Mounting Automatic</c:title>
-    <c:desc>
-      <c:desc1> <![CDATA[]]></c:desc1>
-    </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1"
-                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
-      <![CDATA[
-      <div>
-      We can make the mounting of our remote NFS shares automatic by adding it to our fstab file on the client.
-<br />
-<br />
-Open this file with root privileges in your text editor:
-      </div>
-      <br />     
-      <pre style="font-weight:bold;">sudo nano /etc/fstab</pre>
-      <br />
-      <div>
-      At the bottom of the file, we're going to add a line for each of our shares. They will look like this:
-      </div>
-      <br />     
-      <pre style="font-weight:bold;">1.2.3.4:/home    /mnt/nfs/home   nfs auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0
-1.2.3.4:/var/nfs    /mnt/nfs/var/nfs   nfs auto,noatime,nolock,bg,nfsvers=4,sec=krb5p,intr,tcp,actimeo=1800 0 0</pre>
-      <br />
-      <div>
-      The options that we are specifying here can be found in the man page that describes NFS mounting in the fstab file:
-      </div>
-      <br />     
-      <pre style="font-weight:bold;">man nfs</pre>
-      <br />
-      <div>
-        This will automatically mount the remote partitions at boot (it may take a few moments for the connection to be made and the shares to be available).
-      </div>
-    ]]>
-    </c:sourceContent>
-    <c:comment>
-      <c:comment1>
-        <![CDATA[]]>
-      </c:comment1>
-    </c:comment>
-  </c:entry>
-  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title>Unmount an NFS Remote Share</c:title>
-    <c:desc>
-      <c:desc1> <![CDATA[]]></c:desc1>
-    </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1"
-                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
-      <![CDATA[
-      <div>If you no longer want the remote directory to be mounted on your system, you can unmount it easily by moving out of the share's directory structure and unmounting, like this:
-      </div>
-      <br />     
-      <pre style="font-weight:bold;">cd ~
-sudo umount /mnt/nfs/home
-sudo umount /mnt/nfs/var/nfs</pre>
-      <br />
-      <div>
-      This will remove the remote shares, leaving only your local storage accessible:
-      </div>
-      <br />     
-      <pre><b>df -h</b>
-      
-      
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/vda         59G  1.3G   55G   3% /
-none            4.0K     0  4.0K   0% /sys/fs/cgroup
-udev            2.0G   12K  2.0G   1% /dev
-tmpfs           396M  320K  396M   1% /run
-none            5.0M     0  5.0M   0% /run/lock
-none            2.0G     0  2.0G   0% /run/shm
-none            100M     0  100M   0% /run/user</pre>
-      <br />
-      <div>
-      As you can see, our NFS shares are no longer available as storage space.
-      </div>
-    ]]>
-    </c:sourceContent>
-    <c:comment>
-      <c:comment1>
-        <![CDATA[]]>
-      </c:comment1>
-    </c:comment>
-  </c:entry>
-  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title>Conclusion</c:title>
-    <c:desc>
-      <c:desc1> <![CDATA[]]></c:desc1>
-    </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1"
-                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
-      <![CDATA[
-      NFS provides a quick and easy way to access remote systems over a network. However, the protocol itself is not encrypted. If you are using this in a production environment, consider routing NFS over SSH or a VPN connection to create a more secure experience.
-    ]]>
-    </c:sourceContent>
-    <c:comment>
-      <c:comment1>
-        <![CDATA[]]>
-      </c:comment1>
-    </c:comment>
-  </c:entry>
+
+
 </c:component>
