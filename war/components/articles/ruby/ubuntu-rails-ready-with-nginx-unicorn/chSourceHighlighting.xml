@@ -2,18 +2,72 @@
 <c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
   <c:abstract>
     <![CDATA[
-    We'll be using Digital Ocean to set up the Ubuntu virtural box, a droplet in their terms. 
-    Give the droplet a hostname, select a size, a region, Ubuntu 14.04 x64 for the image, than click Create Droplet. 
-    In a few minutes, you'll get an email with the IP address and root password.
+    <style type="text/css">
+      pre b {
+        /*font-size:1.1em;*/
+        color:rgb(150, 54, 255);
+      }
+    </style>
+    <div>
+    When it comes time to deploy your Rails app to a production environment, there are myriad options available. 
+    This article will explain the nginx/unicorn combo, as deployed on Ubuntu linux. 
+    After reading this article, not only will you be able to set up your own server with the unicorn Rails server and the nginx web server, 
+    but you’ll also understand many of the available configuration options so that you can adjust your server setup to fit your application properly. 
+    While I won’t get into the details of comparing the nginx/unicorn combo with other options, 
+    I will give an overview of what each component provides and why it is a solid choice for your production server environment.
+    </div>
 ]]>
   </c:abstract>
+  
+  
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Instruction</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Unicorn" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      In this article, I’ll be using unicorn as the Rails server. There are definitely other options out there. Rails servers such as <b>puma</b> and <b>thin</b> are quite similar and have their own benefits. I’m going to use unicorn because it is a tried and tested tool that can also teach the basics of similar Rails servers.
+<br />
+<br />
+Unicorn is a “Rack HTTP server for fast clients and Unix”1. Let’s dissect that statement for a moment.
+<br />
+<br />
+First, it’s a Rack HTTP server. This means that it implements the HTTP protocol for Rack applications. I won’t go into the HTTP protocol, but you can read more about it on wikipedia. Rack is a gem that provides a basic interface for ruby applications to respond to web requests. Basically, rack applications must respond with an array of three elements: an HTTP response code, a hash of headers, and the response body that responds to an each block. Modern versions of Rails run on Rack, which enables servers like unicorn, thin, and puma to work with them directly.
+<br />
+<br />
+Next, unicorn is a server for fast clients and Unix. What is a fast client? A fast client is another application or server that can interface with the Rack server quickly, without much latency. Unicorn is not good as a standalone server: it wasn’t designed to handle slow requests that occur over network connections. It relies on Nginx or Apache to handle the buffering and queuing of web requests so that it doesn’t have to worry about concurrency and event-driven programming2. Unicorn is basically the glue between nginx and rack, where Nginx is the fast client.
+<br />
+<br />
+Unicorn has some features, while not necessarily unique to it, that make it ideal for a Rails server. One such feature that comes in handy is the ability to deploy changes to your application without causing downtime. The problem of zero-downtime deployment is often more complex than a simple unicorn no-downtime reload, but for the most part it is all you need. Unicorn is made to handle high-CPU loads, and is usually configured so that there are the same number of worker processes as CPUs.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Nginx" id="sourceContent1" style="background-color:transparent; margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      From Nginx’s website, “Nginx [engine x] is an HTTP and reverse proxy server, as well as a mail proxy server…”3 We will be using nginx as a reverse proxy server and as a regular HTTP server. It will serve requests to our Rails HTTP server (unicorn) and deliver assets (images, stylesheets, and javascript files) over HTTP. A couple of things that are great about nginx are that it can handle a lot of concurrent requests in parallel, it’s quite easy to configure compared to its competition, and it has a relatively low memory footprint.
+<br />
+<br />
+The following sections explain, in a fair amount of detail, how to set up your server with unicorn and nginx.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
     <c:title>Add a sudo user</c:title>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1"
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
       <![CDATA[
@@ -41,10 +95,10 @@ Run:
       <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">## Allow root to run any commands anywhere
 root    ALL=(ALL)       ALL</pre>
       <div>and add the following line:</div>
-      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">deploy    ALL=(ALL)       ALL</pre>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">&lt;username&gt;    ALL=(ALL)       ALL</pre>
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="html" title="Enhance security - configure SSH" id="sourceContent1"
+    <c:sourceContent type="html" title="Enhance security - configure SSH" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
       <![CDATA[
@@ -89,7 +143,7 @@ If you are going to create some more users, but you don’t want them to login t
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1"
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
       <![CDATA[
@@ -112,7 +166,7 @@ sudo apt-get upgrade</pre>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1"
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
       <![CDATA[
@@ -160,11 +214,33 @@ create database testdb owner=username;</pre>
   </c:entry>
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Install a source code versioning manager</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>
+        Nowdays, almost everyone goes with git. It will help manage your source code whilst developing, and may come useful when you deploy, too.
+      </div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">sudo apt-get install git git-core</pre>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
     <c:title>Install Ruby &amp; Ruby on Rails</c:title>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1"
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
       <![CDATA[
@@ -188,6 +264,16 @@ Try: sudo apt-get install &lt;selected package&gt;</pre>
       </div>
       <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">$ sudo apt-get update
 $ sudo apt-get install curl git-core build-essential zlib1g-dev libssl-dev libreadline-dev libyaml-dev libsqlite3-dev sqlite3 libcurl4-openssl-dev libxml2-dev libxslt1-dev python-software-properties</pre>
+      
+         <pre style="margin:1em 0;margin-top:.2em;background-color:rgb(210, 210, 210);padding:1em;font-size:.8em;"><b>For CentOS:</b>
+sudo yum groupinstall -y 'development tools'
+sudo yum install -y gcc-c++ glibc-headers openssl-devel readline libyaml-devel readline-devel zlib zlib-devel  sqlite-devel  
+
+export CC="gcc -fPIC"
+export CXX="g++ -fPIC"</pre>
+
+      
+      
       <div>
        Now, we’ll install rbenv into your home directory and add some commands to your .bashrc for completution and shims.
       </div>
@@ -228,6 +314,30 @@ ruby 2.1.2p95 (2014-05-08 revision 45877) [x86_64-linux]</pre>
       <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">sudo apt-get install nodejs
 Or: <a href="https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-an-ubuntu-14-04-server" target="_blank">
 How To Install Node.js on an Ubuntu 14.04 server</a></pre>
+
+<br />
+<br />
+<div>
+
+<b>Install Rails Gem and test it.</b><br />
+<br />
+Rails 4.0 needs RubyGems 2.0.3, so you have to update your system by using following command
+</div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">gem update --system 2.0.3</pre>
+      
+<div>
+Now, you can install the rails gem
+</div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">gem install rails
+rbenv rehash</pre>
+
+
+<div>
+And bundler:
+</div>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">gem install bundler
+rbenv rehash</pre>
+
       <div>
         At this point you may quickly create a Rails app and check how it runs on port 3000. Next on our list: nginx.
       </div>
@@ -240,34 +350,14 @@ How To Install Node.js on an Ubuntu 14.04 server</a></pre>
     </c:comment>
   </c:entry>
 
-  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title>Install a source code versioning manager</c:title>
-    <c:desc>
-      <c:desc1> <![CDATA[]]></c:desc1>
-    </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1"
-                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
-      <![CDATA[
-      <div>
-        Nowdays, almost everyone goes with git. It will help manage your source code whilst developing, and may come useful when you deploy, too.
-      </div>
-      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">sudo apt-get install git</pre>
-    ]]>
-    </c:sourceContent>
-    <c:comment>
-      <c:comment1>
-        <![CDATA[]]>
-      </c:comment1>
-    </c:comment>
-  </c:entry>
+  
   
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
     <c:title>Install nginx</c:title>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1"
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
       <![CDATA[
@@ -299,7 +389,7 @@ cat default</pre>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1"
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
       <![CDATA[
@@ -327,7 +417,7 @@ Yes, you guess it right, we'll be using ruby's package manager to install unicor
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1"
+    <c:sourceContent type="html" title="Start the rails server" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
       <![CDATA[
@@ -348,40 +438,93 @@ rails server</pre>
       <div>
        It should work and have access to it, however, let's start our unicorns... As a first step, we'll need to add gem 'unicorn' to our Gemfile and re-run bundle install command. Let's start the server again, using unicorn_rails. And, it works, or at least it should be!
       </div>
-      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">unicorn_rails</pre>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">unicorn_rails</pre>      
+    ]]>
+    </c:sourceContent>
+    
+      <c:sourceContent type="html" title="Configuring config/unicorn.rb" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[      
       <div>
+      The unicorn command accepts a configuration file as one of its options. 
+      The defaults are pretty sane, but you’ll still need to configure a few things to match your application’s setup.
+      The unicorn config file is written in Ruby and is usually located at config/unicorn.rb within your application’s root folder.
+      <br />
+      <br />
        Now, let's create a configuration file for unicorn, in conf/unicorn.rb.
       </div>
-      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;"># config/unicorn.rb
+      <pre style="margin:1em 0;margin-top:.2em;background-color:rgb(210, 210, 210);padding:1em;font-size:.8em;"># Set the current app's path for later reference. Rails.root isn't available at
+# this point, so we have to point up a directory.
+<b>app_path = File.expand_path(File.dirname(__FILE__) + '/..')</b>
 
-# Set the working application directory
-# working_directory '/path/to/your/app'
-working_directory '/var/www/demo-app'
+# The number of worker processes you have here should equal the number of CPU
+# cores your server has.
+<b>worker_processes (ENV['RAILS_ENV'] == 'production' ? 4 : 1)</b>
 
-# Unicorn PID file location
-# pid '/path/to/pids/unicorn.pid'
-pid '/var/www/demo-app/pids/unicorn.pid'
+# You can listen on a port or a socket. Listening on a socket is good in a
+# production environment, but listening on a port can be useful for local
+# debugging purposes.
+<b>listen app_path + '/tmp/unicorn.sock', backlog: 64</b>
 
-# Path to logs
-# stderr_path '/path/to/log/unicorn.log'
-# stdout_path '/path/to/log/unicorn.log'
-stderr_path '/var/www/demo-app/log/unicorn.log'
-stdout_path '/var/www/demo-app/log/unicorn.log'
+# For development, you may want to listen on port 3000 so that you can make sure
+# your unicorn.rb file is soundly configured.
+<b>listen(3000, backlog: 64) if ENV['RAILS_ENV'] == 'development'</b>
 
-# Unicorn socket
-# listen '/tmp/unicorn.[application name].sock'
-listen '/tmp/unicorn.demo-app.sock'
+# After the timeout is exhausted, the unicorn worker will be killed and a new
+# one brought up in its place. Adjust this to your application's needs. The
+# default timeout is 60. Anything under 3 seconds won't work properly.
+<b>timeout 30</b>
 
-# Number of processes
-# worker_processes 4
-worker_processes 2
+# Set the working directory of this unicorn instance.
+<b>working_directory app_path</b>
 
-# Time-out
-timeout 30</pre>
+# Set the location of the unicorn pid file. This should match what we put in the
+# unicorn init script later.
+<b>pid app_path + '/tmp/unicorn.pid'</b>
+
+# You should define your stderr and stdout here. If you don't, stderr defaults
+# to /dev/null and you'll lose any error logging when in daemon mode.
+<b>stderr_path app_path + '/log/unicorn.log'</b>
+<b>stdout_path app_path + '/log/unicorn.log'</b>
+
+
+
+# Load the app up before forking.
+<b>preload_app true</b>
+
+# Garbage collection settings.
+<b>GC.respond_to?(:copy_on_write_friendly=) &&
+  GC.copy_on_write_friendly = true</b>
+
+# If using ActiveRecord, disconnect (from the database) before forking.
+<b>before_fork do |server, worker|
+  defined?(ActiveRecord::Base) &&
+    ActiveRecord::Base.connection.disconnect!
+end</b>
+
+# After forking, restore your ActiveRecord connection.
+<b>after_fork do |server, worker|
+  defined?(ActiveRecord::Base) &&
+    ActiveRecord::Base.establish_connection
+end</b></pre>
+
       <div>
-       ... and the pids folder (full path in our case /var/www/demo-app/pids) ...
+       Test that your unicorn configuration works by running the following from your app’s root directory:
       </div>
-      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">mkdir pids</pre>
+      <pre style="margin:1em 0;margin-top:.2em;"># Remember, your STDOUT and STDERR are probably being directed to a file
+# somewhere.
+<b>bin/unicorn -c config/unicorn.rb</b></pre>
+
+      
+      
+    ]]>
+    </c:sourceContent>
+    
+          <c:sourceContent type="html" title="Configuring Nginx" id="sourceContent1" style="background-color:transparent;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[   
       <div>
       Remember the default file we talked about earlier? Backup the original, and let's edit it:
       </div>
@@ -389,7 +532,7 @@ timeout 30</pre>
       <div>
       Its content should read now:
       </div>
-      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">upstream app {
+      <pre style="margin:2em 0;font-weight:bold;margin-top:1em;font-size:.8em;background-color:rgb(210, 210, 210);padding:1em;">upstream app {
     # Path to Unicorn SOCK file, as defined previously
     server unix:/tmp/unicorn.demo-app.sock fail_timeout=0;
 }
@@ -421,96 +564,208 @@ server {
       <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">cd /var/www/demo-app
 unicorn_rails -c config/unicorn.rb -D
 sudo service nginx restart</pre>
-      <div>
-       And it should work. There is one last step, and this is to create init.d script for unicorn, to start up automatically on system reboot. Let's create a file config/unicorn_init.sh.
-      </div>
-      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">#!/bin/sh
-set -e
-# Example init script, this can be used with nginx, too,
-# since nginx and unicorn accept the same signals
-
-# Feel free to change any of the following variables for your app:
-TIMEOUT=${TIMEOUT-60}
-APP_ROOT=/var/www/demo-app
-PID=$APP_ROOT/var/www/demo-app/pids/unicorn.pid
-CMD="$APP_ROOT/bin/unicorn -D -c $APP_ROOT/config/unicorn.rb -E production"
-action="$1"
-set -u
-
-old_pid="$PID.oldbin"
-
-cd $APP_ROOT || exit 1
-
-sig () {
-        test -s "$PID" && kill -$1 `cat $PID`
-}
-
-oldsig () {
-        test -s $old_pid && kill -$1 `cat $old_pid`
-}
-
-case $action in
-start)
-        sig 0 && echo >&2 "Already running" && exit 0
-        su -c "$CMD" - &lt;username&gt;
-        ;;
-stop)
-        sig QUIT && exit 0
-        echo >&2 "Not running"
-        ;;
-force-stop)
-        sig TERM && exit 0
-        echo >&2 "Not running"
-        ;;
-restart|reload)
-        sig HUP && echo reloaded OK && exit 0
-        echo >&2 "Couldn't reload, starting '$CMD' instead"
-        su -c "$CMD" - &lt;username&gt;
-        ;;
-upgrade)
-        if sig USR2 && sleep 2 && sig 0 && oldsig QUIT
-        then
-                n=$TIMEOUT
-                while test -s $old_pid && test $n -ge 0
-                do
-                        printf '.' && sleep 1 && n=$(( $n - 1 ))
-                done
-                echo
-
-                if test $n -lt 0 && test -s $old_pid
-                then
-                        echo >&2 "$old_pid still exists after $TIMEOUT seconds"
-                        exit 1
-                fi
-                exit 0
-        fi
-        echo >&2 "Couldn't upgrade, starting '$CMD' instead"
-        su -c "$CMD" - &lt;username&gt;
-        ;;
-reopen-logs)
-        sig USR1
-        ;;
-*)
-        echo >&2 "Usage: $0 "
-        exit 1
-        ;;
-esac</pre>
-      <div>
-       We need to make this file executable:
-      </div>
-      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">sudo chmod +x config/unicorn_init.sh</pre>
-      <div>
-       Copy this file as /etc/init.d/unicorn or symlink it.
-      </div>
-      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">sudo update-rc.d unicorn defautls</pre>
-      <div>
-       to start automatically at default levels.
-       <br />
-       <br />
-       And here we are... our server is fully configured. Go ahead, create your own app and deploy it. Comments on how to improve the above procedure will be appreciated.
-      </div>
+     
     ]]>
     </c:sourceContent>
+
+    
+    <c:sourceContent type="html" title="Configuring /etc/init.d/unicorn" id="sourceContent1" style="background-color:transparent;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[   
+     
+     <div>
+      The unicorn init script should be located in the <b>/etc/init.d</b> folder, and is usually called <b>unicorn</b>.
+      With such a setup on an Ubuntu server, you’ll be able to run commands like <b>sudo service unicorn upgrade</b> or <b>sudo service unicorn status</b>.
+      
+      <br />
+      <br />
+      The init script is written in bash, and should start with an INIT INFO section:
+      </div>
+      <pre style="margin:2em 0;font-weight:bold;margin-top:1em;font-size:.8em;background-color:rgb(210, 210, 210);padding:1em;">#!/bin/sh
+
+# File: /etc/init.d/unicorn
+
+### BEGIN INIT INFO
+# Provides:          unicorn
+# Required-Start:    $local_fs $remote_fs $network $syslog
+# Required-Stop:     $local_fs $remote_fs $network $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: starts the unicorn web server
+# Description:       starts unicorn
+### END INIT INFO</pre>
+
+    <div>The above section tells your server that the <b>$local_fs</b>, <b>$remote_fs</b>, <b>$network</b>, and <b>$syslog</b> boot facilities must be available before this script can start. Likewise, Required-Stop indicates that this script should be stopped before those facilities to prevent conflicts. It also sets some default start and stop init levels, a short description and a multiline description. You probably shouldn’t touch much in the above settings.
+<br />
+<br />
+In the next part, you’ll set some variables to help get your app started properly:</div>
+      <pre style="margin:2em 0;margin-top:1em;font-size:.8em;background-color:rgb(210, 210, 210);padding:1em;"># Feel free to change any of the following variables for your app:
+
+# ubuntu is the default user on Amazon's EC2 Ubuntu instances.
+<b>USER=ubuntu</b>
+
+# Replace [PATH_TO_RAILS_ROOT_FOLDER] with your application's path. I prefer
+# /srv/app-name to /var/www. The /srv folder is specified as the server's
+# "service data" folder, where services are located. The /var directory,
+# however, is dedicated to variable data that changes rapidly, such as logs.
+# Reference https://help.ubuntu.com/community/LinuxFilesystemTreeOverview for
+# more information.
+<b>APP_ROOT=[PATH_TO_RAILS_ROOT_FOLDER]</b>
+
+# Set the environment. This can be changed to staging or development for staging
+# servers.
+<b>RAILS_ENV=production</b>
+
+# This should match the pid setting in $APP_ROOT/config/unicorn.rb.
+<b>PID=$APP_ROOT/tmp/unicorn.pid</b>
+
+# A simple description for service output.
+<b>DESC="Unicorn app - $RAILS_ENV"</b>
+
+# If you're using rbenv, you may need to use the following setup to get things
+# working properly:
+<b>RBENV_RUBY_VERSION=`cat $APP_ROOT/.ruby-version`
+RBENV_ROOT="/home/$USER/.rbenv"
+PATH="$RBENV_ROOT/bin:$PATH"
+SET_PATH="cd $APP_ROOT && rbenv rehash && rbenv local $RBENV_RUBY_VERSION"</b>
+
+# Unicorn can be run using `bundle exec unicorn` or `bin/unicorn`.
+<b>UNICORN="bin/unicorn"</b>
+
+# Execute the unicorn executable as a daemon, with the appropriate configuration
+# and in the appropriate environment.
+<b>UNICORN_OPTS="-c $APP_ROOT/config/unicorn.rb -E $RAILS_ENV -D"
+CMD="$SET_PATH && $UNICORN $UNICORN_OPTS"</b>
+
+# Give your upgrade action a timeout of 60 seconds.
+<b>TIMEOUT=60</b></pre>
+
+    <div>Once you get the variables set up properly, you should be able to copy and paste the rest of the init script. Note the comments for more information on how things work and why.</div>
+    <pre style="margin:2em 0;margin-top:1em;font-size:.8em;background-color:rgb(210, 210, 210);padding:1em;"># Store the action that we should take from the service command's first
+# argument (e.g. start, stop, upgrade).
+<b>action="$1"</b>
+
+# Make sure the script exits if any variables are unset. This is short for
+# set -o nounset.
+<b>set -u</b>
+
+# Set the location of the old pid. The old pid is the process that is getting
+# replaced.
+<b>old_pid="$PID.oldbin"</b>
+
+# Make sure the APP_ROOT is actually a folder that exists. An error message from
+# the cd command will be displayed if it fails.
+<b>cd $APP_ROOT || exit 1</b>
+
+# A function to send a signal to the current unicorn master process.
+<b>sig () {
+  test -s "$PID" && kill -$1 `cat $PID`
+}</b>
+
+# Send a signal to the old process.
+<b>oldsig () {
+  test -s $old_pid && kill -$1 `cat $old_pid`
+}</b>
+
+# A switch for handling the possible actions to take on the unicorn process.
+<b>case $action in</b>
+  # Start the process by testing if it's there (sig 0), failing if it is,
+  # otherwise running the command as specified above.
+  <b>start)
+    sig 0 && echo >&2 "$DESC is already running" && exit 0
+    su - $USER -c "$CMD"
+    ;;</b>
+
+  # Graceful shutdown. Send QUIT signal to the process. Requests will be
+  # completed before the processes are terminated.
+  <b>stop)
+    sig QUIT && echo "Stopping $DESC" exit 0
+    echo >&2 "Not running"
+    ;;</b>
+
+  # Quick shutdown - kills all workers immediately.
+  <b>force-stop)
+    sig TERM && echo "Force-stopping $DESC" && exit 0
+    echo >&2 "Not running"
+    ;;</b>
+
+  # Graceful shutdown and then start.
+  <b>restart)
+    sig QUIT && echo "Restarting $DESC" && sleep 2 \
+      && su - $USER -c "$CMD" && exit 0
+    echo >&2 "Couldn't restart."
+    ;;</b>
+
+  # Reloads config file (unicorn.rb) and gracefully restarts all workers. This
+  # command won't pick up application code changes if you have `preload_app
+  # true` in your unicorn.rb config file.
+  <b>reload)
+    sig HUP && echo "Reloading configuration for $DESC" && exit 0
+    echo >&2 "Couldn't reload configuration."
+    ;;</b>
+
+  # Re-execute the running binary, then gracefully shutdown old process. This
+  # command allows you to have zero-downtime deployments. The application may
+  # spin for a minute, but at least the user doesn't get a 500 error page or
+  # the like. Unicorn interprets the USR2 signal as a request to start a new
+  # master process and phase out the old worker processes. If the upgrade fails
+  # for some reason, a new process is started.
+  <b>upgrade)
+    if sig USR2 && echo "Upgrading $DESC" && sleep 10 \
+      && sig 0 && oldsig QUIT
+    then
+      n=$TIMEOUT
+      while test -s $old_pid && test $n -ge 0
+      do
+        printf '.' && sleep 1 && n=$(( $n - 1 ))
+      done
+      echo
+
+      if test $n -lt 0 && test -s $old_pid
+      then
+        echo >&2 "$old_pid still exists after $TIMEOUT seconds"
+        exit 1
+      fi
+      exit 0
+    fi
+    echo >&2 "Couldn't upgrade, starting 'su - $USER -c \"$CMD\"' instead"
+    su - $USER -c "$CMD"
+    ;;</b>
+
+  # A basic status checker. Just checks if the master process is responding to
+  # the `kill` command.
+  <b>status)
+    sig 0 && echo >&2 "$DESC is running." && exit 0
+    echo >&2 "$DESC is not running."
+    ;;</b>
+
+  # Reopen all logs owned by the master and all workers.
+  <b>reopen-logs)
+    sig USR1
+    ;;</b>
+
+  # Any other action gets the usage message.
+  <b>*)</b>
+    # Usage
+    <b>echo >&2 "Usage: $0 <start|stop|restart|reload|upgrade|force-stop|reopen-logs>"
+    exit 1
+    ;;
+esac</b></pre>
+
+    <div>The above script doesn’t include all the possible options for signaling the unicorn master process. See the <a target-"_blank" href="http://unicorn.bogomips.org/SIGNALS.html">unicorn signal documentation</a> for more possibilities.
+<br />
+<br />
+Make sure your init script has permission to be executed:</div>
+<pre style="margin:2em 0;margin-top:1em;font-size:.8em;background-color:rgb(210, 210, 210);padding:1em;"><b>sudo chmod +x /etc/init.d/unicorn</b></pre>
+
+<div>Now, you can run <b>sudo service unicorn start</b> to start your unicorn process. Check your logs (whatever you set stderr_path and stdout_path to in unicorn.rb) to troubleshoot issues. When you’ve updated your code base, you can run <b>sudo service unicorn upgrade</b> to gracefully phase in new workers. To make sure unicorn starts on reboot, update the rc.d startup configuration using the following command:</div>
+<pre style="margin:2em 0;margin-top:1em;font-size:.8em;background-color:rgb(210, 210, 210);padding:1em;"><b>sudo update-rc.d unicorn defaults</b></pre>
+
+<div>This will add a symlink to the unicorn init script in the appropriate /etc/rc.d folders, which are used to determine what starts when.</div>
+    ]]>
+    </c:sourceContent>
+    
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
@@ -528,7 +783,7 @@ esac</pre>
       The ImageMagick version available in repositories is probably outdated, so we will compile it from source. <br /><br />
       </div>]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1"
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
       <![CDATA[
@@ -585,7 +840,7 @@ Delegates: bzlib freetype jng jp2 jpeg png ps tiff xml zlib</pre>
       ]]>
       </c:desc1>
     </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1"
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
       <![CDATA[  
@@ -601,6 +856,38 @@ sudo service nginx restart</pre>
       </div>
       
        <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">http://172.28.7.142/demo/index</pre>  
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+<c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Memcache, and Redis</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[
+      ]]>
+      </c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[  
+      
+       <pre style="margin:1em 0;margin-top:.2em;">Memcache:
+<b>sudo apt-get install memcached</b>
+
+And Redis (for Sidekiq and other fun stuff):
+<b>apt-get install redis-server</b>
+
+Boot ‘er up and make sure you can get to the Redis console:
+<b>$ redis-server /etc/redis/redis.conf
+$ redis-cli
+127.0.0.1:6379&gt;</b></pre>   
     ]]>
     </c:sourceContent>
     <c:comment>
