@@ -323,7 +323,7 @@ How To Install Node.js on an Ubuntu 14.04 server</a></pre>
 <br />
 Rails 4.0 needs RubyGems 2.0.3, so you have to update your system by using following command
 </div>
-      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">gem update --system 2.0.3</pre>
+      <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">gem update --system 2.0.3 (Option)</pre>
       
 <div>
 Now, you can install the rails gem
@@ -431,9 +431,19 @@ chmod -R 755 wwwroot</pre>
       </div>
       <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">cd ~/wwwroot/your_app_name
 rails new demo-app
-cd demo-app
-bundle install
-rake db:migrate
+
+# Enter the application directory
+cd my_app
+
+# Create a sample resource
+rails generate scaffold Task title:string note:text
+
+# Create a sample database
+RAILS_ENV=development rake db:migrate
+RAILS_ENV=production  rake db:migrate
+
+# Create a directory to hold the PID files
+mkdir pids    
 rails server</pre>
       <div>
        It should work and have access to it, however, let's start our unicorns... As a first step, we'll need to add gem 'unicorn' to our Gemfile and re-run bundle install command. Let's start the server again, using unicorn_rails. And, it works, or at least it should be!
@@ -454,60 +464,32 @@ rails server</pre>
       <br />
        Now, let's create a configuration file for unicorn, in conf/unicorn.rb.
       </div>
-      <pre style="margin:1em 0;margin-top:.2em;background-color:rgb(210, 210, 210);padding:1em;font-size:.8em;"># Set the current app's path for later reference. Rails.root isn't available at
-# this point, so we have to point up a directory.
-<b>app_path = File.expand_path(File.dirname(__FILE__) + '/..')</b>
+      <pre style="margin:1em 0;margin-top:.2em;background-color:rgb(210, 210, 210);padding:1em;font-size:.8em;"># config/unicorn.rb
 
-# The number of worker processes you have here should equal the number of CPU
-# cores your server has.
-<b>worker_processes (ENV['RAILS_ENV'] == 'production' ? 4 : 1)</b>
+# Set the working application directory
+# working_directory '/path/to/your/app'
+<b>working_directory '/var/www/demo-app'</b>
 
-# You can listen on a port or a socket. Listening on a socket is good in a
-# production environment, but listening on a port can be useful for local
-# debugging purposes.
-<b>listen app_path + '/tmp/unicorn.sock', backlog: 64</b>
+# Unicorn PID file location
+# pid '/path/to/pids/unicorn.pid'
+<b>pid '/var/www/demo-app/pids/unicorn.pid'</b>
 
-# For development, you may want to listen on port 3000 so that you can make sure
-# your unicorn.rb file is soundly configured.
-<b>listen(3000, backlog: 64) if ENV['RAILS_ENV'] == 'development'</b>
+# Path to logs
+# stderr_path '/path/to/log/unicorn.log'
+# stdout_path '/path/to/log/unicorn.log'
+<b>stderr_path '/var/www/demo-app/log/unicorn.log'</b>
+<b>stdout_path '/var/www/demo-app/log/unicorn.log'</b>
 
-# After the timeout is exhausted, the unicorn worker will be killed and a new
-# one brought up in its place. Adjust this to your application's needs. The
-# default timeout is 60. Anything under 3 seconds won't work properly.
-<b>timeout 30</b>
+# Unicorn socket
+# listen '/tmp/unicorn.[application name].sock'
+<b>listen '/tmp/unicorn.demo-app.sock'</b>
 
-# Set the working directory of this unicorn instance.
-<b>working_directory app_path</b>
+# Number of processes
+# worker_processes 4
+<b>worker_processes 2</b>
 
-# Set the location of the unicorn pid file. This should match what we put in the
-# unicorn init script later.
-<b>pid app_path + '/tmp/unicorn.pid'</b>
-
-# You should define your stderr and stdout here. If you don't, stderr defaults
-# to /dev/null and you'll lose any error logging when in daemon mode.
-<b>stderr_path app_path + '/log/unicorn.log'</b>
-<b>stdout_path app_path + '/log/unicorn.log'</b>
-
-
-
-# Load the app up before forking.
-<b>preload_app true</b>
-
-# Garbage collection settings.
-<b>GC.respond_to?(:copy_on_write_friendly=) &&
-  GC.copy_on_write_friendly = true</b>
-
-# If using ActiveRecord, disconnect (from the database) before forking.
-<b>before_fork do |server, worker|
-  defined?(ActiveRecord::Base) &&
-    ActiveRecord::Base.connection.disconnect!
-end</b>
-
-# After forking, restore your ActiveRecord connection.
-<b>after_fork do |server, worker|
-  defined?(ActiveRecord::Base) &&
-    ActiveRecord::Base.establish_connection
-end</b></pre>
+# Time-out
+<b>timeout 30</b></pre>
 
       <div>
        Test that your unicorn configuration works by running the following from your app’s root directory:
@@ -888,6 +870,30 @@ Boot ‘er up and make sure you can get to the Redis console:
 <b>$ redis-server /etc/redis/redis.conf
 $ redis-cli
 127.0.0.1:6379&gt;</b></pre>   
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Further Reading</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[
+      ]]>
+      </c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[  
+     <a target="_blank" href="https://www.digitalocean.com/community/tutorials/how-to-deploy-rails-apps-using-unicorn-and-nginx-on-centos-6-5">
+      How To Deploy Rails Apps Using Unicorn And Nginx on CentOS 6.5
+     </a>
     ]]>
     </c:sourceContent>
     <c:comment>
