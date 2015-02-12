@@ -162,7 +162,7 @@ sudo apt-get upgrade</pre>
   </c:entry>
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title>Install PostgreSQL</c:title>
+    <c:title>Install PostgreSQL (Option)</c:title>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
@@ -212,7 +212,64 @@ create database testdb owner=username;</pre>
       </c:comment1>
     </c:comment>
   </c:entry>
+  
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Install MySQL</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <pre>sudo apt-get install mysql-server mysql-client libmysqlclient-dev
 
+* If you need to add your user to the mysql database:
+mysql -u root
+mysql > CREATE USER “username”;
+mysql > GRANT ALL ON *.* TO “username”;
+mysql > FLUSH PRIVILEGES;</pre>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Memcache, and Redis</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[
+      ]]>
+      </c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[  
+      
+       <pre style="margin:1em 0;margin-top:.2em;">Memcache:
+<b>sudo apt-get install memcached</b>
+
+And Redis (for Sidekiq and other fun stuff):
+<b>apt-get install redis-server</b>
+
+Boot ‘er up and make sure you can get to the Redis console:
+<b>$ redis-server /etc/redis/redis.conf
+$ redis-cli
+127.0.0.1:6379&gt;</b></pre>   
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
     <c:title>Install a source code versioning manager</c:title>
     <c:desc>
@@ -848,7 +905,7 @@ sudo service nginx restart</pre>
   </c:entry>
 
 <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title>Memcache, and Redis</c:title>
+    <c:title>Rails Deployment</c:title>
     <c:desc>
       <c:desc1>
         <![CDATA[
@@ -858,18 +915,21 @@ sudo service nginx restart</pre>
     <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
-      <![CDATA[  
-      
-       <pre style="margin:1em 0;margin-top:.2em;">Memcache:
-<b>sudo apt-get install memcached</b>
+      <![CDATA[            
+      <div>For Rails deployment we like to use <a target="_blank" href="https://github.com/mislav/git-deploy">git-deploy</a> created by Mislav Marohnić. The setup directions are quite simple but we have noticed a slight issue in that the Rails application it self is constantly updating files with in itself.
+<br />
+<br />
+To remedy this, we create two directories and a few sub-directories for our Rails application:
+      </div>
+       <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">mkdir /webapps/myapp/repository
+mkdir /webapps/myapp/shared
+mkdir /webapps/myapp/shared/log
+mkdir /webapps/myapp/shared/pids
+mkdir /webapps/myapp/shared/system</pre>     
 
-And Redis (for Sidekiq and other fun stuff):
-<b>apt-get install redis-server</b>
-
-Boot ‘er up and make sure you can get to the Redis console:
-<b>$ redis-server /etc/redis/redis.conf
-$ redis-cli
-127.0.0.1:6379&gt;</b></pre>   
+      <div>Then in the setup for git-deploy, we use the repository for the remote:</div>
+       <pre style="margin:1em 0;font-weight:bold;margin-top:.2em;">git remote add production "username"@IPaddres:/webapps/myapp/repository</pre>           
+      <div>From there, follow the setup directions for git-deploy.</div>
     ]]>
     </c:sourceContent>
     <c:comment>

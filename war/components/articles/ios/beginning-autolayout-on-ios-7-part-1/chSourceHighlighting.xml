@@ -1,0 +1,853 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+    <div style="font-family:monospace;">
+     到目前为止，如果你的设计相当的复杂，那么你必须编写大量的代码来适应这样的布局。你应该很高兴，现在这样的情况再也不存在了! iOS6 为 iPhone 和 iPad 带来了一个极好的新特性：自动布局。
+     Xcode5 和 iOS7 中对自动布局做出了改善！如果你曾经尝试着在 Xcode4 中使用自动布局并最终做出放弃，现在是该给 Xcode5 一次机会了。
+     <br /> 
+     <br />
+     在你的程序中，自动布局不仅可以很容易的支持不同大小的屏幕，一个额外的功能，它也使得本地化几乎变得微不足道。
+     你不再需要为每种你希望支持的语言创建新的 nibs 或 storyboards，包括像 Hebrew 或 Arabic 这样从右到左的语言。
+</div>
+    ]]>
+  </c:abstract>
+
+  <c:entry style="margin-top:1em;color:rgb(156, 25, 197);font-weight:bold;">
+    <c:title>springs 和 struts 的问题</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[
+          <div>
+            你肯定很熟悉 autosizing masks: 也被认为是 springs&struts 模式。autosizing mask 决定了当一个视图的父视图大小改变时，其自身需要做出什么改变。
+            它有一个灵活的或固定不变的 margins（struts）吗？它的宽和高要做出什么改变（springs）？
+<br />
+<br />
+举个例子，一个宽度灵活的视图，如果其父视图变宽，那么它也会相应的变宽。一个视图右边拥有固定的 margin，那么它的右边缘将会一直粘住其父视图的右边缘。
+ <br />
+<br />
+autosizing 系统在简单的情况下非常奏效，但当你布局变得更复杂时，它立马跪了。让我们看一个 springs 和 struts 不能处理的示例。
+ <br />
+<br />
+打开 Xcode5，创建一个基于 Single View Application 模板的 iPhone 项目。叫做 "StrutsProblem":
+          </div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202163929_1.png" />
+          </div>
+          
+          <div>
+            点击 Main.storyboard。在你做别的之前，首先将这个 storyboard 的自动布局关了。你需要在 File inspector，第一个选项的第六个 tabs 里：
+          </div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202163857_1.png" />
+          </div>
+          
+          <div>将Use Autolayout的box勾选去掉。现在storyboard使用旧的struts-and-springs模型。</div>
+
+          <blockquote style="color:#FF0057;"><b>注意:</b> 任何你使用 Xcode4.5 或更高版本中，nib 或者 storyboard 文件都默认激活了自动布局。
+          因为自动布局是 iOS6 以及以上系统的一个新特性，如果你想使用最新的 Xcode 开发兼容 iOS5 的程序，你需要将这个选项去掉。</blockquote>
+          
+          <div>拖拽三个新的视图到主视图上，并且像这样排列起来：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202163830_1.png" />
+          </div>
+          
+          <div>为了表述更清楚，这里给出每个视图的颜色，这样你就能分清哪个是驴子哪个是马了。
+每个视图的 inset 到窗口的距离都是 20 点；视图之间的距离也是 20 点。底部的视图的宽是 280 点，上面两个视图的宽都是 130 点。所有的视图的高都是 254。
+ <br />
+ <br /> 
+在 iPhone Retina 4-inch simulator 上运行这个程序，并且将模拟器旋转到 landscape。程序看起来便变成这副鬼样，这不是我想象的那样：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202163815_1.png" />
+          </div>
+
+          <blockquote style="color:#FF0057;"><b>注意:</b> 你可以使用 Hardware\Rotate Left 和 Rotate Right 菜单选项旋转模拟器，或者通过按下键盘上的? 键，同时按下 ← 或 → 。</blockquote>
+          <div>而你想象的程序在 landscape 应该像这样：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202163723_1.png" />
+          </div>
+          <div>很明显，三个视图的 autosizing masks 留下了一些需要改进的地方。将左上方视图的 autosizing 设置改成这样：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202163706_1.png" />
+          </div>
+          <div>这将会让视图贴附左上边缘（不是右下边缘）,并且当父视图大小改变时，重新调整自身水平和垂直方向的大小。
+ <br />
+ <br />
+同样的，右上方视图的autosizing设置改成这样：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202163632_1.png" />
+          </div>
+          <div>底部视图：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202163618_1.png" />
+          </div>
+          
+          <div>再次运行程序，并且旋转到 landscape。现在看起来像这样：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202163550_1.png" />
+          </div>
+          
+          <div>已经很接近了，但又不完全一样。视图之间的 padding 不正确。换个说法就是视图的大小不完全正确。问题出在当父视图改变大小时，autosizing masks 告诉子视图调整大小，但又没告诉子视图该调整多少（坑儿？）。
+ <br />
+ <br />
+你可以调戏 autosizing masks 比如，改变灵活宽度和高度设置（springs）, 你不会得到完全正确的三个间距 20 点的视图。
+<br />
+<br />
+为了解决这个 springs 和 struts 方法的布局问题，非常不幸，你需要额外写一些代码。
+<br />
+<br />
+在旋转用户界面之前、之间、之后，UIKit 会发送一些消息到你的视图控制器，你可以截获这些消息，从而对你 UI 做出改变。代表性的像 viewWillLayoutSubviews，你会重写这个方法从而改变任何需要重新排列的视图的frame。
+<br />
+<br />
+在这之前，你需要先做出一个 outlet 属性来引用这个视图。
+<br />
+<br />
+切换到 Assistant Editor 模式，按住 Ctrl，将三个视图都拖到 ViewController.m 中去：
+</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202163426_1.png" />
+          </div>
+          <div>分别链接视图到这三个属性：</div>
+          <pre>@property (weak, nonatomic) IBOutlet UIView *topLeftView; 
+@property (weak, nonatomic) IBOutlet UIView *topRightView; 
+@property (weak, nonatomic) IBOutlet UIView *bottomView; </pre>
+<br />
+<br />
+<div>下面的代码写到 ViewController.m:</div>
+<pre>- (void)viewWillLayoutSubviews 
+{ 
+    if (UIInterfaceOrientationIsLandscape(self.interfaceOrientation)) 
+    { 
+        CGRect rect = self.topLeftView.frame; 
+        rect.size.width = 254; 
+        rect.size.height = 130; 
+        self.topLeftView.frame = rect; 
+  
+        rect = self.topRightView.frame; 
+        rect.origin.x = 294; 
+        rect.size.width = 254; 
+        rect.size.height = 130; 
+        self.topRightView.frame = rect; 
+  
+        rect = self.bottomView.frame; 
+        rect.origin.y = 170; 
+        rect.size.width = 528; 
+        rect.size.height = 130; 
+        self.bottomView.frame = rect; 
+    } 
+    else 
+    { 
+        CGRect rect = self.topLeftView.frame; 
+        rect.size.width = 130; 
+        rect.size.height = 254; 
+        self.topLeftView.frame = rect; 
+  
+        rect = self.topRightView.frame; 
+        rect.origin.x = 170; 
+        rect.size.width = 130; 
+        rect.size.height = 254; 
+        self.topRightView.frame = rect; 
+  
+        rect = self.bottomView.frame; 
+        rect.origin.y = 295; 
+        rect.size.width = 280; 
+        rect.size.height = 254; 
+        self.bottomView.frame = rect; 
+    } 
+} </pre>
+<br />
+<br />
+<div>当视图控制器旋转到一个新的方向，这个回调将会被调用。它会监控视图控制器旋转的方向，并且适当的调整视图大小-在这种情况，根据已知 iPhone 屏幕大小会有一个 hard-code 偏移。
+这个回调会在一个动画 block 中发生，所以会动态的改变大小。
+ <br />
+ <br />
+暂时还不要运行这个程序。首先你需要按下面的样子重新保存三个视图的 autosizing masks，否则 autosizing mechanism 将会和你在 viewWillLayoutSubviews 中设置的位置和大小冲突。</div>
+
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202163335_1.png" />
+          </div>
+          <div>这样就可以了，运行程序并且翻转到 landscape。现在视图排列的非常号。翻转回到 portrait，经核实，一切都良好。
+ <br />
+ <br />
+这样奏效了，但是你需要为这个非常简单的例子编写大量的布局代码。想象一下，为布局付出的努力是非常复杂的，特别是个别视图动态的改变大小，或者子视图的个数是不固定的。
+ <br />
+ <br />
+现在试着在 3.5 寸的模拟器上运行程序。我了个去。视图的位置和大小又错了。
+因为 viewWillLayoutSubviews 的 hard-code 坐标是基于4英寸大小的手机 (320x568取代320x480)。你可以增加另一个 if 语句判断屏幕大小，并使用不同的坐标集，但是你可以看到这个方法很快变得不切实际。</div>
+
+          <blockquote style="color:#FF0057;"><b>注意:</b> 另一个你可以采取的方法就是为 portrait 和 landscape 模式建立独立的 nibs。
+          当设备旋转时，你从另一个 nib 中装载视图并替换掉当前的那个。但这任然需要做很多工作，并且维护两个 nibs 也会增加问题。
+          当你使用 storyboards 替代 nibs 的时候，这个方法也变得不切实际。</blockquote>
+        ]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="WebLogWritable.java" id="sourceContent1">
+      <![CDATA[
+      ]]>
+    </c:sourceContent>
+    <c:comment style="margin-top:2em;">
+      <c:comment1 style="color:black;">
+        <![CDATA[
+                ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:2em;color:rgb(156, 25, 197);font-weight:bold;">
+    <c:title>AutoLayout (自动布局)</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[
+          <div>
+            现在你将会看到如何用自动布局实现相同的效果，从 ViewController.m 中移除 viewWillLayoutSubviews，因为我们不再需要写任何代码。
+ <br />
+ <br />
+选择 Main.storyboard，并在 File inspector 中选择开启 Use Autolayout：
+          </div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202163207_1.png" />
+          </div>
+          <div>运行程序，旋转到 landscape。现在看起来像这样：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202163153_1.png" />
+          </div>
+          <div>让我们把自动布局付诸行动。当你点击顶部两个视图时，按住?键，这样两个视图都被选中了。从Xcode的Editor菜单中选择Pin\Widths Equally:</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202163137_1.png" />
+          </div>
+          <div>再次选中两个相同的视图，选择 Editor\Pin\Horizontal Spacing。（尽管你执行完第一次 Pin 处理后，两个视图看起来还是被选中的，但其实他们只是在一个特别的布局关系显示模型里。
+          所以你需要重新选择这两个视图）
+<br />
+<br />
+storyboard 现在看起来像这样：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202163117_1.png" />
+          </div>
+          <div>橙色的 "T-bar" 形状代表视图间的约束。目前为止你增加了两个约束：一个等宽约束和一个位于两个视图间的水平约束。
+          约束表达了视图之间的关系，并且他们是你使用自动布局建立布局最主要的工具。这货看起来有点吓人，但是一旦弄懂它的意思，便变得相当简单。
+<br />
+<br />
+为了继续为这个屏幕简历布局，执行下面这些步骤。每个步骤增加更多橘黄色的 T-bars：</div>
+<pre><b>For the view on the right, choose:</b>
+o Top Space to Superview
+o Leading Space to Superview
+
+<b>For the view on the right, choose:</b>
+o Top Space to Superview
+o Trailing Space to Superview
+
+<b>And for the big view at the bottom:</b>
+o Leading Space to Superview
+o Trailing Space to Superview
+o Bottom Space to Superview</pre>
+<br />
+<div>现在你应该有了下面这些约束：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202163055_1.png" />
+          </div>
+          <div>此时, T-bars 仍然是橘黄色的。这意味这你的布局没有完成；自动布局没有足够的约束条件计算出视图的位置和大小。解决办法便是增加更多约束，直到他们变蓝。
+          <br />
+          <br />
+          按下? 键并选中三个视图。从 Editor 菜单中，选择 Pin\Heights Equally。
+ <br />
+ <br />
+现在选中左上角的视图和底部视图（像前面一样按住? 键），选择 Editor\Pin\Vertical Spacing.
+  <br />
+ <br />
+Interface Builder 看起来应该像这样：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202162830_1.png" />
+          </div>
+          <div>T-bars 已经变蓝了。自动布局现在已经有足够的信息来计算出一个有效的布局。这看起来有点杂乱无章，这是因为等宽和等高约束条件占去了很大空间。
+ <br />
+ <br />
+运行程序并且： 不管你在哪个模拟器上运行；在3.5英寸和4英寸设备上，布局都运行良好。</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202162736_1.png" />
+          </div>
+          <div>这非常酷，但是究竟你在这做了什么？自动布局让你表达出布局中的视图和其他每个视图的关系，而不是需要你指出视图有多大，放在哪儿。你需要放置以下这些关系（即我们所谓的约束）到布局中：
+<br /><br />
+1.左上角和右上角的视图总是有相等的宽度（也就是pin中第一个widths equally命令）。<br />
+2.左上角和右上角的视图水平方向有20点距离（也就是pin中的horizontal spacing）。<br />
+3.所有的视图总是有相同的高度（也就是pin中heights equally命令）。<br />
+4.上面两个视图和下面那个视图垂直方向上有20点距离（也就是pin中的vertical spacing）。<br />
+5.视图和屏幕边缘有20点空间（top，bottom，leading和trailing space相对于父视图的约束）。
+<br /><br /> 
+这些就足以表达出自动布局该怎么放置视图，以及当屏幕大小改变时该如何处理。
+<br /><br /> 
+你可以在左边 Document Outline 中看到你所有的约束，组名叫做 Constraints（当你为 storyboard 激活自动布局时才会加进来）。
+<br /><br /> 
+如果你在 Document Outline 中点击一个约束，Interface Builder 将会在视图中高亮出它：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202162500_1.png" />
+          </div>
+          <div>约束是一个真实的对象（NSLayoutConstraint），并且他们也有属性。比如，选择上面两个视图的间距约束条件（叫做"Horizontal Space（20）"），然后切换到 Attributes inspector。
+          你可以在那里通过编辑 Constant 字段改变边缘空间的大小。</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202162442_1.png" />
+          </div>
+          <div>将它设置为100，然后再次运行程序。现在他们边缘空间变得更宽了：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202162402_1.png" />
+          </div>
+          <div>自动布局在描述视图上比 springs 和 struts 显得更有表现力。在这篇教程的剩余部分，你将会学到约束的一切，以及如何将他们应用到 Interface Builder 上来构造出不同种类的布局。</div>
+        ]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="WebLogWritable.java" id="sourceContent1">
+      <![CDATA[
+      ]]>
+    </c:sourceContent>
+    <c:comment style="margin-top:2em;">
+      <c:comment1 style="color:black;">
+        <![CDATA[
+                ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;color:rgb(156, 25, 197);font-weight:bold;">
+    <c:title>自动布局如何工作</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[
+          <div>
+            正如你在上面测试样例中所看到的一样，自动布局最基本的工具是约束。一个约束描述了两个视图间的几何关系。比如，你可能有这样一个约束：
+<br />
+<b>"label A 右边缘和 button B 左边缘有 20 点的空白空间。"</b>
+<br />
+<br />
+自动布局会考虑到所有的约束，然后为你的视图计算出理想的位置和大小。你再也不需要亲自为你的视图设置 frames 了， 自动布局会完全基于你为这些视图设置的约束为你做这个工作。
+<br />
+<br />
+自动布局以前，你一直需要为视图的 frames 设置 hard-code，要么在 Interface Builder 中将他们放置在特定的坐标，
+或通过传递一个 rectangle 到 initWithFrame：，或者设置视图的 frame，bounds 或者 center 属性。
+<br />
+<br />
+就你刚刚做的那个程序，你需要明确设置 frames 为：
+          </div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202162329_1.png" />
+          </div> 
+          <div>还需要为这些视图设置自动调整大小的masks：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202162315_1.png" />
+          </div>
+          <div>这再也不是你需要为屏幕设计所考虑的东西了。使用自动布局，你需要做这些：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202162223_1.png" />
+          </div>
+          <div>视图的大小和位置再也不重要了，只有约束要紧。当然，当你拖一个新建的button或label到画布上时，它会有一定的大小，并且你会将它拖到某一位置，
+          但这是只一个用来告诉Interface Builder如何放置约束的设计工具。</div>]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="WebLogWritable.java" id="sourceContent1">
+      <![CDATA[
+      ]]>
+    </c:sourceContent>
+    <c:comment style="margin-top:2em;">
+      <c:comment1 style="color:black;">
+        <![CDATA[
+                ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;color:rgb(156, 25, 197);font-weight:bold;">
+    <c:title>想你所想，如你所愿</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[
+          <div>
+            使用约束最大的优势就是你再也不需要把时间浪费在坐标上了。相反，你可以向自动布局描述视图如何和其他视图相关联，自动布局将会为你完成所有困难的工作。这叫做根据目的设计（designing by intent）。
+<br />
+<br />
+当你根据目的设计时，你表达的是你想要实现什么，而不需要关心它如何实现。"button的左上角坐标为（20，230）"，现在你可以这么说了：
+<b>button 是垂直居中于它的父视图，并且相对于父视图的左边缘有一个固定的距离</b>。使用这个描述，不管父视图多大或多小，自动布局都可以自动计算出你的 button 需要在哪儿出现！
+ <br />
+<br />
+其他根据目的设计的示例（自动布局可以处理所有这些指令）：<br />
+<br />
+<b>"这两个text fields的大小需要一直相等。"<br />
+"这两个button需要一直一起移动。"<br />
+"这四个labels需要一直右对齐。"</b><br />
+ <br />
+这使得你用户界面的设置更具描述性。你只需简单的定义约束，系统会为你自动计算 frames。<br />
+ <br />
+在第一部分你看到，即使为几个视图在横竖方向上正确的布局都需要做大量的工作。有了自动布局，你可以绕过这些麻烦。如果你正确的设置了约束，那么在横竖屏方向上，布局将不需要做任何改变。<br />
+ <br />
+使用自动布局另一个重要的好处就是本地化。比如德语中的文本，出了名的比老奶奶的裹脚布还要长，适配起来是一件很麻烦的事。再次，自动布局拯救了猿，因为它能根据label需要显示的内容自动改变label的大小。<br />
+ <br />
+现在增加德语，法语或者其他任何一种语言，都只是设置约束的事，然后翻译文本，然后。。。就没有然后了！
+<br />
+<br />
+获得自动布局窍门最好的方法就是使用它，所以这正是剩下教程中你会学到的东西。
+          </div>
+                    <blockquote style="color:#FF0057;"><b>注意:</b> 自动布局不仅对旋转有作用；它还能轻易的缩放你 UI 的大小从而适应不同尺寸的屏幕。
+                    这并不是巧合，当 iPhone5 拥有更高屏幕的同时，这个技术也同时加到了 iOS 中！ 
+                    自动布局能轻易的拉伸你程序的用户界面，从而充满 iPhone5 垂直方向上多出来的空间。随着 iOS7 中的动态类型，自动布局变得更加重要了。
+                    用户现在可以改变全局字体大小设置！ 有了自动布局，这将变得非常简单。</blockquote>
+
+          ]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="WebLogWritable.java" id="sourceContent1">
+      <![CDATA[
+      ]]>
+    </c:sourceContent>
+    <c:comment style="margin-top:2em;">
+      <c:comment1 style="color:black;">
+        <![CDATA[
+                ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;color:rgb(156, 25, 197);font-weight:bold;">
+    <c:title>拥抱约束（courting constraints）</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[
+          <div>
+            关闭你当前的项目并用Single View Application模板创建一个新的iPhone项目。叫做"Constraints"。任何用Xcode5创建出来的项目都会自动假定你会使用自动布局，所以你并不需要额外做任何事情。
+<br />
+<br />
+点击Main.storyboard打开Interface Builder。拖一个新的Button到画布上。注意当你拖拽的时候，蓝色虚线将会出现。这写线用来做向导。
+          </div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202162120_1.png" />
+          </div>
+          <div>在屏幕边缘以及中心的时候，都会有向导线：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202162030_1.png" />
+          </div>
+          <div>如果之前你已经使用过Interface Builder，那么你肯定看到过这些向导线。这对我们对齐控件有很大的帮助。
+ <br />
+ <br />
+在 Xcode4 中激活自动布局时，向导线有另外一个目的。你任然可以用他们来对齐，但是他们也会告诉你新的约束将会在哪儿。如果你将button沿着向导线反方向拖拽到左上角时，Xcode4中的storyboard看起来便像这样：</div>
+
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202162008_1.png" />
+          </div>
+          <div>有两个蓝色的东西附属在button上面。这些T-bar形状的对象便是约束了。Xcode 4的Interface Builder中不管你将UI控制器放在哪儿，它总是会给出有效的约束。理论上这听起来是个好主意，但是实践起来，在Interface Builder中使用自动布局却非常困难。
+<br />
+<br />
+幸运的是，Xcode5中已经有所好转。将button拖拽到画布上之后并看不到T-bars形状的东西：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202161948_1.png" />
+          </div>
+          <div>同时在Document Outline面板中也没用Constraints部分。得到结论：此时button上并没有设置任何约束。
+<br />
+<br />
+那这是如何运作的呢？我们之前了解的自动布局总是需要足够多的约束才能决定视图的大小和位置，但是现在我们这儿跟本没有约束。确定这是一个完整的布局？
+ <br />
+<br />
+这这是 Xcode5 相对 Xcode4 来说最大的一个提升：再也不强制你总是有一个有效的布局。</div>
+
+<blockquote style="color:#FF0057;"><b>注意:</b> 
+<br />1.运行一个无效布局的程序是不明智的，因为自动布局不能正确的计算需要将视图放在哪儿。要么视图的位置是不可预知的（约束不够），要么程序将会崩溃（约束过多）。
+<br />2.Xcode4设法保证总是有足够多正确的约束来创建一个有效的布局。不幸的是，它经常会将你的约束替换为你并不想要的。这会令人很沮丧，正是因为这个原因很多开发者放弃了自动布局。
+<br />3.Xcode5中，当你编辑Storyboard时它允许你有不完整的布局，但它也会指出哪些地方你还需要修改。使用Interface Builder创建的自动布局驱动用户界面变得更有趣了，使用Xcode5也消耗更少的时间。</blockquote>
+
+<br />
+<div>如果你根本不提供任何约束，Xcode 自动分配一套默认的约束，正是我们所知的自动约束。
+它会在程序 built 的编译时间中去完成这些事，而不是设计时间。当你设计你的用户界面时，Xcode5 中的自动布局为了不参与你的设计方法而努力工作，这这是我们喜欢它的原因。
+<br />
+<br />
+自动约束为你的视图提供一个固定尺寸和位置。换句话说，视图总是拥有跟你在 storyboard 中看到的一样的坐标。
+这是非常方便的，因为这就意味着你可以大量的忽视自动布局。你可以为那些拥有充分约束的控件不增加约束，只为那些需要特殊规则的视图创建约束。
+<br />
+<br />
+OK，让我们玩一玩约束并看看他们能做什么。现在，按钮是在左上角，并且没有约束。确认按钮跟两个拐角向导线对齐。
+<br />
+<br />
+使用 Editor\Pin 菜单为按钮增加两个新的约束，看起来像这样：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202161846_1.png" />
+          </div>
+          <div>这是Leading Space to Superview和Top Space to Superview选项。
+<br />
+<br />
+所有的约束都会在 Document Outline 面板中列出来：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202161828_1.png" />
+          </div>
+          <div>目前有两个约束，一个是 button 和 main view 左边缘的 Horizontal Space 约束，一个是 button 和 main view 上边缘的 Vertical Space 约束。
+          这个关系通过约束描述起来便是： "button 总是位于其父视图左上角20点处。"</div>
+          
+          
+<blockquote style="color:#FF0057;"><b>注意:</b> 
+这些其实都不是非常有用的约束，因为他们有相同的自动约束。如果你总是想你的button相对于父视图左上角，那么你还不如不提供任何约束，让Xcode为你做这些。
+</blockquote>
+<div>现在拖动button并将它放到屏幕的右上角，再次和蓝色向导线对齐：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202161645_1.png" />
+          </div>
+          <div>哇哦，这里发生了什么？在Xcode4中这会破坏旧的约束并赋值一个基于蓝色向导线的新约束，但是在Xcode5中button保留了现存的约束。但问题是button在Interface Builder中的大小和位置再也不和自动布局希望基于约束的大小和位置相符合了。这叫做错位的视图。（misplaced view）
+ <br />
+ <br />
+运行程序。Button仍然会出现在屏幕的左上角：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202161617_1.png" />
+          </div>
+          <div>当谈到自动布局，橙色代表坏的。Interface Builder绘制两个橙色方块：一个是虚线边框，一个是实线边框。虚线方块是根据自动布局显示视图的frame。实线方块是根据你在屏幕上放置的视图的frame。这两个应该吻合的，但是这里并没有。
+ <br />
+ <br />
+如何修改取决于你想要达到什么目的：
+<br />
+1.你想让button附属于屏幕左边缘254点处吗？在这种情况下你需要将现存的Horizontal Space约束变大234点。这正是橙色badge中"+234"的意思。<br />
+2.你想让button附属于屏幕的右边缘？那么你需要移除现有的约束并重新创建一个新的。
+ <br />
+ <br />
+删除Horizontal Space约束。首先在画布或Document Outline中选中，然后按键盘上的Delete键。</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202161536_1.png" />
+          </div>
+           <div>
+           注意这次Vertical Space约束变橙色了。直到现在它都是蓝色的。那一个约束并没有任何错误；它的意思是剩下的没有足够的约束决定button完整的位置。你任然需要在X轴方向增加一个约束。
+           </div>
+<blockquote style="color:#FF0057;">
+Note：你可能会奇怪，为什么Xcode不为X轴方向自动增加一个约束。Xcode中的规则是：Xcode只为那些你没有设置任何约束的对象创建自动约束。一旦你增加一个约束，你便是告诉Xcode你接管了这个视图。Xcode将不再增加任何自动约束，并希望你为这个视图增加需要的约束。
+</blockquote>
+<div>选中button，并选择Editor\Pin|Trailing Space to Superview.这迫使在button右边缘和屏幕右边缘增加一个新的约束。关系表达如下："button总是位于距离其父视图右上角20点处。"
+ <br />
+ <br />
+运行程序并旋转到landscape。注意button如何与屏幕右边缘保持相同距离：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202161444_1.png" />
+          </div>
+          <div>当你放置一个对立于向导线的button（或者任何其他视图）并新建一个约束时，你会得到一个根据"HIG"（Apple's iOS Human Interface Guidelines document）定义的标准大小的间隔约束。对于边框来说，标准大小空间是20点。
+ <br />
+ <br />
+现在将button向左拖拽一点：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202161426_1.png" />
+          </div>
+          <div>由于视图错位，你得到了一个橙色虚线边框。我们假设这个button新位置的确是你想要的。创建完一个约束后做一些细微的调整是很常见的，但这却会导致橙色方块出现。一个修改方法就是移除约束并创建一个新的，但还有一个更简单的解决方案。
+ <br />
+ <br />
+Editor菜单上有一个Resolve Auto Layout Issues子菜单。从这个菜单中，选中Update Constraints。就我这个情况来说，这会告诉Interface Builder需要将约束变大64点，像这样：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202161351_1.png" />
+          </div>
+          <div>很好，T-bars又变蓝了，布局是有效的。在Document Outline中，你可以看到Horizontal Space约束不再有一个标准的间隔了：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202161334_1.png" />
+          </div>
+          <div>到目前为止你已经尝试过了Horizontal Space和Vertical Space约束。还有一个"center"约束。拖拽一个新的Button对象到画布底部中心，根据向导线完好入位：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202161311_1.png" />
+          </div>
+          <div>为了保持button在水平方向上一直居中对齐于父视图，你需要增加一个Center X Alignment约束。从Editor菜单选择Align\Horizontal Center in Container.这会增加一个很长的橙色线段：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202161219_1.png" />
+          </div>
+          <div>线之所以是橙色是因为你才仅仅指定了button的X轴，但Y轴并没有指定约束。使用Editor\Pin菜单在button和视图底部间增加一个Vertical Space约束。看起来像这样：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202161211_1.png" />
+          </div>
+          <div>如果你不知道原因，这是Bottom Space to Superview选项。Vertical Space约束使button远离视图底部（再一次使用标准间隔）。
+ <br />
+ <br />
+运行程序并旋转到横屏模式。甚至在横屏模式，button也保持在屏幕底部的中心：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202161202_1.png" />
+          </div>
+          <div>这就是你表达的意思---这个button始终应该位于底部中心。注意，你根本不需要告诉Interface Builder按钮的坐标是什么，除非你想将它固定在视图上。
+ <br />
+ <br />
+通过自动布局，你再也不需要担心视图位置的精确坐标或视图大小了。相反，自动布局会根据你设置的约束得到这两个参数。
+ <br />
+ <br />
+你可以在button的Size inspector中看到这个经典转移，现在有了很大的不同：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202161147_1.png" />
+          </div>
+          <div>如果不使用自动布局，输入值到X，Y，Width或Height字段将会改变选中视图的位置和大小。使用自动布局后，你仍然可以输入新值到这些字段，但是如果你已经为视图设置了约束，那这可能造成视图错位。你将不得不更新约束来匹配新值。
+ <br />
+ <br />
+举个例子，把button的宽度改为100，画布会变成这样：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202161139_1.png" />
+          </div>
+          <div>Xcode4用Horizontal Space取代Center X Alignment约束，并且button上会产生一个新约束强制它的宽度为100 points。然而，Xcode5说，"如果你想让button宽度变为100 points，对我来说无所谓，但是你要知道约束并不是这么说的。"
+ <br />
+ <br />
+在这种情况下你希望button是100点宽。对此有一个特殊的约束类型：Fixed Width约束。首先按一下Undo，这样button又居中了，T-bars也变蓝了。选中button并选择Editor\Pin\Width。这会在button下面放置一个新T-bar：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202161132_1.png" />
+          </div>
+          <div>选中那个T-bar并在Attributes inspector中改变Constant为100.不管button的title多大或多小，这都会强制button的宽总是100点。为了能更好的看清你可以给button设置一个背景色：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202161124_1.png" />
+          </div>
+          <div>你也可以在左边的Document Outline中看到这个新的Width约束：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131202/4673_131202161117_1.png" />
+          </div>
+          <div>与其他约束不同，在button和它的父视图之间，Width约束只会应用到button本身。你可以将这个认为是一个button本身和本身之间的约束。
+ <br />
+ <br />
+你可能怀疑为什么button之前没有Width约束。自动布局是为何知道button有多宽？
+ <br />
+ <br />
+事情是这样的：button自己是知道自己有多宽。它根据自己的title text加上一些padding就行了。如果你为button设置一个背景图片，它也会考虑进去。
+ <br />
+ <br />
+这正是我们熟悉的intrinsic content size。并不是所有的控制器都有这个，但大部分是（UILabel是一个例子）。如果一个视图可以计算自己理想的大小，那么你就不需要为它特别指定Width或Height约束了，你将会在稍后看到更多相关内容。
+<br />
+<br />
+为了恢复button到最佳大小，首先我们需要移除Width约束。然后选中button，并从Editor菜单中选择Size to Fit Content。这样就能够恢复button的固有的内容尺寸了。
+</div>
+         ]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="WebLogWritable.java" id="sourceContent1">
+      <![CDATA[
+      ]]>
+    </c:sourceContent>
+    <c:comment style="margin-top:2em;">
+      <c:comment1 style="color:black;">
+        <![CDATA[
+                ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:2em;color:rgb(156, 25, 197);font-weight:bold;">
+    <c:title>孤掌难鸣</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[
+          <div>
+            向导线不但出现在一个视图和它的父视图之间，而且也会出现在相同层级的视图之间。拖拽一个新的button到画布上进行演示。如果你将这个button拖近其他对象，这时他们的向导线将会开始相互影响。
+ <br />
+ <br />
+将新button放到之前一个button的后面完好入位：
+          </div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131203/4196_131203133856_1.png" />
+          </div>
+          <div>这还有一些向导虚线。Interface Builder识别出这两个button可以通过不同方式对齐—顶部，中心以及基线。
+ <br />
+ <br />
+Xcode4会将这些显著的向导线转变成新的约束。但是在Xcode5中，如果你想让这两个button间有约束，你需要自己创建。之前你已经使用过Editor\Pin菜单来创建这两个视图间的约束，但是还有一个更简单的方式。
+ <br />
+ <br />
+选中新的button并按住Ctrl拖拽到另一个button上，像这样：</div>
+
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131203/4196_131203133905_1.png" />
+          </div>
+          <div>放开鼠标按键，出现一个弹出框。选择第一个选项，Horizontal Spacing。</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131203/4196_131203133916_1.png" />
+          </div>
+          <div>这将会创建一个新的约束：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131203/4196_131203133924_1.png" />
+          </div>
+          <div>它是橙色的，这意味着这个button至少还需要另一个约束。button的大小是知道的（使用intrinsic content size），并且还有一个button在X轴上的约束。只剩下Y轴没有约束了。
+ <br />
+ <br />
+这种缺失约束的情况是很容易确定的，但是更复杂的设计可能就没这么明显了。幸运的是，你不再需要敏思苦想，Xcode已经记录并可以确切的告诉你缺少了什么。
+ <br />
+ <br />
+在Document Outline中会有一个红色的小箭头，就在View Controller Scene后面。点击这个箭头便会看到所有Auto Layout问题：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131203/4196_131203133932_1.png" />
+          </div>
+          <div>我们将Y轴方向缺失的约束加进去。按住Ctrl并向下拖拽新的button：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131203/4196_131203133946_1.png" />
+          </div>
+          <div>这次弹出菜单有不同的选项了。这次菜单的选项是基于上下文环境的—你在哪些视图间拖拽以及鼠标移动的方向。选择Bottom Space to Bottom Layout。
+ <br />
+ <br />
+现在新button有一个位于屏幕底部的Vertical Space，也有一个跟其他button相关联的Horizontal Space。虽然空间非常小（只有8 points），T-bar可能不大容易看到，但它就在那里。
+ <br />
+ <br />
+点击Document Outline里面的Horizontal Space(8):</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131203/4196_131203133957_1.png" />
+          </div>
+          <div>当你选中一个约束，它会高亮自己所属的控制器。这个特别的约束位于两个button之间。这个约束表达了：“不管第一个button在哪儿或多大，第二个button总是出现在第一个button的左边”。
+ <br />
+ <br />
+选中黄色背景的button并输入较长的label，比如：“A longer label”。输入完成后，button会为新的text改变大小，并且另一个button会移开。
+ <br />
+ <br />
+最终，它依附在第一个button的左边缘，这正是我们所期望的：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131203/4196_131203134006_1.png" />
+          </div>
+          <div>为了更好的摸索这是如何工作的，多练一些吧。拖拽另一个button到画布上并放到黄色button的上方，他们会垂直方向对齐到位（不要试着让两个button的左边缘对齐）：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131203/4196_131203134015_1.png" />
+          </div>
+          <div>为新button设置一个绿色背景色，这样就可以更容易看出它的范围。
+ <br />
+ <br />
+因为你将两个button对齐在一起，现在他们之间存在HIG推荐的8 points间隔。按住Ctrl在两个button之间拖拽将这变为一个约束。从弹出菜单中选中Vertical Spacing。
+<br />
+ <br />
+Note：“HIG”是“iOS Human Interface Guidelines”的简称，包含Apple推荐的良好的用户界面设计。任何iOS开发者都有必要读一读这个规范。HIG解释了哪些UI元素适合在什么情况下使用，以及最佳使用方式。你可以在这里找到。（https://developer.apple.com/library/ios/DOCUMENTATION/UserExperience/Conceptual/MobileHIG/Introduction/Introduction.html）
+<br />
+<br />
+然而你并没有被限制在controls间的标准间隔。约束是成熟的对象，就像视图一样，因此你可以改变它们的属性。
+ <br />
+<br />
+选中两个button之间的Vertical Space约束。你可以在画布上点击T-bar，虽然这有点麻烦。目前最简单的办法就是在Document Outline里面选择约束。一旦你选中约束，再切换到Attributes inspector：
+</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131203/4196_131203134044_1.png" />
+          </div>
+          <div>在Constant字段里输入40改变约束大小。现在两个button更进一步的分开了，但是他们任然是连接在一起的：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131203/4196_131203134206_1.png" />
+          </div>
+          <div>运行程序并翻转到landscape模式查看效果：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131203/4196_131203134218_1.png" />
+          </div>
+          <div>button必然会保持他们垂直方向的排列，但是水平方向就不了！原因很明显：绿色button还没有X轴方向的约束。
+ <br />
+ <br />
+为绿色button增加一个到屏幕左边缘的Horizontal Space并不能解决问题。这样的约束只会让绿色按钮总是保持在同一个X轴坐标，即便是在横屏模式下。这看起来感觉不大对，所以你需要表述这样一个目的：
+“黄色button会一直水平居中，蓝色button左边缘会一直跟黄色button左边缘对齐。”
+ <br />
+ <br />
+你已经为第一种情况创建了一个约束，但是第二个并没有。Interface Builder为对齐显示了向导线，这样你就可以将上面button一直拖拽到跟黄色左边缘对齐的位置：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131203/4196_131203134233_1.png" />
+          </div>
+          <div>如果你也在垂直方向上拖拽button，这时button框架和Vertical Space约束之间就不能达到正确的距离了。你在T-bar上将会看到橙色的badge：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131203/4196_131203134242_1.png" />
+          </div>
+          <div>如果发生这样的情况，简单的使用方向键将button微调到位，直到badge消失。
+ <br />
+ <br />
+最终，按住Ctrl在两个button间拖拽，从弹出菜单中选择Left。这会创建一个约束：“两个视图的左边缘一直对齐”。换句话说，这两个button一直会有相同的X轴坐标。这时T-bars变成蓝色了：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131203/4196_131203134254_1.png" />
+          </div>
+          <div>运行程序并旋转到横屏模式：</div>
+          
+          <div style="margin:1.5em 0;">
+            <img style="max-width:100%;" src="http://cdn.cocimg.com/cms/uploads/allimg/131203/4196_131203134302_1.png" />
+          </div>
+         ]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="WebLogWritable.java" id="sourceContent1">
+      <![CDATA[
+      ]]>
+    </c:sourceContent>
+    <c:comment style="margin-top:2em;">
+      <c:comment1 style="color:black;">
+        <![CDATA[
+                ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;color:rgb(156, 25, 197);font-weight:bold;">
+    <c:title>何去何从？</c:title>
+    <c:desc>
+      <c:desc1>
+        <![CDATA[
+          <div>
+            现在你已经对自动布局进行了第一次尝试，感觉怎么样？这可能需要一些时间习惯，但是它能让你的工作更加简单，也会让你的app更加灵活。
+            <br />
+            <br />
+            想要学习更多的内容？继续阅读 <a target="_blank" href="http://www.raywenderlich.com/50319/beginning-auto-layout-tutorial-in-ios-7-part-2">第二部分</a> 吧，你将会继续在Interface Builder中使用button进一步理解Auto Layout提供的多种可能性，以及你可能遇到的问题。
+ <br />
+            <br />
+最重要的是，你将会使用Auto Layout在一个真实的程序中创建一个逼真的布局。
+          </div>
+          
+         
+         ]]>
+      </c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="WebLogWritable.java" id="sourceContent1">
+      <![CDATA[
+      ]]>
+    </c:sourceContent>
+    <c:comment style="margin-top:2em;">
+      <c:comment1 style="color:black;">
+        <![CDATA[
+                ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+</c:component>
