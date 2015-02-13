@@ -17,6 +17,10 @@
           <xsl:value-of disable-output-escaping="yes" select="normalize-space(c:abstract) "/>
         </blockquote>
       </xsl:if>
+      
+      <xsl:if test="normalize-space(c:hero) != ''">
+        <img style="width:100%;" src="{c:hero}" />
+      </xsl:if>
     
       <xsl:choose>
         <xsl:when test="count(c:entry) &gt; 0">
