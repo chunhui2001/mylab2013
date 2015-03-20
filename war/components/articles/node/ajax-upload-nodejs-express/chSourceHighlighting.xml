@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+In this tutorial i am going to explain how to develop file uploads using node.js with Ajax. So it won’t need a page refresh at all.
+]]>
+  </c:abstract>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Our application :" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>I am going to develop same application as i have did in last tutorial with some additional code changes which makes it asynchronous or Ajax.
+      <br />
+      <br />
+      So we will use FORM submit and same Express router with <b>multer middleware</b> for handling file upload.</div>
+      <br />
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+{
+  "name": "file_upload",
+  "version": "0.0.1",
+  "dependencies": {
+    "express": "~4.10.2",
+    "multer": "~0.1.6"
+  }
+}</pre>
+<br />
+<br />
+<div>Switch to the folder where package file is saved and type</div>
+      <br />
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+npm install</pre>
+<br />
+<br />
+<div>to install the dependencies.</div>
+      <br />
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">var express     =    require("express");
+var multer      =    require('multer');
+var app         =    express();
+var done        =    false;
+
+app.use(multer({ dest: './uploads/',
+ rename: function (fieldname, filename) {
+    return filename+Date.now();
+  },
+onFileUploadStart: function (file) {
+  console.log(file.originalname + ' is starting ...');
+  done        =    false;
+},
+onFileUploadComplete: function (file) {
+  console.log(file.fieldname + ' uploaded to  ' + file.path)
+  done=true;
+}
+}));
+
+app.get('/',function(req,res){
+      res.sendfile("index.html");
+});
+
+app.post('/api/photo',function(req,res){
+  if(done==true){
+    console.log(req.files);
+    res.end("File uploaded.");
+  }
+});
+
+app.listen(3000,function(){
+    console.log("Working on port 3000");
+});</pre>
+<br />
+<br />
+<div>index.html</div>
+      <br />
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;File upload Node.&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+      &lt;input type="file" style="width:173px;" id="myFile" name="myFile" /&gt;
+      &lt;input type="button" id="the_btn_upload" value="开始上传" /&gt;
+      
+      &lt;progress id="prog" 
+          style="width:18.75em;" value="0" min="0" max="100"&gt;&lt;/progress&gt;
+  
+  &lt;script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"&gt;&lt;/script&gt;
+  &lt;script type="text/javascript"&gt;
+    $(function(){
+      $("#the_btn_upload").on("click", function() {
+	      $("#myFile").upload("/api/photo", function(success) {
+		      console.log('Done', success);
+		      if (JSON.parse(success).status === 0) {
+			      $("#the_btn_upload").val('上传完毕');
+		      }
+	      }, $("#prog"));
+      });
+    });  
+  
+    $.fn.upload = function(remote, data, successFn, progressFn) {
+        // if we don't have post data, move it along
+        if (typeof data !== 'object') {
+            progressFn = successFn;
+            successFn = data; 
+        }
+
+        return this.each(function() {
+          if ($(this)[0].files[0]) {
+            var formData = new FormData();
+
+            formData.append($(this).attr("name"), $(this)[0].files[0]);
+
+            if (typeof data == 'object') {
+              for (dataidx in data) {
+	              formData.append(dataidx, data[dataidx]);
+              }
+            }
+
+            // do ajax requrest
+            $.ajax({
+              url:remote,
+              type:'POST',
+              xhr:function () {
+                var theXHR = $.ajaxSettings.xhr();
+
+                if (theXHR.upload && progressFn) {
+                    theXHR.upload.addEventListener('progress', function(prog) {
+                      var value = ~~((prog.loaded / prog.total) *100);
+
+                      if (progressFn && typeof progressFn == 'function') {
+                          progressFn(prog, value);
+                      } else if (progressFn) {
+                          $(progressFn).val(value);
+                      }
+                    }, false);
+                }
+
+                return theXHR;
+              },
+              data:formData,
+              cache:false,
+              contentType:false,
+              processData:false,
+              complete:function(res) {
+                  if (successFn) successFn(res.responseText);
+              }
+            });
+          }
+        });
+    };
+
+
+  &lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</pre>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Running the code :" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+     <div>Either download the ready made code from Github or save all those files in seperate folder and switch to that folder using command prompt.</div>
+<br />
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+node Server.js</pre>
+<br />
+<br />
+<div>Visit http://localhost:3000 to view the app on your browser.</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Conclusion:" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+     Ajax always provides richness to web application. jQuery.form is one of the stable and popular library.
+     <b>Multer</b> takes care of handling multipart data and provides ease to implementation.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  
+</c:component>
