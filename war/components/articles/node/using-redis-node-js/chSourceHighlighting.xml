@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+Redis is a fast and efficient in-memory key-value store. It is also known as a data structure server,
+as the keys can contain strings, lists, sets, hashes and other data structures.
+If you are using Node.js, you can use the node_redis module to interact with Redis.
+This tutorial explains various ways of interacting with Redis from a Node.js app using the node_redis library.
+]]>
+  </c:abstract>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Installing node_redis" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>node_redis, as you may have guessed, is the Redis client for Node.js. You can install it via npm using the following command.</div>
+      <br />
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+npm install redis</pre>
+    ]]>
+    </c:sourceContent>
+
+      <c:sourceContent type="html" title="Getting Started" id="sourceContent1" style="margin-top:4em;"
+                       titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                       bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+          <![CDATA[
+      <div>Once you have installed node_redis module you are good to go. Let’s create a simple file, app.js, and see how to connect with Redis from Node.js.</div>
+      <br />
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+var redis = require('redis');
+var client = redis.createClient(); //creates a new client </pre>
+<br />
+<br />
+<div>By default, redis.createClient() will use 127.0.0.1 and 6379 as the hostname and port respectively.
+If you have a different host/port you can supply them as following:</div>
+      <br />
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+var client = redis.createClient(port, host);</pre>
+<br />
+<br />
+<div>Now, you can perform some action once a connection has been established. Basically, you just need to listen for connect events as shown below.</div>
+      <br />
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+client.on('connect', function() {
+    console.log('connected');
+});</pre>
+<br />
+<br />
+<div>So, the following snippet goes into app.js:</div>
+      <br />
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+var redis = require('redis');
+var client = redis.createClient();
+
+client.on('connect', function() {
+    console.log('connected');
+});</pre>
+<br />
+<div>Now, type node app in the terminal to run the app. Make sure your Redis server is up and running before running this snippet.</div>
+    ]]>
+      </c:sourceContent>
+
+
+      <c:sourceContent type="html" title="Storing Key-Value Pairs" id="sourceContent1" style="margin-top:4em;"
+                       titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                       bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+          <![CDATA[
+      <div>Now that you know how to connect with Redis from Node.js, let’s see how to store key-value pairs in Redis storage.</div>
+      <br />
+      <br />
+
+<strong><b>Storing Strings</b></strong><br /><br />
+      <div>All the <a target="_blank" href="http://redis.io/commands">Redis commands</a> are exposed as different functions on the client object. To store a simple string use the following syntax:</div>
+      <br />
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+client.set('framework', 'AngularJS');
+OR
+client.set(['framework', 'AngularJS']);</pre>
+<br />
+<br />
+<div>The above snippets store a simple string AngularJS against the key framework.
+You should note that both the snippets do the same thing.
+The only difference is that the first one passes a variable number of arguments while the later passes an args array to client.set() function.
+You can also pass an optional callback to get a notification when the operation is complete:</div>
+      <br />
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+client.set('framework', 'AngularJS', function(err, reply) {
+  console.log(reply);
+});</pre>
+<br />
+<br />
+<div>If the operation failed for some reason,
+the err argument to the callback represents the error.
+To retrieve the value of the key do the following:</div>
+      <br />
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+client.get('framework', function(err, reply) {
+    console.log(reply);
+});</pre>
+<br />
+<div>client.get() lets you retrieve a key stored in Redis.
+The value of the key can be accessed via the callback argument reply.
+If the key doesn’t exist, the value of reply will be empty.</div>
+
+
+<br />
+<br />
+<strong><b>Storing Hash</b></strong><br /><br />
+      <div>Many times storing simple values won’t solve your problem. You will need to store hashes (objects) in Redis.
+       For that you can use hmset() function as following:</div>
+      <br />
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+client.hmset('frameworks', 'javascript', 'AngularJS', 'css', 'Bootstrap', 'node', 'Express');
+
+client.hgetall('frameworks', function(err, object) {
+    console.log(object);
+});</pre>
+<br />
+<div>The above snippet stores a hash in Redis that maps each technology to its framework.
+The first argument to hmset() is the name of the key. Subsequent arguments represent key-value pairs. Similarly,
+hgetall() is used to retrieve the value of the key. If the key is found,
+the second argument to the callback will contain the value which is an object.</div>
+<blockquote stryle="font-weight:bold;">Note that Redis doesn’t support nested objects.
+All the property values in the object will be coerced into strings before getting stored.</blockquote>
+
+<div>You can also use the following syntax to store objects in Redis:</div>
+      <br />
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+client.hmset('frameworks', {
+    'javascript': 'AngularJS',
+    'css': 'Bootstrap',
+    'node': 'Express'
+});</pre>
+
+<br />
+<div>An optional callback can also be passed to know when the operation is completed.</div>
+<blockquote stryle="font-weight:bold;">All the functions (commands) can be called with uppercase/lowercase equivalents. For example,
+client.hmset() and client.HMSET() are the same.</blockquote>
+
+
+<br />
+<br />
+<strong><b>Storing Lists</b></strong><br /><br />
+      <div>If you want to store a list of items, you can use Redis lists. To store a list use the following syntax:</div>
+      <br />
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+client.rpush(['frameworks', 'angularjs', 'backbone'], function(err, reply) {
+    console.log(reply); //prints 2
+});</pre>
+
+<br /><br />
+      <div>The above snippet creates a list called frameworks and pushes two elements to it.
+      So, the length of the list is now two. As you can see I have passed an args array to rpush.
+      The first item of the array represents the name of the key while the rest represent the elements of the list.
+      You can also use lpush() instead of rpush() to push the elements to the left.
+      <br />
+      <br />
+      To retrieve the elements of the list you can use the lrange() function as following:
+      </div>
+      <br />
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+client.lrange('frameworks', 0, -1, function(err, reply) {
+    console.log(reply); // ['angularjs', 'backbone']
+});</pre>
+
+<br />
+      <div>Just note that you get all the elements of the list by passing -1 as the third argument to lrange().
+      If you want a subset of the list, you should pass the end index here.</div>
+
+
+<br />
+<br />
+<strong><b>Storing Sets</b></strong><br /><br />
+      <div>Sets are similar to lists, but the difference is that they don’t allow duplicates.
+      So, if you don’t want any duplicate elements in your list you can use a set.
+      Here is how we can modify our previous snippet to use a set instead of list.</div>
+      <br />
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+client.sadd(['tags', 'angularjs', 'backbonejs', 'emberjs'], function(err, reply) {
+    console.log(reply); // 3
+});</pre>
+
+<br /><br />
+      <div>As you can see, the sadd() function creates a new set with the specified elements. Here, the length of the set is three.
+      To retrieve the members of the set, use the smembers() function as following:</div>
+      <br />
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+client.smembers('tags', function(err, reply) {
+    console.log(reply);
+});</pre>
+
+<br />
+      <div>This snippet will retrieve all the members of the set. Just note that the order is not preserved while retrieving the members.
+<br />
+<br />
+This was a list of the most important data structures found in every Redis powered app. Apart from strings, lists, sets, and hashes, you can store sorted sets, hyperLogLogs, and more in Redis. If you want a complete list of commands and data structures, visit the official Redis documentation. Remember that almost every Redis command is exposed on the client object offered by the node_redis module.
+<br />
+<br />
+Now let’s have a look at some more important operations supported by node_redis.</div>
+    ]]>
+      </c:sourceContent>
+
+
+
+
+      <c:sourceContent type="html" title="Checking the Existence of Keys" id="sourceContent1" style="margin-top:4em;"
+                       titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                       bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+          <![CDATA[
+      <div>Sometimes you may need to check if a key already exists and proceed accordingly. To do so you can use exists() function as shown below:</div>
+      <br />
+
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+client.exists('key', function(err, reply) {
+    if (reply === 1) {
+        console.log('exists');
+    } else {
+        console.log('doesn\'t exist');
+    }
+});</pre>
+    ]]>
+      </c:sourceContent>
+
+
+      <c:sourceContent type="html" title="Deleting and Expiring Keys" id="sourceContent1" style="margin-top:4em;"
+                       titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                       bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+          <![CDATA[
+      <div>At times you will need to clear some keys and reinitialize them. To clear the keys, you can use del command as shown below:</div>
+      <br />
+
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+client.del('frameworks', function(err, reply) {
+    console.log(reply);
+});</pre>
+<br />
+<br />
+      <div>You can also give an expiration time to an existing key as following:</div>
+      <br />
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+client.set('key1', 'val1');
+client.expire('key1', 30);</pre>
+<br />
+<br />
+<div>The above snippet assigns an expiration time of 30 seconds to the key key1.</div>
+    ]]>
+      </c:sourceContent>
+
+
+      <c:sourceContent type="html" title="Incrementing and Decrementing" id="sourceContent1" style="margin-top:4em;"
+                       titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                       bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+          <![CDATA[
+      <div>Redis also supports incrementing and decrementing keys. To increment a key use incr() function as shown below:</div>
+      <br />
+
+      <pre style="border:solid 1px gray;padding:1em;background-color:rgb(234, 245, 255);;border:solid 1px rgb(255, 187, 187);">
+client.set('key1', 10, function() {
+    client.incr('key1', function(err, reply) {
+        console.log(reply); // 11
+    });
+});</pre>
+<br />
+<br />
+      <div>The incr() function increments a key value by 1.
+      If you need to increment by a different amount, you can use incrby() function.
+      Similarly, to decrement a key you can use the functions like decr() and decrby().
+</div>
+    ]]>
+      </c:sourceContent>
+
+
+      <c:sourceContent type="html" title="Conclusion" id="sourceContent1" style="margin-top:4em;"
+                       titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                       bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+          <![CDATA[
+      We have covered the basic and most commonly used operations in node_redis.
+      You can use this module to leverage the full power of Redis and create really sophisticated Node.js apps.
+      You can build many interesting things with this library such as a strong caching layer, a powerful Pub/Sub messaging system and more.
+      To know more about the library check out their <a target="_blank" href="https://www.npmjs.com/package/redis">documentation.</a>
+      I hope you enjoyed reading the article. Let us know what you think in comments.
+    ]]>
+      </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  
+</c:component>
