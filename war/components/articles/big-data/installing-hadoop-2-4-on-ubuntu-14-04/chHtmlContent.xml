@@ -79,7 +79,6 @@
       </p>
       
       
-      <h4 style="margin-bottom:1em;font-size:1.5em;margin-top:2.5em;color:green;">Has it worked up to here?</h4>
       <p>
         <span>
           Run this command anywhere:
@@ -122,7 +121,6 @@
       </p>
       
       
-      <h4 style="margin-bottom:1em;font-size:1.5em;margin-top:2.5em;color:green;">Has it worked up to here?</h4>
       <p>
         <span>Type:</span>
         <br />
@@ -312,24 +310,22 @@
 
         <span>
           <b>
-            export HADOOP_HOME=/usr/local/hadoop <br />
-            export JAVA_HOME=/usr
+            	export JAVA_HOME=/usr/lib/jvm/java-8-oracle (run: sudo update-alternatives --config java to get JAVA_HOME) <br />
+            	export HADOOP_HOME=/usr/local/hadoop <br /><br />
+
+		export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop/ <br />
+		export HADOOP_MAPRED_HOME=$HADOOP_HOME <br />
+		export HADOOP_COMMON_HOME=$HADOOP_HOME <br />
+		export HADOOP_HDFS_HOME=$HADOOP_HOME <br />
+		export HADOOP_YARN_HOME=$HADOOP_HOME <br />
+		export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_INSTALL/sbin <br />
           </b>
         </span>
         <br />
-        <br />
 
         <span>
-          and follow up with this command: <br />   <br />         
+          and follow up with this command: <br />         
           <b>source ~/.bashrc</b>
-        </span>
-        <br />
-        <br />
-
-        <span>
-          If you’ve deviated from any of the instructions above, those lines are likely to be different. You can find what your java home should be by running the following command:
-          <br /> <br /> 
-          <b>which java | sed -e 's/\(.*\)\/bin\/java/\1/g'</b>
         </span>
         <br />
         <br />
@@ -362,8 +358,8 @@
         
         <b>
           su - hduser <br />
-          mkdir /usr/local/hadoop/data <br />
-          sudo chown $USER -R /usr/local/hadoop/data
+          mkdir $HADOOP_HOME/data <br />
+          sudo chown $USER -R $HADOOP_HOME/data
         </b>
         <br />
         <br />
@@ -381,7 +377,7 @@
         <b>1.) /usr/local/hadoop/etc/hadoop/hadoop-env.sh</b>
       </h6>
       <p>
-        Change export <b>JAVA_HOME=${JAVA_HOME}</b> to match the JAVA_HOME you set in your bashrc (for us JAVA_HOME=/usr).
+        Change export <b>JAVA_HOME=${JAVA_HOME}</b> to match the JAVA_HOME you set in your bashrc (for us JAVA_HOME=<b>/usr/lib/jvm/java-8-oracle</b>).
         <br />
         <br />
         
@@ -397,14 +393,14 @@
         <br />
         <br />
 
-        <b>export HADOOP_OPTS="$HADOOP_OPTS -Djava.net.preferIPv4Stack=true -Djava.library.path=$HADOOP_PREFIX/lib"</b>
+        <b>export HADOOP_OPTS="$HADOOP_OPTS -Djava.net.preferIPv4Stack=true -Djava.library.path=$HADOOP_HOME/lib"</b>
         <br />
         <br />
 
         And finally, add the following line:
         <br />
         <br />
-        <b>export HADOOP_COMMON_LIB_NATIVE_DIR=${HADOOP_PREFIX}/lib/native</b>
+        <b>export HADOOP_COMMON_LIB_NATIVE_DIR=${HADOOP_HOME}/lib/native</b>
       </p>
       
       <h6 style="margin-bottom:1em;font-size:1em;margin-top:2.5em;color:rgb(209, 81, 9);">
@@ -416,8 +412,8 @@
         <br />
 
         <b>
-          export HADOOP_CONF_LIB_NATIVE_DIR=${HADOOP_PREFIX:-"/lib/native"} <br />
-          export HADOOP_OPTS="-Djava.library.path=$HADOOP_PREFIX/lib"
+          export HADOOP_CONF_LIB_NATIVE_DIR=${HADOOP_HOME:-"/lib/native"} <br />
+          export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib"
         </b>
       </p>
       
@@ -501,33 +497,80 @@
       <p>
         Run the following command:
         <br />
-        <br />
 
-        <b>/usr/local/hadoop/bin/hadoop namenode -format</b>
-        <br />
-        <br />
-
-        If that works, you’re 20% of the way there.
+        <b>$ /usr/local/hadoop/bin/hadoop namenode -format</b>
         <br />
         <br />
 
-        Then, run:
-        <br />
+        If that works, you’re 20% of the way there. Then, run:
         <br />
 
-        <b>/usr/local/hadoop/sbin/start-dfs.sh</b>
+        <b>$ /usr/local/hadoop/sbin/start-dfs.sh</b>
         <br />
         <br />
 
         If that seems to work without throwing up a bunch of errors:
         <br />
+
+        <b>$ /usr/local/hadoop/sbin/start-yarn.sh</b>
+        <br />
         <br />
 
-        <b>/usr/local/hadoop/sbin/start-yarn.sh</b>
-        <br />
-        <br />
+        If that’s worked, you can safely say you’ve got Hadoop running on your computer :) 
+	<br />
+	Get it on the LinkedIn as a strength as soon as possible ;)
+	<br />
+	<br />
+	List services by jps:
+<br />
+	<b>$ jps</b>
+	<br />
+	<br />
+	OR Start Hadoop Services<br />
+	<b>$ sbin/hadoop-daemon.sh start namenode </b><br />
+	<b>$ sbin/hadoop-daemon.sh start datanode </b><br />
+	<b>$ sbin/yarn-daemon.sh start resourcemanager </b><br />
+	<b>$ sbin/yarn-daemon.sh start nodemanager </b><br />
+	<b>$ sbin/mr-jobhistory-daemon.sh start historyserver </b><br />
+	<br />
+	<br />
+	Stop the processes<br />
+	<b>$ sbin/hadoop-daemon.sh stop namenode </b><br />
+	<b>$ sbin/hadoop-daemon.sh stop datanode </b><br />
+	<b>$ sbin/yarn-daemon.sh stop resourcemanager </b><br />
+	<b>$ sbin/yarn-daemon.sh stop nodemanager </b><br />
+	<b>$ sbin/mr-jobhistory-daemon.sh stop historyserver </b><br />
+	<br />
+	<br />
+	If everything is sucessful, you should see following services running <br />
 
-        If that’s worked, you can safely say you’ve got Hadoop running on your computer :) Get it on the LinkedIn as a strength as soon as possible ;)
+	<b>2583 DataNode </b><br />
+	<b>2970 ResourceManager </b><br />
+	<b>3461 Jps </b><br />
+	<b>3177 NodeManager </b><br />
+	<b>2361 NameNode </b><br />
+	<b>2840 SecondaryNameNode </b><br />
+	<b>17626 JobHistoryServer </b><br />
+      </p>
+
+
+      
+      
+      <h4 style="margin-bottom:1em;font-size:1.5em;margin-top:2.5em;color:green;">Run Hadoop Example</h4>
+      <p>
+        <b>$ cd $HADOOP_INSTALL</b> <br />
+	<b>$ hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.2.0.jar pi 2 5</b>
+      </p>
+
+
+      
+      
+      <h4 style="margin-bottom:1em;font-size:1.5em;margin-top:2.5em;color:green;">Web interface</h4>
+      <p>
+        <b>Browse HDFS and check health using http://localhost:50070 in the browser: </b> <br />
+	<br />
+	<br />
+	<b>You can check the status of the applications running using http://localhost:8088 in the browser: </b>
       </p>
       
       
@@ -540,7 +583,7 @@
       
       
       
-      <h4 style="margin-bottom:1em;font-size:1.5em;margin-top:2.5em;color:green;">isable HDFS Permissions for Hadoop Development</h4>
+      <h4 style="margin-bottom:1em;font-size:1.5em;margin-top:2.5em;color:green;">Disable HDFS Permissions for Hadoop Development</h4>
       <p>
         If you’ve set up Hadoop for development you may be wondering why you can’t read or write files or create MapReduce jobs then you’re probably missing a tiny bit of configuration. 
         For most development systems in pseudo-distributed mode it’s easiest to disable permissions altogether. 

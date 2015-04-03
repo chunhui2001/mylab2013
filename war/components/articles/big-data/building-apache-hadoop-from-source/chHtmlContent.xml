@@ -7,9 +7,35 @@
       </p>
       <br />
       
-      <h1>
-       Refer <a target="_blank" href="http://wiki.apache.org/hadoop/HowToContribute#Hardware_Setup">How to Contribute to Hadoop Common</a>
-      </h1>
+
+      <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
+        Native libraries
+      </h4>
+	<div>
+
+		<b>Refer</b>
+		<a target="_blank" href="http://wiki.apache.org/hadoop/HowToContribute#Hardware_Setup">How to Contribute to Hadoop Common</a>
+		<br />
+		On Linux, you need the tools to create the native libraries: LZO headers,zlib headers, gcc, OpenSSL headers, cmake, protobuf dev tools, and libtool, and the GNU autotools (automake, autoconf, etc).
+		<br />
+		<br />
+		<b>For RHEL (and hence also CentOS):</b>
+		<br />
+		<pre>yum -y install  lzo-devel  zlib-devel  gcc libtool openssl-devel fuse-devel</pre>
+		<br />
+		<b>For Debian and Ubuntu:</b>
+		<br />
+		<pre>apt-get -y install maven build-essential libtool cmake zlib1g-dev pkg-config libssl-dev libfuse-dev</pre>
+	</div>
+
+
+      <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
+        Install Glibc
+      </h4>
+	<div>
+		<b>Refer</b>
+		<a target="_blank" href="/blog/articles/linux/how-to-install-glib-2-36-3-on-ubuntu-and-linux-mint.shtml">How To Install Glib 2.36.3 on Ubuntu and Linux Mintl</a>
+	</div>
       
       <h4 style="font-size:1.5em;margin-bottom:.6em;margin-top:1.5em;">
         Required Softwares
@@ -145,11 +171,16 @@
       <ul style="margin-left:.5em;">
         <li># yum install zlib</li>
         <li># yum install zlib-devel</li>
-        <li># https://code.google.com/p/protobuf/</li>
+        <li># https://github.com/google/protobuf</li>
         <li># tar xfj protobuf-2.5.0.tar.bz2</li>
+	<li>$ sudo pacman -S pkg-config xorg-server-devel libtool automake
+	<br />
+	$ libtoolize --force<br />
+	$ ./autogen.sh</li>
         <li># ./configure</li>
         <li># make</li>
         <li># make install</li>
+	<li>#protoc --version</li>
         <li># ldconfig</li>
       </ul>      
       
@@ -226,7 +257,7 @@
         <li>
           Create source and binary distributions with native code and documentation:
           <br />
-          <b style="color:rgb(116, 167, 61)"># mvn package -Pdist,native,docs,src -DskipTests -Dtar -U</b>
+          <b style="color:rgb(167, 61, 158)"># mvn package -Pdist,native,docs,src -DskipTests -Dtar -U -Dmaven.javadoc.skip=true</b>
         </li>
         <li>
           Create a local staging version of the website (in /tmp/hadoop-site)
