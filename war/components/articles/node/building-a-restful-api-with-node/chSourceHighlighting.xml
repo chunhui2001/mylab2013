@@ -1,0 +1,502 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+    <div>
+With an ever growing collection of beer, I am in dire need of a way to store and track my beer. What better way to do this than to create an application where I can add, remove, update, and view my beer collection. Like any motivated developer, I want my friends to be able to create their own lockers and control who has access to mine. 
+<br />
+<br />
+In this multipart series we’ll be creating a RESTful API using <a target="_blank" href="http://nodejs.org/">Node</a>, <a target="_blank" href="http://expressjs.com/">Express</a>, <a target="_blank" href="http://mongoosejs.com/">Mongoose</a> to interact with <a target="_blank" href="https://www.mongodb.org/">MongoDB</a>, <a target="_blank" href="http://passportjs.org/">Passport</a> for authentication, <a target="_blank" href="https://github.com/jaredhanson/oauth2orize">OAuth2orize</a> for OAuth support, and explore best practices and tools.
+<br />
+<br />
+When we are done, we should have an API that allows users to authenticate, perform CRUD operations, authorize other applications via OAuth to access the API, have a solid understanding of best practices and tooling, and most important of all, a place to store our beer!
+</div>
+]]>
+  </c:abstract>
+
+  <c:entry style="margin-top:0em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[&nbsp;]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Application structure" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      
+  <pre>beerlocker/
+  models/         // holds our models
+    beer.js
+    user.js
+  node_modules/   // npm packages (auto created by npm)
+  package.json    // defines our node app and dependencies
+  server.js       // main application logic</pre>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Define Node packages" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      
+  <pre>{
+  "name": "beerlocker",
+  "main": "server.js",
+  "dependencies": {
+    "express": "~4.1.1"
+  }
+}</pre>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Create the server" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>If you haven’t already created the server.js file, create it now in the root of your Node application.</div>
+  <pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Get the packages we need
+var express = require('express');
+
+// Create our Express application
+var app = express();
+
+// Use environment defined port or 3000
+var port = process.env.PORT || 3000;
+
+// Create our Express router
+var router = express.Router();
+
+// Initial dummy route for testing
+// http://localhost:3000/api
+router.get('/', function(req, res) {
+  res.json({ message: 'You are running dangerously low on beer!' });
+});
+
+// Register all our routes with /api
+app.use('/api', router);
+
+// Start the server
+app.listen(port);
+console.log('Insert beer on port ' + port);</pre>
+<br />
+<h4><b>Test it out</b></h4>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">node server.js</pre>
+<div>You should see the console output ‘Insert beer on port 3000’. Open your browser and browse to http://localhost:3000/api. You should get back the message you defined in your route.</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Nodemon" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>Now is a good time to seque into some tooling that will make things much easier when developing Node applications. Nodemon is a utility that will monitor for any changes in your source and automatically restart your server.
+  <br />
+  <br />
+You can install it using npm using the following command. I like to install it globally so I can use it for all projects, but you can remove the -g to install it locally instead.</div>
+  <pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">npm install -g nodemon</pre>
+  <div>Now instead of using node server.js to run your application, you can use <b>nodemon server.js</b>. It will watch for any changes in your application and automatically restart your server for you.</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Node Inspector" id="sourceContent1" style="margin-top:2em;background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div><a target="_blank" href="https://github.com/node-inspector/node-inspector">Node Inspector</a> is a debugger interface for Node.js applications that uses the Blink Developer Tools. The really cool thing is that it works almost exactly as the Chrome Developer Tools.
+<br />
+<br />
+Some of the things you can do with Node Inspector are:</div>
+<br />
+<ul style="list-style-type:disc;margin-left:1.5em;">
+  <li>Navigate in your source files</li>
+  <li>Set breakpoints (and specify trigger conditions)</li>
+  <li>Step over, step in, step out, resume (continue)</li>
+  <li>Inspect scopes, variables, object properties</li>
+  <li>Hover your mouse over an expression in your source to display its value in a tooltip</li>
+  <li>Edit variables and object properties</li>
+  <li>Continue to location</li>
+  <li>Break on exceptions</li>
+  <li>Disable/enable all breakpoints</li>
+</ul>
+<br />
+<div>Just like Nodemon, you can install it locally or globally. Use the following command to install it globablly:</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">npm install -g node-inspector</pre>
+<div>Once it is installed, you can run it using the following command. This will start the debugger and open your browser.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">node-debug server.js</pre>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Postman" id="sourceContent1" style="margin-top:2em;background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div><a target="_blank" href="http://www.getpostman.com/">Postman</a> is a powerful HTTP client to help test web services easily and efficiently. It lets you craft simple as well as complex HTTP requests quickly. It also saves requests for future use so that you never have to repeat your keystrokes ever again. Postman is designed to save you and your team tons of time.
+<br />
+<br />
+Here is the application when you first start it
+<br />
+<br />
+<img style="max-width:100%;" src="/images/node/building-restful-apis-with-node-postman.png" />
+<br />
+<br />
+Let’s go ahead and test our application using Postman. Make sure your application is still running.
+<br />
+<br />
+All we have to do is enter our URL in the input field where it says, “Enter request URL here”. Type in ‘http://localhost:3000/api’ and press Send.
+<br />
+<br />
+<img style="max-width:100%;" src="/images/node/building-restful-apis-with-node-postman2.png" />
+<br />
+<br />
+And Postman is now calling our API but we have a serious problem. We are dangerously low on beer. We will remedy that in the next part where we will add the ability to create, view, update, and remove beer from our locker.
+</div>   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  <c:entry style="margin-top:2em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>GET, PUT, POST, and DELETE</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      <div style="font-size:1.25em;">
+      In this part we will dive a bit deeper and learn how to implement CRUD operations on our beer locker. By the end of this article you will have learned how to connect to a MongoDB, used Mongoose for object modeling, and have implemented GET, PUT, POST, and DELETE endpoints.
+    </div>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Connecting to MongoDB" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>Update the code in server.js from our previous article to look like the following.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Load required packages
+var express = require('express');
+var mongoose = require('mongoose');
+
+// Connect to the beerlocker MongoDB
+mongoose.connect('mongodb://localhost:27017/beerlocker');</pre>
+    ]]>
+    </c:sourceContent>
+
+    
+    <c:sourceContent type="html" title="Create our first model - BEER" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>Add the following code to beer.js file.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Load required packages
+var mongoose = require('mongoose');
+
+// Define our beer schema
+var BeerSchema   = new mongoose.Schema({
+  name: String,
+  type: String,
+  quantity: Number
+});
+
+// Export the Mongoose model
+module.exports = mongoose.model('Beer', BeerSchema);</pre>
+<br />
+<div>The last step is to load this new beer model in our server.js file.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Load required packages
+var express = require('express');
+var mongoose = require('mongoose');
+var Beer = require('./models/beer');</pre>
+    ]]>
+    </c:sourceContent>
+
+    
+    <c:sourceContent type="html" 
+                     title="Get ready to accept data via POST or PUT" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>In order to accept data via POST or PUT, we need to add another package called body-parser.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">npm install body-parser --save</pre>
+<br />
+<div>Load the body-parser package in our code.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Load required packages
+var express = require('express');
+var mongoose = require('mongoose');
+var bodyParser = require('body-parser');
+var Beer = require('./models/beer');
+
+
+// Use the body-parser package in our application
+app.use(bodyParser.urlencoded({
+  extended: true
+}));</pre>
+    ]]>
+    </c:sourceContent>
+
+    
+    <c:sourceContent type="html" 
+                     title="Add some beer to our beer locker" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>Let’s add this code to our server.js file.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Create a new route with the prefix /beers
+var beersRoute = router.route('/beers');
+
+// Create endpoint /api/beers for POSTS
+beersRoute.post(function(req, res) {
+  // Create a new instance of the Beer model
+  var beer = new Beer();
+
+  // Set the beer properties that came from the POST data
+  beer.name = req.body.name;
+  beer.type = req.body.type;
+  beer.quantity = req.body.quantity;
+
+  // Save the beer and check for errors
+  beer.save(function(err) {
+    if (err)
+      res.send(err);
+
+    res.json({ message: 'Beer added to the locker!', data: beer });
+  });
+});</pre>
+<br />
+<div>What we are doing here is creating a new route with the prefix ‘/beers’ and then setting up what to do when we POST to that endpoint. In this case we create a new Beer model, set its properties to those passed in as data in the POST, and call save on the Beer model which is a Mongoose function that will save the model to the MongoDB database.
+<br />
+<br />
+Fire up Postman and test is out. Make sure to switch the data type to <b>x-www-form-urlencoded</b>. You will want to add 3 key value pairs for name, type, and quantity, choose POST as the method, and enter the URL <b>http://localhost:3000/api/beers</b>.
+<br />
+<br />
+<img style="max-width:100%;" src="/images/node/building-restful-apis-with-node-postman3.png" /></div>
+    ]]>
+    </c:sourceContent>
+
+    
+    <c:sourceContent type="html" 
+                     title="Party time, let’s get all the beer!" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>Getting all our beer is pretty simple. We implement it in a similar fashion as we did for POST. Add the following code to server.js.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Create endpoint /api/beers for POSTS
+beersRoute.post(function(req, res) {
+  ...
+});
+
+// -- New Code Below Here -- //
+
+// Create endpoint /api/beers for GET
+beersRoute.get(function(req, res) {
+  // Use the Beer model to find all beer
+  Beer.find(function(err, beers) {
+    if (err)
+      res.send(err);
+
+    res.json(beers);
+  });
+});</pre>
+<br />
+<div>What we are doing here is creating a new route to the prefix ‘/beers’ and then setting up what to do when we make a GET request to that endpoint. In this case we use the Mongoose Beer model to call find which will query the MongoDB database and return all our beer.
+<br />
+<br />
+Fire up Postman and test it out by making a GET request to http://localhost:3000/api/beers. If everything is working fine, you should get back all the beer you have added.</div>
+    ]]>
+    </c:sourceContent>
+
+    
+    <c:sourceContent type="html" 
+                     title="Pace yourself with a single beer" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>We really don’t want to drink all of our beer at once, so we need a way to get out a single beer.
+<br />
+<br />
+Time to update server.js again.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Create a new route with the /beers/:beer_id prefix
+var beerRoute = router.route('/beers/:beer_id');
+
+// Create endpoint /api/beers/:beer_id for GET
+beerRoute.get(function(req, res) {
+  // Use the Beer model to find a specific beer
+  Beer.findById(req.params.beer_id, function(err, beer) {
+    if (err)
+      res.send(err);
+
+    res.json(beer);
+  });
+});</pre>
+<br />
+<div>Because we are wanting to request a single beer, we needed to implement a new route. This new route contains the id of the beer we want /api/beers/:beer_id'. With this new route, we then setup what to do when it is called with a GET. We end up using the Mongoose Beer model function findById() and pass in the beer_id parameter to look up the requested beer.
+<br />
+<br />
+To test this out, make a request to your API and get out all of your beer. Pick out an id from one that you want to request individually. Finally using Postman you can make a request to http://localhost:3000/api/beers/:beer_id and replace :beer_id with your id.
+<br />
+<br />
+<img style="max-width:100%;" src="/images/node/building-restful-apis-with-node-postman4.png" /></div>
+    ]]>
+    </c:sourceContent>
+
+    
+    <c:sourceContent type="html" 
+                     title="Updating the quantity for beers we just drank" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>We are now pulling beers out of our locker. For each beer we remove, we need to update our quantity so we know how many we have left. This can be done by implementing support for the PUT method.
+<br />
+<br />
+You guessed it, let’s update the server.js file again.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Create endpoint /api/beers/:beer_id for PUT
+beerRoute.put(function(req, res) {
+  // Use the Beer model to find a specific beer
+  Beer.findById(req.params.beer_id, function(err, beer) {
+    if (err)
+      res.send(err);
+
+    // Update the existing beer quantity
+    beer.quantity = req.body.quantity;
+
+    // Save the beer and check for errors
+    beer.save(function(err) {
+      if (err)
+        res.send(err);
+
+      res.json(beer);
+    });
+  });
+});</pre>
+<br />
+<div>Just like we did for getting a single beer, we used the same route but implemented functionality to handle PUT requests. We lookup the beer the same way, update its quantity, and then save it back to MongoDB.
+  <br />
+  <br />
+  Using the same URL you used to GET a single beer, update Postman to use PUT, set data type to <b>x-www-form-urlencoded</b>, and add a key value pair quantity set to whatever number you want.
+  <br />
+  <br />
+  You should get back a response with the beer object’s quantity updated.
+<br />
+<br />
+<img style="max-width:100%;" src="/images/node/building-restful-apis-with-node-postman5.png" /></div>
+    ]]>
+    </c:sourceContent>
+
+    
+    <c:sourceContent type="html" 
+                     title="I just drank my last beer!" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>Sometimes, we drink the last beer. In this case, updating the quantity to 0 isn’t appropriate. What we need is the ability to delete the beer entirely.
+<br />
+<br />
+This can be accomplished by implementing functionality to support DELETE requests to our endpoint we used for GET and PUT.
+<br />
+<br />
+Update server.js.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Create endpoint /api/beers/:beer_id for DELETE
+beerRoute.delete(function(req, res) {
+  // Use the Beer model to find a specific beer and remove it
+  Beer.findByIdAndRemove(req.params.beer_id, function(err) {
+    if (err)
+      res.send(err);
+
+    res.json({ message: 'Beer removed from the locker!' });
+  });
+});</pre>
+<br />
+<div>Just like our PUT, DELETE uses the id passed in. We then use the Mongoose findByIdAndRemove function to find and delete our object. Update Postman to use DELETE instead of PUT and send the request.
+<br />
+<br />
+<img style="max-width:100%;" src="/images/node/building-restful-apis-with-node-postman6.png" />
+<br />
+<br />
+You should now be able to switch the method to GET and receive and error since the object with that id no longer exists.</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+  <c:entry style="margin-top:2em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Passport</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      <div style="font-size:1.25em;">
+      In this part we will dive into creating user accounts and authentication using Passport. By the end of this article you will have learned how to add user accounts, implement authentication, and control access to beer lockers.
+    </div>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="So what is Passport? " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<blockquote> “Passport is authentication middleware for Node.js. Extremely flexible and modular, Passport can be unobtrusively dropped in to any Express-based web application. A comprehensive set of strategies support authentication using a username and password, Facebook, Twitter, and more.”</blockquote>
+<br />
+<br />
+<div>Some of the great features provided by Passport are:</div>
+<ul style="margin-left:1.8em;list-style-type:disc;margin-top:.5em;">
+    <li>140+ authentication strategies</li>
+    <li>Single sign-on with OpenID and OAuth</li>
+    <li>Easily handle success and failure</li>
+    <li>Supports persistent sessions</li>
+    <li>Dynamic scope and permissions</li>
+    <li>Pick and choose required strategies</li>
+    <li>Implement custom strategies</li>
+    <li>Does not mount routes in application</li>
+    <li>Lightweight code base</li>
+</ul>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Authentication Strategies" 
+                     id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>As of writing this blog post, Passport has 140+ authenication strategies available for use in your application.
+<br />
+<br />
+What these strategies provide are nicely encapsulated npm packages that abstract out some of the complexities with intergrating OAuth or OpenID for API services like Twitter, Facebook, Google, etc.
+<br />
+<br />
+You can find the full list <a target="_blank" href="http://passportjs.org/guide/providers/">here</a>.
+<br />
+<br />
+For this tutorial we will be using the <a target="_blank" href="https://github.com/jaredhanson/passport-http">Basic strategy</a> to support Basic Authentication in the calls to our API endpoints.</div>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+</c:component>
