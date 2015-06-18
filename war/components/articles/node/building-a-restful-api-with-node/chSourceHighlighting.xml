@@ -492,7 +492,1099 @@ You can find the full list <a target="_blank" href="http://passportjs.org/guide/
 For this tutorial we will be using the <a target="_blank" href="https://github.com/jaredhanson/passport-http">Basic strategy</a> to support Basic Authentication in the calls to our API endpoints.</div>
   ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="Clean Up" 
+                     id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>We need to do a bit of code cleanup and restructuring before continuing otherwise our codebase will become very messy and hard to follow.
+<br />
+<br />
+Create a new folder in your application called controllers and add a new file beer.js to that folder with the following code:</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Load required packages
+var Beer = require('../models/beer');
 
+// Create endpoint /api/beers for POSTS
+exports.postBeers = function(req, res) {
+  // Create a new instance of the Beer model
+  var beer = new Beer();
+
+  // Set the beer properties that came from the POST data
+  beer.name = req.body.name;
+  beer.type = req.body.type;
+  beer.quantity = req.body.quantity;
+
+  // Save the beer and check for errors
+  beer.save(function(err) {
+    if (err)
+      res.send(err);
+
+    res.json({ message: 'Beer added to the locker!', data: beer });
+  });
+};
+
+// Create endpoint /api/beers for GET
+exports.getBeers = function(req, res) {
+  // Use the Beer model to find all beer
+  Beer.find(function(err, beers) {
+    if (err)
+      res.send(err);
+
+    res.json(beers);
+  });
+};
+
+// Create endpoint /api/beers/:beer_id for GET
+exports.getBeer = function(req, res) {
+  // Use the Beer model to find a specific beer
+  Beer.findById(req.params.beer_id, function(err, beer) {
+    if (err)
+      res.send(err);
+
+    res.json(beer);
+  });
+};
+
+// Create endpoint /api/beers/:beer_id for PUT
+exports.putBeer = function(req, res) {
+  // Use the Beer model to find a specific beer
+  Beer.findById(req.params.beer_id, function(err, beer) {
+    if (err)
+      res.send(err);
+
+    // Update the existing beer quantity
+    beer.quantity = req.body.quantity;
+
+    // Save the beer and check for errors
+    beer.save(function(err) {
+      if (err)
+        res.send(err);
+
+      res.json(beer);
+    });
+  });
+};
+
+// Create endpoint /api/beers/:beer_id for DELETE
+exports.deleteBeer = function(req, res) {
+  // Use the Beer model to find a specific beer and remove it
+  Beer.findByIdAndRemove(req.params.beer_id, function(err) {
+    if (err)
+      res.send(err);
+
+    res.json({ message: 'Beer removed from the locker!' });
+  });
+};</pre>
+<br />
+<div>Next, you will need to udpate server.js as follows:</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Load required packages
+var express = require('express');
+var mongoose = require('mongoose');
+var bodyParser = require('body-parser');
+var beerController = require('./controllers/beer');
+
+// Connect to the beerlocker MongoDB
+mongoose.connect('mongodb://localhost:27017/beerlocker');
+
+// Create our Express application
+var app = express();
+
+// Use the body-parser package in our application
+app.use(bodyParser.urlencoded({
+  extended: true
+}));
+
+// Create our Express router
+var router = express.Router();
+
+// Create endpoint handlers for /beers
+router.route('/beers')
+  .post(beerController.postBeers)
+  .get(beerController.getBeers);
+
+// Create endpoint handlers for /beers/:beer_id
+router.route('/beers/:beer_id')
+  .get(beerController.getBeer)
+  .put(beerController.putBeer)
+  .delete(beerController.deleteBeer);
+
+// Register all our routes with /api
+app.use('/api', router);
+
+// Start the server
+app.listen(3000);</pre>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="User Model" 
+                     id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>The first thing we will need is a model to store our user. This model will be created similarly to the Beer model we made before. Inside the models folder, create a file named user.js and add the following code to it.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Load required packages
+var mongoose = require('mongoose');
+var bcrypt = require('bcrypt-nodejs');
+
+// Define our user schema
+var UserSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    unique: true,
+    required: true
+  },
+  password: {
+    type: String,
+    required: true
+  }
+});
+
+// Execute before each user.save() call
+UserSchema.pre('save', function(callback) {
+  var user = this;
+
+  // Break out if the password hasn't changed
+  if (!user.isModified('password')) return callback();
+
+  // Password changed so we need to hash it
+  bcrypt.genSalt(5, function(err, salt) {
+    if (err) return callback(err);
+
+    bcrypt.hash(user.password, salt, null, function(err, hash) {
+      if (err) return callback(err);
+      user.password = hash;
+      callback();
+    });
+  });
+});
+
+// Export the Mongoose model
+module.exports = mongoose.model('User', UserSchema);</pre>
+<div>You will also need to install the bcrypt-nodejs package so we can properly hash out password as we should never store passwords in plain text.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">npm install bcrypt-nodejs --save</pre>
+<div>The UserSchema we just created has some similarities to our BeerSchema. You will notice that our fields have an object definding their properties such as type, unique, and required. This allows us to better control with is allowed and required in our models.
+<br />
+<br />
+We have also added a hook to be called before each call to save() on our User model. This will allow us to check to see if the password has changed. If it has changed, we can then hash it and stored the hash in the model and MongoDB.</div>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="User Controller" 
+                     id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>Now that we have a model to store our user in, we need to make another controller in order to add and view users. The view users implementation will be helpful for this tutorial, but is something you should consider not doing for applications you create. You don’t want to provide a list of all usernames nor do you want to expose the hashed passwords.
+<br />
+In the controllers directory, create a new filed called user.js. Add the following code to this file.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Load required packages
+var User = require('../models/user');
+
+// Create endpoint /api/users for POST
+exports.postUsers = function(req, res) {
+  var user = new User({
+    username: req.body.username,
+    password: req.body.password
+  });
+
+  user.save(function(err) {
+    if (err)
+      res.send(err);
+
+    res.json({ message: 'New beer drinker added to the locker room!' });
+  });
+};
+
+// Create endpoint /api/users for GET
+exports.getUsers = function(req, res) {
+  User.find(function(err, users) {
+    if (err)
+      res.send(err);
+
+    res.json(users);
+  });
+};</pre>
+<div>With our controller in place, we need to define our routes so that we can add and view users by making calls to our API. In the server.js file, update the code to require the new controller and include the new routes.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Load required packages
+...
+var userController = require('./controllers/user');
+
+...
+
+// Create endpoint handlers for /users
+router.route('/users')
+  .post(userController.postUsers)
+  .get(userController.getUsers);</pre>
+  <div>You should now be able to fire up your trusty Postman application and make POST and GET calls to http://localhost:3000/api/users. For the POST, be sure to include username and password in order to create a new user.
+</div>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:2em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Auth Controller</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">npm install passport --save
+npm install passport-http --save</pre>
+<div>This will install the standard passport package along with passport-http. Passport-http will provide our API HTTP Basic and Digest authentication strategies.
+<br />
+<br />
+Before we make our auth controller, we need to update our User model to add a function capable of verifying a password in order to authenticate calls to the API. Update your user.js model.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">...
+
+UserSchema.methods.verifyPassword = function(password, cb) {
+  bcrypt.compare(password, this.password, function(err, isMatch) {
+    if (err) return cb(err);
+    cb(null, isMatch);
+  });
+};
+
+// Export the Mongoose model
+module.exports = mongoose.model('User', UserSchema);</pre>
+<div>Now we can create our auth controller which will manage authentication for our API endpoints. In the controllers directory, add a file auth.js with the following contents.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Load required packages
+var passport = require('passport');
+var BasicStrategy = require('passport-http').BasicStrategy;
+var User = require('../models/user');
+
+passport.use(new BasicStrategy(
+  function(username, password, callback) {
+    User.findOne({ username: username }, function (err, user) {
+      if (err) { return callback(err); }
+
+      // No user found with that username
+      if (!user) { return callback(null, false); }
+
+      // Make sure the password is correct
+      user.verifyPassword(password, function(err, isMatch) {
+        if (err) { return callback(err); }
+
+        // Password did not match
+        if (!isMatch) { return callback(null, false); }
+
+        // Success
+        return callback(null, user);
+      });
+    });
+  }
+));
+
+exports.isAuthenticated = passport.authenticate('basic', { session : false });</pre>
+<div>What we are doing here is setting up passport to use the Basic authentication stategy provided by the passport-http package. For our BasicStrategy, we are defining a callback that will attempt to look up the user using the provided username and if found see if the password is correct. If all works well, it will call the callback method and provide the found user.
+<br />
+<br />
+The final piece of this is exporting the isAuthenticated function which tells passport to authenticate using our BasicStrategy. The option of session being set to false tells passport to not store session variables between calls to our API. This forces the user to submit the username and password on each call.
+<br />
+<br />
+The last piece is to update our server.js file to include the passport package, initialize it with our express app, and call the isAuthenticated function for each call to our API. Open up server.js and update it as follows.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Load required packages
+...
+var passport = require('passport');
+var authController = require('./controllers/auth');
+
+// Connect to the beerlocker MongoDB
+mongoose.connect('mongodb://localhost:27017/beerlocker');
+
+// Create our Express application
+var app = express();
+
+// Use the body-parser package in our application
+app.use(bodyParser.urlencoded({
+  extended: true
+}));
+
+// Use the passport package in our application
+app.use(passport.initialize());
+
+// Create our Express router
+var router = express.Router();
+
+// Create endpoint handlers for /beers
+router.route('/beers')
+  .post(authController.isAuthenticated, beerController.postBeers)
+  .get(authController.isAuthenticated, beerController.getBeers);
+
+// Create endpoint handlers for /beers/:beer_id
+router.route('/beers/:beer_id')
+  .get(authController.isAuthenticated, beerController.getBeer)
+  .put(authController.isAuthenticated, beerController.putBeer)
+  .delete(authController.isAuthenticated, beerController.deleteBeer);
+
+// Create endpoint handlers for /users
+router.route('/users')
+  .post(userController.postUsers)
+  .get(authController.isAuthenticated, userController.getUsers);
+
+...</pre>
+<div>What we have done here, is insert the isAuthenticated funtion in the callback chain for our endpoint handlers. If a call is made to any of these endpoints without a valid username and password, the request will be denied with a 401 HTTP response.
+<br />
+<br />
+If you haven’t already created a user, go ahead and create one now by posting to http://localhost:3000/api/users and remember your username and password.
+<br />
+<br />
+Now you can make a call to any of the endpoints we defined that call the isAuthenticated function to test that your authentication is working. If you are using Postman, you can use the Basic Auth tab towards the top to enter your username and password. Postman will then automatically create the Authorization header and value for you.
+<br />
+<br />
+Here is a screenshot of me adding some beer to the locker with valid credentials.
+<br />
+<br />
+<img style="max-width:100%;" src="/images/node/building-restful-apis-with-node-postman7.png" />
+<br />
+<br />
+Here is a screenshot of me trying to add beer with an invalid username.
+<br />
+<br />
+<img style="max-width:100%;" src="/images/node/building-restful-apis-with-node-postman8.png" />
+<br />
+<br />
+Here is a screenshot of me trying to add beer with an invalid password.
+<br />
+<br />
+<img style="max-width:100%;" src="/images/node/building-restful-apis-with-node-postman9.png" />
+
+</div>
+                      ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:2em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Hey, that is my beer!</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="font-size:1.1em;">
+        We now have the ability to require authentication for calls to our API. We still need a way to make sure when beer is added, removed, etc that it is done for the authenticated user.
+        </div>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>The first thing we need to do is add a field to our Beer model to store the id of the user that owns it. Update your Beer model in the beer.js file.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">
+// Load required packages
+var mongoose = require('mongoose');
+
+// Define our beer schema
+var BeerSchema   = new mongoose.Schema({
+  name: String,
+  type: String,
+  quantity: Number,
+  userId: String
+});
+
+// Export the Mongoose model
+module.exports = mongoose.model('Beer', BeerSchema);
+</pre>
+<div>Now that our model can store a user id, we need to update our Beer endpoint handlers to set the id when adding and query with the id when getting, updating, and deleting. Open up the beer.js file in the controllers directory and update it to the following code.</div>
+
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Load required packages
+var Beer = require('../models/beer');
+
+// Create endpoint /api/beers for POST
+exports.postBeers = function(req, res) {
+  // Create a new instance of the Beer model
+  var beer = new Beer();
+
+  // Set the beer properties that came from the POST data
+  beer.name = req.body.name;
+  beer.type = req.body.type;
+  beer.quantity = req.body.quantity;
+  beer.userId = req.user._id;
+
+  // Save the beer and check for errors
+  beer.save(function(err) {
+    if (err)
+      res.send(err);
+
+    res.json({ message: 'Beer added to the locker!', data: beer });
+  });
+};
+
+// Create endpoint /api/beers for GET
+exports.getBeers = function(req, res) {
+  // Use the Beer model to find all beer
+  Beer.find({ userId: req.user._id }, function(err, beers) {
+    if (err)
+      res.send(err);
+
+    res.json(beers);
+  });
+};
+
+// Create endpoint /api/beers/:beer_id for GET
+exports.getBeer = function(req, res) {
+  // Use the Beer model to find a specific beer
+  Beer.find({ userId: req.user._id, _id: req.params.beer_id }, function(err, beer) {
+    if (err)
+      res.send(err);
+
+    res.json(beer);
+  });
+};
+
+// Create endpoint /api/beers/:beer_id for PUT
+exports.putBeer = function(req, res) {
+  // Use the Beer model to find a specific beer
+  Beer.update({ userId: req.user._id, _id: req.params.beer_id }, { quantity: req.body.quantity }, function(err, num, raw) {
+    if (err)
+      res.send(err);
+
+    res.json({ message: num + ' updated' });
+  });
+};
+
+// Create endpoint /api/beers/:beer_id for DELETE
+exports.deleteBeer = function(req, res) {
+  // Use the Beer model to find a specific beer and remove it
+  Beer.remove({ userId: req.user._id, _id: req.params.beer_id }, function(err) {
+    if (err)
+      res.send(err);
+
+    res.json({ message: 'Beer removed from the locker!' });
+  });
+};</pre>
+<div>One of the great things about passport is that it will automatically set the authenticated user in the req.user object. This allows us to easily get ahold of the user id in order to set it when adding beer to our locker. You can see in the postBeers() function we are setting the userId to req.user._id.
+<br />
+<br />
+The other 4 endpoints have had their find(), update(), and remove() functions updated to pass in the userId in order to control which beer we can get, update and delete.</div>
+                      ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:2em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Wrap up</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[You can now add multiple users, have each user add, remove, update, and get their own beer without the fear of anyone else getting into their stash! Up next will dive into allowing others to access our locker via OAuth powered by <a target="_blank" href="https://github.com/jaredhanson/oauth2orize">OAuth2orize</a>.]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:2em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>OAuth2 Server</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="font-size:1.1em;">In this part we will dive into creating an OAuth2 server and allowing access to API endpoints for the authorized user or authorized applications. We will do this by integrating <a target="_blank" href="https://github.com/jaredhanson/oauth2orize">OAuth2orize</a> into our application.
+</div>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Security" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+I realized I wasn’t explicitly clear about what steps ones should take in regards to security. This article was meant more on how to get an OAuth2 server up and running. When implementing an OAuth2 server you MUST make sure to secure your application. This means running all OAuth2 endpoints over HTTPS and hashing the client secret, authorization code, and access token. All three of those values should be treated the same way you would a password for a user account. If you are unsure about how best to secure your applications, you should seek out the assistance of someone who does.
+      ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Application Client" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>The first thing we need to do is add a new model, controller, and endpoints to allow us to create new application clients. An application client is what would request access to a user account. Perhaps something like a service that wants to help manage your beer collection to notify you when you are running low.
+<br />
+<br />
+Create a new file called client.js in the models directory and add the following code to it.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Load required packages
+var mongoose = require('mongoose');
+
+// Define our client schema
+var ClientSchema = new mongoose.Schema({
+  name: { type: String, unique: true, required: true },
+  id: { type: String, required: true },
+  secret: { type: String, required: true },
+  userId: { type: String, required: true }
+});
+
+// Export the Mongoose model
+module.exports = mongoose.model('Client', ClientSchema);</pre>
+<div>There isn’t too much going on here that differs from what we already did in previous articles. We have a name to help identify the application client. The id and secret are used as part of the OAuth2 flow and should always be kept secret. In this post we aren’t adding any encryption, but it would be a good practice to hash the secret at the very least. Finally we have a userId field to identify which user owns this application client.
+<br />
+<br />
+You could also consider auto generating the client id and secret in order to enforce uniqueness, randomness, and strength.
+<br />
+<br />
+The next thing we will add is the controller to facilitate adding and viewing application clients. Create a new file called client.js in the controllers directory and add the following code to it.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Load required packages
+var Client = require('../models/client');
+
+// Create endpoint /api/client for POST
+exports.postClients = function(req, res) {
+  // Create a new instance of the Client model
+  var client = new Client();
+
+  // Set the client properties that came from the POST data
+  client.name = req.body.name;
+  client.id = req.body.id;
+  client.secret = req.body.secret;
+  client.userId = req.user._id;
+
+  // Save the client and check for errors
+  client.save(function(err) {
+    if (err)
+      res.send(err);
+
+    res.json({ message: 'Client added to the locker!', data: client });
+  });
+};
+
+// Create endpoint /api/clients for GET
+exports.getClients = function(req, res) {
+  // Use the Client model to find all clients
+  Client.find({ userId: req.user._id }, function(err, clients) {
+    if (err)
+      res.send(err);
+
+    res.json(clients);
+  });
+};</pre>
+<div>These two methods will allow us to create new application clients and get all existing ones for the authenticated user.
+<br />
+<br />
+Finally, in the server.js file we need to require the new controller and add some new routes for the two endpoints. The new route can be added just after the /users route.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">var clientController = require('./controllers/client');
+
+...
+
+// Create endpoint handlers for /clients
+router.route('/clients')
+  .post(authController.isAuthenticated, clientController.postClients)
+  .get(authController.isAuthenticated, clientController.getClients);</pre>
+  <div>Using Postman, let’s go ahead and create a new application client. If for some reason you forgot your password for your user, you should make a new one by posting to the /users endpoint with username and password.
+    <br />
+    <br />
+    <img src="/images/node/building-restful-apis-with-node-postman10.png" style="max-width:100%;" /></div>
+      ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Authenticate our application client" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>We already created the ability to authenticate a user in our previous article using the BasicStrategy. We need to do the same here so we can lock down our token exchange endpoint which we will implement later.
+<br />
+<br />
+Update the controllers/auth.js file to require the Client model, add a new BasicStrategy to passport, and setup an export that can be used to verify the client is authenticated.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">var Client = require('../models/client');
+
+...
+
+passport.use('client-basic', new BasicStrategy(
+  function(username, password, callback) {
+    Client.findOne({ id: username }, function (err, client) {
+      if (err) { return callback(err); }
+
+      // No client found with that id or bad password
+      if (!client || client.secret !== password) { return callback(null, false); }
+
+      // Success
+      return callback(null, client);
+    });
+  }
+));
+
+...
+
+exports.isClientAuthenticated = passport.authenticate('client-basic', { session : false });</pre>
+<div>The one thing to note here is that when we call passport.use() we are not just supplying a BasicStrategy object. Instead we are also giving it the name client-basic. Without this, we would not be able to have two BasicStragies running at the same time.
+<br />
+<br />
+The actual implementation for our new BasicStrategy is to lookup a client using the supplied client id and verify the password is correct.</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Authorization Codes" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>We need to create another model that will store our authorization codes. These are the codes generated in the first part of the OAuth2 flow. These codes are then used in later steps by getting exchanged for access tokens.
+<br />
+<br />
+Create a new file called code.js in the models directory and add the following code to it.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Load required packages
+var mongoose = require('mongoose');
+
+// Define our token schema
+var CodeSchema   = new mongoose.Schema({
+  value: { type: String, required: true },
+  redirectUri: { type: String, required: true },
+  userId: { type: String, required: true },
+  clientId: { type: String, required: true }
+});
+
+// Export the Mongoose model
+module.exports = mongoose.model('Code', CodeSchema);</pre>
+<div>It is a pretty simple model with the value field used to store our authorization code. redirectUri is there to store the redirect uri supplied in the initial authorization process so we can add a bit more security later on to make sure the token exchange is legitimate. The userId and clientId fields are used to know what user and application client own this code.
+<br />
+<br />
+It is also worth noting, that to be extra secure, you should consider hashing the authorization code.</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Access Tokens" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>Now we need to create the model that will store our access tokens. Access tokens are the final step in the OAuth2 process. With an access token, an application client is able to make a request on behalf of the user. We will implement the code a little later that creates and validates them.
+<br />
+<br />
+Create a new file called token.js in the models directory and add the following code to it.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Load required packages
+var mongoose = require('mongoose');
+
+// Define our token schema
+var TokenSchema   = new mongoose.Schema({
+  value: { type: String, required: true },
+  userId: { type: String, required: true },
+  clientId: { type: String, required: true }
+});
+
+// Export the Mongoose model
+module.exports = mongoose.model('Token', TokenSchema);</pre>
+<div>The value field will be of the most interest here. It is the actual token value used when accessing the API on behalf of the user. The userId and clientId fields are used to know what user and application client own this token.
+<br />
+<br />
+Just like we did for user passwords, you should implement a strong hashing scheme for the access token. Never store them as plain text as we are in this example.</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Authentication using access tokens" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>Earlier, we added a second BasicStrategy so we can authenticate requests from clients. Now we need to setup a BearerStategy which will allow us to authenticate requests made on behalf of users via an OAuth token. This is done via the Authorization: Bearer <access token> header.
+<br />
+<br />
+First we need to install another npm package that will provide us with the BearerStrategy for Passport.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">npm install passport-http-bearer --save</pre>
+<div>Update the controllers/auth.js file to require the passport-http-bearer package and Token model, add a new BearerStrategy to passport, and setup an export that can be used to verify the application client request is authenticated.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">var BearerStrategy = require('passport-http-bearer').Strategy
+var Token = require('../models/token');
+
+...
+
+passport.use(new BearerStrategy(
+  function(accessToken, callback) {
+    Token.findOne({value: accessToken }, function (err, token) {
+      if (err) { return callback(err); }
+
+      // No token found
+      if (!token) { return callback(null, false); }
+
+      User.findOne({ _id: token.userId }, function (err, user) {
+        if (err) { return callback(err); }
+
+        // No user found
+        if (!user) { return callback(null, false); }
+
+        // Simple example with no scope
+        callback(null, user, { scope: '*' });
+      });
+    });
+  }
+));
+
+...
+
+exports.isBearerAuthenticated = passport.authenticate('bearer', { session: false });</pre>
+<div>This new strategy will allow us to accept requests from application clients using OAuth tokens and for us to validate those requests.</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Simple UI for granting application client access" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>Up to this point in our series, we have not added any UI. We need to add a simple page with a form that will allow a user to grant or deny access to their account for any application client requesting access.
+<br />
+<br />
+There are a lot of template engines to pick from like jade, handlebars, ejs, and more.For this series, I went with ejs.
+<br />
+<br />
+First, we need to install the ejs npm package.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">npm install ejs --save</pre>
+<div>Next, we need to update our express application to tell it to use ejs as its view engine. Add the following require and app.set statements in server.js.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">var ejs = require('ejs');
+
+...
+
+// Create our Express application
+var app = express();
+
+// Set view engine to ejs
+app.set('view engine', 'ejs');</pre>
+<div>Finally, we need to create our view that will let the user grant or deny the application client access to their account.
+<br />
+<br />
+Create a new directory called views and add a file named dialog.ejs.
+<br />
+<br />
+Add the following code to the dialog.ejs file.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;Beer Locker&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;p&gt;Hi &lt;%= user.username %&gt;!&lt;/p&gt;
+    &lt;p&gt;&lt;b&gt;&lt;%= client.name %&gt;&lt;/b&gt; is requesting &lt;b&gt;full access&lt;/b&gt; to your account.&lt;/p&gt;
+    &lt;p&gt;Do you approve?&lt;/p&gt;
+
+    &lt;form action="/api/oauth2/authorize" method="post"&gt;
+      &lt;input name="transaction_id" type="hidden" value="&lt;%= transactionID %&gt;"&gt;
+      &lt;div&gt;
+      &lt;input type="submit" value="Allow" id="allow"&gt;
+      &lt;input type="submit" value="Deny" name="cancel" id="deny"&gt;
+      &lt;/div&gt;
+    &lt;/form&gt;
+
+  &lt;/body&gt;
+&lt;/html&gt;</pre>
+<div>We will come back to this page later as we do a full walkthrough of how everything works. For now, we have this in place and can move on to the next piece.</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Enable sessions for our express application" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>OAuth2orize requires session state for the express application in order to properly complete the authorization transaction. In order to do this, we need to install the express-session package.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">npm install express-session --save</pre>
+<div>Next we need to require the package and use it in our express application.
+<br />
+<br />
+Update server.js with the following code.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">var session = require('express-session');
+
+...
+
+// Set view engine to ejs
+app.set('view engine', 'ejs');
+
+// Use the body-parser package in our application
+app.use(bodyParser.urlencoded({
+  extended: true
+}));
+
+// Use express session support since OAuth2orize requires it
+app.use(session({
+  secret: 'Super Secret Session Key',
+  saveUninitialized: true,
+  resave: true
+}));</pre>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Create our OAuth2 controller" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>We are finally ready to create our OAuth2 controller that will facilitate the OAuth2 flow.
+<br />
+<br />
+First, install the oauth2orize package.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">npm install oauth2orize --save</pre>
+<div>Next, create a new file called oauth2.js in the controllers directory. We will add the code to this file in steps.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Load required packages
+var oauth2orize = require('oauth2orize')
+var User = require('../models/user');
+var Client = require('../models/client');
+var Token = require('../models/token');
+var Code = require('../models/code');
+
+// Create OAuth 2.0 server
+var server = oauth2orize.createServer();
+
+// Register serialialization function
+server.serializeClient(function(client, callback) {
+  return callback(null, client._id);
+});
+
+// Register deserialization function
+server.deserializeClient(function(id, callback) {
+  Client.findOne({ _id: id }, function (err, client) {
+    if (err) { return callback(err); }
+    return callback(null, client);
+  });
+});</pre>
+<div>When a client redirects a user to user authorization endpoint, an authorization transaction is initiated. To complete the transaction, the user must authenticate and approve the authorization request. Because this may involve multiple HTTP request/response exchanges, the transaction is stored in the session.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Register authorization code grant type
+server.grant(oauth2orize.grant.code(function(client, redirectUri, user, ares, callback) {
+  // Create a new authorization code
+  var code = new Code({
+    value: uid(16),
+    clientId: client._id,
+    redirectUri: redirectUri,
+    userId: user._id
+  });
+
+  // Save the auth code and check for errors
+  code.save(function(err) {
+    if (err) { return callback(err); }
+
+    callback(null, code.value);
+  });
+}));</pre>
+<div>OAuth 2.0 specifies a framework that allows users to grant client applications limited access to their protected resources. It does this through a process of the user granting access, and the client exchanging the grant for an access token.
+<br/>
+<br />
+We are registering here for an authorization code grant type. We create a new authorization code model for the user and application client. It is then stored in MongoDB so we can access it later when exchanging for an access token.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Exchange authorization codes for access tokens
+server.exchange(oauth2orize.exchange.code(function(client, code, redirectUri, callback) {
+  Code.findOne({ value: code }, function (err, authCode) {
+    if (err) { return callback(err); }
+    if (authCode === undefined) { return callback(null, false); }
+    if (client._id.toString() !== authCode.clientId) { return callback(null, false); }
+    if (redirectUri !== authCode.redirectUri) { return callback(null, false); }
+
+    // Delete auth code now that it has been used
+    authCode.remove(function (err) {
+      if(err) { return callback(err); }
+
+      // Create a new access token
+      var token = new Token({
+        value: uid(256),
+        clientId: authCode.clientId,
+        userId: authCode.userId
+      });
+
+      // Save the access token and check for errors
+      token.save(function (err) {
+        if (err) { return callback(err); }
+
+        callback(null, token);
+      });
+    });
+  });
+}));</pre>
+<div>What we are doing here is registering for the exchange of authorization codes for access tokens. We first look up to see if we have an authorization code for the one supplied. If we do we perform validation to make sure everything is as it should be. If all is well, we remove the existing authorization code so it cannot be used again and create a new access token. This token is tied to the application client and user. It is finally saved to MongoDB.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// User authorization endpoint
+exports.authorization = [
+  server.authorization(function(clientId, redirectUri, callback) {
+
+    Client.findOne({ id: clientId }, function (err, client) {
+      if (err) { return callback(err); }
+
+      return callback(null, client, redirectUri);
+    });
+  }),
+  function(req, res){
+    res.render('dialog', { transactionID: req.oauth2.transactionID, user: req.user, client: req.oauth2.client });
+  }
+]</pre>
+<div>This endpoint, initializes a new authorization transaction. It finds the client requesting access to the user’s account and then renders the dialog ejs view we created eariler.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// User decision endpoint
+exports.decision = [
+  server.decision()
+]</pre>
+<div>This endpoint is setup to handle when the user either grants or denies access to their account to the requesting application client. The server.decision() function handles the data submitted by the post and will call the server.grant() function we created earlier if the user granted access.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Application client token exchange endpoint
+exports.token = [
+  server.token(),
+  server.errorHandler()
+]</pre>
+<div>This endpoint is setup to handle the request made by the application client after they have been granted an authorization code by the user. The server.token() function will initiate a call to the server.exchange() function we created earlier.
+</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">// Utility functions to generate unique identifiers
+function uid (len) {
+  var buf = []
+    , chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    , charlen = chars.length;
+
+  for (var i = 0; i < len; ++i) {
+    buf.push(chars[getRandomInt(0, charlen - 1)]);
+  }
+
+  return buf.join('');
+};
+
+function getRandomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}</pre>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Add routes to OAuth2 endpoints" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>Now that we have the controller made for our OAuth2 endpoints, we need to update our express application to add the necessary routes to those endpoints.
+<br />
+<br />
+In server.js require the new oauth2 controller and add a few new routes.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">var oauth2Controller = require('./controllers/oauth2');
+
+...
+
+// Create endpoint handlers for oauth2 authorize
+router.route('/oauth2/authorize')
+  .get(authController.isAuthenticated, oauth2Controller.authorization)
+  .post(authController.isAuthenticated, oauth2Controller.decision);
+
+// Create endpoint handlers for oauth2 token
+router.route('/oauth2/token')
+  .post(authController.isClientAuthenticated, oauth2Controller.token);</pre>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Access token authorization on API endpoints" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>At this point we have everything in place for a fully functioal OAuth2 server. The last piece we need is to update our endpoints that require authorization. Currently, we are authorizing with the BasicStrategy which uses username/password. We need to update that to also allow it to use the BearerStrategy which will allow the use of the access token.
+<br />
+<br />
+Change the exports.isAuthenticated call in controllers/auth.js to use either basic or bearer strategies.</div>
+<pre style="margin:1em 0;padding:1em;background-color:rgb(239, 239, 239);">exports.isAuthenticated = passport.authenticate(['basic', 'bearer'], { session : false });</pre>
+<div>We are already using the isAuthenticated function on our endpoints so this change will allow authorization with usernamne/password and access tokens.</div>
+]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:2em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Let’s use our OAuth2 server!</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="font-size:1.1em;">In this part we will dive into creating an OAuth2 server and allowing access to API endpoints for the authorized user or authorized applications. We will do this by integrating <a target="_blank" href="https://github.com/jaredhanson/oauth2orize">OAuth2orize</a> into our application.
+</div>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>That was a lot of code! Still far less than it would have been had we not used OAuth2orize.
+<br />
+<br />
+Now it is time to actually try it out.
+<br />
+<br />
+Open up your favorite web browser and browse to: <b>http://localhost:3000/api/oauth2/authorize?client_id=this_is_my_id&response_type=code&redirect_uri=http://localhost:3000</b>. If you used a different client id, then change it in the query string. Also, if you are running on a different port, be sure to change that in both places. When prompted, enter your username and password.
+<br />
+<br />
+<img src="/images/node/building-restful-apis-with-node-postman11.png" style="max-width:100%;" />
+<br />
+<br />
+You can test it out by clicking Deny if you want and should see it not continue the OAuth2 flow. Go ahead and click Allow to continue to the next step.
+<br />
+<br />
+<img src="/images/node/building-restful-apis-with-node-postman12.png" style="max-width:100%;" />
+<br />
+<br />
+So why did we get a 404? This is part of the tutorial where we are hacking things together a bit. Normally with OAuth2 you would have an endpoint in the application requesting access to a user’s account. That is the query string redirect_uri that we supplied. So when a user grants access, that URI is requested and passed the authorization code. This then allows the requesting application to exchange that code for an access token.
+<br />
+<br />
+To continue this tutorial, we will fake an application server using Postman. Go ahead and copy the authorization code from the query string code. Mine in this example would be S7VlbvRQW1aIC5X5.
+<br />
+<br />
+In Postman, we will want to POST to http://localhost:3000/api/oauth2/token, set the Basic Auth username and password to the client id and client secret for your application client, add set post data values code, grant_type, and redirect_uri. Code needs to be set the code you copied from the browser request. Grant_type needs to be set to authorization_code because that is the type we are using. Redirect_uri needs to be set to the same redirect_uri you used in the authorization code request.
+<br />
+<br />
+<img src="/images/node/building-restful-apis-with-node-postman13.png" style="max-width:100%;" />
+<br />
+<br />
+See that value field in the response access_token object? That is our access token which we can now use to make API requests on behalf of the user!
+<br />
+<br />
+Let’s test our access token by making a request to our API endpoints.
+<br />
+<br />
+All you have to do is make GET, POST, PUT, or DELETE requests to the API endpoints we made in earlier tutorials. The only difference is you don’t have to supply a username or password. Instead, you will add an Authorization header with the value set to Bearer &lt;access token&gt;
+<br />
+<br />
+<img src="/images/node/building-restful-apis-with-node-postman14.png" style="max-width:100%;" />
+<br />
+<br />
+Get beer from the user’s locker 
+<br />
+<br />
+<img src="/images/node/building-restful-apis-with-node-postman15.png" style="max-width:100%;" />
+<br />
+<br />
+Feel free to play around a bit. You should be able to alter the access token and find you are unauthorized. Switch back to username and password to verify the user still has access.
+</div>]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:2em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Wrap up</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[You now have a fully functional OAuth2 server done with just a little bit of work. OAuth2orize is an amazing library that makes building our server very straightfoward.
+
+
+      <br />
+      <br />
+      <b>http://z43studio.com/2014/07/oauth2/</b>]]>
+    </c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
