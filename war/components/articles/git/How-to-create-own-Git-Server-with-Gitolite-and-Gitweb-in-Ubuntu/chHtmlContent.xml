@@ -566,6 +566,46 @@ Now from your system you can easily manage the user group ACL. But for this you 
       
       <br />
     
+      <h2 style="font-size:1.5em;font-weight:bold;font-family:sans-serif;">Gitolite One User - Many Keys - Different usernames: <br />Old way of dealing with this, at the bottom of this section is the current recommendation (easier)</h2>
+      <div>
+        <h3 style="font-weight:bold;">If you are asking how you accomplish the following:</h3>
+        <ul style="list-style-type:decimal;margin-left:1.5em;">
+          <li>David (home computer)</li>
+          <li>David (work computer)</li>
+          <li>David (laptop)</li>
+        </ul>
+        <br />
+        <p>With different ssh keys on each computer you would simply create the key (ie: keygen <b>"david@someemail.com"</b>) and then <b>copy the public key to your gitolite keydir directory (gitolite-admin/keydir)</b>. When you do that simply name the key <b>david@homecomputer.pub</b>, <b>david@workcomputer.pub</b>, and <b>david@laptop.pub</b>. 
+        <br />
+        <br />
+        Add the keys to the repository (<b>git add keydir/.</b>), 
+        <br />
+        commit (<b>git commit -m "added David's additional keys"</b>) and 
+        <br />
+        <b>git push</b> back to the server.</p>
+      </div>
+      
+      <br />
+      <div>Gitolite is smart enough to know that even though it is a different key the user name (before the @) is still david and will let that user log in and use the ACL for david</div>
+
+      <br />
+      <div>Keep in mind, in order for this to work, the email address in the SSH Keys needs to be the same for all of the user's keys. So using the example above, in the keys  david@homecomputer.pub, david@workcomputer.pub, and david@laptop.pub all should have the email address of david@foobar.com.</div>
+
+      <br />
+      <div>Above was the "old way" do to this and may cause a complication if you have named your keys in the "email address way" contrary to what I stated above gitolite DOES NOT inspect your key for the proper email address. Please ignore (I left the original comment in for clarity).</div>
+
+      <br />
+      <h2 style="font-weight:bold;">The current recommended way according to the documentation is:</h2>
+      <div>"The simplest and most understandable is to <b>put their keys in different subdirectories</b> [inside your /kedir], (alice.pub, home/alice.pub, laptop/alice.pub, etc)."</div>    
+
+      <br />
+      <h2 style="font-weight:bold;">Can Gitlab/Gitolite enforce correct username/email?</h2>
+      <a href="http://stackoverflow.com/questions/12066276/can-gitlab-gitolite-enforce-correct-username-email">
+http://stackoverflow.com/questions/12066276/can-gitlab-gitolite-enforce-correct-username-email</a>
+      
+      <br />
+      <br />
+    
       <h2 style="font-size:1.5em;font-weight:bold;font-family:sans-serif;">Add a new repository to Gitolite server</h2>
       <div>
         1. login to the Git-Admin's computer <br />
