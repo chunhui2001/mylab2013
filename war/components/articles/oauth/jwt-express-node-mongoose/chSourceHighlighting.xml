@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+  Authentication is part of almost every system, even if it is in node.js, Express, Angular.JS, PHP, Perl, Ruby, or any other languages you are using. Dealing with authentication is a must for most of the systems.
+]]>
+  </c:abstract>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="How we used to do authentication" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      <div>As we know HTTP protocol is stateless, so it cannot remember anything between requests, as it forgets everything on the next request.
+<br />
+<br />
+Imagine if you need to login in on every request you make to the page, which is a real pain.</div>
+<br />
+<h3>How did we solve this</h3>
+<ul style="margin-left:1.5em;list-style-type:disc;">
+  <li>Sessions: We have to store our sessions on the server, and if we have multiple server then we need to synchronize the sessions between the servers, we can use redis to make it easier to share the sessions. But with no sessions we don’t have a problem.</li>
+  <li>Mobile: From my experience native mobile apps have problems working with cookies. If we need to query an API maybe session is not the best way to do it.</li>
+  <li>CSRF: If we use cookies for authentications, we will have to implement CSRF, for more details visit this <a href="http://en.wikipedia.org/wiki/Cross-site_request_forgery" target="_blank">link</a></li>
+  <li>CORS: Have you tried using cookies with CORS? For more details visit this <a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing" target="_blank">link</a></li>
+</ul>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>JSON Web Token</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      <div style="font-size:1.2em;">Good thing about JWT is that it doesn’t use sessions, meaning has no problems with CSRF, works excellent with CORS, Mobile</div>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="flow" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<ul style="margin-left:2.5em;list-style-type:decimal;">
+ <li>Client Login</li>
+<li>Client receives a token</li>
+<li>Client does request with the token</li>
+<li>
+  Token gets decoded on the server, and you get the information stored in the token
+  <ul style="list-style-type:circle;margin-left:1.5em;">
+    <li>In here you can verify if the user has access for this resource, this will simplify ACL</li>
+    <li>If the token is invalid return 401</li>
+  </ul> 
+</li>
+<li>With the data the server has it will decide if it will let the user get data or return a 401
+<ul style="list-style-type:circle;margin-left:1.5em;">
+    <li>I can query database and return the data that the user requested if he has privileges</li>
+    <li>I can update if the user has privileges</li>
+  </ul> </li>
+</ul>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+</c:component>
