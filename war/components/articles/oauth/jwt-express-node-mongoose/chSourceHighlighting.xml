@@ -46,7 +46,7 @@ Imagine if you need to login in on every request you make to the page, which is 
       <div style="font-size:1.2em;">Good thing about JWT is that it doesn’t use sessions, meaning has no problems with CSRF, works excellent with CORS, Mobile</div>
       ]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="html" title="flow" id="sourceContent1"
+    <c:sourceContent type="html" title="The flow is" id="sourceContent1"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
       <![CDATA[
@@ -67,6 +67,862 @@ Imagine if you need to login in on every request you make to the page, which is 
     <li>I can update if the user has privileges</li>
   </ul> </li>
 </ul>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="So one important thing is how and where do we store the token?" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<ul style="margin-left:2em;list-style-type:disc;">
+  <li>localStorage</li>
+  <li>sessionStorage</li>
+  <li>in the application that does the requests</li>
+</ul>
+<br />
+<div>
+Another thing you can also do is share your token with a different client and he can login with that token too.
+</div>
+<div style="margin-top:.5em;">
+To create a token we will need a secret key, as long as we don’t share that key, no one can
+</div>
+<div style="margin-top:.5em;">
+If you are interested in more details you can read the <a target="_blank" href="https://tools.ietf.org/html/draft-ietf-oauth-json-web-token-25">IETF JSON Web Token draft.</a>
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Implementation" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+Lets see how we would go about implementing this:
+</div>
+<div style="margin-top:.5em;">
+We can use express-generator, to generate a skeleton for the application, but in our case we wouldn’t need one as we are only gonna focus on creating an authentication mechanism, without a front-end
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Preparation" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+So let’s run the following commands to create the necessary structure for the project
+</div>
+<pre style="border:solid 1px rgb(195, 195, 195);padding:.8em;font-size:.7em;margin:1em 0;background-color:rgb(234, 234, 234);">mkdir express-jwt-auth
+mkdir express-jwt-auth/keys
+mkdir express-jwt-auth/routes
+mkdir express-jwt-auth/models
+mkdir express-jwt-auth/errors
+</pre>
+<div style="margin-top:.5em;">
+We need to prepare the package.json so we can install all the dependencies
+</div>
+<pre style="border:solid 1px rgb(195, 195, 195);padding:.8em;font-size:.7em;margin:1em 0;background-color:rgb(234, 234, 234);">{
+    "name": "express-jwt-auth",
+    "version": "0.0.1",
+    "private": true,
+    "main": "app.js",
+    "dependencies": {
+        "bcryptjs": "~2.0.2",
+        "body-parser": "~1.0.0",
+        "compression": "^1.0.11",
+        "cors": "^2.4.1",
+        "debug": "~0.7.4",
+        "express": "^4.2.0",
+        "express-jwt": "^0.3.1",
+        "express-unless": "*",
+        "hiredis": "^0.1.17",
+        "jsonwebtoken": "^0.4.1",
+        "lodash": "~2.4.1",
+        "mongoose": "~3.8.14",
+        "morgan": "~1.2.2",
+        "on-finished": "^2.1.0",
+        "redis": "^0.12.1",
+        "response-time": "~2.0.1"
+    }
+}
+</pre>
+<div>You can look up these packages to see what all of them do.
+<br /><br />
+You need to install all the package, so issue the following command</div>
+<pre style="border:solid 1px rgb(195, 195, 195);padding:.8em;font-size:.7em;margin:1em 0;background-color:rgb(234, 234, 234);">
+  npm install
+</pre>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Implementation" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+Lets see how we would go about implementing this:
+</div>
+<div style="margin-top:.5em;">
+We can use express-generator, to generate a skeleton for the application, but in our case we wouldn’t need one as we are only gonna focus on creating an authentication mechanism, without a front-end
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Errors" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+First lets create the error files in errors directory, if you are asking why we would use this, it’s simple, we can pass the errors onto the next handler, and we can process all the errors and handle them in one places instead of handling them in each route separately.
+
+</div>
+<h4 style="margin-top:1.5em;font-family:'Lora', serif;">errors/NotFoundError.js</h4>
+<pre style="border:solid 1px rgb(195, 195, 195);padding:.8em;font-size:.7em;margin:1em 0;background-color:rgb(234, 234, 234);">"use strict";
+function NotFoundError(code, error) {
+    Error.call(this, typeof error === "undefined" ? undefined : error.message);
+    Error.captureStackTrace(this, this.constructor);
+    this.name = "NotFoundError";
+    this.message = typeof error === "undefined" ? undefined : error.message;
+    this.code = typeof code === "undefined" ? "404" : code;
+    this.status = 404;
+    this.inner = error;
+}
+
+NotFoundError.prototype = Object.create(Error.prototype);
+NotFoundError.prototype.constructor = NotFoundError;
+
+module.exports = NotFoundError;
+</pre>
+<h4 style="margin-top:1.5em;font-family:'Lora', serif;">errors/UnauthorizedAccessError.js</h4>
+<pre style="border:solid 1px rgb(195, 195, 195);padding:.8em;font-size:.7em;margin:1em 0;background-color:rgb(234, 234, 234);">"use strict";
+function UnauthorizedAccessError(code, error) {
+    Error.call(this, error.message);
+    Error.captureStackTrace(this, this.constructor);
+    this.name = "UnauthorizedAccessError";
+    this.message = error.message;
+    this.code = code;
+    this.status = 401;
+    this.inner = error;
+}
+
+UnauthorizedAccessError.prototype = Object.create(Error.prototype);
+UnauthorizedAccessError.prototype.constructor = UnauthorizedAccessError;
+
+module.exports = UnauthorizedAccessError;
+</pre>
+<br />
+<div>We have created the errors, that we are gonna use in the application.</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Main App" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+Now we need to create the main file app.js in the root of the directory with the following contents
+</div>
+<h4 style="margin-top:1.5em;font-family:'Lora', serif;">app.js</h4>
+<pre style="border:solid 1px rgb(195, 195, 195);padding:.8em;font-size:.7em;margin:1em 0;background-color:rgb(234, 234, 234);">"use strict";
+
+var debug = require('debug')('app:' + process.pid),
+    path = require("path"),
+    fs = require("fs"),
+    http_port = process.env.HTTP_PORT || 3000,
+    https_port = process.env.HTTPS_PORT || 3443,
+    jwt = require("express-jwt"),
+    config = require("./config.json"),
+    mongoose_uri = process.env.MONGOOSE_URI || "localhost/express-jwt-auth",
+    onFinished = require('on-finished'),
+    NotFoundError = require(path.join(__dirname, "errors", "NotFoundError.js")),
+    utils = require(path.join(__dirname, "utils.js")),
+    unless = require('express-unless');
+
+debug("Starting application");
+
+debug("Loading Mongoose functionality");
+var mongoose = require('mongoose');
+mongoose.set('debug', true);
+mongoose.connect(mongoose_uri);
+mongoose.connection.on('error', function () {
+    debug('Mongoose connection error');
+});
+mongoose.connection.once('open', function callback() {
+    debug("Mongoose connected to the database");
+});
+
+debug("Initializing express");
+var express = require('express'), app = express();
+
+debug("Attaching plugins");
+app.use(require('morgan')("dev"));
+var bodyParser = require("body-parser");
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded());
+app.use(require('compression')());
+app.use(require('response-time')());
+
+app.use(function (req, res, next) {
+
+    onFinished(res, function (err) {
+        debug("[%s] finished request", req.connection.remoteAddress);
+    });
+
+    next();
+
+});
+
+var jwtCheck = jwt({
+    secret: config.secret
+});
+jwtCheck.unless = unless;
+
+app.use(jwtCheck.unless({path: '/api/login' }));
+app.use(utils.middleware().unless({path: '/api/login' }));
+
+app.use("/api", require(path.join(__dirname, "routes", "default.js"))());
+
+// all other requests redirect to 404
+app.all("*", function (req, res, next) {
+    next(new NotFoundError("404"));
+});
+
+// error handler for all the applications
+app.use(function (err, req, res, next) {
+
+    var errorType = typeof err,
+        code = 500,
+        msg = { message: "Internal Server Error" };
+
+    switch (err.name) {
+        case "UnauthorizedError":
+            code = err.status;
+            msg = undefined;
+            break;
+        case "BadRequestError":
+        case "UnauthorizedAccessError":
+        case "NotFoundError":
+            code = err.status;
+            msg = err.inner;
+            break;
+        default:
+            break;
+    }
+
+    return res.status(code).json(msg);
+
+});
+
+debug("Creating HTTP server on port: %s", http_port);
+require('http').createServer(app).listen(http_port, function () {
+    debug("HTTP Server listening on port: %s, in %s mode", http_port, app.get('env'));
+});
+
+debug("Creating HTTPS server on port: %s", https_port);
+require('https').createServer({
+    key: fs.readFileSync(path.join(__dirname, "keys", "server.key")),
+    cert: fs.readFileSync(path.join(__dirname, "keys", "server.crt")),
+    ca: fs.readFileSync(path.join(__dirname, "keys", "ca.crt")),
+    requestCert: true,
+    rejectUnauthorized: false
+}, app).listen(https_port, function () {
+    debug("HTTPS Server listening on port: %s, in %s mode", https_port, app.get('env'));
+});
+</pre>
+<div style="margin-top:1.5em;">
+  <h3>So let’s see what happens here:</h3>
+
+<ul style="margin-left:1.5em;list-style-type:disc;">
+  <li>We connect to Mongo database via Mongoose</li>
+  <li>We add various plugins to extend Express</li>
+  <li>We initialize JSON Web Token library and give it a secret key</li>
+  <li>We exclude JSON Web Token verification for /api/login</li>
+  <li>We hook the default route, for login, logout, verify routes</li>
+  <li>We create handler for 404 messages</li>
+  <li>We create handler for Error messages</li>
+  <li>We start HTTP and HTTPS version on the defined ports</li>
+</ul>
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Models" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+Now let’s create the models/user.js file, this will serve us as a way to store the users and the password, and then authenticate against it later on
+</div>
+<h4 style="margin-top:1.5em;font-family:'Lora', serif;">models/user.js</h4>
+<pre style="border:solid 1px rgb(195, 195, 195);padding:.8em;font-size:.7em;margin:1em 0;background-color:rgb(234, 234, 234);">
+"use strict";
+
+var mongoose = require('mongoose'),
+    bcrypt = require("bcryptjs"),
+    Schema = mongoose.Schema;
+
+var UserSchema = new Schema({
+
+    username: {
+        type: String,
+        unique: true,
+        required: true
+    },
+
+    password: {
+        type: String,
+        required: true
+    }
+
+}, {
+    toObject: {
+        virtuals: true
+    }, toJSON: {
+        virtuals: true
+    }
+});
+
+UserSchema.pre('save', function (next) {
+    var user = this;
+    if (this.isModified('password') || this.isNew) {
+        bcrypt.genSalt(10, function (err, salt) {
+            if (err) {
+                return next(err);
+            }
+            bcrypt.hash(user.password, salt, function (err, hash) {
+                if (err) {
+                    return next(err);
+                }
+                user.password = hash;
+                next();
+            });
+        });
+    } else {
+        return next();
+    }
+});
+
+UserSchema.methods.comparePassword = function (passw, cb) {
+    bcrypt.compare(passw, this.password, function (err, isMatch) {
+        if (err) {
+            return cb(err);
+        }
+        cb(null, isMatch);
+    });
+};
+
+module.exports = mongoose.model('User', UserSchema);
+</pre>
+<div style="margin-top:1.5em;">As you can see, before saving the model into database, the password is hashed and we cannot retrieve it.</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Routes" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+Now lets define the routes, we will use this for logging in or logging out of the system, also to verify if we are logged in or not
+<br />
+<br />
+First lets create the necessary utilities to be able to log in and log out
+</div>
+<h4 style="margin-top:1.5em;font-family:'Lora', serif;">utils.js</h4>
+<pre style="border:solid 1px rgb(195, 195, 195);padding:.8em;font-size:.7em;margin:1em 0;background-color:rgb(234, 234, 234);">
+"use strict";
+
+var debug = require('debug')('app:utils:' + process.pid),
+    path = require('path'),
+    util = require('util'),
+    redis = require("redis"),
+    client = redis.createClient(),
+    _ = require("lodash"),
+    config = require("./config.json"),
+    jsonwebtoken = require("jsonwebtoken"),
+    TOKEN_EXPIRATION = 60,
+    TOKEN_EXPIRATION_SEC = TOKEN_EXPIRATION * 60,
+    UnauthorizedAccessError = require(path.join(__dirname, 'errors', 'UnauthorizedAccessError.js'));
+
+client.on('error', function (err) {
+    debug(err);
+});
+
+client.on('connect', function () {
+    debug("Redis successfully connected");
+});
+
+module.exports.fetch = function (headers) {
+    if (headers && headers.authorization) {
+        var authorization = headers.authorization;
+        var part = authorization.split(' ');
+        if (part.length === 2) {
+            var token = part[1];
+            return part[1];
+        } else {
+            return null;
+        }
+    } else {
+        return null;
+    }
+};
+
+module.exports.create = function (user, req, res, next) {
+
+    debug("Create token");
+
+    if (_.isEmpty(user)) {
+        return next(new Error('User data cannot be empty.'));
+    }
+
+    var data = {
+        _id: user._id,
+        username: user.username,
+        access: user.access,
+        name: user.name,
+        email: user.email,
+        token: jsonwebtoken.sign({ _id: user._id }, config.secret, {
+            expiresInMinutes: TOKEN_EXPIRATION
+        })
+    };
+
+    var decoded = jsonwebtoken.decode(data.token);
+
+    data.token_exp = decoded.exp;
+    data.token_iat = decoded.iat;
+
+    debug("Token generated for user: %s, token: %s", data.username, data.token);
+
+    client.set(data.token, JSON.stringify(data), function (err, reply) {
+        if (err) {
+            return next(new Error(err));
+        }
+
+        if (reply) {
+            client.expire(data.token, TOKEN_EXPIRATION_SEC, function (err, reply) {
+                if (err) {
+                    return next(new Error("Can not set the expire value for the token key"));
+                }
+                if (reply) {
+                    req.user = data;
+                    next(); // we have succeeded
+                } else {
+                    return next(new Error('Expiration not set on redis'));
+                }
+            });
+        }
+        else {
+            return next(new Error('Token not set in redis'));
+        }
+    });
+
+    return data;
+
+};
+
+module.exports.retrieve = function (id, done) {
+
+    debug("Calling retrieve for token: %s", id);
+
+    if (_.isNull(id)) {
+        return done(new Error("token_invalid"), {
+            "message": "Invalid token"
+        });
+    }
+
+    client.get(id, function (err, reply) {
+        if (err) {
+            return done(err, {
+                "message": err
+            });
+        }
+
+        if (_.isNull(reply)) {
+            return done(new Error("token_invalid"), {
+                "message": "Token doesn't exists, are you sure it hasn't expired or been revoked?"
+            });
+        } else {
+            var data = JSON.parse(reply);
+            debug("User data fetched from redis store for user: %s", data.username);
+
+            if (_.isEqual(data.token, id)) {
+                return done(null, data);
+            } else {
+                return done(new Error("token_doesnt_exist"), {
+                    "message": "Token doesn't exists, login into the system so it can generate new token."
+                });
+            }
+
+        }
+
+    });
+
+};
+
+module.exports.verify = function (req, res, next) {
+
+    debug("Verifying token");
+
+    var token = exports.fetch(req.headers);
+
+    jsonwebtoken.verify(token, config.secret, function (err, decode) {
+
+        if (err) {
+            req.user = undefined;
+            return next(new UnauthorizedAccessError("invalid_token"));
+        }
+
+        exports.retrieve(token, function (err, data) {
+
+            if (err) {
+                req.user = undefined;
+                return next(new UnauthorizedAccessError("invalid_token", data));
+            }
+
+            req.user = data;
+            next();
+
+        });
+
+    });
+};
+
+module.exports.expire = function (headers) {
+
+    var token = exports.fetch(headers);
+
+    debug("Expiring token: %s", token);
+
+    if (token !== null) {
+        client.expire(token, 0);
+    }
+
+    return token !== null;
+
+};
+
+module.exports.middleware = function () {
+
+    var func = function (req, res, next) {
+
+        var token = exports.fetch(req.headers);
+
+        exports.retrieve(token, function (err, data) {
+
+            if (err) {
+                req.user = undefined;
+                return next(new UnauthorizedAccessError("invalid_token", data));
+            } else {
+                req.user = _.merge(req.user, data);
+                next();
+            }
+
+        });
+    };
+
+    func.unless = require("express-unless");
+
+    return func;
+
+};
+
+module.exports.TOKEN_EXPIRATION = TOKEN_EXPIRATION;
+module.exports.TOKEN_EXPIRATION_SEC = TOKEN_EXPIRATION_SEC;
+
+debug("Loaded");
+</pre>
+<div style="margin-top:1.5em;">What does this file do, it is responsible for loading, saving the token into redis, and when verifying the token to make sure it is present in redis too. By storing the token in redis, we get and extra option, like invalidating tokens, if we just remove it from redis, even if the token is valid but not present, the API will return a 401 error.</div>
+
+
+<h4 style="margin-top:1.5em;font-family:'Lora', serif;">routes/default.js</h4>
+<pre style="border:solid 1px rgb(195, 195, 195);padding:.8em;font-size:.7em;margin:1em 0;background-color:rgb(234, 234, 234);">
+"use strict";
+
+var debug = require('debug')('app:routes:default' + process.pid),
+    _ = require("lodash"),
+    util = require('util'),
+    path = require('path'),
+    bcrypt = require('bcryptjs'),
+    utils = require("../utils.js"),
+    Router = require("express").Router,
+    UnauthorizedAccessError = require(path.join(__dirname, "..", "errors", "UnauthorizedAccessError.js")),
+    User = require(path.join(__dirname, "..", "models", "user.js")),
+    jwt = require("express-jwt");
+
+var authenticate = function (req, res, next) {
+
+    debug("Processing authenticate middleware");
+
+    var username = req.body.username,
+        password = req.body.password;
+
+    if (_.isEmpty(username) || _.isEmpty(password)) {
+        return next(new UnauthorizedAccessError("401", {
+            message: 'Invalid username or password'
+        }));
+    }
+
+    process.nextTick(function () {
+
+        User.findOne({
+            username: username
+        }, function (err, user) {
+
+            if (err || !user) {
+                return next(new UnauthorizedAccessError("401", {
+                    message: 'Invalid username or password'
+                }));
+            }
+
+            user.comparePassword(password, function (err, isMatch) {
+                if (isMatch && !err) {
+                    debug("User authenticated, generating token");
+                    utils.create(user, req, res, next);
+                } else {
+                    return next(new UnauthorizedAccessError("401", {
+                        message: 'Invalid username or password'
+                    }));
+                }
+            });
+        });
+
+    });
+
+
+};
+
+module.exports = function () {
+
+    var router = new Router();
+
+    router.route("/verify").get(function (req, res, next) {
+        return res.status(200).json(undefined);
+    });
+
+    router.route("/logout").get(function (req, res, next) {
+        if (utils.expire(req.headers)) {
+            delete req.user;
+            return res.status(200).json({
+                "message": "User has been successfully logged out"
+            });
+        } else {
+            return next(new UnauthorizedAccessError("401"));
+        }
+    });
+
+    router.route("/login").post(authenticate, function (req, res, next) {
+        return res.status(200).json(req.user);
+    });
+
+    router.unless = require("express-unless");
+
+    return router;
+};
+
+debug("Loaded");
+</pre>
+
+
+<h4 style="margin-top:1.5em;font-family:'Lora', serif;">/api/login</h4>
+<h5>Now let’s try to login to the system, we can use curl to do this:</h5>
+<pre style="border:solid 1px rgb(195, 195, 195);padding:.8em;font-size:.7em;margin:1em 0;background-color:rgb(234, 234, 234);">
+# <b style="color:green;">curl -v -d "username=demo&password=demo"  http://127.0.0.1:3000/api/login</b>
+
+* Hostname was NOT found in DNS cache
+*   Trying 127.0.0.1...
+* Connected to 127.0.0.1 (127.0.0.1) port 3000 (#0)
+> POST /api/login HTTP/1.1
+> User-Agent: curl/7.37.1
+> Host: 127.0.0.1:3000
+> Accept: */*
+> Content-Length: 27
+> Content-Type: application/x-www-form-urlencoded
+> 
+* upload completely sent off: 27 out of 27 bytes
+< HTTP/1.1 200 OK
+< X-Powered-By: Express
+< Content-Type: application/json; charset=utf-8
+< Content-Length: 281
+< X-Response-Time: 362.181ms
+< Vary: Accept-Encoding
+< Date: Fri, 05 Sep 2014 06:07:50 GMT
+< Connection: keep-alive
+< 
+* Connection #0 to host 127.0.0.1 left intact
+{
+  "_id": "540951d773d8bf915726de69",
+  "username": "demo",
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfaWQiOiI1NDA5NTFkNzczZDhiZjkxNTcyNmRlNjkiLCJpYXQiOjE0MDk4OTcyNzAsImV4cCI6MTQwOTkwMDg3MH0.NmzXaVUWpAaZLnq4lpsy_HlV6GqW2leOkOqyrvYku-U",
+  "token_exp": 1409900870,
+  "token_iat": 1409897270
+}
+</pre>
+<div style="margin-top:1.5em">As you can see we got a token back now, and we can use this to query the API. What we are doing is we are storing the user id in the token so when we decode it we can use the id to query the database for details, as we are storing the token and the user data in redis, we can use this id to get all the information about the user from Redis instead of querying the data all the time.</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top:1em;">
+  <li>token is the actual token</li>
+  <li>token_exp until when is the token valid (unix timestamp)</li>
+  <li>token_iat is when the token was created (unix timestamp)</li>
+</ul>
+<h4 style="margin-top:1.5em;font-family:'Lora', serif;">/api/verify</h4>
+<h5>Now let’s see about verifying if we are logged in or not</h5>
+<pre style="border:solid 1px rgb(195, 195, 195);padding:.8em;font-size:.7em;margin:1em 0;background-color:rgb(234, 234, 234);">
+# <b style="color:green;">curl -v  http://127.0.0.1:3000/api/verify</b>
+* Hostname was NOT found in DNS cache
+*   Trying 127.0.0.1...
+* Connected to 127.0.0.1 (127.0.0.1) port 3000 (#0)
+> GET /api/verify HTTP/1.1
+> User-Agent: curl/7.37.1
+> Host: 127.0.0.1:3000
+> Accept: */*
+> 
+< HTTP/1.1 401 Unauthorized
+< X-Powered-By: Express
+< Content-Type: application/json
+< X-Response-Time: 2.777ms
+< Vary: Accept-Encoding
+< Date: Fri, 05 Sep 2014 06:10:37 GMT
+< Connection: keep-alive
+< Transfer-Encoding: chunked
+< 
+* Connection #0 to host 127.0.0.1 left intact
+</pre>
+<div>You can see we got 401 response, we didn’t supply the token, let’s add the token</div>
+<pre style="border:solid 1px rgb(195, 195, 195);padding:.8em;font-size:.7em;margin:1em 0;background-color:rgb(234, 234, 234);">
+# <b style="color:green;">curl -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfaWQiOiI1NDA5NTFkNzczZDhiZjkxNTcyNmRlNjkiLCJpYXQiOjE0MDk4OTcyNzAsImV4cCI6MTQwOTkwMDg3MH0.NmzXaVUWpAaZLnq4lpsy_HlV6GqW2leOkOqyrvYku-U" -v  http://127.0.0.1:3000/api/verify</b>
+* Hostname was NOT found in DNS cache
+*   Trying 127.0.0.1...
+* Connected to 127.0.0.1 (127.0.0.1) port 3000 (#0)
+> GET /api/verify HTTP/1.1
+> User-Agent: curl/7.37.1
+> Host: 127.0.0.1:3000
+> Accept: */*
+> Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfaWQiOiI1NDA5NTFkNzczZDhiZjkxNTcyNmRlNjkiLCJpYXQiOjE0MDk4OTcyNzAsImV4cCI6MTQwOTkwMDg3MH0.NmzXaVUWpAaZLnq4lpsy_HlV6GqW2leOkOqyrvYku-U
+> 
+< HTTP/1.1 200 OK
+< X-Powered-By: Express
+< Content-Type: application/json
+< X-Response-Time: 3.722ms
+< Vary: Accept-Encoding
+< Date: Fri, 05 Sep 2014 06:12:03 GMT
+< Connection: keep-alive
+< Transfer-Encoding: chunked
+< 
+* Connection #0 to host 127.0.0.1 left intact
+</pre>
+<div style="margin-top:1.5em;">Now we got 200, which means the token is valid</div>
+<h4 style="margin-top:1.5em;font-family:'Lora', serif;">/api/logout</h4>
+<h5>Same applies for logout, you cannot logout unless you are logged in, if you try to do it without the token you will get 401.</h5>
+<pre style="border:solid 1px rgb(195, 195, 195);padding:.8em;font-size:.7em;margin:1em 0;background-color:rgb(234, 234, 234);">
+<b style="color:green;">curl -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfaWQiOiI1NDA5NTFkNzczZDhiZjkxNTcyNmRlNjkiLCJpYXQiOjE0MDk4OTcyNzAsImV4cCI6MTQwOTkwMDg3MH0.NmzXaVUWpAaZLnq4lpsy_HlV6GqW2leOkOqyrvYku-U" -v  http://127.0.0.1:3000/api/logout</b>
+* Hostname was NOT found in DNS cache
+*   Trying 127.0.0.1...
+* Connected to 127.0.0.1 (127.0.0.1) port 3000 (#0)
+> GET /api/logout HTTP/1.1
+> User-Agent: curl/7.37.1
+> Host: 127.0.0.1:3000
+> Accept: */*
+> Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfaWQiOiI1NDA5NTFkNzczZDhiZjkxNTcyNmRlNjkiLCJpYXQiOjE0MDk4OTcyNzAsImV4cCI6MTQwOTkwMDg3MH0.NmzXaVUWpAaZLnq4lpsy_HlV6GqW2leOkOqyrvYku-U
+> 
+< HTTP/1.1 200 OK
+< X-Powered-By: Express
+< Content-Type: application/json; charset=utf-8
+< Content-Length: 51
+< ETag: W/"33-3789284850"
+< X-Response-Time: 4.644ms
+< Vary: Accept-Encoding
+< Date: Fri, 05 Sep 2014 06:14:20 GMT
+< Connection: keep-alive
+< 
+* Connection #0 to host 127.0.0.1 left intact
+{"message":"User has been successfully logged out"}
+</pre>
+
+<h4 style="margin-top:1.5em;font-family:'Lora', serif;">Creating a user (create_user.js)</h4>
+<pre style="border:solid 1px rgb(195, 195, 195);padding:.8em;font-size:.7em;margin:1em 0;background-color:rgb(234, 234, 234);">
+var path = require("path"),
+    config = require("./config.json"),
+    User = require(path.join(__dirname, "models", "user.js")),
+    mongoose_uri = process.env.MONGOOSE_URI || "localhost/express-jwt-auth";
+
+var args = process.argv.slice(2);
+
+var username = args[0];
+var password = args[1];
+
+if (args.length < 2) {
+    console.log("usage: node %s %s %s", path.basename(process.argv[1]), "user", "password");
+    process.exit();
+}
+
+console.log("Username: %s", username);
+console.log("Password: %s", password);
+
+console.log("Creating a new user in Mongo");
+
+
+var mongoose = require('mongoose');
+mongoose.set('debug', true);
+mongoose.connect(mongoose_uri);
+mongoose.connection.on('error', function () {
+    console.log('Mongoose connection error', arguments);
+});
+mongoose.connection.once('open', function callback() {
+    console.log("Mongoose connected to the database");
+
+    var user = new User();
+
+    user.username = username;
+    user.password = password;
+
+    user.save(function (err) {
+        if (err) {
+            console.log(err);
+        } else {
+            console.log(user);
+        }
+        process.exit();
+    });
+
+});
+</pre>
+
+<h4 style="margin-top:1.5em;font-family:'Lora', serif;">So to create a user just execute the following command</h4>
+<pre style="border:solid 1px rgb(195, 195, 195);padding:.8em;font-size:.7em;margin:1em 0;background-color:rgb(234, 234, 234);">
+# <b style="color:green;">node create_user.js demo demo</b>
+
+Username: demo
+Password: demo
+Creating a new user in Mongo
+Mongoose: users.ensureIndex({ username: 1 }) { safe: undefined, background: true, unique: true }  
+Mongoose connected to the database
+Mongoose: users.insert({ __v: 0, _id: ObjectId("540951d773d8bf915726de69"), username: 'demo', password: '$2a$10$7t4Uz6WUapkmvr.uN1PVkuHfc6JcuMuWiElfv6CFMi/GESe1qSAt2' }) {}  
+{ __v: 0,
+  password: '$2a$10$7t4Uz6WUapkmvr.uN1PVkuHfc6JcuMuWiElfv6CFMi/GESe1qSAt2',
+  username: 'demo',
+  _id: 540951d773d8bf915726de69,
+  id: '540951d773d8bf915726de69' }
+</pre>
+<div style="margin-top:1.5em;">This will create a user demo that you can use to log in</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="Conclusion" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+This approach will enable you a lot of flexibility with login/logout, and API architecture.
+<br />
+<br />
+Any modification to the token will invalidate it, also the only way to do modifications to the token is with a secret key, but this is not something we share with other people.
+<br />
+<br />
+Also this approach sets a expiry date, in our case 60 min, also that information is saved into the payload, so on the frontend, we can know when the token expires, and reissue a new token before expiry, or user has to re-login into the system to continue using it.
+<br />
+<br />
+Using JSON Web Token should be done over SSL preferably as you are sending the token on every request.
+<br />
+<br />
+If you want even more security you can change the secret key on every user login, or use a different secret key for every user.
     ]]>
     </c:sourceContent>
     <c:comment>
