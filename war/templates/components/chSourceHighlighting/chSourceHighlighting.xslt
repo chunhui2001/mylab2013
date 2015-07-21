@@ -84,7 +84,7 @@
 
 
 
-    <xsl:variable name="style" select="'overflow:hidden;border:none;background-color:rgb(249, 249, 249);'" />
+    <xsl:variable name="style" select="'overflow:hidden;border:none;'" />
 
     <xsl:if test="count($entry/c:sourceContent[normalize-space(text()) != '']) &gt; 0">
       <xsl:for-each select="$entry/c:sourceContent">

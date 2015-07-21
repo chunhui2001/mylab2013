@@ -189,4 +189,280 @@ mongod --install --auth --directoryperdb --dbpath "/opt/mongodb/data" --logpath 
   </c:entry>
 
   
+  
+<c:entry style="margin-top:2em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>搭建高可用mongodb集群</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        转自: <br />
+http://www.lanceyan.com/tech/mongodb/mongodb_cluster_1.html <br />
+http://www.lanceyan.com/tech/mongodb/mongodb_repset1.html 
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="mongodb单实例" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      
+<div>
+这种配置只适合简易开发时使用，生产使用不行，因为单节点挂掉整个数据业务全挂，如下图。
+<br />
+<br />
+<img style="max-width:100%" src="/images/mongodb/mongodb1.png" />
+<br />
+虽然不能生产使用，但这个模式可以快速搭建启动，并且能够用mongodb的命令操作数据库。下面列出在linux下安装单节点mongodb的步骤
+</div>
+
+<div style="margin-top:1.5em;">
+  <h4 style="font-style:italic;color:rgb(0, 135, 249);">1、建立mongodb测试文件夹</h4>
+  <pre style="margin:.8em 0;padding:1em;border:solid 1px rgb(226, 226, 226);background-color:rgb(244, 244, 244)">#存放整个mongodb文件
+mkdir -p /data/mongodbtest/single 
+
+#存放mongodb数据文件
+mkdir -p /data/mongodbtest/single/data
+
+#进入mongodb文件夹
+cd  /data/mongodbtest/single</pre>
+</div>
+
+<div style="margin-top:1.5em;">
+  <h4 style="font-style:italic;color:rgb(0, 135, 249);">2、下载mongodb的安装程序包</h4>
+  <pre style="margin:.8em 0;padding:1em;border:solid 1px rgb(226, 226, 226);background-color:rgb(244, 244, 244)">wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.4.6.tgz
+
+#解压下载的压缩包  
+tar xvzf mongodb-linux-x86_64-2.4.6.tgz
+
+#进入mongodb程序执行文件夹
+cd mongodb-linux-x86_64-2.4.6/bin/</pre>
+</div>
+
+<div style="margin-top:1.5em;">
+  <h4 style="font-style:italic;color:rgb(0, 135, 249);">3、启动单实例mongodb</h4>
+  <pre style="margin:.8em 0;padding:1em;border:solid 1px rgb(226, 226, 226);background-color:rgb(244, 244, 244)">mongod  --dbpath /data/mongodbtest/single/data</pre>
+<br />
+  <pre style="font-style:italic;color:rgb(221, 109, 109);font-size:.8em;">输出日志如下，成功！
+
+[initandlisten] db version v2.4.6
+……..
+[initandlisten] waiting for connections on port 27017
+[websvr] admin web console waiting for connections on port 28017
+
+mongodb默认自带提供了web访问接口，通过 IP + 端口的形式可以访问。
+
+http://192.168.0.1:28017/</pre>
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="主从模式" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+      
+<div>
+使用mysql数据库时大家广泛用到，采用双机备份后主节点挂掉了后从节点可以接替主机继续服务。所以这种模式比单节点的高可用性要好很多。
+<br />
+<br />
+<img style="max-width:100%" src="/images/mongodb/mongodb3.png" />
+</div>
+
+<div style="margin-top:1.5em;">
+  下面看一下怎么一步步搭建一个mongodb的主从复制节点: <br />
+<br />
+1、准备两台机器 192.168.0.1 和 192.168.0.2。 192.168.0.1 当作主节点， 192.168.0.2作为从节点。<br />
+2、分别下载mongodb安装程序包。在192.168.0.1上建立文件夹 /data/mongodbtest/master，192.168.0.2建立文件夹/data/mongodbtest/slave。<br />
+3、在192.168.0.1启动mongodb主节点程序。注意后面的这个 “ –master ”参数，标示主节点。<br />
+<b>mongod –dbpath /data/mongodbtest/master –master</b>
+<br />
+<br />
+</div>
+<pre style="font-style:italic;color:rgb(221, 109, 109);font-size:.8em;">输出日志如下，成功！
+
+[initandlisten] MongoDB starting : pid=18285 port=27017 dbpath=/data/mongodbtest/master master=1
+#日志显示主节点参数
+[initandlisten] options: { dbpath: “/data/mongodbtest/master”, master: true }
+……..
+[initandlisten] waiting for connections on port 27017</pre>
+
+
+<div style="margin-top:1.5em;">
+  4. 在 192.168.0.2 启动 mongodb 从节点程序。
+  <br />指定主节点 ip 地址和端口 –source 192.168.0.1:27017 和标示从节点 –source 参数。
+  <br />
+  <b>mongod –dbpath /data/mongodbtest/slave –slave –source 192.168.0.1:27017</b>
+<br />
+<br />
+</div>
+
+<pre style="font-style:italic;color:rgb(221, 109, 109);font-size:.8em;">输出日志如下，成功！
+
+[initandlisten] MongoDB starting : pid=17888 port=27017 dbpath=/data/mongodbtest/slave slave=1
+……..
+#日志显示从节点参数
+[initandlisten] options: { dbpath: “/data/mongodbtest/slave”, slave: true, source: “192.168.0.1:27017″ }
+……..
+[initandlisten] waiting for connections on port 27017
+#日志显示从节点 从主节点同步复制数据
+[replslave] repl: from host:192.168.0.1:27017</pre>
+
+
+<div style="margin-top:1.5em;">
+  5、测试主从复制。
+  <br />
+  在主节点上连接到终端：
+</div>
+<pre style="margin:.8em 0;padding:1em;border:solid 1px rgb(226, 226, 226);background-color:rgb(244, 244, 244)">mongo 127.0.0.1
+
+#建立test 数据库。
+use test;
+
+往testdb表插入数据。
+> db.testdb.insert({"test1":"testval1"})
+
+查询testdb数据看看是否成功。
+> db.testdb.find();
+{ "_id" : ObjectId("5284e5cb1f4eb215b2ecc463"), "test1" : "testval1" }</pre>
+
+
+<pre style="font-style:italic;color:rgb(221, 109, 109);font-size:.8em;">可以看到主机的同步日志
+
+[initandlisten] connection accepted from 192.168.0.2:37285 #3 (2 connections now open)
+[slaveTracking] update local.slaves query: { _id: ObjectId(’5284e6268ed115d6238bdb39′), config: { host: “192.168.0.2:35271″, upgradeNeeded: true }, ns: “local.oplog.$main” } update: { $set: { syncedTo: Timestamp 1384441570000|1 } } nscanned:1 nupdated:1 fastmod:1 keyUpdates:0 locks(micros) w:132015 132ms
+
+</pre>
+<div style="margin-top:1.5em;">
+ 检查从主机的数据。
+<br />
+mongo 127.0.0.1
+<br />
+查看当前数据库。
+</div>
+<pre style="margin:.8em 0;padding:1em;border:solid 1px rgb(226, 226, 226);background-color:rgb(244, 244, 244)">&gt; show dbs;
+  local   0.203125GB
+  test    0.203125GB
+
+use test;
+db.testdb.find();
+{ "_id" : ObjectId("5284e5cb1f4eb215b2ecc463"), "test1" : "testval1" }</pre>
+<div style="margin-top:1.5em;">
+ 查询后数据已经同步过来了。再看看日志，发现从主机确实从主机同步了数据。
+</div>
+<pre style="margin:.8em 0;padding:1em;border:solid 1px rgb(226, 226, 226);background-color:rgb(244, 244, 244)">Thu Nov 14 23:05:13 [replslave] repl:   checkpoint applied 15 operations
+Thu Nov 14 23:05:13 [replslave] repl:   syncedTo: Nov 14 23:08:10 5284e75a:1</pre>
+<div style="margin-top:1.5em;">
+ 查看服务状态
+</div>
+<pre style="margin:.8em 0;padding:1em;border:solid 1px rgb(226, 226, 226);background-color:rgb(244, 244, 244)">> db.printReplicationInfo();
+          this is a slave, printing slave replication info.
+          source:   192.168.0.1:27017
+              syncedTo: Sun Nov 17 2013 16:04:02 GMT+0800 (CST)
+                      = -54 secs ago (-0.01hrs)</pre>
+<div style="margin-top:1.5em;">
+ 到此主从结构的mongodb搭建好了。
+</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="故障转移测试" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<h4>现在两台服务器如果主服务器挂掉了，从服务器可以正常运转吗？</h4>
+<div style="margin-top:1.5em;">
+a、先测试下从服务器可以当成主服务器吗，也就是往从服务器里写能够同步主服务器吗？<br />
+在192.168.0.2上连接mongodb。
+</div>
+
+<pre style="margin:.8em 0;padding:1em;border:solid 1px rgb(226, 226, 226);background-color:rgb(244, 244, 244)">mongo 127.0.0.1:27017
+> db.testdb.insert({"test3":"testval3"});
+not master</pre>
+<div style="margin-top:1em;">
+可以看到 mongodb的从节点是不能提供写操作的，只能提供读操作。
+</div>
+
+
+<div style="margin-top:1.5em;">
+b、如果从服务器挂掉，主服务器还可以提供服务。如果主服务器挂掉了从服务器能否自动变为可写。
+测试一下！
+<br />
+先杀掉原来的 mongodb 主服务器。
+</div>
+
+<pre style="margin:.8em 0;padding:1em;border:solid 1px rgb(226, 226, 226);background-color:rgb(244, 244, 244)">kill -3 `ps -ef|grep mongod|grep -v grep|awk '{print $2}'`</pre>
+
+<div style="margin-top:1.5em;">
+测试从服务器能否可写。在 192.168.0.2 上连接 mongodb 测试。
+</div>
+
+<pre style="margin:.8em 0;padding:1em;border:solid 1px rgb(226, 226, 226);background-color:rgb(244, 244, 244)">> db.testdb.insert({"test3":"testval3"});
+not master</pre>
+
+<div style="margin-top:1.5em;">
+看起来从服务器没有自动接替主服务器的功能，只有手工处理了！
+<br />
+停止从服务器，在原数据文件启动并添加主服务器标示。
+</div>
+
+<pre style="margin:.8em 0;padding:1em;border:solid 1px rgb(226, 226, 226);background-color:rgb(244, 244, 244)">mongod  --dbpath /data/mongodbtest/slave --master</pre>
+
+<div style="margin-top:1.5em;">
+等到启动成功（时间有点长）。在 192.168.0.2 上连接
+</div>
+
+<pre style="margin:.8em 0;padding:1em;border:solid 1px rgb(226, 226, 226);background-color:rgb(244, 244, 244)">mongo 192.168.0.2:27017
+
+> db.testdb.find();
+{ "_id" : ObjectId("5288629e9b0318be4b20bd4c"), "test1" : "testval1" }
+{ "_id" : ObjectId("528862d69b0318be4b20bd4d"), "test2" : "testval2" }</pre>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="多个从节点" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div style="margin-top:1.5em;">
+现在只是一个数据库服务器又提供写又提供读，机器承载会出现瓶颈。大家还记得mysql里的读写分离吗？把20%的写放到主节点，80%的读放到从节点分摊了减少了服务器的负载。但是大部分应用都是读操作带来的压力，一个从节点压力负载不了，可以把一个从节点变成多个节点。那mongodb的一主多从可以支持吗？答案是肯定的。
+<br />
+<br />
+
+<img style="max-width:100%" src="/images/mongodb/mongodb4.png" />
+</div>
+
+<div style="margin-top:1.5em;">
+为了方便测试，在192.168.0.2上再建立一个文件夹 /data/mongodbtest/slave1 作为另一个slave服务器。
+启动slave2服务:
+</div>
+
+<pre style="margin:.8em 0;padding:1em;border:solid 1px rgb(226, 226, 226);background-color:rgb(244, 244, 244)">mongod  --dbpath /data/mongodbtest/slave1 --slave  --port 27017 --source 192.168.0.1:27017</pre>
+
+<div style="margin-top:1.5em;">
+成功启动后通过 mongodb 连接测试:
+</div>
+
+<pre style="margin:.8em 0;padding:1em;border:solid 1px rgb(226, 226, 226);background-color:rgb(244, 244, 244)">> db.testdb.find();
+{ "_id" : ObjectId("5288629e9b0318be4b20bd4c"), "test1" : "testval1" }
+{ "_id" : ObjectId("528862d69b0318be4b20bd4d"), "test2" : "testval2" }</pre>
+
+
+<div style="margin-top:1.5em;">
+搭建了这套主从复制系统是不是就很稳健了，其实不然。。。看看这几个问题？
+<br />
+<br />
+1. 主节点挂了能否自动切换连接？目前需要手工切换。<br />
+2. 主节点的写压力过大如何解决？<br />
+3. 从节点每个上面的数据都是对数据库全量拷贝，从节点压力会不会过大？<br />
+4. 就算对从节点路由实施路由访问策略能否做到自动扩展？
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
 </c:component>
