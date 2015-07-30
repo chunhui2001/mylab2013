@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract style="font-size:1em;line-height:1.6em;">
+    <![CDATA[<div style="margin-bottom:.8em;">Spring 框架于 2002 年年底发布，目的在于简化 J2EE（目前是 JavaEE）开发。在过去 8 年中，Spring 成功完成了该使命，提供了 Java 社区框架或功能，比如 Spring Security、Spring MVC、事务管理、Spring 批处理和 Spring 集成，这都易于理解和使用。Spring 希望让 Java 开发人员的工作更轻松、更富成效。为此，Spring 创建了一个名为 Spring Roo 的开发工具。
+        </div><div style="margin-bottom:.8em;">
+        Spring Roo 是针对 Java 技术的一个可扩展的、基于文本的开源 RAD 工具。它是用于创建和管理基于 Spring 的应用程序的一个强大资源。这里是任务说明：
+<b style="color:green;">Roo 的任务是从根本上可持续地改善 Java 开发人员的生产效率，而无损工程完整性和灵活性。</b>
+这一要求转换为构建于 Java 技术之上的一种工具，可持续地增加项目整个生命周期的生产效率，且不限定开发人员使用某一特定方法。Spring Roo 使用流行、可靠和成熟的库，比如 Spring 框架、Java 持久化 API、Java Server Pages (JSP)、Spring Security、Spring Web Flow、Log4J 和 Maven。Roo 生成的应用程序使用 Bean Validation (JSR-303) 和 Dependency Injection (JSR-330) 这样的标准，且遵循最佳实践 SpringSource 认证的应用程序架构。
+</div><div style="margin-bottom:.8em;">
+使用 Spring Roo，您可以添加和配置 JPA、Spring MVC、Spring Security 等功能，使用 Log4j 进行日志记录，测试 JUnit 和 Selenium、Solr、JMS、电子邮件等框架，仅需在 Roo shell 上输入命令即可。使用 Roo 添加这些功能节省的时间提高了开发人员的生产效率。Roo 不能编写业务逻辑，但可以管理应用程序的基础结构或配置。
+</div><div style="margin-bottom:.8em;">
+Roo 是一个开发时间工具，这意味着应用程序在运行时独立于 Roo。由于 Roo 在运行时不存在，它没有任何性能或内存开销。这确保您不依赖于 Spring Roo，您只需几个按键即可随时从您的项目中删除 Roo。
+</div><div style="margin-bottom:.8em;">
+本文讨论如何使用 Roo shell 构建简单的 web 应用程序，并展示如何在 Windows 或 Ubuntu 机器上编译 Spring Roo 源代码。
+</div>
+
+<a target="_blank" style="font-size:1.2em;" href="http://projects.spring.io/spring-roo/#pre-requisites">http://projects.spring.io/spring-roo/#pre-requisites</a>]]>
+  </c:abstract>
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h2 style="font-size:1.8em;">开始使用 Roo shell</h2>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[通过加载 Roo shell 并使用命令与之交互，您可以管理和配置应用程序。Roo Shell 是一个制表完成的、上下文感知的、提供提示的命令 shell。您可以使用 hint 命令询问 Spring Roo 您的下一步逻辑操作。Roo 足够智能，可通过判定应用程序上下文建议下一步行动。例如，比方说您使用 entity 命令创建了一个实体。然后输入 hint 命令。Roo 会告诉您应当使用 field 将字段添加到您的实体。该特性减少了 Roo 的概念权重，使其成为一个优秀的学习工具。您可以跟随 Roo help 和 hint 命令创建完全的应用程序，无需参考文档。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="先决条件" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      在开始使用 Roo 之前，确保您安装了：
+      <ul style="padding-left:1.5em;list-style:disc;">
+          <li> Java V6 JDK</li>
+          <li> Apache Maven V2.0.9 或更高</li>
+      </ul>
+    ]]>
+    </c:sourceContent>
+    
+
+    <c:sourceContent type="html" title="安装 Spring Roo" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      要安装独立的 Spring Roo：
+      <ul style="padding-left:1.5em;list-style:disc;">
+          <li>您可以下载 Roo 独立命令行 shell 或使用内置的 Roo SpringSource Tool Suite (STS) 插件。我建议两者都下载并一起使用，因为 STS 为基于 Spring 的应用程序通过 Eclipse 提供许多额外功能。</li>
+          <li>解压 Spring Roo 到选定位置。</li>
+          <li>设置环境变量：sudo ln -s ~/spring-roo-1.x.x/bin/roo.sh /usr/bin/roo</li>
+      </ul>
+
+    ]]>
+    </c:sourceContent>
+    
+
+    <c:sourceContent type="html" title="构建应用程序" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      为向您展示 Roo 的强大功能，让我们创建一个简单的企业会议应用程序。一个会议应用程序有两个实体：Speaker 和 Talk。一个 Speaker 可以提供一次或多次讲话，且 Talk 将仅由一个发言人提供。简单的类图如下图所示: 
+      <br />
+      <br />
+
+      <img src="https://www.ibm.com/developerworks/cn/opensource/os-springroo1/fig01.gif" style="max-width:100%;" />
+
+      <br />
+      <br />
+      创建应用程序：<br />
+      <ul style="padding-left:1.5em;list-style:disc;">
+          <li>打开操作系统命令行 shell: <b>$ mkdir conference && cd conference && roo </b></li>
+          <li>该命令将启动 Roo shell，如清单 1 所示。</li>
+          <li>
+            <pre style="line-height:1.1em;color:green;">
+    ____  ____  ____
+   / __ \/ __ \/ __ \
+  / /_/ / / / / / / /
+ / _, _/ /_/ / /_/ /
+/_/ |_|\____/\____/       1.1.B.RELEASE [rev 793f2b0]
+<br />
+Welcome to Spring Roo. For assistance press TAB or type "hint" then hit ENTER.
+roo>
+            </pre>
+          </li>
+      </ul>
+      既然我们在 Roo shell 内部，我们将使用 Roo 的 hint 命令来引导接下来的步骤。hint 建议使用 project 创建一个新的基于 Maven 的 Spring 项目, 如下:
+      <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+Welcome to Spring Roo. For assistance press TAB or type "hint" then hit ENTER.
+roo> hint
+Welcome to Roo! We hope you enjoy your stay!
+Before you can use many features of Roo, you need to start a new project.
+
+To do this, type ’project’ (without the quotes) and then hit TAB.
+
+Enter a --topLevelPackage like ’com.mycompany.projectname’ (no quotes).
+When you're finished completing your --topLevelPackage, press ENTER.
+Your new project will then be created in the current working directory.
+
+Note that Roo frequently allows the use of TAB, so press TAB regularly.
+Once your project is created, type ’hint’ and ENTER for the next suggestion.
+You're also welcome to visit http://forum.springframework.org`for Roo help.
+roo></pre>
+      <div>正如 hint 命令所建议的，我们将使用 project 命令创建一个项目。该命令有一个必要属性 topLevelPackage，用于指定根程序包的名称。除了必要属性之外，我们将使用两个可选属性：java（指定 Java 版本）和 projectName（指定项目名称）。输入以下内容：</div>
+      <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+project --topLevelPackage com.dw.roo.conference --java 6 --projectName conference</pre>
+
+      <div>该命令将创建一个 Maven V2 管理的基于 Spring 的项目，如以下输出所示：</div>
+      <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+Created C:\Users\xebia\demo\conference\pom.xml
+Created SRC_MAIN_JAVA
+Created SRC_MAIN_RESOURCES
+Created SRC_TEST_JAVA
+Created SRC_TEST_RESOURCES
+Created SRC_MAIN_WEBAPP
+Created SRC_MAIN_RESOURCES\META-INF\spring
+Created SRC_MAIN_RESOURCES\META-INF\spring\applicationContext.xml
+Created SRC_MAIN_RESOURCES\log4j.properties</pre>
+
+      <div>再次输入 hint 向 Roo 询问下一步行动。这次它建议建立持久化机制。在 shell 上输入 persistence setup 并按下 Tab 三次。您会获得 --provider 选项。按下 H 然后按下 Tab 完成 “HIBERNATE”。在提供者之后，按下 tab 选择数据库，您会看到有大量选项。因为我们使用 Hibernate 作为我们的提供者，我们不能选择非关系型数据库，比如 Google App Engine。现在，我打算使用 HYPERSONIC_IN_MEMORY 数据库</div>
+      <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+persistence setup --provider HIBERNATE --database HYPERSONIC_IN_MEMORY</pre>
+
+      <div>还有其他可选属性，比如用户名和密码，这次我们不需要这些。<br />
+现在我们已经建立了持久化机制，我们将再次使用 hint 命令。这次我们被告知要使用 entity 命令创建实体。Entity 用于创建实际域对象，且有一个必要属性 class，用于指定实体的名称。除了必需的 --class 属性，我们还将使用 --testAutomatically 属性，该属性为域对象创建集成测试。让我们创建两个实体：Speaker 和 Talk。</div>
+      <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+entity --class ~.domain.Speaker –testAutomatically  
+entity --class ~.domain.Talk --testAutomatically</pre>
+
+      <div>我使用了 ~ 作为项目顶级程序包的占位符。<br />
+Entity 将创建一个灵活的、特性丰富的 JPA 实体。所创建的实体将有 JPA @Entity，带有 ID、版本、EntityManager 和无参数的构造函数。所生成的实体将拥有 persist、merge、remove、flush、count、find 和 findById 等方法。如果看一下该命令的输出，您会注意到该命令除了创建 Java 文件（为 Speaker 和 Talk），还创建了以 *Roo_*.aj 结尾的 AspectJ 文件。这些 *Roo_*.aj 称为 Intertype Declaration (ITD)、Mixins 或 Introductions。Roo 将 ITD 作为一个代码生成的工件。ITDs 允许 Roo 在一个单独的编译单元中生成代码，但 ITDs 在编译时被合并成同一个编译类。AspectJ intertype 声明用于自动生成 ID 和版本字段，以及域类中持久化字段的 getters 和 setters。<br />
+再次使用 hint 提供建议，根据建议使用 field 命令将字段添加到实体。让我们给 Speaker 实体添加一些字段：</div>
+      <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+field string --fieldName firstname --class ~.domain.Speaker --notNull 
+field string --fieldName lastname --notNull 
+field string --fieldName email --unique --notNull 
+field string --fieldName organization 
+field date --fieldName birthdate --type java.util.Date --past --notNull 
+field number --type java.lang.Long --fieldName age --min 25 --max 60</pre>
+
+      <div>--class 选项允许我们指定向哪个类添加字段。<br />
+field 命令可用于指定特定于 JavaBean 验证的注释，含有 --max 和 --min 等选项。它还可用于指定特定于 JPA 的注释，含有 --fetch、--column 和 --unique 等选项。对于日期字段，您还可以指定日期应当是过去还是将来，正如上面使用的。使用 field，您无需记住这些注释。<br />
+现在让我们向 Talk 实体添加一些字段：</div>
+      <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+field string --fieldName title --class ~.domain.Talk --notNull 
+field string --fieldName description --notNull --sizeMax 4000</pre>
+
+      <div>目前为止，我们创建了实体并向其添加了字段，但是我们没有指定它们之间的关系。Speaker 与 Talk 之间的关系是 ONE_TO_MANY（例如，一个发言人可发表多次讲话）。这通过 field 完成，如下所示：</div>
+      <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+field set --fieldName talks --element ~.domain.Talk --class ~.domain.Speaker --cardinality ONE_TO_MANY  
+field reference --fieldName speaker --type ~.domain.Speaker --class ~.domain.Talk –notNull</pre>
+
+      <div>现在我们想为会议应用程序 <a target="_blank" href="https://en.wikipedia.org/wiki/Scaffold_(programming)">scaffold</a> 搭建一个 web 层，可通过 controller 命令完成。生成控制器和所有相关 web 工件最方便的方式是使用 controller all。</div>
+      <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+controller all --package ~.web</pre>
+
+      <div>第一次使用控制器命令还会添加额外的依赖项到您的项目中，比如 Spring MVC 和 Tiles。这可能需要一些时间来运行，因为它需要下载所有依赖项（如果它们不存在于您的 Maven 存储库中）。该命令还展示 Roo 的功能之一：只有在需要依赖项时才予以添加。<br />
+下一步，我们将使用 logging 命令建立 log4j。</div>
+      <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+logging setup --level INFO --package ALL_SPRING</pre>
+
+      <div>退出 Roo shell 之前应做的最后一件事是，当我们使用 entity 命令指定了 --testAutomatically 时，运行生成的集成测试。要从 shell 中运行测试，输入 perform tests。<br />
+Roo 将调用委托给 Maven 来运行测试，因此 perform tests 等同于 mvn test 命令。输入 q 或 quit 退出 shell。
+这些命令将创建一个功能齐全的会议应用程序。接下来我们将运行这个应用程序。<br />
+要运行该应用程序，输入 mvn tomcat:run，这将启动 jetty 服务器。
+打开 web 浏览器并转至 http://localhost:8080/conference/ 
+
+<br />
+<br />
+您可以单击 Create new Speaker 创建一个会议发言人。您还可以单击 List all Speakers 来查看、编辑和删除用户。以同样的方式，您可以创建一个 Talk，但是必须在创建 Speaker 之后。<br />
+这是一个简单的应用程序，但是它展示如何在数分钟内从头轻松创建一个新的基于 Spring 的 web 应用程序。在本系列的第 2 部分，我将向您展示如何使用不同的 Roo 功能和附加组件构建应用程序。<br />
+现在我们已经创建了一个简单的应用程序，我将向您展示如何在 Windows 和 Ubuntu 上编译 Spring Roo 源代码。</div>
+
+
+    ]]>
+
+    </c:sourceContent>
+
+
+
+
+    <c:sourceContent type="html" title="script 重新构建" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+
+      <div>script 会执行源文件中的所有命令，您会注意到 Roo 创建了一个名为 log.roo 的文件，它包含了 Roo shell 中执行的所有命令。我们将执行 log.roo 文件并重建应用程序。</div><br />
+      <ul style="padding-left:2.5em;list-style-type:decimal;">
+        <li>此文件包含在代码样例中。可以将其重命名为 conference.roo。</li>
+        <li>创建一个名为 conference 的目录并把 conference.roo 拷贝进去。</li>
+        <li>打开操作系统命令行 shell。</li>
+        <li>进入刚创建的 conference 目录。</li>
+        <li>执行 script --file conference.roo 命令。</li>
+      </ul><br />
+      <div>如果所需要的 JAR 在 Maven 存储库，script 将会在几秒钟之内重建应用程序。否则，将会花费更长的时间，因为它要下载所有 JAR。script 命令很有用，因为可以将它用作一个模板来创建 Spring 托管的项目。<br /><br />
+在进入下一步之前，将 Maven 项目导入 STS 中 。STS 预装捆绑在 <a target="_blank" href="http://m2eclipse.sonatype.org/">Maven Eclipse</a> 插件 中。您可以通过选择 <b>File > Import > Maven > Existing Maven Projects</b> 导入此项目。我们将在此后编写自定义代码导入 STS 项目。<br /><br />
+目前所创建的 web 应用程序已经可以运行，我们可以通过创建、读取、更新和删除 Speaker 和 Talk 实体来手工测试。但如果这些过程能自动化不是更好么？</div>
+    ]]>
+
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="自动化 web 测试" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+
+      <div>这里是 Spring Roo 的另一个属性：Selenium 测试支持。Selenium 是一组功能强大的工具，它支持基于 web 应用程序测试自动化的快速开发。要将 Selenium 测试支持添加到您的应用程序中，执行以下命令：</div>
+      <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+selenium test --controller ~.web.SpeakerController
+selenium test --controller ~.web.TalkController</pre>
+    ]]>
+
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h2 style="font-size:1.8em;">在 Ubuntu 上编译 Spring Roo 源代码的过程</h2>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      <ul style="padding-left:2.5em;list-style-type:decimal;">
+          <li>安装 Git，一个分布式源代码控制管理系统。要在 Ubuntu 系统上安装它，输入 sudo apt-get install git-core gitk。</li>
+          <li>输入 git clone git://git.springsource.org/roo/roo.git，使用 Git 签出 Spring Roo。您将在主目录中看到一个 roo 文件夹，其中包含所有 Roo 源代码。</li>
+          <li>GnuPG 支持数据和通信的加密和签名，且以一个多功能的密钥管理系统和各种公钥目录的访问模块为特色。Roo 使用 GPG 来自动签名编译输出。</li>
+          <li><span>执行命令 gpg --list-secret-keys</span><br />
+              <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">C:\dev\roo-sourcecode\roo>gpg --1ist-secret-keys
+C:/Users/xebia/AppData/Roaming/gnupg\secring.gpg
+sec 2048R/2F96093B 2010-07-03
+uid                shekhar (spring-roo) <shekhargu1ati84@gmai1.com>
+ssb 2048R/B77E5C63 2010-07-03
+C:\dev\roo-sourcecode\roo>_</pre>
+          </li>
+          <li>如果您看不到输出，首先必须创建一个密钥。使用 gpg –gen-key，它将引导您逐步创建密钥。然后使用 gpg –list-secret-keys 验证您新创建的密钥已生成。</li>
+          <li>接下来，您需要发布您的密钥到公钥服务器。注意 –list-secret-keys 中显示的 sec 密钥 ID。在我的例子中，密钥 ID 是 2F96093B。通过 gpg –keyserver hkp://pgp.mit.edu –send-keys 2F96093B 将您的公钥推送到一个密钥服务器（在结尾更改密钥 ID）。</li>
+          <li><span>一些 Roo 模块需要已经不以 OSGi 形式存在的 JAR。即，它们没有一个 OSGi 感知的清单。Roo 有一个称为 wrapping 的特殊项目，可将常态 JAR 转化为 OSGi JAR。您需要在试图使用 Roo 之前运行包装程序。没有包装程序，您将看到错误，说 Maven 无法找到 org.springframework.roo.wrapping.some_module。要创建 JAR 文件包，从根 Roo 签出位置输入：</span><br />
+            <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">cd wrapping
+mvn clean install 
+cd..</pre>
+          </li>
+          <li>接下来，运行 mvn clean install 命令。（Maven V2 应当安装在了您的系统上。如果没有，立即安装它。）每次编译源代码时，Maven 将提示您输入您的密钥的密码/口令（您输入了口令的同时创建 GPG 密钥）。输入口令并按下 Enter。编译源代码需要几分钟时间。</li>
+      </ul>
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h2 style="font-size:1.8em;">在 Windows 上编译 Roo 源代码的过程</h2>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      <ul style="padding-left:2.5em;list-style-type:decimal;">
+          <li><span>安装 Git，一个分布式源代码控制管理系统。要开始此过程，您需要在您的 windows 机器上安装 Git。我在我的 windows 机器上安装了 msysGit 。如果您已经安装了 Git，那么可以跳过这一步。在安装 msysGit 时，它会要求选择安装位置。它会打开一个命令提示符，并开始触发大量命令。这将持续大约 1 分钟。安装完成之后，您将看到如下所示的一个屏幕。</span><br />
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">{ test "$bindir/" = "$execdir/" || \
+               { rm -f "$execdir/git.exe" && \
+               test -z "" &amp;&amp; \
+               ln "$bindir/git.exe" "$execdir/git.exe" 2>/dev/null || \
+               cp "$bindir/git.exe" "$execdir/git.exe"; } ; } && \
+        { for p in git-add.exe git-annotate.exe git-apply.exe git-archive.exe 
+git-bisect--helper.exe git-blame.exe git-branch.exe git-bundle.exe git-cat-file.exe 
+git-check-attr.exe git-check-ref
+                rm -f "$execdirf$p" && \
+                ln "Sexecdir/git.exe" "Sexecdir/$p" 2>/dev/null ll \
+                ln -s "git.exe" "$execdir/$p" 2>/dev/null || \
+                cp "Sexecdir/git.exe" "$execdir/$p" Il exit; \
+         done; } && \
+        { test x"git-renote-https.exe git-renote-ftp.exe \
+git-renote-ftps.exe" = x ll \
+                { for p in git-remote-https.exe git-remote-ftp.exe \
+git-remote-ftps.exe; do \
+                rm -f "$execdir{$p" && \
+                ln "Sexecdir/git-remote-http.exe" "$execdir/$p" 2>/dev/null ll \
+                ln -s “git-renote—http.exe" "$execdir/$p" 2>/dev/null || \
+                cp "Sexecdir/git-remote-http.exe" "Sexecdir/$p" ll exit; \
+          done; } ; } && \
+        ./check_bindir "z$bindir" "z$execdir" "Sbindir/git—add.exe"
+
+-------------------------
+Hello, dear Git developer.
+
+This is a minimal MSYS environment to work on Git.
+
+You are in the git working tree, and all is ready for you to hack.
+
+Welcome to msysGit
+
+Run 'git help git' to display the help index.
+Run 'git help <command>' to display help for specific commands.
+Run '/share/msysGit/add-shortcut.tcl' to add a shortcut to msysGit.
+
+It appears that you installed msysGit using the full installer.
+To set up the Git repositories, please run /share/msysGit/initialize.sh</pre>
+          </li>
+          <li><span>设置 Git 环境变量。需要在您的 Windows 路径中设置 Git。将 <b>${MSYSGIT}\msysgit\bin</b> 和 <b>{MSYSGIT}\msysgit\mingw\bin</b> 添加到您的 Windows 路径中，其中 <b>${MSYSGIT}</b> 是安装 msysGit 的位置。打开一个新的命令提示符并输入 git。您将看到如下所示的输出。</span><br />
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">C:\>git
+usage: git [--version] [--exec-path[=GIT_EXEC_PATH]] [--html-path]
+           [-pl--paginate|I--no-pager] [--no-replace-objects]
+           [--bare] [--git-dir=GIT_DIR] [--work-tree=GIT_WORK_TREE]
+           [-c name=value
+           [--help] COMMAND [ARGS]
+The most commonly used git commands are:
+   add        Add file contents to the index
+   bisect     Find by binary search the change that introduced a bug
+   branch     List, create, or delete branches
+   checkout   Checkout a branch or paths to the working tree
+   clone      Clone a repository into a new directory
+   commit     Record changes to the repository
+   diff       Show changes between commits, commit and working tree, etc
+   fetch      Download objects and refs from another repository
+   grep       Print lines matching a pattern
+   init       Create an empty git repository or reinitialize an existing
+   log        Show commit logs
+   merge      Join two or more development histories together
+   mv         Move or rename a file, a directory, or a symlink
+   pull       Fetch from and merge with another repository or a local bra
+   push       Update remote refs along with associated objects
+   rebase     Forward-port local commits to the updated upstream head
+   reset      Reset current HEAD to the specified state
+   rm         Remove files from the working tree and from the index
+   show       Show various types of objects
+   status     Show the working tree status
+   tag        Create, list, delete or verify a tag object signed with GPG
+
+See ’git help COMMAND’ for more information on a specific command.
+C:\>_</pre>
+        </li>
+          <li>使用 Git 签出 Spring Roo。在这一步中，您将使用 Git 签出最新源代码，从而创建 Spring Roo 的本地克隆。打开一个命令提示符并转至您希望签出 Spring Roo 的位置。输入 <b>git clone git://git.springsource.org/roo/roo.git</b> 。一直等到它完成为止。这将在您签出 Spring Roo 的位置创建一个名为 roo 的新文件夹。</li>
+          <li><span>下载和安装 <b>GPG for Windows</b>。<b>GnuPG</b> 是 GNU 用于确保安全通信和数据存储的工具。它可用于加密数据和创建数字签名。Roo 使用 GPG 来自动签名编译输出。安装了 GPG 之后，使用 gpg –list-secret-keys。您应当会看到类似下面的输出:</span><br />
+              <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">C:\dev\roo-sourcecode\roo>gpg --1ist-secret-keys
+C:/Users/xebia/AppData/Roaming/gnupg\secring.gpg
+sec 2048R/2F96093B 2010-07-03
+uid                shekhar (spring-roo) <shekhargu1ati84@gmai1.com>
+ssb 2048R/B77E5C63 2010-07-03
+C:\dev\roo-sourcecode\roo>_</pre>
+          </li>
+          <li>如果没有看到输出，这表明您首先需要创建一个密钥。使用 <b>gpg –gen-key</b>。它会引导您逐步创建密钥。使用 <b>gpg –list-secret-keys</b> 验证您新创建的密钥已生成。</li>
+          <li>发布您的密钥到一个公钥服务器上。注意 –list-secret-keys 上显示的 sec 密钥 ID。在我的例子中，该 ID 是 2F96093B。通过 <b>gpg –keyserver hkp://pgp.mit.edu –send-keys 2F96093B</b> 将您的公钥推送到一个密钥服务器上（在结尾更改密钥 ID）。</li>
+          <li><span>首先构建包装程序项目。一些 Roo 模块需要已经不以 OSGi 形式存在的 JAR。即，它们没有一个 OSGi 感知的清单。Roo 有一个名为 wrapping 的特殊项目，可将常态 JAR 转化成 OSGi JAR。您需要在试图使用 Roo 之前运行包装程序。没有安装程序，您将看到错误，说 Maven 无法找到 org.springframework.roo.wrapping.some_module。要创建 JAR 文件包，从根 Roo 签出位置输入：</span><br />
+            <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">cd wrapping
+mvn clean install 
+cd..</pre>
+          </li>
+          <li>运行 mvn clean install 命令。（Maven V2 应当安装在了您的系统上。如果没有，立即安装它。）每次编译源代码时，Maven 将提示您输入您的密钥的密码/口令（您输入了口令的同时创建 GPG 密钥）。输入口令并按下 Enter。编译源代码需要几分钟时间。</li>
+          <li>在您的系统设置中建立环境变量 ROO-DEV，该变量应指向 Roo 项目内的引导文件夹。您还应当添加该变量到 PATH 环境变量: <br />
+          <br />
+          <img src="https://www.ibm.com/developerworks/cn/opensource/os-springroo1/fig03.jpg" style="max-width:100%;" />
+
+            <br />
+            <br />
+          </li>
+      </ul>
+
+      <div>您现在可以使用最新开发的 Roo 版本了。打开命令提示符，创建一个名为 mkdir roo_dev_demo 的新文件夹，并触发 roo-dev 命令。您将看到如下所示的输出:
+
+          <br />
+          <pre style="line-height:1.1em;color:green">
+    ____  ____  ____
+   / __ \/ __ \/ __ \
+  / /_/ / / / / / / /
+ / _, _/ /_/ / /_/ /
+/_/ |_|\____/\____/       1.1.B.RELEASE [rev 793f2b0]
+<br />
+Welcome to Spring Roo. For assistance press TAB or type "hint" then hit ENTER.
+roo>
+            </pre>
+        您可能希望更新 Spring Roo 源代码来使用最新版本的 Spring Roo。打开命令提示符并转至 Spring Roo 的源代码位置。触发 git pull 命令，该命令会将所有远程更改拉入到您的本地克隆中，然后执行一个 mvn clean install 命令来编译更新的源代码。</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+</c:component>

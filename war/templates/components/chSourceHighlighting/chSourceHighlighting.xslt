@@ -13,7 +13,7 @@
     <link rel="stylesheet" type="text/css" href="/RenderingAssets/components/chSourceHighlighting/chSourceHighlighting.css" />
     <div class="chSourceHighlighting">
       <xsl:if test="normalize-space(c:abstract) != ''">
-        <blockquote>
+        <blockquote style="{c:abstract/@style}">
           <xsl:value-of disable-output-escaping="yes" select="normalize-space(c:abstract) "/>
         </blockquote>
       </xsl:if>

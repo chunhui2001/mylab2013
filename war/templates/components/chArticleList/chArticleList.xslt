@@ -12,7 +12,7 @@
     <xsl:variable name="articles" select="document(concat($APP_ROOT,c:articleMaster))/*/c:article" />
 
 
-    <div class="chArticleList">
+    <div class="chArticleList" style="line-height:1.6em;">
 
       <xsl:for-each select="$articles">
         <xsl:sort select="c:pubDate" data-type="number" order="descending"/>
