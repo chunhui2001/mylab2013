@@ -205,6 +205,39 @@ Roo 将调用委托给 Maven 来运行测试，因此 perform tests 等同于 mv
       <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
 selenium test --controller ~.web.SpeakerController
 selenium test --controller ~.web.TalkController</pre>
+
+      <div>selenium test 命令将会创建 Speaker 和 Talk 控制器的 Selenium 支持。此命令有个属性 controller 用来指定控制器的名称，以创建 Selenium 测试。此命令还有两个可选属性 name 和 serverUrl 用来指定 Selenium 测试的名称和 web 应用程序可用的服务器。当您执行 selenium test 命令时，Spring Roo 还会添加 Selenium Maven 插件。
+<br />
+<br />
+至此，我们创建了控制器的 Selenium 测试用例，但在运行之前，我们要先修复 Spring Roo 所创建的 Selenium 测试套件中的一个小缺陷。我们在 Speaker 实体中加入一个约束， 年龄应在 25 到 60 之间，但测试套件对此约束不予考虑。它使用了年龄 1 岁，测试失败。
+<br />我们需要修改一个名为 test-speaker.xhtml 的文件，并做相应的更新:</div>
+
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.5em;">test-speaker.xhtml</h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+&lt;tr&gt;
+  &lt;td&gt;type&lt;/td&gt;
+  &lt;td&gt;_age_id&lt;/td&gt;
+  &lt;td&gt;1&lt;/td&gt;
+&lt;/tr&gt;</pre>
+<h3><b>TO</b></h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+&lt;tr&gt;
+  &lt;td&gt;type&lt;/td&gt;
+  &lt;td&gt;_age_id&lt;/td&gt;
+  &lt;td&gt;<b>26</b>&lt;/td&gt;
+&lt;/tr&gt;</pre>
+
+<div>此缺陷将会在 Spring Roo 的后续版本中修复。<br />
+<br />
+要运行 Selenium 测试案例，需要启动 Tomcat 服务器。可以通过使用 Maven 命令 mvn tomcat:run 来启动。默认情况下，所有使用 Roo 创建的 web 应用程序都有用于 Tomcat 和 Jetty web 服务器的 Maven 插件。要运行 selenium test，执行 Maven 命令 mvn selenium:selenese。<br />
+<br />
+这将启动 Firefox 浏览器运行 Selenium 测试案例。在测试执行时，您会看到如下所示的界面: 
+<br />
+<br />
+<img style="max-width:100%;" src="https://www.ibm.com/developerworks/cn/opensource/os-springroo2/figure01.jpg" />
+<br />
+<br />
+现在，所有人可以访问应用程序并在 Speaker 和 Talk 上执行创建、更新和删除操作。在实时应用程序中，还有安全问题，即谁能做哪些操作。</div>
     ]]>
 
     </c:sourceContent>
@@ -215,6 +248,439 @@ selenium test --controller ~.web.TalkController</pre>
       </c:comment1>
     </c:comment>
   </c:entry>
+
+
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h2 style="font-size:1.8em;">保证 web 应用程序的安全</h2>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[Roo 使用 Spring Security 向应用程序添加安全性能。
+        <a target="_blank" href="http://static.springsource.org/spring-security/site/index.html">Spring Security</a> 是功能强大的并高度可定制的认证和访问控制框架。这是保证基于 Spring 的应用程序安全的实际标准。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="添加 Spring Security" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      <div>要添加 Spring Security，输入以下命令：<b>security setup</b>
+        <br />
+        <br />
+此命令将会添加所有所需的 Spring Security JAR 并设置应用程序的基本安全。此命令还会创建其他文件，其中重要的是 <b>applicationContext-security.xml</b>，它包含所有与安全相关的 bean 定义。applicationContext-security.xml 内容看上去像清单 2 。我已经用点号代替了密码，使得可读性更好。</div>
+
+
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.5em;">applicationContext-security.xml</h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+&lt;beans:beans xmlns="http://www.springframework.org/schema/security"
+    xmlns:beans="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans \
+http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+                        http://www.springframework.org/schema/security \
+http://www.springframework.org/schema/security/spring-security-3.0.xsd"&gt;
+
+  &lt;!-- HTTP security configurations --&gt;
+    &lt;http auto-config="true" use-expressions="true"&gt;
+      &lt;form-login login-processing-url="/resources/j_spring_security_check" \
+login-page="/login" authentication-failure-url="/login?login_error=t"/&gt;
+        &lt;logout logout-url="/resources/j_spring_security_logout"/&gt;
+        
+        &lt;!-- Configure these elements to secure URIs in your application --&gt;
+        &lt;intercept-url pattern="/choices/**" access="hasRole('ROLE_ADMIN')"/&gt;
+        &lt;intercept-url pattern="/member/**" access="isAuthenticated()" /&gt;
+        &lt;intercept-url pattern="/resources/**" access="permitAll" /&gt;
+        &lt;intercept-url pattern="/**" access="permitAll" /&gt;
+    &lt;/http&gt;
+
+  &lt;!-- Configure Authentication mechanism --&gt;
+    &lt;authentication-manager alias="authenticationManager"&gt;
+      &lt;!-- SHA-256 values can be produced using \
+'echo -n your_desired_password | sha256sum' \
+(using normal *nix environments) --&gt;
+      &lt;authentication-provider&gt;
+        &lt;password-encoder hash="sha-256"/&gt;
+          &lt;user-service&gt;
+              &lt;user name="admin" password="..." authorities="ROLE_ADMIN"/&gt;
+            &lt;user name="user" password="..." authorities="ROLE_USER"/&gt;
+        &lt;/user-service&gt;
+      &lt;/authentication-provider&gt;
+  &lt;/authentication-manager&gt;
+
+&lt;/beans:beans&gt;</pre>
+
+<div>由 Roo 配置的安全是通用的，我们的应用程序不需要关注。请记住 Roo 能够帮助您快速安装或配置，但定制最终产品是开发人员的责任。本例中，Roo 只提供了 Spring Security 模板，按照需求定制是我们的责任。</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="自定义 Spring Security" id="sourceContent1" 
+                     style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      <div>在我们的应用程序中，所有人都能创建 Speaker，但只有 Speaker 能创建 Talk。我们需要如下修改 applicationContext-security.xml。清单 3 只显示了需要修改的 XML 的一部分。</div>
+
+
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.5em;">修改 applicationContext-security.xml</h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+&lt;http auto-config="true" use-expressions="true"&gt;
+      &lt;form-login login-processing-url="/resources/j_spring_security_check" \
+login-page="/login" authentication-failure-url="/login?login_error=t"/&gt;
+        &lt;logout logout-url="/resources/j_spring_security_logout"/&gt;
+        
+        &lt;!-- Configure these elements to secure URIs in your application --&gt;
+        &lt;intercept-url pattern="/talks/**" access="hasRole('ROLE_USER')"/&gt;
+        &lt;intercept-url pattern="/speakers/**" access="permitAll" /&gt;
+        &lt;intercept-url pattern="/resources/**" access="permitAll" /&gt;
+        &lt;intercept-url pattern="/**" access="permitAll" /&gt;
+&lt;/http&gt;</pre>
+
+<div>我更新了 intercept-url，这样只有角色为 user 的用户才能创建 Talk，并且所有用户都可以将自己注册为 Speaker。
+  <br />
+  <br />
+如上 Roo 生成的 Spring Security 在 <user-service> 标记下使用了 内存认证 提供程序。由于我们的应用程序管理 Speaker 实体，我们应当建立一个使用 Speaker 数据的自定义认证提供程序。对于认证，我们将使用 Speaker email 作为用户名，并为 Speaker 实体添加一个密码字段，它也将用作认证密码。<br /><br />
+我将再次使用 Roo shell 来将密码字段添加到 Speaker 实体：</div>
+
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+field string --class ~.domain.Speaker --fieldName password --notNull --sizeMin 6 –sizeMax 10</pre>
+
+<div>我还加入了限制条件，密码不能为空，长度在 6 至 10 个字符之间。<br /><br />
+由于我们使用 email 和密码作为认证参数，我们找一个 Speaker 的 email 和密码。Spring Roo 提供了一个功能为您的应用程序创建查找程序，使用 <b>finder add</b> 命令：</div>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+finder add --finderName findSpeakersByEmailAndPasswordEquals --class ~.domain.Speaker</pre>
+
+<div>您可以使用 <b>finder list</b> 命令找到某个实体的所有查找程序。<b>finder add</b> 在 <b>Speaker_Roo_Finder.aj</b> 文件写入查找程序代码，并写入一些视图相关的文件。这让您能够从 GUI 查找所有演讲者。</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="写入自定义 AuthenticationProvider" id="sourceContent1" 
+                     style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      <div>我们通过扩展一个名为 AbstractUserDetailsAuthenticationProvider 的类来写入自定义 Authentication 提供程序，它使用用户名/密码进行认证。扩展 AbstractUserDetailsAuthenticationProvider 的类需要提供两个具体方法的实现：additionalAuthenticationChecks 和 retrieveUser。提供程序调用 retrieveUser 方法使用输入的 email 和密码来认证 Speaker。数据库查找 Speaker 是使用我们之前创建的查找程序。如果找到了 Speaker，会将 GrantedAuthority ROLE_USER 分配给 Speaker。如果登录成功，此方法最终会返回一个弹出的 UserDetails 对象，否则会抛出一个 BadCredentialsException 及相关信息（见清单 4）。
+</div>
+
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.5em;">com.dw.roo.conference.security.ConferenceAuthenticationProvider.java</h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+package com.dw.roo.conference.security;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.persistence.EntityNotFoundException;
+import javax.persistence.NonUniqueResultException;
+
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.\
+dao.AbstractUserDetailsAuthenticationProvider;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.GrantedAuthorityImpl;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.util.StringUtils;
+
+import com.dw.roo.conference.domain.Speaker;
+
+public class ConferenceAuthenticationProvider extends \
+AbstractUserDetailsAuthenticationProvider {
+
+    @Override
+    protected void additionalAuthenticationChecks(UserDetails userDetails, \
+UsernamePasswordAuthenticationToken authentication)
+            throws AuthenticationException {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    protected UserDetails retrieveUser(String username,
+UsernamePasswordAuthenticationToken \
+authentication) throws AuthenticationException {
+        String password = (String) authentication.getCredentials();
+        if (!StringUtils.hasText(password)) {
+            throw new BadCredentialsException("Please enter password");
+        }
+        List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
+        try {
+            Speaker speaker = Speaker.findSpeakersByEmailAndPasswordEquals(username, \
+password).getSingleResult();
+            authorities.add(new GrantedAuthorityImpl("ROLE_USER"));
+        } catch (EmptyResultDataAccessException e) {
+            throw new BadCredentialsException("Invalid username or password");
+        } catch (EntityNotFoundException e) {
+            throw new BadCredentialsException("Invalid user");
+        } catch (NonUniqueResultException e) {
+            throw new BadCredentialsException("Non-unique user, contact administrator");
+        }
+        return new User(username, password, true, // enabled
+                true, // account not expired
+                true, // credentials not expired
+                true, // account not locked
+                authorities);
+    }
+}</pre>
+
+<div>在 applicationContext-security.xml 中，我们要定义 conferenceAuthenticationProvider bean 并用我们的 conferenceAuthenticationProvider 代替 Roo 创建的内存认证提供程序，如清单 5 所示。</div>
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.5em;">conferenceAuthenticationProvider</h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+&lt;beans:bean name="conferenceAuthenticationProvider"
+class="com.dw.roo.conference.security.ConferenceAuthenticationProvider"&gt;
+&lt;/beans:bean&gt;
+
+&lt;!-- Configure Authentication mechanism --&gt;
+&lt;authentication-manager alias="authenticationManager"&gt;
+  &lt;authentication-provider ref="conferenceAuthenticationProvider"/&gt;
+&lt;/authentication-manager&gt;</pre>
+
+<div>现在如果您启动了服务器并试图创建 Talk，您会看到一个登录屏幕，需要在此处输入您创建的 Speaker 的 email 和密码。构建自定义认证提供程序的目的不是构建一个理想的认证提供程序，而是告诉您 Roo 做了哪些，您自己需要做哪些。</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="Email 通知" id="sourceContent1" 
+                     style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div>在我们的应用程序中，Speaker 在创建 Talk 时应该能收到 email，让我们在应用程序中加入 email 支持。我们将使用 Gmail 作为 SMTP 服务器，以便把精力集中在使用 Roo 发送 email。向应用程序中加入 email 支持要使用以下命令：</div>
+
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+email sender setup --hostServer smtp.gmail.com --username \
+&lt;Your email address&gt; --password &lt;Your email password&gt; --port 587 --protocol SMTP</pre>
+
+<div>email 发送程序命令会在您的项目中安装一个 Spring JavaMailSender。您可以在 email.properties 文件中修改 email 相关的属性。
+创建 Talk 后，我们要发送一封 email。需要在 TalkController 中加入 email 字段。要添加 email 字段，输入：</div>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+field email template --class ~.web.TalkController</pre>
+
+<div>这会将 MailSender 模板和 sendMessage 方法加入 TalkController。当 Talk 存在于数据库之后，我们需要触发 sendMessage 方法。由于 TalkController 的所有代码都在 TalkController_Roo_Controller.aj 文件中，完成该任务的最简单的方法是创建一个从 .aj 文件到 TalkController 类的 encodeUrlPathSegment 方法，并在 talk.persist() 行之后添加一个对 sendMessage 方法的调用，如清单 6 所示。</div>
+
+
+
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.5em;">创建一个从 .aj 文件到 TalkController 的 encodeUrlPathSegment 方法</h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+public class TalkController {
+
+  @Autowired
+  private transient MailSender mailTemplate;
+
+  public void sendMessage(String mailFrom, String subject, String mailTo,
+      String message) {
+    org.springframework.mail.SimpleMailMessage \
+simpleMailMessage = new org.springframework.mail.SimpleMailMessage();
+    simpleMailMessage.setFrom(mailFrom);
+    simpleMailMessage.setSubject(subject);
+    simpleMailMessage.setTo(mailTo);
+    simpleMailMessage.setText(message);
+    mailTemplate.send(simpleMailMessage);
+  }
+
+  @RequestMapping(method = RequestMethod.POST)
+  public String create(@Valid Talk talk, BindingResult result, Model model,
+      HttpServletRequest request) {
+    if (result.hasErrors()) {
+      model.addAttribute("talk", talk);
+      return "talks/create";
+    }
+    talk.persist();
+    sendMessage("spring.roo.playground@gmail.com", "Your talk is created",
+        talk.getSpeaker().getEmail(), \
+"Congrats your talk is created");
+    return "redirect:/talks/"
+        + encodeUrlPathSegment(talk.getId().toString(), request);
+  }
+
+  private String encodeUrlPathSegment(String pathSegment,
+      HttpServletRequest request) {
+    String enc = request.getCharacterEncoding();
+    if (enc == null) {
+      enc = WebUtils.DEFAULT_CHARACTER_ENCODING;
+    }
+    try {
+      pathSegment = UriUtils.encodePathSegment(pathSegment, enc);
+    } catch (UnsupportedEncodingException uee) {
+    }
+    return pathSegment;
+  }
+}</pre>
+<div>至此，Speaker 将会在创建 Talk 后在专有帐户中收到 email。</div>
+    ]]>
+    </c:sourceContent>
+
+
+
+
+    <c:sourceContent type="html" title="国际化支持" id="sourceContent1" 
+                     style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div>我们构建的是基于 Internet 的 web 应用程序，因此，支持不同语言让来自不同地方的用户能够使用我们的应用程序就非常重要。Spring Roo 通过使用 web mvc install language 命令来添加国际化支持，它将会在您的应用程序中添加新的语言。例如，西班牙语和意大利语的命令是：</div>
+
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+web mvc install language --code es 
+web mvc install language --code it</pre>
+
+<div>Roo 目前支持六种语言，您可以根据选择编写其他的语言插件。但应用程序运行时，会显示两个国旗（意大利和西班牙），还有英国国旗。如果单击其中任意一个国旗，您会看到 web 应用程序变成对应的语言。</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="社会化 web 应用程序" id="sourceContent1" 
+                     style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div>这是社会化媒体的时代，现在的应用程序中通常会添加社会化特性。添加 Talk 视频会很有意义。Roo 提供了嵌入视频上传到 YouTube、Vimeo、Viddler 和 Google Video 等等的支持。要嵌入视频，使用如下命令：</div>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+web mvc embed video --provider VIMEO --videoId 16069687</pre>
+
+<div>如果您启动服务器并在浏览器中打开应用程序，您将能看到以上嵌入的视频。同样，您可以添加 YouTube 或 Viddler 视频。
+Roo 还提供了一个选项，可以在您的应用程序中嵌入 Twitter 消息、文档、股票行情，地图，照片和视频流。各种命令如清单 7。</div>
+
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.5em;">清单 7. 嵌入命令</h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+web mvc embed document 
+web mvc embed finances 
+web mvc embed map
+web mvc embed photos 
+web mvc embed stream video 
+web mvc embed twitter
+web mvc embed video</pre>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="数据库反向工程" id="sourceContent1" 
+                     style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div>数据库反向工程（DBRE）能让您从内部检查一个现有的数据库并将其公开为应用程序。为了让 DBRE 能用起来，我将用现有的反馈模式创建一个反馈应用程序。我将用 MySQL 数据库。<br /><br />
+在启动 Roo 之前，我们将在 MySQL 安装程序中创建一个模式。运行清单 8 中的 SQL 脚本，在 MySQL 数据库中创建一个反馈模式。</div>
+
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.5em;">创建反馈模式的 SQL 脚本</h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+create database feedback_schema;
+use feedback_schema;
+CREATE TABLE feedback (
+  id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  TalkTitle VARCHAR(45) NOT NULL,
+  SpeakerName VARCHAR(45) NOT NULL,
+  Feedback VARCHAR(4000) NOT NULL,
+  PRIMARY KEY (id)
+)
+ENGINE = InnoDB;</pre>
+
+<div>这是一个简单的模式，一个表，没有关系，但 Roo 能成功地对多个表和多个关系的复杂模式进行反向工程。
+  <br /><br />
+在运行了以上的 SQL 脚本并生成模式后，创建反馈应用程序：</div>
+
+<ul style="padding-left:2.5em;list-style-type:decimal;margin-top:.5em;">
+          <li>创建名为 feedback 的目录。</li>
+          <li>在操作系统命令行，到达 feedback 目录。</li>
+          <li>通过输入 roo 命令打开 Roo shell。</li>
+          <li>输入 project --topLevelPackage com.dw.roo.feedback 来创建新的 Maven 项目。</li>
+          <li><span>在此应用程序中，我们将使用 MySQL 作为数据库。要设置应用程序的持久性，用：</span><br />
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.5em 0;">
+persistence setup --provider HIBERNATE 
+--database MYSQL --databaseName feedback_schema 
+  --userName root --password password</pre>
+  <span>由于我使用根用户创建模式，我将使用根作为用户名。输入您创建模式的用户名和密码。此命令还会添加持久性所需的所有 JAR。</span>
+          </li>
+          <li>您可以使用 database introspect --schema feedback_schema 来内部检查数据库模式。database introspect 命令显示了与数据库模式相关的元数据。此命令将会在 Roo shell 控制台显示模式的元数据。您还可以使用 --file attribute 将元数据 xml 导入文件。</li>
+          <li>完成数据库模式内部检查以后，您可以用 database reverse engineer --schema feedback_schema --package ~.domain 对模式进行反向工程。<br />
+database reverse engineer 命令有两个参数，schema 和 package，用来指定需要进行反向工程的模式的名称和 Roo 生成资源所在的包。这会在 com.dw.roo.feedback.domain 包中创建所有实体。</li>
+          <li>下一步是生成应用程序的控制器。可以通过运行 controller all --package ~.web 来完成。</li>
+          <li><span>在运行应用程序之前，需要对 persistence.xml 中的一个属性做点小变动。hibernate.ejb.naming_strategy i属性使用 ImprovedNamingStrategy，它无法用于 MySQL 数据库，如果运行 mvn clean install tomcat:run 将会产生例外。要使它能用，需要将 hiberate.ejb.naming_strategy 改成 DefaultNamingStrategy，如下所示：</span>
+          <br /><pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.5em 0;">
+&lt;property name="hibernate.ejb.naming_strategy" 
+value="org.hibernate.cfg.DefaultNamingStrategy"/&gt;</pre>
+        </li>
+        <li>现在您可以使用 Now you can run the feedback application using the Maven 命令 <b>mvn clean install tomcat:run</b> 来运行反馈程序。</li>
+      </ul>
+
+      <blockquote style="font-size:1em;line-height:1.6em;">至此，我们已将简单的 CRUD web 应用程序扩展为成熟的企业应用程序。<br /> 我们演示了添加特性，如 JPA、Selenium 测试、Spring Security、电子邮件集成、Spring Roo 社交功能、国际化支持等。我还演示了如何使用 Spring Roo 数据库反向工程特性根据现有数据库创建应用程序。<br />还有其他很多特性如 JMS、Solr 和 JSON 支持，等等。 Roo 都能方便地添加到您应用程序中。</blockquote>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h2 style="font-size:1.8em;">Spring Roo 附加组件</h2>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[<div>简单来说，附加组件是一种软件组件，它将 特定的功能添加到软件应用中。例如，在大多数 Web 浏览器中，视频支持由附加组件提供。另一个 示例是 Eclipse（许多 Java™ 开发人员使用或 至少了解的开源 IDE）。大多数功能， 如 JUnit 支持、SVN 支持等，都由附加组件提供。我们使用 add-on 作为 插件和扩展的总称。</div>
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.5em;">Spring Roo 还有附加组件的概念：</h3>
+<ul style="padding-left:2.5em;list-style-type:decimal;margin-top:.5em;">
+    <li>为了让第三方开发人员能够创建扩展 Spring Roo 的功能的能力</li>
+    <li>帮助 Spring Roo 轻松添加新功能</li>
+    <li>帮助 Spring Roo 仍然轻便灵活（即：减少 Spring Roo 的大小）</li>   
+</ul>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Spring Roo 核心组件" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      <div> 为了实现附加组件的开发， Spring Roo 提供了一组核心组件，这些组件构成了不同附加组件的托管执行环境。这些组件是 Classpath，它支持 Process Manager 和 Shell。反过来 Process Manager 支持 Project 和 File Undo。Project 支持 Model、Metadata 和 File Monitor。最后，还有 Support 组件，它由所有组件使用。下图提供了这些关系的可视化表示。
+        <br />
+        <br />
+        <img src="https://www.ibm.com/developerworks/cn/opensource/os-springroo3/figure01.gif" style="max-width:100%;" /></div>
+
+        <ul style="padding-left:2em;list-style-type:disc;margin-top:1em;">
+    <li><b>Support</b> — org.springframework.roo.support 模块 提供所有核心模块 和附加组件使用的常见实用工具类。一些实用工具类包括 Assert、 FileCopyUtils、 XmlUtils、 StringUtils、 FileUtils 等。例如，如果您 要将一个文件的内容复制到另一个文件，您可以使用 FileCopyUtils 来完成。</li>
+    <li><b>Metadata</b> — org.springframework.roo.metadata 模块 提供元数据服务提供程序接口和实现， 包括依赖项注册和缓存。</li>
+    <li><b>File monitor</b> — org.springframework.roo.file.monitor 模块在检测到的文件系统变化之后公布事件 （默认实现使用自动缩放的磁盘轮询）。</li> 
+    <li><b>File undo</b> — org.springframework.roo.file.undo 模块提供文件撤消工具，供进程 管理器使用。</li> 
+    <li><b>Project</b> — org.springframework.roo.project 模块 提取典型的最终用户项目构建系统，如 Apache Maven 和 Apache Ant。</li> 
+    <li><b>Process manager</b> — org.springframework.roo.process.manager 模块提供一个类似于 ACID 的文件系统抽象，包括 磁盘回滚和进程同步。</li>
+    <li><b>Classpath</b> — org.springframework.roo.classpath 模块对 Java 和 AspectJ 编译单元执行抽象语法树解析和类型绑定。</li>
+</ul>
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   <c:entry style="margin-top:2em;">
     <c:title><![CDATA[<h2 style="font-size:1.8em;">在 Ubuntu 上编译 Spring Roo 源代码的过程</h2>]]></c:title>
