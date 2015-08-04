@@ -1063,6 +1063,213 @@ mvn release:prepare release:perform</pre>
 </li>
 
 </ul>
+
+<div>这不是任何开发人员都能够轻松铭记的简单的 bean 定义， 我认为如果我可以自动化该样板配置会很不错。因此我决定编写一个附加组件，它能够自动化添加 JAMon 依赖项和连接侦听器 bean 的流程。您如何决定您需要简单还是高级附加组件呢？</div>
+<ul style="padding-left:2.5em;list-style-type:decimal;margin:.8em 0;">
+<li>当您想要将 Maven 依赖项、配置工件或这两者添加到您的项目时，使用 <b>简单附加组件</b>。</li>
+<li>当您需要编写增强现有 Java 类型的功能完整的附加组件、引入新的 Java 类型和 AspectJ ITD 或同时实现这两点时，使用<b>高级附加组件</b>。</li>
+</ul>
+<div>我们的要求是将 jamon.jar 添加到类路径，并编写包含我们的 bean 定义的应用程序上下文文件。最好编写一个新的 Spring 应用程序上下文文件，而不是使用现有的上下文文件，因为这有助于模块化应用程序上下文。根据这些要求，显然我们应该编写简单的附加程序，能够将 JAMon 支持添加到任何 Web 应用程序。</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="项目建立" 
+                     id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div>我们需要以与国际化附加组件相同的方式建立项目。我将该项目命名为 <b>“spring-roo-addon-jamon”</b>。</div>
+
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="创建简单的附加组件" 
+                     id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div>在建立了项目后，您将得到一个名为 spring-roo-addon-jamon 的目录以及 .svn 文件夹。转到 spring-roo-addon-jamon 目录并启动 Spring Roo shell。然后输入下面的命令：</div>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+addon create simple --topLevelPackage org.xebia.roo.addon.jamon \
+--projectName spring-roo-addon-jamon
+</pre>
+<div>好！附加组件创建完成</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="安装生成的附加组件" 
+                     id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div>您可以通过下面的命令安装该附加组件：</div>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+osgi start --url file://<Location to addon
+    target folder>/org.xebia.roo.addon.jamon-0.1.0.BUILD-SNAPSHOT.jar</pre>
+<div>在安装了附加组件后，创建一个要测试的简单客户端，正如我们为 i18n 附加组件所创建的。生成的附加组件提供两个命令：</div>
+<ul style="padding-left:2.5em;list-style-type:decimal;margin:.8em 0;">
+  <li>say hello，该命令在 Roo shell 上打印出一条欢迎消息。该命令将总是可用，您可以在 Roo shell 运行时随时输入该命令。</li>
+  <li>Web mvc install tags 取代了默认 MVC 标记， 当您构建 Web 应用程序时会生成该标记。该命令只能在您创建了 Web 应用程序后才可用。</li>
+</ul>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="看一看生成的代码" 
+                     id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div>现在您已经测试了该附加组件，让我们看一看该附加组件生成的文件，如清单 8 所示。</div>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+Created ROOT/pom.xml 
+Created ROOT/readme.txt 
+Created ROOT/legal 
+Created ROOT/legal/LICENSE.TXT 
+Created SRC_MAIN_JAVA 
+Created SRC_MAIN_RESOURCES 
+Created SRC_TEST_JAVA 
+Created SRC_TEST_RESOURCES 
+Created SRC_MAIN_WEBAPP 
+Created SRC_MAIN_RESOURCES/META-INF/spring 
+Created SRC_MAIN_JAVA/com/shekhar/roo/addon/jamon 
+Created SRC_MAIN_JAVA/com/shekhar/roo/addon/jamon/JamonCommands.java 
+Created SRC_MAIN_JAVA/com/shekhar/roo/addon/jamon/JamonOperations.java 
+Created SRC_MAIN_JAVA/com/shekhar/roo/addon/jamon/JamonOperationsImpl.java 
+Created SRC_MAIN_JAVA/com/shekhar/roo/addon/jamon/JamonPropertyName.java 
+Created ROOT/src/main/assembly 
+Created ROOT/src/main/assembly/assembly.xml 
+Created SRC_MAIN_RESOURCES/com/shekhar/roo/addon/jamon 
+Created SRC_MAIN_RESOURCES/com/shekhar/roo/addon/jamon/info.tagx 
+Created SRC_MAIN_RESOURCES/com/shekhar/roo/addon/jamon/show.tagx</pre>
+<div>文件 pom.xml、assembly.xml、LICENSE.TXT 和 readme.txt 与 i18n 附加组件所生成的相同。我们在前面已经讨论了这些文件，因此我不会再次讨论。比较有趣的工件包括 JamonCommands、JamonOperations、 JamonOperationsImpl 和 JamonPropertyName。我们将逐个进行讨论， 以了解简单的附加组件命令生成的代码。</div>
+<ul style="padding-left:2.5em;list-style-type:decimal;margin:.8em 0;">
+  <li><b>JamonCommands.java:JamonCommands</b> — 这个类实现了一个称为 CommandMarker 的标记接口，并公开了两个命令，say hello 和 Web mvc install 标记，如清单 9 所示。<br />
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.5em;">清单 9. JamonCommands.java:JamonCommands 生成的代码</h3>
+  <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+@Component 
+@Service 
+public class JamonCommands implements CommandMarker { 
+        
+       @Reference private JamonOperations operations; 
+        
+       @Reference private StaticFieldConverter staticFieldConverter; 
+
+
+       protected void activate(ComponentContext context) { 
+           staticFieldConverter.add(JamonPropertyName.class); 
+           } 
+
+
+       protected void deactivate(ComponentContext context) { 
+               staticFieldConverter.remove(JamonPropertyName.class); 
+       } 
+        
+       @CliAvailabilityIndicator("say hello") 
+       public boolean isSayHelloAvailable() { 
+               return true; 
+       } 
+        
+       @CliCommand(value = "say hello", 
+help = "Prints welcome message to the Roo shell") 
+       public void sayHello( 
+               @CliOption(key = "name", mandatory = true, 
+help = "State your name") String name, 
+               @CliOption(key = "contryOfOrigin", mandatory = false, 
+       help = "Country of origin") JamonPropertyName country) { 
+                
+               log.info("Welcome " + name + "!"); 
+               log.warning("Country of origin: " + (country == null ? \
+JamonPropertyName.NOT_SPECIFIED.getPropertyName() : country.getPropertyName())); 
+               
+               log.severe("It seems you are a running JDK " 
++ operations.getProperty("java.version")); 
+               log.info("You can use the default JDK logger anywhere in your" 
++ " add-on to send messages to the Roo shell"); 
+       } 
+        
+       @CliAvailabilityIndicator("web mvc install tags") 
+       public boolean isInstallTagsCommandAvailable() { 
+               return operations.isInstallTagsCommandAvailable(); 
+       } 
+        
+       @CliCommand(value = "web mvc install tags", 
+help="Replace default Roo MVC tags used for scaffolding") 
+       public void installTags() { 
+               operations.installTags(); 
+       } 
+}</pre>
+<div>我已经删除了代码生成器所生成的所有注释， 以减少代码的冗余。让我们看看 这个类的重要成员：</div>
+<ul style="padding-left:2.5em;list-style-type:lower-alpha;margin:.5em 0;">
+  <li style="margin-bottom:.5em;"><b>CommandMarker</b> — 所有命令类都应该实现 CommandMarker 接口，并通过 @Component 和 @Service 注释注明，以便对它们进行注册并让它们的命令在 Roo shell 中可用。通过 @Reference 注释的字段是 JamonCommands 类的依赖项，通过底层 Roo OSGi 容器注入。所有使用 @Component 和 @Service annotations 注释的类都可以被注入到其他附加组件。</li>
+  <li style="margin-bottom:.5em;"><b>Activate 和 Deactivate 方法</b> — activate 和 deactivate 方法是在您使用 addon install 命令安装附加组件或使用 addon remove 命令删除附加组件时调用的方法。这些方法允许您挂接到附加组件的生命周期，这通过底层 Roo OSGi 容器管理。</li>
+  <li style="margin-bottom:.5em;"><b>标有 @CliAvailabilityIndicator 注释的方法</b> — 标有 @CliAvailabilityIndicator 注释的方法是在命令不可用时帮助隐藏命令的方法。 例如，security setup 命令，它将 Spring Security 安装到项目中，除非该项目是一个 Web 应用程序，否则它不可见。不要求 您必须拥有这些方法，但是它们非常有用， 因为它们不允许用户发出当时没有意义的命令。例如，在用户拥有 Web 应用程序之前执行 security setup 命令就没有任何意义。</li>
+  <li><b>标有 @CliCommand 注释的方法</b> — 标有 @CliCommand 注释的方法将命令注册在 Roo shell 中。 @CliCommand 注释有两个属性：value， 它定义命令名称，和 help，它定义帮助消息，当您输入 help 命令时会显示帮助消息。每个命令都能够使用 @CliOption 注释定义强制性和非强制性属性，作为该命令的一部分。例如， say hello 命令有一个称为 name 的强制性属性和一个称为 country 的非强制性属性。</li>
+</ul>
+</li>
+  <li><b>JamonOperationsImpl.java</b> — 在执行某个命令时命令类需要执行某些操作。这些操作由操作类执行。JamonOperationsImpl 是一个操作类，负责执行实际工作，比如在 pom.xml 中添加依赖项，或将资源复制到所需的位置。 JamonOperationsImpl 使用 Spring Roo 框架提供的核心服务执行其操作。例如，要添加一个依赖项，它使用 ProjectOperations 接口。要复制文件，它则使用 FileManager 接口。让我们看看 JamonOperationsImpl 类的代码（参见清单 10） 以便更好地了解 Roo 附加组件。
+  <br />
+  <h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.5em;">清单 10. JamonOpertionsImpl</h3>
+  <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+@Component 
+@Service 
+public class JamonOperationsImpl implements JamonOperations { 
+  private static final char SEPARATOR = File.separatorChar; 
+ 
+  @Reference private FileManager fileManager; 
+  @Reference private ProjectOperations projectOperations; 
+
+  public boolean isInstallTagsCommandAvailable() { 
+      return projectOperations.isProjectAvailable() &&
+            fileManager.exists(projectOperations.getProjectMetadata().
+      getPathResolver().getIdentifier(Path.SRC_MAIN_WEBAPP,
+                "WEB-INF" + SEPARATOR + "tags")); 
+  } 
+
+  public String getProperty(String propertyName) { 
+    Assert.hasText(propertyName, "Property name required"); 
+    return System.getProperty(propertyName); 
+  } 
+
+  public void installTags() { 
+    PathResolver pathResolver =
+          projectOperations.getProjectMetadata().getPathResolver(); 
+    createOrReplaceFile(pathResolver.getIdentifier(
+        Path.SRC_MAIN_WEBAPP, "WEB-INF" + SEPARATOR +
+                  "tags" + SEPARATOR + "util"), "info.tagx"); 
+
+  createOrReplaceFile(pathResolver.getIdentifier(
+    Path.SRC_MAIN_WEBAPP, "WEB-INF" + SEPARATOR +
+              "tags" + SEPARATOR + "form"), "show.tagx"); 
+  } 
+ 
+  private void createOrReplaceFile(String path, String fileName) { 
+    String targetFile = path + SEPARATOR + fileName; 
+    MutableFile mutableFile = fileManager.exists(targetFile) ?
+              fileManager.updateFile(targetFile) :
+              fileManager.createFile(targetFile); 
+        try { 
+          FileCopyUtils.copy(TemplateUtils.getTemplate(getClass(),
+                      fileName), mutableFile.getOutputStream()); 
+        } catch (IOException e) { 
+      throw new IllegalStateException(e); 
+    } 
+  } 
+}
+</pre>
+<div>JamonOperationsImpl 类有两个重要的方法： isInstallTagsCommandAvailable 检查该命令是否可用， installTags 将标记安装到目标项目。为了执行这些操作， JamonOperationsImpl 类使用一些 Spring Roo 核心服务和实用程序：</div>
+<ul style="padding-left:2.5em;list-style-type:lower-alpha;margin:.5em 0;">
+  <li style="margin-bottom:.5em;"><b>ProjectOperations</b>: JamonOperationsImpl 类使用 ProjectOperations 服务来 检查项目是否可用，并获得 标记文件夹的路径。</li>
+  <li style="margin-bottom:.5em;"><b>FileManager</b>: JamonOperationsImpl 类使用 FileManager 服务来检查一个文件是否在某个路径上存在， 并获得更新或创建一个 MutableFile。 MutableFile 是另一个特定于 Roo 的类，它表示一个 可以进行修改的文件的句柄。</li>
+  <li style="margin-bottom:.5em;"><b>TemplateUtils</b>: TemplateUtils 实用程序类用于在我们的附加组件包里为模板文件（info.tagx 和 show.tagx）获取一个 InputStream。</li>
+  <li style="margin-bottom:.5em;"><b>FileCopyUtils</b>: FileCopyUtils 实用程序类用于将模板（从 TemplateUtils）复制到 MutableFile（从 FileManager）。</li>
+</ul>
+</li>
+</ul>
     ]]>
     </c:sourceContent>
 
