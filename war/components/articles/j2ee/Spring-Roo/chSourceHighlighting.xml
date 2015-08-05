@@ -1273,6 +1273,389 @@ public class JamonOperationsImpl implements JamonOperations {
     ]]>
     </c:sourceContent>
 
+
+    <c:sourceContent type="html" title="修改附加组件以满足我们的要求" 
+                     id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div>在关于简单附加组件的小节中，我们讨论了两个 必须满足的要求，以便使我们的附加组件能够在任何 Spring MVC Web 应用程序中配置 JAMon。要求如下：</div>
+<ul style="padding-left:2.5em;list-style-type:lower-alpha;margin:.5em 0;">
+  <li style="margin-bottom:.5em;">在您的 pom.xml 中添加 JAMon JAR</li>
+  <li style="margin-bottom:.5em;">在应用程序上下文文件中定义 <b>JamonPerformanceMonitorInterceptor bean</b></li>
+  
+</ul>
+<div>为了满足这些要求，我们将更改 JamonCommands 类，以支持 jamon setup 命令。然后我们将添加一个对应于 jamon setup 命令的操作来执行实际工作，以满足要求。
+<br />
+<br />
+<b>JamonCommands</b> — JamonCommands 类 现在只有两个方法：isInstallJamon 检查 jamon setup 命令是否可用， installJamon 用于在触发 jamon setup 命令时安装 JAMon。 （参见清单 11。）</div>
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.5em;">清单 11. JamonCommands 的代码</h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+@Component 
+@Service 
+public class JamonCommands implements CommandMarker { 
+   
+  private Logger log = Logger.getLogger(getClass().getName()); 
+
+  @Reference private JamonOperations operations; 
+   
+  @CliAvailabilityIndicator("jamon setup") 
+  public boolean isInstallJamon() { 
+    return operations.isInstallJamonAvailable(); 
+  } 
+   
+  @CliCommand(value = "jamon setup", help = "Setup Jamon into your project") 
+  public void installJamon() { 
+    operations.installJamon(); 
+  } 
+}</pre>
+<div>这是我们在 JamonCommands 类中所需要的。 它只需要公开 jamon setup 命令，剩下的工作委托 JamonOperationsImpl 类完成。（参见清单 12。）</div>
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.5em;">清单 12. JamonOperationsImpl 的代码</h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+JamonOperationsImpl
+
+JamonOperationsImpl need to implement two methods – \
+isInstallJamonAvailable() and installJamon(). 
+
+The isinstallJamonAvailable() method returns a boolean indicating whether 
+command is available at this location or not. I want to enable JAMon only for the web
+applications so we need to perform the check whether the project is 
+a web application or not. To do that we will write the code as shown below 
+
+  public boolean isInstallJamonAvailable() { 
+    return projectOperations.isProjectAvailable() &&
+        fileManager.exists(projectOperations.getPathResolver()
+      .getIdentifier(Path.SRC_MAIN_WEBAPP, "/WEB-INF/web.xml")); 
+  }</pre>
+<div>清单 12 中显示的代码使用 ProjectOperations 服务检查项目在该位置是否可用，以获得 web.xml 文件的路径（web.xml 文件只对 Web 应用程序存在）。FileManager 服务用于检查 Web.xml 是否在 ProjectOperations 指定的位置存在。<br />
+<br />
+我们需要实现的第二个方法是 installJamon()，它应当在 pom.xml 中添加 JAMon 依赖项，并将 bean 定义添加到 Webmvc-config.xml。在编写该方法的代码之前，我们必须在 src/main/resources/org/xebia/roo/addon/jamon 文件夹内创建一个名为 configuration.xml 的 XML 文件。该文件夹结构是 org/xebia/roo/addon/jamon，与您的 Roo 附加组件的包结构相同。configuration.xml 定义 JAMon 版本 和 JAMon JAR 依赖项，如清单 13 所示。</div>
+
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.5em;">清单 13. configuration.xml 的内容</h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+&lt;?xml version="1.0" encoding="UTF-8" standalone="no"?&gt;
+&lt;configuration&gt; 
+    &lt;jamon&gt; 
+        &lt;properties&gt; 
+            &lt;jamon.version&gt;2.4&lt;/jamon.version&gt; 
+        &lt;/properties&gt; 
+        &lt;dependencies&gt; 
+            &lt;dependency&gt; 
+            &lt;groupId&gt;com.jamonapi&lt;/groupId&gt; 
+            &lt;artifactId&gt;jamon&lt;/artifactId&gt; 
+            &lt;version&gt;${jamon.version}&lt;/version&gt; 
+        &lt;/dependency&gt; 
+        &lt;/dependencies&gt; 
+    &lt;/jamon&gt; 
+&lt;/configuration&gt;</pre>
+
+<div>下面我们编写在 pom.xml 中添加依赖项的代码，如清单 14 所示。</div>
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.5em;">清单 14. pom.xml 的内容</h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+public void installJamon() { 
+  Element configuration = XmlUtils.getConfiguration(getClass()); 
+  updatePomProperties(configuration); 
+  updateDependencies(configuration); 
+} 
+
+private void updatePomProperties(Element configuration) { 
+  List<Element> properties = \
+    XmlUtils.findElements("/configuration/jamon/properties/*"
+  , configuration); 
+  for (Element property : properties) { 
+    projectOperations.addProperty(new Property(property)); 
+  } 
+} 
+
+private void updateDependencies(Element configuration) { 
+
+  List<Dependency> dependencies = new ArrayList<Dependency>(); 
+  List<Element> jamonDependencies = XmlUtils.findElements(
+    "/configuration/jamon/dependencies/dependency", configuration); 
+  for (Element dependencyElement : jamonDependencies) { 
+    dependencies.add(new Dependency(dependencyElement)); 
+  } 
+  projectOperations.addDependencies(dependencies); 
+}</pre>
+
+<div>这是在 pom.xml 中添加依赖项的标准机制，您可以在大多数 Roo 附加组件中找到它。清单 14 中所示的代码很显而易见，使用 Spring Roo 实用程序类 XmlUtils 读取 configuration.xml 中的内容，然后使用 ProjectOperations 服务更新 pom.xml 文件。<br /><br />
+在添加了 pom.xml 依赖项之后，我们需要创建一个单独的 Spring 配置，即 web-jamon-config.xml，它包含 JamonPerformanceMonitorInterceptor 的 bean 定义。</div>
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.5em;">清单 15. web-jamon-config.xml 的内容</h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+&lt;?xml version="1.0" encoding="UTF-8" standalone="no"?&gt; 
+&lt;beans xmlns="http://www.springframework.org/schema/beans" 
+  xmlns:context="http://www.springframework.org/schema/context" 
+  xmlns:mvc="http://www.springframework.org/schema/mvc" \
+xmlns:p="http://www.springframework.org/schema/p" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+  xsi:schemaLocation=\
+"http://www.springframework.org/schema/beans \
+http://www.springframework.org/schema/beans/spring-beans-3.0.xsd     
+  http://www.springframework.org/schema/context \
+http://www.springframework.org/schema/context/spring-context-3.0.xsd     
+  http://www.springframework.org/schema/mvc \
+http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd"&gt; 
+
+
+  &lt;bean id="jamonPerformanceMonitorInterceptor" 
+    class=\
+"org.springframework.aop.interceptor.JamonPerformanceMonitorInterceptor"&gt; 
+    &lt;property name="trackAllInvocations" value="true"&gt;&lt;/property&gt; 
+    &lt;property name="useDynamicLogger" value="true"&gt;&lt;/property&gt; 
+  &lt;/bean&gt; 
+
+  &lt;bean id="autoProxyCreator" 
+    class=\
+"org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator"&gt; 
+    &lt;property name="interceptorNames"&gt; 
+      &lt;list&gt; 
+        &lt;idref bean="jamonPerformanceMonitorInterceptor" /&gt; 
+      &lt;/list&gt; 
+    &lt;/property&gt; 
+    &lt;property name="beanNames"&gt; 
+      &lt;list&gt; 
+        &lt;value&gt;&lt;/value&gt; 
+      &lt;/list&gt; 
+    &lt;/property&gt; 
+  &lt;/bean&gt; 
+
+&lt;/beans&gt;</pre>
+<div>在清单 15 所示的 web-jamon-config.xml 文件中，我们已经配置了 基于 Spring 的应用程序中的 JAMon 所需的一切。 我惟一没有指定的是 要监控的 bean 的名称。代码生成器无法预测 这个，因此需要附加组件开发人员进行指定。<br />
+<br />
+现在我们需要编写将该 web-jamon-config.xml 文件复制到 web_INF/spring 文件夹的代码，webmvc-config.xml 也在该文件夹中，还要编写 add import 语句的代码，该语句在 webmvc-config.xml 中要导入 web-jamon-config.xml（参见清单 16）。</div>
+
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.5em;">清单 16. 操作 pom.xml 的代码</h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+public void installJamon() { 
+     
+  // update pom.xml code 
+  PathResolver pathResolver =
+        projectOperations.getProjectMetadata().getPathResolver(); 
+  String resolvedSpringConfigPath = pathResolver.getIdentifier(Path.SRC_MAIN_WEBAPP,
+        "/WEB-INF/spring"); 
+  if (fileManager.exists(resolvedSpringConfigPath + "/web-jamon-config.xml")) { 
+      return; 
+  } 
+  copyTemplate("web-jamon-config.xml", resolvedSpringConfigPath); 
+     
+  String webMvcConfigPath = resolvedSpringConfigPath + "/webmvc-config.xml"; 
+
+  new XmlTemplate(fileManager).update(webMvcConfigPath, new DomElementCallback() { 
+    public boolean doWithElement(Document document, Element root) { 
+      if (null ==
+               XmlUtils.findFirstElement\
+("/beans/import[@resource='web-jamon-config.xml']",
+                   root)) { 
+                   Element element = document.createElement("import"); 
+            element.setAttribute("resource", "web-jamon-config.xml"); 
+        root.appendChild(element); 
+            return true; 
+        } 
+        return false; 
+       } 
+  }); 
+     
+} 
+   
+private void copyTemplate(String templateFileName, String resolvedTargetDirectoryPath) { 
+  
+    try { 
+      FileCopyUtils.copy(TemplateUtils.getTemplate(getClass(),
+               templateFileName), fileManager.createFile(
+              resolvedTargetDirectoryPath + "/" +
+                   templateFileName).getOutputStream()); 
+  } catch (IOException e) { 
+           throw new IllegalStateException(
+               "Encountered an error during copying of resources for Jamon addon.", e); 
+    } 
+}</pre>
+<div>上面使用的 XmlTemplate 类来自于 Spring Web flow 附加组件。因此您需要将 Web flow 附加组件的依赖项添加到您的附加组件中（参见清单 17）。</div>
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.5em;">清单 17. 添加 Web flow 附加组件的依赖项</h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+&lt;dependency&gt; 
+  &lt;groupId&gt;org.springframework.roo&lt;/groupId&gt; 
+  &lt;artifactId&gt;org.springframework.roo.addon.web.flow&lt;/artifactId&gt; 
+  &lt;version&gt;${roo.version}&lt;/version&gt; 
+  &lt;type&gt;bundle&lt;/type&gt; 
+&lt;/dependency&gt;</pre>
+<div>在清单 17 中，roo.version 是 您所使用的 Roo 的版本。
+  <br />
+  <br />
+我们在该附加组件中需要做的最后一件事是配置项目日志， 并设置要跟踪的日志级别。这通过 LoggingOperations 完成，它是 log4j 附加组件的操作类。要使用该 类，我们首先需要在 pom.xml 文件中添加日志附加依赖项，如清单 18 所示。</div>
+
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.5em;">清单 18. 添加日志附加依赖项的 XML 代码</h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+&lt;dependency&gt; 
+  &lt;groupId&gt;org.springframework.roo&lt;/groupId&gt; 
+  &lt;artifactId&gt;org.springframework.roo.addon.logging&lt;/artifactId&gt; 
+  &lt;version&gt;${roo.version}&lt;/version&gt; 
+  &lt;type&gt;bundle&lt;/type&gt; 
+&lt;/dependency&gt;</pre>
+<div>在 pom.xml 中添加了依赖项之后，使用以下代码行将 LoggingOperation 添加到 JamonOperationsImpl 类中：</div>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+@Reference private LoggingOperations loggingOperations;</pre>
+
+<div>下一步，将下面的代码添加到 installJamon 方法：</div>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+loggingOperations.configureLogging(LogLevel.TRACE, LoggerPackage.PROJECT);</pre>
+
+<div>这是我们需要为该附加组件编写的所有代码。 JamonOperationsImpl 类的完整代码如 清单 19 所示。</div>
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.5em;">清单 19. JamonOperationsImpl 的完整代码</h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+@Component 
+@Service 
+public class JamonOperationsImpl implements JamonOperations { 
+       @Reference private FileManager fileManager; 
+       @Reference private ProjectOperations projectOperations; 
+       @Reference private LoggingOperations loggingOperations; 
+
+
+       public boolean isInstallJamonAvailable() { 
+               return projectOperations.isProjectAvailable() && 
+fileManager.exists(projectOperations.getPathResolver()
+.getIdentifier(Path.SRC_MAIN_WEBAPP,"/WEB-INF/web.xml")); 
+       } 
+
+
+       public void installJamon() { 
+               Element configuration = XmlUtils.getConfiguration(getClass()); 
+               updatePomProperties(configuration); 
+               updateDependencies(configuration); 
+               PathResolver pathResolver = 
+projectOperations.getProjectMetadata().getPathResolver(); 
+               String resolvedSpringConfigPath = 
+pathResolver.getIdentifier(Path.SRC_MAIN_WEBAPP, 
+            "/WEB-INF/spring"); 
+               if (fileManager.exists(resolvedSpringConfigPath 
++ "/web-jamon-config.xml")) { 
+                       return; 
+               } 
+
+
+               copyTemplate("web-jamon-config.xml", resolvedSpringConfigPath); 
+                
+               String webMvcConfigPath = resolvedSpringConfigPath 
++ "/webmvc-config.xml";
+
+
+               new XmlTemplate(fileManager).update(webMvcConfigPath, 
+new DomElementCallback() { 
+                       public boolean doWithElement(Document document, Element root) {
+                            if (null == XmlUtils.findFirstElement(
+"/beans/import[@resource='web-jamon-config.xml']",
+root)) { 
+                                 
+Element element = document.createElement("import"); 
+                                element.setAttribute("resource", "web-jamon-config.xml"); 
+                                root.appendChild(element); 
+                                return true; 
+                             } 
+                             return false; 
+                       } 
+               });
+               loggingOperations.configureLogging(LogLevel.TRACE, 
+LoggerPackage.PROJECT); 
+       } 
+        
+       private void copyTemplate(String templateFileName, 
+String resolvedTargetDirectoryPath) { 
+               try { 
+FileCopyUtils.copy(
+      TemplateUtils.getTemplate(getClass(), templateFileName),
+              fileManager.createFile(resolvedTargetDirectoryPath + "/" + 
+              templateFileName).getOutputStream()); 
+               } catch (IOException e) { 
+                       throw new IllegalStateException(
+               "Encountered an error during copying of resources for Jamon addon.", e);
+               } 
+       } 
+        
+       private void updatePomProperties(Element configuration) { 
+               List<Element> properties = XmlUtils
+     .findElements("/configuration/jamon/properties/*",configuration);
+               for (Element property : properties) { 
+                       projectOperations.addProperty(new Property(property));
+               } 
+       } 
+
+
+       private void updateDependencies(Element configuration) { 
+               List<Dependency> dependencies = new ArrayList<Dependency>(); 
+               List<Element> jamonDependencies = XmlUtils.findElements(
+           "/configuration/jamon/dependencies/dependency", configuration); 
+               for (Element dependencyElement : jamonDependencies) { 
+                       dependencies.add(new Dependency(dependencyElement)); 
+               } 
+               projectOperations.addDependencies(dependencies); 
+       } 
+        
+}</pre>
+
+
+<div style="margin-top:1.5em;">您可以从 <a target="_blank" href="http://code.google.com/p/spring-roo-addon-jamon/downloads/detail?name=spring-roo-addon-jamon.zip&can=2&q=">Google 代码库</a> 下载该附加组件的完整源代码。现在我们使用刚刚创建的附加组件将 JAMon 支持添加到我们的应用程序：</div>
+
+<ul style="padding-left:2.5em;list-style-type:decimal;margin:.5em 0;">
+  <li style="margin-bottom:.5em;">退出 roo shell 并运行 mvn clean install 命令。在 构建过程中，它会询问 GPG 密码。</li>
+  <li style="margin-bottom:.5em;">在构建完 Roo 附加组件后，打开一个新命令行 并创建一个名为 jamon-client 的目录。我们将 为我们的附加组件创建一个简单的客户端。</li>
+  <li style="margin-bottom:.5em;">转到目录 jamon-client 并输入 roo 命令，以打开 Roo shell。</li>
+  <li>在 Roo shell 中执行清单 20 中的命令。这会 创建一个简单的 Spring MVC Web 应用程序。
+    <br />
+    <h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.3em;">清单 20. 创建简单的 MVC Web 应用程序</h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+project --topLevelPackage com.shekhar.roo.jamon.client --projectName jamon-client 
+persistence setup --provider HIBERNATE --database
+HYPERSONIC_IN_MEMORY
+entity --class ~.domain.MyUser
+field string --fieldName name --notNull
+controller all --package ~.web</pre>
+  </li>
+  <li>要安装该附加组件，请输入：<br />
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+osgi start --url <a
+href="../../../../">file:///</a><location \
+to addon target folder >
+/org.xebia.roo.addon.jamon-0.1.0.BUILD-SNAPSHOT.jar</pre>
+这样能够安装并激活我们的 JAMon 附加组件。您可以 使用 osgi ps 命令查看该附加组件的状态。
+  </li>
+  <li>输入 jamon setup 命令，您将 看到在您的应用程序中配置的 JAMon。如果您现在 使用 mvn tomcat:run 运行您的应用程序，您在控制台不会看到任何 日志，因为您还没有配置任何要监控的 bean。 让我们在 web-jamon-config.xml 中使用清单 21 中的代码配置我们的 myUserController bean。<br />
+  <h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.3em;">清单 21. web-jamon-config.xml 中 myUserController 的配置</h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+&lt;bean id="autoProxyCreator" 
+    class=\
+"org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator"&gt; 
+  &lt;property name="interceptorNames"&gt; 
+    &lt;list&gt; 
+      &lt;idref bean="jamonPerformanceMonitorInterceptor" /&gt; 
+    &lt;/list&gt; 
+  &lt;/property&gt; 
+  &lt;property name="beanNames"&gt; 
+    &lt;list&gt; 
+      &lt;value&gt;myUserController&lt;/value&gt; 
+    &lt;/list&gt; 
+  &lt;/property&gt; 
+&lt;/bean&gt;</pre>
+</li>
+<li>现在使用 mvn tomcat:run 运行该应用程序，您将在 您的 maven 控制台看到 JAMon 日志。示例如清单 22 所示。
+<br />
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.3em;">清单 22. 示例 JAMon 日志</h3>
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+TRACE MyUserController - JAMon performance statistics for method 
+[MyUserController.populateMyUsers]: 
+JAMon Label=MyUserController.populateMyUsers, Units=ms.: (LastValue=187.0, 
+Hits=1.0, Avg=187.0, Total=187.0, Min=187.0, Max=187.0, Active=0.0, Avg 
+Active=1.0, Max Active=1.0, First Access=Wed May 18 15:33:41 IST 2011, Last 
+Access=Wed May 18 15:33:41 IST 2011)</pre></li>
+</ul>
+
+<div>在测试过您的附加组件在您的开发系统中运行良好后，您可以将其推送到我们创建的 Google 代码项目中。要对外发布附加组件，请遵循我们用来发布 i18n 附加组件的过程。同样，要在 RooBot 上注册该附加组件，请遵循 i18n 注册过程。</div>
+
+
+      <blockquote style="font-size:1em;line-height:1.6em;color:green;"><h3>总结:</h3>
+        我们探究了 Spring Roo 附加架构，以及如何编写国际化和简单的附加组件。附加架构对于 Roo 非常重要，因为它为 Roo 提供了快速添加新功能的灵活性。对于开发人员来说，该附加架构非常重要，因为它能够满足他们的要求而无需等待功能在全局实现。过些时候，如果将一个功能纳入到 Roo 中，可以相对容易地改变实现来删除自定义解决方案。</blockquote>
+
+    ]]>
+    </c:sourceContent>
+
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
@@ -1284,6 +1667,252 @@ public class JamonOperationsImpl implements JamonOperations {
 
 
 
+
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h2 style="font-size:1.8em;">用 Spring Roo 和 Cloud Foundry 在云中快速开发应用程序</h2>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[通过 <b>VMWare</b> 创建的第一个开放的 “平台即服务 (Platform As A Service)” 项目 <b>Cloud Foundry</b>，创建能够在云内使用的应用程序，这使得 Roo 快速应用程序开发又向前迈进了一步。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="什么是 Platform As A Service？" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      <div>平台即服务 (PaaS) 是云计算层中的一层。其他的层还包括软件即服务 (SaaS) 和基础架构即服务 (IaaS)。PaaS 位于 SaaS 和 IaaS 之间，提供了基础架构的抽象，并提供了一个计算平台和一个解决方案堆栈。</div>
+      <h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.3em;">图 1. 平台即服务：云计算架构的战略中心</h3>
+      <div style="margin-top:1em;">
+        <img src="https://www.ibm.com/developerworks/cn/opensource/os-springroo4/image001.gif" style="max-width:100%" />
+      </div>
+
+      <div>PaaS 适合于业务和专业开发人员。不编写代码的业务开发人员可以使用像 WaveMaker 这样的平台来开发包含拖放组件的应用程序，而专业的开发人员可以使用像 Google App Engine 这样的平台构建和部署 Web 应用程序。PaaS 具有一些设施，可用这些设施来支持构建和交付 Web 应用程序与服务的端到端的生命周期。一些主要的 PaaS 提供商有 Google App Engine for Java™ and Python、Microsoft® Azure for .Net and Java 以及 Force.com。<br />
+      <br />
+直到 2010 年，PaaS 的发展速度都未赶上 SaaS 和 IaaS，可能是受已有 PaaS 解决方案的限制。那么，让我们先来看看已有的 PaaS 存在的一些问题，这些问题是下一代 PaaS 平台（比如 Cloud Foundry）应该解决的。</div>
+
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:1.5em;">已有的 PaaS 解决方案存在的一些问题</h3>
+<ul style="padding-left:2.5em;list-style-type:decimal;margin:.5em 0;">
+  <li style="margin-bottom:.5em;"><b>供应商锁定（缺乏云的可移植性）</b>：没有为开发人员或组织提供从一个云转到另一个云的选项。比如，如果一个开发人员选择了 Google App Engine，那么他们必须一直使用 Google App Engine，除非此应用程序通过 Google App Engine 控制台删除 Google App Engine，并且让现有应用程序按照新的云提供商的要求进行修改。而此应用程序之后必须部署在此处。</li>
+  <li style="margin-bottom:.5em;"><b>只可部署到公共云</b>：大多数现有 PaaS 解决方案都以公共云为目标，这导致了很多企业都不打算转至 PaaS。目前，许多企业永远都不会转至公共云，而且它们也没有在现有基础架构上设置私有云或组合使用私有与公共云的选项。</li>
+  <li style="margin-bottom:.5em;"><b>滞后的思维方式</b>：开发人员必须更改在公共云上构建应用程序的思维方式。之前，Google App Engine 并未提供关系数据库的选项。应用程序必须针对 BigTable 进行编码，因此在构建开始之前，需要先在思维方式上有所转变，而且已经有了与之相关的学习曲线。开发人员可以在没有任何修改的情况下将应用程序 WAR 文件部署到云内。</li>
+  <li style="margin-bottom:.5em;"><b>对稀松框架的支持</b>：目前，Java 程序员大都使用框架，而且几近 100% 的框架支持都会引入一些编写应用程序方面的难题。使用任何像 Spring 或 Struts 这样的常见框架，通过 Google App Engine 构建一个简单的应用程序，这常常需要使用一些技巧进行处理，然后才能使用该框架。</li>
+  <li style="margin-bottom:.5em;"><b>束缚于某个特定的环境</b>：已有的 PaaS 解决方案多限制于特定的环境，比如 Java 和 Python 使用 BigTable 作为 Google App Engine 的后端，.Net 和 Java 要求对 Microsoft Azure 使用 SQL Azure 数据库，对 Amazon Beanstalk 使用 Java。 使用任何这些 PaaS 都只要求在该环境下能正常存在。</li>
+  <li style="margin-bottom:.5em;"><b>非开源</b>：已有的 PaaS 解决方案没有一个是开源的，这就让开发人员很难衍生代码并添加对供社区分享的新特性的支持。Cloud Foundry 的一个引入注目的元素是它的开源特性，该特性使得组织之外的开发人员也能对其成功起到主要作用。</li>
+</ul>
+
+<h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:1.5em;">2011 – PaaS 之年</h3>
+<div><a target="_blank" href="http://www.gartner.com/technology/home.jsp">Gartner</a> 说过 <a target="_blank" href="http://www.gartner.com/it/page.jsp?id=1586114">2011 将是 “平台即服务” 之年</a>。这可归因于领先的企业软件提供商引入了大量新的 PaaS 产品。目前已发布的 PaaS 产品有 VMWare 的 Cloud Foundry、RedHat 的 OpenShift、CloudBees 和 DotCloud。（参阅 参考资料，获得所有这些产品的更多信息。）这些新的 PaaS 产品不会局限于一种语言或框架。现在，PaaS 已经真正成为了一种能支持使用多种语言和框架构建应用程序的平台。像 Cloud Foundry 这样的 PaaS 产品则更上了一个台阶，因为它支持多个云，我们将在本文的稍候部分对此进行讨论。这些改变会迫使已有的 PaaS 解决方案也成为多框架的。接下来，我们将重点讨论 Cloud Foundry，其他的 PaaS 产品不在本文的讨论范围之内。</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="什么是 Cloud Foundry？" id="sourceContent1"
+                      style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      <div>在 2011 年 4 月，VMWare 发布了一个开放的平台即服务项目，名为 Cloud Foundry。Cloud Foundry 是一种多语言、多框架、多应用服务和多个云的开源平台。它试图解决之前所列出的已有 PaaS 解决方案中存在的问题。开发人员或组织可以使用 Cloud Foundry 作为部署目标，即可部署到由 Cloud Foundry 提供的一个公共云，也可将它用作为一层，从而允许部署到所选择的云（公共云和私有云）。Cloud Foundry 有三个关键特性：</div>
+<ul style="padding-left:2.5em;list-style-type:decimal;margin:.5em 0;">
+  <li style="margin-bottom:.5em;"><b>在所有层上的选择</b>：一言以蔽之，Cloud Foundry 是一个 PaaS 提供选项。给开发人员提供的选择并不限于编程语言，而是可以应用于所有的层（服务和云）。 图 2 所示的图表是对 Cloud Foundry 的一个很好的描述。
+
+  <h3 style="padding-bottom:0;font-family:sans-serif;font-style:oblique;font-size:1.3em;color:green;margin-top:.3em;">图 2. Cloud Foundry 选择</h3>
+  <div style="margin-top:.5em;">
+    <img src="https://www.ibm.com/developerworks/cn/opensource/os-springroo4/image002.gif" style="max-width:100%" />
+    <div>在图 2 中，可以看到此三角型所有三个顶点上的选择。第一个顶点面向的是语言/运行时和框架。目前，Cloud Foundry 支持 Java、Groovy、Scala、Ruby 和 Node.js 语言。面向这些语言的受支持框架包括 Rails3、Grails、Node、Sinatra、Lift 和 Spring。第二个顶点对应于应用程序服务，开箱即用的可用服务有 MySQL（关系数据库）、Redis（键值数据仓库）和 MongoDB（文档数据仓库）。不久的将来还会提供对 RabbitMQ 和其他服务的支持。Cloud Foundry 为开发人员提供了使用 SQL 或 NoSQL 数据库的选择。仅仅掌握 MySQL 和 Java 的开发人员不必学习任何新东西，即可使用现有知识构建一个应用程序或部署已有的应用程序。第三个顶点显示的是云的选择。Cloud Foundry 可部署在一个公共云上，比如 cloudfoundry.com 上目前可用的公共云，也可以将 Cloud Foundry 部署于 IaaS 上，比如 Amazon EC2。还可以将 Cloud Foundry 下载并部署到您组织的私有云上，开发人员甚至可以将 Cloud Foundry 安装到自己的笔记本上，将它用作微云或开发人员云。</div> 
+  </div>
+  </li>
+  <li style="margin-bottom:.5em;"><b>开源</b>：Cloud Foundry 是一个开源项目，可在 Github 上找到（参阅 <a target="_blank" href="https://www.ibm.com/developerworks/cn/opensource/os-springroo4/#resources">参考资料</a>）。开发人员可以衍生 Cloud Foundry 项目，添加对新特性的支持或修复现有问题，还可以对此项目提供自己的贡献。 一家称为 ActiveState 的公司已经在 Cloud Foundry 上构建了自己的面向 Python 和 Perl 的云平台（参阅 <a target="_blank" href="https://www.ibm.com/developerworks/cn/opensource/os-springroo4/#resources">参考资料</a>）。之所以能够这样做完全是因为 Cloud Foundry 是一个开源项目，开发人员可以向它添加更多的服务或语言支持。
+  </li>
+  <li><b>云可移植性</b>：由于 Cloud Foundry 是一个开源项目，开发人员或组织拥有按需要运行 Cloud Foundry 的自由。RightScale 显示 Cloud Foundry 可运行在 Amazon EC2（参见 <a target="_blank" href="https://www.ibm.com/developerworks/cn/opensource/os-springroo4/#resources">参考资料</a>）上。那些不希望使用默认 Cloud Foundry 公共云的人可转而使用 Cloud Foundry 提供的其他云。</li>
+</ul>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="开始使用 Cloud Foundry" id="sourceContent1"
+                      style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      <div><b>Cloud Foundry</b> 公共云是作为 <a target="_blank" href="http://www.cloudfoundry.com/">http://www.cloudfoundry.com/</a> 处的一个免费服务提供的。此服务目前仍未测试版。尚未获得 Cloud Foundry 凭证的用户必须先注册一个帐户后才能开始使用 Cloud Foundry 公共云。而收到 Cloud Foundry 凭证通常需要几天的时间。公共云目前运行于 VMWare vSphere 云操作系统之上。要在收到凭证之前就开始使用，可以通过下载并安装 Cloud Foundry 在一台机器上设立一个云。
+        <br />
+        <br />
+收到 Cloud Foundry 凭证后，可采用三种方式与之进行交互。所有客户端都会与由 Cloud Foundry 公开的 REST API 交互。这些 REST Web 服务是一些简单的 HTTP 上的 json 有效负荷。</div>
+<ul style="padding-left:2.5em;list-style-type:decimal;margin:.5em 0;">
+  <li style="margin-bottom:.5em;"><b>VMC 命令行客户端</b>：VMC 是一个 ruby gem，它通过命令行提供对 Cloud Foundry 的访问。可用它来部署使用各种语言创建的应用程序。从 http://rubygems.org/gems/vmc 下载它。
+  </li>
+  <li style="margin-bottom:.5em;"><b>Spring Source Tool Suite（Spring Eclipse IDE 或 STS）</b>：STTS 是第二种连接到 Cloud Foundry 的方式。STS 是一个基于 Eclipse 的 IDE，常常与很多 Spring 产品捆绑在一起。欲了解有关 STS 的更多信息，可以参考 refcard 发布的 on dzone。访问 Cloud Foundry 还需要安装一个插件。在这个 IDE 内，可以进行所有的构建、测试和向云的部署。这真酷！您可以从 SpringSource 团队的博客 更多地了解它。
+  </li>
+  <li style="margin-bottom:.5em;"><b>Spring Roo Cloud Foundry 附加组件</b>：使用 Spring Roo Cloud Foundry 附加组件，应用程序可以直接在 Roo shell 内部署。对于 Roo shell 的热衷者，这意味着将可以从 Roo shell 内进行构建和部署。Roo shell 提供的另一个好处是 tab 完成。向命令添加几个字母，按下 tab 键，Roo shell 就会完成此命令。
+  </li>
+</ul>
+<div>现在，我们来探讨 Java 开发人员如何从 Roo shell 访问 Cloud Foundry。我们还会将前两篇文章中所创建的这个应用程序部署到 Cloud Foundry。</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h2 style="font-size:1.8em;">Spring Roo Cloud Foundry 集成</h2>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[Spring Roo 以附加组件的格式提供了对 Cloud Foundry 的支持。附加组件是一种机制，Spring Roo 借此提供对新特性的支持。]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="前提条件" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div>要用 Spring Roo 向 Cloud Foundry 部署一个应用程序，要遵循如下步骤：</div>
+<ul style="padding-left:2.5em;list-style-type:decimal;margin:.5em 0;">
+  <li style="margin-bottom:.5em;">如果未在您机器上安装 Spring Roo，请参考本系列文章的 第 1 部分 开始使用 Spring Roo。我使用的是最新版本的 Spring Roo 1.1.5.RELEASE。
+  </li>
+  <li style="margin-bottom:.5em;">下载会议应用程序的源代码，参见 <a href="https://www.ibm.com/developerworks/cn/opensource/os-springroo4/#download" target="_blank">下载</a>。该应用程序与前两篇文章中介绍的是同一个应用程序。目前使用 HSQLDB 作为数据库。我们稍后会将此应用程序移植到 MySQL 数据库中。
+  </li>
+</ul>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="在 Cloud Foundry 上部署简单的 HSQLDB 应用程序" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div>开发环境就绪后，就可以部署这个 conference 应用程序了。所下载的会议应用程序使用 HSQLDB 作为其数据库。要将此应用程序部署到 Cloud Foundry，可以遵循如下步骤：</div>
+<ul style="padding-left:2.5em;list-style-type:decimal;margin:.5em 0;">
+  <li style="margin-bottom:.5em;">将 conference.zip 解压缩到一个适当位置。  </li>
+  <li style="margin-bottom:.5em;">从命令行转至 conference.zip 解压缩的位置。  </li>
+  <li style="margin-bottom:.5em;">通过在命令行键入 mvn clean install 构建这个项目。</li>
+  <li style="margin-bottom:.5em;">在 conference 目录内，激发 Roo 命令来加载 shell。</li>
+  <li style="margin-bottom:.5em;">在 Cloud Foundry 上部署此应用程序之前，安装这个 Cloud Foundry 附加组件, 它将提供用来在 Cloud Foundry 执行操作的命令。要安装此 Cloud Foundry 附加组件，可以在 Roo shell 上键入如下命令：
+    <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">roo&gt; pgp automatic trust 
+
+    roo> addon install bundle --bundleSymbolicName 
+        org.springframework.roo.addon.cloud.foundry;1.1.5.RELEASE</pre>
+      第一个命令告诉 Spring Roo 自动信任所有 pgp 键，以便安装所有必需的附加组件，避免逐个信任各个信任键。
+      <br />
+      第二个命令安装 Cloud Foundry 附加组件的 1.1.5 RELEASE 版。这个命令需要一些时间才能完成，所以请耐心等待。</li>
+  <li style="margin-bottom:.5em;">安装完此附加组件后，必须先登录到 Cloud Foundry 才能执行操作。要登录到 Cloud Foundry，可以在 Roo shell 上键入如下命令：
+    <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;"> roo&gt; cloud foundry login --email shekhargulati84@gmail.com --password ******
+        --cloudControllerUrl http://api.cloudfoundry.com</pre>
+      cloud foundry login 命令接受三个选项：email、password 和 cloudControllerUrl。这三者中，email 和 password 是强制性的。cloudControllerUrl 的值默认为 http://api.cloudfoundry.com 处的 Cloud Foundry 公共云。若要部署到微云或其他地方的云，指向其 URL 即可。</li>
+  <li style="margin-bottom:.5em;">要查看用来访问 Cloud Foundry 的所有可用命令，只需键入 cloud foundry 并按下 tab 键，您就会看到所有命令。
+    <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">roo&gt; cloud foundry <Press Tab>                                                   
+
+      cloud foundry bind       cloud foundry clear      cloud foundry create     
+
+      cloud foundry delete     cloud foundry deploy     cloud foundry files 
+
+      cloud foundry info       cloud foundry list       cloud foundry login      
+
+      cloud foundry map        cloud foundry restart    cloud foundry start 
+
+      cloud foundry stop       cloud foundry unbind     cloud foundry unmap      
+
+      cloud foundry update     cloud foundry view</pre>
+  </li>
+  <li style="margin-bottom:.5em;">要查看与您的 Cloud Foundry 实例相关的信息， 可按如下所示键入 info 命令。这个命令将会显示有关内存使用、部署在 Cloud Foundry 上的应用程序的数量以及运行的服务数量的信息。它还会显示最大分配值，即最大内存为 2GB。
+    <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">roo&gt; cloud foundry info 
+        
+     VMware's Cloud Application Platform 
+     For support visit support@cloudfoundry.com 
+
+     Target:     http://api.cloudfoundry.com (0.999) 
+
+     User:     shekhargulati84@gmail.com 
+     Usage:     Memory (0MB of 2048MB total) 
+     Services (0 of 16 total) 
+     Apps (0 of 20 total)</pre></li>
+  <li style="margin-bottom:.5em;">接下来，通过键入 cloud foundry deploy 命令部署此应用程序。这个命令需要两个必需属性 appName 和 path。appName 属性代表的是应用程序的名称，而 path 属性代表的是 WAR 文件的路径。没有必要输入此路径，只需在 path 后按下 tab 键，Spring Roo 就会为您寻找该路径。此外，还有其他三种非强制属性：instances、memory 和 urls。默认情况下，只启动应用程序的一个实例，但是通过使用 instances 属性来指定实例，可以部署此应用程序的多个实例。分配给实例的默认内存大小为 256MB。要更改这个属性，在部署时，可以使用 memory 属性。URL 属性则可用来指定映射到此应用程序的 URL。默认情况下，URL 为 &lt;Application Name&gt;.cloudfoundry.com，在本例中，对于我们这个应用程序，URL 为 conference.cloudfoundry.com 。键入以下命令来部署这个会议应用程序
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">  roo&gt; cloud foundry deploy
+         --appName conference --path /target/conference-0.1.0.BUILD-SNAPSHOT.war</pre>
+         path 属性的值可以是 CREATE，具体情况取决于项目是否使用 Maven 构建。如果项目已经构建，正如本例中所示的那样，那么就会看到 war 的路径。否则，将会看到 CREATE，它首先构建项目，然后部署该应用程序。
+   </li>
+   <li>
+    所部署的应用程序尚未启动。使用如下所示的命令可以启动此应用程序。
+    <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+cloud foundry start app --appName conference</pre>
+   </li>
+   <li>在 http://conference.cloudfoundry.com/ 可以查看运行中的应用程序。</li>
+</ul>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="用 MySQL 数据库替代 HSQLDB" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div>从面向本地环境的 HSQLDB 转换到产品环境的 MySQL 数据库十分容易。首先，使用 Roo shell 将 persistence store 从 HSQLDB 改为 MySQL，然后使用 Cloud Foundry 附加组件创建一个 MySQL 服务并将此服务绑定到此应用程序。代码没有必要更改；唯一要更改的是配置。在机器上甚至没有必要提供 MySQL 数据库，因为测试可以直接在云内完成。Cloud Foundry 使用起来就像在本地的开发人员机器上进行开发那么轻便。</div>
+<ul style="padding-left:2.5em;list-style-type:decimal;margin:.5em 0;">
+  <li style="margin-bottom:.5em;">打开 Roo shell，并通过在 shell 上键入如下命令将永久性存储库从 HSQDB 更改到 MySQL。
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+persistence setup --database MYSQL --provider HIBERNATE</pre>
+这个命令将会更新此 pom.xml、database.properties、persistence.xml 指向 MySQL 的相关配置。
+  </li>
+  <li style="margin-bottom:.5em;">打开另一个命令行并执行 root 文件夹内的 mvn clean install -Dmaven.test.skip=true。请注意我跳过了测试，因为在这个会议应用程序中，没有 MySQL 数据库。</li>
+  <li style="margin-bottom:.5em;">构建成功后，应用程序也就准备好，可以进行部署了。但是，在部署之前，请先删除此应用程序，以便可以为我们的应用程序创建一个 MySQL 服务，并重新部署 一个新的应用程序。没有必要在每次更改时都删除此应用程序，因为还可以使用 update 命令更新部署。
+    <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+cloud foundry delete app --appName conference</pre>
+  </li>
+  <li style="margin-bottom:.5em;">现在，我们将部署新创建的这个具有 MySQL 特定配置的 war。
+  <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+cloud foundry deploy --appName conference --path 
+        /target/conference-0.1.0.BUILD- SNAPSHOT.war --memory 512MB</pre></li>
+  <li style="margin-bottom:.5em;">以上命令可部署这个应用程序，但应用程序实例尚未启动。所以，在启动此应用程序之前，我们需要创建一个 MySQL 服务并将它绑定到我们的服务。为了创建一个新服务，我们使用了 Cloud Foundry create service 命令，并为它提供 serviceName 和 serviceType。serviceType 可以是 MySQL、MongoDB 或 Redis。
+  <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+cloud foundry create service --serviceName conference-db --serviceType mysql</pre>
+服务创建之后，就可以通过使用 bind service 命令绑定服务。bind service 命令确保了 MySQL datasource 依赖关系在云内可得到满足。在云内，这又称为依赖注入。
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+cloud foundry bind service --appName conference --serviceName conference-db</pre>
+我们还可以通过指定 create service 命令的 appName 属性来避免使用 bind service 命令。
+<pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+cloud foundry create service --serviceName conference-db --serviceType mysql
+      --appName conference</pre>
+  </li>
+  <li style="margin-bottom:.5em;">现在，就可以使用 start 命令来启动这个会议应用程序了。在 http://conference.cloudfoundry.com/ 处可找到此应用程序。
+  <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+cloud foundry start app --appName conference</pre></li>
+<li style="margin-bottom:.5em;">最后，通过执行如下所示的 Cloud Foundry list apps 和 list services 命令来查看应用程序和服务列表。
+  <pre style="background-color:#F9F9F9;padding:.8em;border:solid 1px #E2E2E2;margin:.8em 0;">
+roo&gt; cloud foundry list apps                     
+
+================================= Applications ================================= 
+
+Name        Status    Instances   Services        URLs 
+----        ------    ---------   --------        ---- 
+conference  STARTED   1           conference-db   conference.cloudfoundry.com 
+
+
+roo> cloud foundry list services 
+
+================== System Services =================== 
+
+Service     Version     Description 
+-------     -------     ----------- 
+mongodb     1.8         MongoDB NoSQL store 
+redis       2.2         Redis key-value store service 
+mysql       5.1         MySQL database service 
+
+
+
+= Provisioned Services = 
+
+Name              Service 
+----              ------- 
+conference-db     mysql</pre></li>
+</ul>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 
 
 
