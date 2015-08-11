@@ -59,7 +59,7 @@
     <xsl:if test="normalize-space($entry/c:title) != ''">
       <h3>
         <xsl:attribute name="style">
-          <xsl:value-of select="concat('word-break:break-word;',$entry/@style)"/>
+          <xsl:value-of select="concat('word-break:break-word;margin-top:2em;',$entry/@style)"/>
         </xsl:attribute>
         <xsl:value-of disable-output-escaping="yes" select="$entry/c:title"/>
       </h3>
