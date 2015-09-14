@@ -254,6 +254,66 @@ $ git commit -m 'initial project version'</p>
           git rebase bug_101026  <span style="color:gray;"># 将你的主题分支加到公共分支的末尾 </span><br />
           git push               <span style="color:gray;"># 推送 </span></p> 
       </div>   
+      <br />   
+      <br />   
+      <br />   
+      <br />
+
+
+
+      <h2 style="font-size:3em;">git rebase</h2>
+      <div>
+        <b>git rebase</b> 用于把一个分支的修改合并到当前分支, 你可以基于远程分支 "origin"，创建一个叫 "mywork" 的分支。<br />
+        <pre style="margin: .625em 0 2em 0;padding:.625em 1em;border:solid 1px #D0D0D0;background-color:#EAEAEA;">$ git checkout -b mywork origin</pre>
+        假设远程分支 "origin" 已经有了 2 个提交，如图: <br />
+        <img src="/images/git/1339682677_4329.jpg" style="max-width:100%;margin-top:1em;" />
+      </div>
+
+      <div style="margin-top:2.5em;">现在我们在这个分支做一些修改，然后生成两个提交 (commit): <br />
+      <pre style="margin: .625em 0 2em 0;padding:.625em 1em;border:solid 1px #D0D0D0;background-color:#EAEAEA;">$ vi file.txt
+$ git commit
+$ vi otherfile.txt
+$ git commit</pre>
+      </div>
+
+      <div style="margin-top:2.5em;">但是与此同时，有些人也在 "origin" 分支上做了一些修改并且做了提交了. 这就意味着 "origin" 和 "mywork" 这两个分支各自 "前进" 了，它们之间 "分叉" 了。<br />
+        <img src="/images/git/1339682809_4752.jpg" style="max-width:100%;margin-top:1em;" />
+      </div>
+
+      <div style="margin-top:2.5em;">這時，你可以用 "pull" 命令把 "origin" 分支上的修改拉下来并且和你的修改合并； 结果看起来就像一个新的 "合并的提交" (merge commit):<br />
+        <img src="/images/git/1339682845_9921.jpg" style="max-width:100%;margin-top:1em;" />
+      </div>
+
+      <div style="margin-top:2.5em;">但是，如果你想让 "mywork" 分支历史看起来像没有经过任何合并一样，你也许可以用 git rebase:<br />
+      <pre style="margin: .625em 0 2em 0;padding:.625em 1em;border:solid 1px #D0D0D0;background-color:#EAEAEA;">$ git checkout mywork
+$ git rebase origin</pre>
+这些命令会把你的 "mywork" 分支里的每个提交 (commit) 取消掉，并且把它们临时保存为补丁 (patch)(这些补丁放到".git/rebase"目录中),然后把 "mywork" 分支更新为最新的 "origin" 分支，最后把保存的这些补丁应用到 "mywork" 分支上。
+        <img src="/images/git/1339682915_7495.jpg" style="max-width:100%;margin-top:1em;" />
+      </div>
+
+      <div style="margin-top:2.5em;">当'mywork'分支更新之后，它会指向这些新创建的提交 (commit),而那些老的提交会被丢弃。 如果运行垃圾收集命令 (pruning garbage collection), 这些被丢弃的提交就会删除. （请查看 git gc)
+        <img src="/images/git/1339682976_4523.jpg" style="max-width:100%;margin-top:1em;" />
+      </div>
+
+      <div style="margin-top:2.5em;"><b>解决冲突: </b>在 rebase 的过程中，也许会出现冲突 (conflict). 在这种情况，Git 会停止 rebase 并会让你去解决冲突； 在解决完冲突后，用 "git-add" 命令去更新这些内容的索引(index). 然后，你无需执行 git-commit, 只要执行:
+      <pre style="margin: .625em 0 2em 0;padding:.625em 1em;border:solid 1px #D0D0D0;background-color:#EAEAEA;">$ git rebase --continue</pre>
+      这样 git 会继续应用 (apply) 余下的补丁。在任何时候，你可以用 --abort 参数来终止 rebase 的行动，并且 "mywork" 分支会回到 rebase 开始前的状态。        
+      <pre style="margin: .625em 0 2em 0;padding:.625em 1em;border:solid 1px #D0D0D0;background-color:#EAEAEA;">$ git rebase --abort</pre>
+      </div>
+
+      <div style="margin-top:2.5em;"><b>git rebase 和 git merge 的区别</b>现在我们可以看一下用合并(merge)和用rebase所产生的历史的区别：
+      <img src="/images/git/1339683149_4793.jpg" style="max-width:100%;margin-top:1em;" />
+      <br />
+      <br />
+      当我们使用 Git log 来参看 commit 时，其 commit 的顺序也有所不同。<br />
+假设 C3 提交于 9:00AM, C5 提交于 10:00AM, C4 提交于 11:00AM，C6 提交于 12:00AM,<br />
+对于使用 git merge 来合并所看到的 commit 的顺序（从新到旧）是：C7 ,C6,C4,C5,C3,C2,C1<br />
+对于使用 git rebase 来合并所看到的 commit 的顺序（从新到旧）是：C7 ,C6‘,C5',C4,C3,C2,C1<br />
+ 因为 C6' 提交只是 C6 提交的克隆，C5' 提交只是 C5 提交的克隆，
+从用户的角度看使用 git rebase 来合并后所看到的 commit 的顺序（从新到旧）是：C7 ,C6,C5,C4,C3,C2,C1<br />
+<br />
+ 另外，我们在使用 git pull 命令的时候，可以使用 --rebase 参数，即 git pull --rebase,这里<b>表示把你的本地当前分支里的每个提交 (commit) 取消掉，并且把它们临时保存为补丁 (patch) (这些补丁放到".git/rebase"目录中),  然后把本地当前分支更新为最新的 "origin" 分支，最后把保存的这些补丁应用到本地当前分支上。</b>
+      </div>
     ]]>
   </c:content>
 </c:component>
