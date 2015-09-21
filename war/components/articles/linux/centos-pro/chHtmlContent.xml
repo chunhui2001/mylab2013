@@ -578,14 +578,13 @@ The system will be mount a driver local is<b> /media</b> <br />
 
 
 
-<h2 style="color:rgb(189, 21, 208);font-size:2.5em;margin-top:2em;">wkhtmltopdf 
-<h3>http://wkhtmltopdf.org/</h2>
-</h3>
+<h2 style="color:rgb(189, 21, 208);font-size:2.5em;margin-top:2em;">wkhtmltopdf </h2>
+<h3>http://wkhtmltopdf.org/</h3>
 <h2 style="color:green;font-size:1.5em;">&diams; 1. 下载相关 rpm: </h2>
 <div style="margin-bottom:2.5em;">
     1): xorg-x11-fonts-75dpi-7.5-9.el7.noarch.rpm <a href="ftp://ftp.muug.mb.ca/mirror/centos/7.1.1503/os/x86_64/Packages/xorg-x11-fonts-75dpi-7.5-9.el7.noarch.rpm">Download</a> <br />
     2): wkhtmltox-0.12.2.1_linux-centos6-amd64.rpm: <a href="http://downloads.sourceforge.net/wkhtmltopdf/wkhtmltox-0.12.2.1_linux-centos6-amd64.rpm">Download</a>
-  </div>
+</div>
 
 <h2 style="color:green;font-size:1.5em;">&diams; 2. 安装: </h2>
 <div style="margin-bottom:2.5em;">
@@ -618,6 +617,70 @@ exec($cmd, $var, $res);
 echo $var;
 </pre>
     </div>
+
+
+
+<h2 style="color:rgb(189, 21, 208);font-size:2.5em;margin-top:2em;">How To Create a systemd Service in Linux (CentOS 7)</h2>
+<h3 style="color:gray;">https://scottlinux.com/2014/12/08/how-to-create-a-systemd-service-in-linux-centos-7/</h3>
+<div>Creating a systemd service in Linux is much easier than writing init scripts. Here is an example to create an iperf3 service for systemd! <br /> OS used in this guide: CentOS 7 with EPEL for the iperf3 package <br /><br /></div>
+
+<h2 style="color:green;font-size:1.5em;">&diams; 1. First, install iperf3.</h2>
+<div style="margin-bottom:1em;">
+<span><b style="color:rgb(211, 98, 49);"># sudo yum install iperf3</b></span><br />
+</div>
+
+<h2 style="color:green;font-size:1.5em;">&diams; 2. Next, create a user iperf which will be used to run the iperf3 service.</h2>
+<div style="margin-bottom:1em;">
+<span><b style="color:rgb(211, 98, 49);"># sudo adduser iperf -s /sbin/nologin</b></span><br />
+</div>
+
+<h2 style="color:green;font-size:1.5em;">&diams; 3. Next, create the following file:</h2>
+<div style="margin-bottom:1em;">
+<span><b style="color:rgb(211, 98, 49);"># /etc/systemd/system/iperf3.service</b></span><br />
+</div>
+
+<h2 style="color:green;font-size:1.5em;">Put in the following contents and save the file:</h2>
+<div style="margin-bottom:1em;">
+<span><b style="color:rgb(211, 98, 49);">[Unit]<br />
+Description=iperf3 Service<br />
+After=network.target<br />
+<br />
+[Service]<br />
+Type=simple<br />
+User=iperf<br />
+ExecStart=/usr/bin/iperf3 -s<br />
+Restart=on-abort<br />
+<br />
+
+[Install]<br />
+WantedBy=multi-user.target</b></span><br />
+</div>
+
+<h2 style="color:green;font-size:1.5em;">Start the iperf3 service:</h2>
+<div style="margin-bottom:1em;">
+<span><b style="color:rgb(211, 98, 49);"># sudo systemctl start iperf3</b></span><br />
+</div>
+
+<h2 style="color:green;font-size:1.5em;">Check the status:</h2>
+<div style="margin-bottom:1em;">
+<span><b style="color:rgb(211, 98, 49);"># sudo systemctl status iperf3</b></span><br />
+</div>
+
+<h2 style="color:green;font-size:1.5em;">Stop the iperf3 service:</h2>
+<div style="margin-bottom:1em;">
+<span><b style="color:rgb(211, 98, 49);"># sudo systemctl stop iperf3</b></span><br />
+</div>
+
+<h2 style="color:green;font-size:1.5em;">Start the service at boot:</h2>
+<div style="margin-bottom:1em;">
+<span><b style="color:rgb(211, 98, 49);"># sudo systemctl enable iperf3</b></span><br />
+</div>
+
+<h2 style="color:green;font-size:1.5em;">Disable the service at boot:</h2>
+<div style="margin-bottom:1em;">
+<span><b style="color:rgb(211, 98, 49);"># sudo systemctl disable iperf3</b></span><br />
+</div>
+
 ]]>
     </c:content>
 </c:component>
