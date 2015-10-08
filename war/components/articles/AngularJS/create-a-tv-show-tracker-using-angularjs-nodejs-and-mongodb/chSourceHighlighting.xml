@@ -25,10 +25,11 @@
 <img src="/images/angularjs/tvshow-tracker-32.png" style="max-width:100%;" />
 <br />
 <br />
-
-
+<a target="_blank" href="https://github.com/sahat/tvshow-tracker">Source Code</a>
+<br />
+<br />
 <div style="margin-bottom:1em;">
-<b>August 18, 2014 Update:</b> GitHub repository code has been updated. Here is a brief overview of the main changes:
+GitHub repository code has been updated. Here is a brief overview of the main changes:
 </div>
 <ul style="line-height: 1.2em;margin-left: 1.5em;list-style-type: disc;color:rgb(22, 178, 255);">
   <li style="margin-bottom: .3em;">Removed method-override, cookie-parser and express-session modules</li>
@@ -62,7 +63,7 @@
 <div style="margin-bottom:.6em;">
 Run <b>express showtrackr</b> to create a new Express project, where showtrackr is the name of our app that we are going to build today.
 </div>
-<div style="margin-bottom:0em;">
+<div style="margin-bottom:1em;">
 <img src="/images/angularjs/tvshow-tracker-1.png" style="max-width:100%;" />
 </div>
 <div style="margin-bottom:.6em;">
@@ -112,7 +113,7 @@ app.listen(app.get('port'), function() {
   Download and extract the <a href="http://getbootstrap.com/getting-started/" target="_blank">Boostrap Sass</a>.
 </div>
 
-<div style="margin-bottom:0em;">
+<div style="margin-bottom:1em;">
 <img src="/images/angularjs/tvshow-tracker-4.png" style="max-width:100%;" />
 </div>
 <div style="margin-bottom:.6em;">
@@ -121,7 +122,7 @@ app.listen(app.get('port'), function() {
 <div style="margin-bottom:.6em;">
   Updated Bootstrap Sass path locations.
 </div>
-<div style="margin-bottom:0em;">
+<div style="margin-bottom:1em;">
 <img src="/images/angularjs/tvshow-tracker-5.png" style="max-width:100%;" />
 </div>
 <div style="margin-bottom:.6em;">
@@ -140,7 +141,7 @@ You will also need to download the following scripts and place them inside the <
   <li style="margin-bottom: .3em;"><a href="https://code.angularjs.org/1.3.5/">angular-cookies.js</a></li>
   <li style="margin-bottom: .3em;"><a href="http://momentjs.com/">moment.min.js</a></li>
 </ul>
-<div style="margin-bottom:0em;">
+<div style="margin-bottom:1em;">
 <img src="/images/angularjs/tvshow-tracker-6.png" style="max-width:100%;" />
 </div>
 <div style="margin-bottom:.6em;">
@@ -287,7 +288,7 @@ gulp.task('default', ['sass', 'watch']);</pre>
 The very last line specifies which gulp tasks to run when you execute gulp command in the terminal. For now it just compiles Sass stylesheets and watches for file changes, recompiling stylesheets automatically. You may be wondering what is <a href="https://github.com/floatdrop/gulp-plumber">gulp-plumber</a>? It will prevent pipe breaking caused by errors from gulp plugins. In other words when you make a syntax error in a Sass stylesheet, the gulp watcher will not crash and you won't see this crap happening in the middle of your workflow:
 </div>
 
-<div style="margin-bottom:0.6em;">
+<div style="margin-bottom:1em;">
 <img src="/images/angularjs/tvshow-tracker-9.png" style="max-width:100%;" />
 </div>
 
@@ -533,6 +534,2401 @@ Run the gulp command from the project directory and refresh the browser.
 Everything in the style.scss should be very straightforward if you are not completely new to Bootstrap. There are only a few custom classes, everything else simply overrides core Bootstrap classes to make it look prettier.
 </div>
   ]]>
+    </c:sourceContent>
+
+
+
+
+
+    <c:sourceContent type="html" title="Step 3: AngularJS Routes and Templates" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+<div style="margin-bottom:0.6em;">
+Go back to app.js and add this line inside the config method to enable HTML5 pushState:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">$locationProvider.html5Mode(true);</pre>
+</div>
+
+<div style="margin-bottom:0.6em;">
+What is <b>$locationProvider</b> and where does it come from? It's a built-in AngularJS service for configuring application linking paths. Using this service you can enable <b>HTML5 pushState</b> or change URL prefix from <b>#</b> to something like <b>#!</b>, which you will need to do if you are planning to use Disqus comments in your AngularJS application. Simply by adding <b>$locationProvider</b> parameter to the config's callback function is enough to tell AngularJS to inject that service and make it available.
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">angular.module('MyApp', ['ngCookies', 'ngResource', 'ngMessages', 'ngRoute', 'mgcrea.ngStrap'])
+  .config(function($locationProvider) {
+    $locationProvider.html5Mode(true);
+  });</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+But what happens when you try to minify this script with UglifyJS? The <b>$locationProvider</b> parameter will be changed to some obscure name and AngularJS won't know what to inject anymore. You can get around this problem by annotating the function with the names of the dependencies.
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">angular.module('MyApp', ['ngCookies', 'ngResource', 'ngMessages', 'ngRoute', 'mgcrea.ngStrap'])
+  .config(['$locationProvider', function($locationProvider) {
+    $locationProvider.html5Mode(true);
+  }]);</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+Each string in the array is the name of the service to inject for the corresponding parameter. From now on forward I will be using this notation. We are planning to minify and concatenate scripts after all.
+<br />
+<br />
+Next, we will need routes for the following pages:</div>
+
+
+<ul style="line-height: 1.2em;margin-left: 1.5em;list-style-type: disc;margin-bottom:1.5em;">
+  <li style="margin-bottom: .3em;"><b>Home</b> - display a list of popular shows.</li>
+  <li style="margin-bottom: .3em;"><b>Detail</b> - information about one particular TV show.</li>
+  <li style="margin-bottom: .3em;"><b>Login</b> - user login form.</li>
+  <li style="margin-bottom: .3em;"><b>Signup</b> - user signup form.</li>
+  <li style="margin-bottom: .3em;"><b>Add</b> - add a new show form.</li>
+</ul>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+Inject <b>$routeProvider</b> into config then add these routes:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">$routeProvider
+  .when('/', {
+    templateUrl: 'views/home.html',
+    controller: 'MainCtrl'
+  })
+  .when('/shows/:id', {
+    templateUrl: 'views/detail.html',
+    controller: 'DetailCtrl'
+  })
+  .when('/login', {
+    templateUrl: 'views/login.html',
+    controller: 'LoginCtrl'
+  })
+  .when('/signup', {
+    templateUrl: 'views/signup.html',
+    controller: 'SignupCtrl'
+  })
+  .when('/add', {
+    templateUrl: 'views/add.html',
+    controller: 'AddCtrl'
+  })
+  .otherwise({
+    redirectTo: '/'
+  });</pre>
+</div>
+
+
+
+<div style="margin-bottom:1em;">
+<img src="/images/angularjs/tvshow-tracker-11.png" style="max-width:100%;" />
+</div>
+
+
+
+<div style="margin-bottom:0.6em;">
+For each route there is a template and a controller. If you have a page with mostly static content then you don't even need to specify a controller. If you reload the page right now and open Browser's Developer Tools you will see a <b>404 (Not Found)</b> error since we haven't created any templates yet.
+<br />
+<br />
+Create a new file <b>home.html</b> in  <b>public/views</b> directory. This will be a place for all AngularJS templates.
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;div class="jumbotron"&gt;
+  &lt;div class="container"&gt;
+    &lt;ul class="alphabet"&gt;
+      &lt;li ng-repeat="char in alphabet"&gt;
+        &lt;span ng-click="filterByAlphabet(char)"&gt;{{char}}&lt;/span&gt;
+      &lt;/li&gt;
+    &lt;/ul&gt;
+    &lt;ul class="genres"&gt;
+      &lt;li ng-repeat="genre in genres"&gt;
+        &lt;span ng-click="filterByGenre(genre)"&gt;{{genre}}&lt;/span&gt;
+      &lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;div class="container"&gt;
+  &lt;div class="panel panel-default"&gt;
+    &lt;div class="panel-heading"&gt;
+      {{headingTitle}}
+      &lt;div class="pull-right"&gt;
+        &lt;input class="search" type="text" ng-model="query.name" placeholder="Search..."&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class="panel-body"&gt;
+      &lt;div class="row show-list"&gt;
+        &lt;div class="col-xs-4 col-md-3" ng-repeat="show in shows | filter:query | orderBy:'rating':true"&gt;
+          &lt;a href="/shows/{{show._id}}"&gt;
+            &lt;img class="img-rounded" ng-src="{{show.poster}}" width="100%"/&gt;
+          &lt;/a&gt;
+          &lt;div class="text-center"&gt;
+            &lt;a href="/shows/{{show._id}}"&gt;{{show.name}}&lt;/a&gt;
+            &lt;p class="text-muted"&gt;Episodes: {{show.episodes.length}}&lt;/p&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</pre>
+</div>
+
+
+
+<div style="margin-bottom:0.6em;">
+If you have used Bootstrap CSS framework before then everything should look familiar to you. There are however some AngularJS directives here. The <b>ng-repeat</b> will iterate over an array of items specified in the controller for this page.
+<br />
+<br />
+Let's take a look at this code snippet:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;li ng-repeat="char in alphabet"&gt;
+  &lt;span ng-click="filterByAlphabet(char)"&gt;{{char}}&lt;/span&gt;
+&lt;/li&gt;</pre>
+</div>
+
+
+
+<div style="margin-bottom:0.6em;">
+It expects an array called <b>alphabet</b> defined in the <b>MainCtrl</b> controller. The <b>char</b> refers to each individual item in that array, an alphabet letter in this case. When you click on that letter it will run the <b>filterByAlphabet</b> function specified in the <b>MainCtrl</b> controller as well. Here we are passing the current letter in <b>filterByAlphabet(char)</b> otherwise how would it know which letter to filter by?
+<br />
+<br />
+The other <b>ng-repeat</b> displays a thumbnail and a name of each show:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;div class="col-xs-4 col-md-3" ng-repeat="show in shows | filter:query | orderBy:'rating':true"&gt;
+  &lt;a href="/shows/{{show._id}}"&gt;
+    &lt;img class="img-rounded" ng-src="{{show.poster}}" width="100%"/&gt;
+  &lt;/a&gt;
+  &lt;div class="text-center"&gt;
+    &lt;a href="/shows/{{show._id}}"&gt;{{show.name}}&lt;/a&gt;
+    &lt;p class="text-muted"&gt;Episodes: {{show.episodes.length}}&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</pre>
+</div>
+
+
+
+<div style="margin-bottom:0.6em;">
+In AngularJS you can also filter and sort your results. In this code above, thumbnails are sorted by the rating and filtered by the query you type into the Search box:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;input class="search" type="text" ng-model="query.name" placeholder="Search..."&gt;</pre>
+</div>
+
+
+
+<div style="margin-bottom:0.6em;">
+The reason it's <b>query.name</b> and not just <b>query</b> is because we want to filter only by the TV show name, not by its summary, rating, network, air time, etc.
+<br />
+<br />
+Next create a new file <b>main.js</b> in  <b>public/controllers</b> directory then add it to <b>index.html</b>:
+</div>
+
+<div style="margin-bottom:1em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;script src="controllers/main.js"&gt;&lt;/script&gt;</pre>
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">angular.module('MyApp')
+  .controller('MainCtrl', ['$scope', 'Show', function($scope, Show) {
+
+    $scope.alphabet = ['0-9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+      'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+      'Y', 'Z'];
+
+    $scope.genres = ['Action', 'Adventure', 'Animation', 'Children', 'Comedy',
+      'Crime', 'Documentary', 'Drama', 'Family', 'Fantasy', 'Food',
+      'Home and Garden', 'Horror', 'Mini-Series', 'Mystery', 'News', 'Reality',
+      'Romance', 'Sci-Fi', 'Sport', 'Suspense', 'Talk Show', 'Thriller',
+      'Travel'];
+
+    $scope.headingTitle = 'Top 12 Shows';
+
+    $scope.shows = Show.query();
+
+    $scope.filterByGenre = function(genre) {
+      $scope.shows = Show.query({ genre: genre });
+      $scope.headingTitle = genre;
+    };
+
+    $scope.filterByAlphabet = function(char) {
+      $scope.shows = Show.query({ alphabet: char });
+      $scope.headingTitle = char;
+    };
+  }]);</pre>
+</div>
+
+
+
+<div style="margin-bottom:0.6em;">
+Here are the <b>alphabet</b> and <b>genre</b> arrays that I just mentioned earlier when describing the <b>ng-repeat</b> directive. The <b>Show</b> service is injected automatically by AngularJS. We haven't created it yet, so if you trying reloading the page you will get this error: <b>Unknown provider: ShowProvider &gt;- Show</b>.
+<br />
+<br />
+Go ahead and create the <b>show.js</b> in <b>public/services</b> directory and once again don't forget to add it to <b>index.html</b>:
+</div>
+
+<div style="margin-bottom:1em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;script src="services/show.js"&gt;&lt;/script&gt;</pre>
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">angular.module('MyApp')
+  .factory('Show', ['$resource', function($resource) {
+    return $resource('/api/shows/:_id');
+  }]);</pre>
+</div>
+
+
+
+<div style="margin-bottom:0.6em;">
+The simplest service you will ever see thanks to the <b>angular-resource.js</b> module for doing all the heavy lifting for us. The <b>$resource</b> service is the perfect companion for a RESTful backend. This is all we need to query all shows and an individual show by id. Refresh the page and if you see the <b>api/shows 404 (Not Found)</b> error then everything is working as expected for the time being.
+</div>
+
+
+<div style="margin-bottom:1em;">
+<img src="/images/angularjs/tvshow-tracker-12.png" style="max-width:100%;" />
+</div>
+
+
+
+<div style="margin-bottom:0.6em;">
+Let us switch over back to the Express application to implement database schemas and API routes.
+</div>
+  ]]>
+    </c:sourceContent>
+
+
+
+
+
+
+
+    <c:sourceContent type="html" title="Step 4: Database Schemas" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+
+
+
+<div style="margin-bottom:0.6em;">
+To install <a target="_blank" href="http://mongoosejs.com/">mongoose</a> and <b>bcryptjs</b> run the following command from the project directory:
+</div>
+
+<div style="margin-bottom:1em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">npm install --save mongoose bcryptjs</pre>
+</div>
+
+
+
+<div style="margin-bottom:0.6em;">
+Then add these two lines at the beginning of <b>server.js</b>:
+</div>
+
+<div style="margin-bottom:1em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">var mongoose = require('mongoose');
+var bcrypt = require('bcryptjs');</pre>
+</div>
+
+
+
+<div style="margin-bottom:0.6em;">
+Right below that, add the <b>Show</b> mongoose schema:
+</div>
+
+<div style="margin-bottom:1em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">var showSchema = new mongoose.Schema({
+  _id: Number,
+  name: String,
+  airsDayOfWeek: String,
+  airsTime: String,
+  firstAired: Date,
+  genre: [String],
+  network: String,
+  overview: String,
+  rating: Number,
+  ratingCount: Number,
+  status: String,
+  poster: String,
+  subscribers: [{
+    type: mongoose.Schema.Types.ObjectId, ref: 'User'
+  }],
+  episodes: [{
+      season: Number,
+      episodeNumber: Number,
+      episodeName: String,
+      firstAired: Date,
+      overview: String
+  }]
+});</pre>
+</div>
+
+
+
+<div style="margin-bottom:0.6em;">
+A schema is just a representation of your data in MongoDB. This is where you can enforce a certain field to be of particular type. A field can also be required, unique, contain only certain characters.
+<br />
+<br />
+All the fields above are almost 1-to-1 match with the data response from the <a target="_blank" href="http://thetvdb.com/">TheTVDB.com API</a>. Two things to note here:
+</div>
+
+<ul style="line-height: 1.2em;margin-left: 1.5em;margin-bottom:1.5em;list-style-type: disc;">
+  <li style="margin-bottom: .3em;">The default <b>_id</b> field has been overwritten with the numerical ID from The <b>TVDB</b>. There is no point in having both <b>_id</b> and <b>showId</b> fields.</li>
+  <li style="margin-bottom: .3em;">The <b>subscribers</b> field is an array of <b>User</b> ObjectIDs. We haven't created the User schema yet, but essentially it's just an array of references to <b>User</b> documents.</li>
+</ul>
+
+
+
+<div style="margin-bottom:0.6em;">
+Next, create the User schema:
+</div>
+
+<div style="margin-bottom:1em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">var userSchema = new mongoose.Schema({
+  email: { type: String, unique: true },
+  password: String
+});
+
+userSchema.pre('save', function(next) {
+  var user = this;
+  if (!user.isModified('password')) return next();
+  bcrypt.genSalt(10, function(err, salt) {
+    if (err) return next(err);
+    bcrypt.hash(user.password, salt, function(err, hash) {
+      if (err) return next(err);
+      user.password = hash;
+      next();
+    });
+  });
+});
+
+userSchema.methods.comparePassword = function(candidatePassword, cb) {
+  bcrypt.compare(candidatePassword, this.password, function(err, isMatch) {
+    if (err) return cb(err);
+    cb(null, isMatch);
+  });
+};</pre>
+</div>
+
+
+
+<div style="margin-bottom:0.6em;">
+Here we are using <a target="_blank" href="http://mongoosejs.com/docs/middleware.html">pre-save mongoose middleware</a> and comparePassword <a target="_blank" href="http://mongoosejs.com/docs/guide.html#methods">instance</a> method for password validation. This code was taken directly from <a target="_blank" href="https://github.com/jaredhanson/passport-local">passport-local</a> example.
+<br />
+<br />
+Now that we have schemas in place, we just have to create mongoose models which we will use for querying MongoDB. Where a schema is just an abstract representation of the data, a model on the other hand is a concrete object with methods to query, remove, update and save data from/to MongoDB.
+</div>
+
+<div style="margin-bottom:1em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">var User = mongoose.model('User', userSchema);
+var Show = mongoose.model('Show', showSchema);</pre>
+</div>
+
+
+
+<div style="margin-bottom:0.6em;">
+And finally in order to connect to the database:
+</div>
+
+<div style="margin-bottom:1em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">mongoose.connect('localhost');</pre>
+</div>
+
+
+
+<div style="margin-bottom:0.6em;">
+Launch mongod - MongoDB server, then restart <b>server.js</b> just to make sure our application still works.
+</div>
+
+                     ]]>
+    </c:sourceContent>
+
+
+
+
+
+
+
+
+    <c:sourceContent type="html" title="Step 5: Express API Routes" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+
+
+
+<div style="margin-bottom:0.6em;">
+We are going to create two routes for now. One is for querying all shows and another one for querying a single show by ID.
+<br />
+<br />
+If we were going to implement all REST routes for <b>/api/shows</b> here is a table that outlines a route's responsibility.
+</div>
+
+<table style="width:100%;margin-bottom:1.5em;">
+  <thead style="background-color:#f0e2f0;">
+    <tr>
+      <th>Route</th>
+      <th>POST</th>
+      <th>GET</th>
+      <th>PUT</th>
+      <th>DELETE</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>/api/shows</td>
+      <td>Add a new show</td>
+      <td>Get all shows</td>
+      <td>Update all shows</td>
+      <td>Remove all shows</td>
+    </tr>
+    <tr>
+      <td>/api/shows/:id</td>
+      <td>N/A</td>
+      <td>Get a show</td>
+      <td>Update a show</td>
+      <td>Delete a show</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+<div style="margin-bottom:0.6em;">
+Add these routes after Express middlewares:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">app.get('/api/shows', function(req, res, next) {
+  var query = Show.find();
+  if (req.query.genre) {
+    query.where({ genre: req.query.genre });
+  } else if (req.query.alphabet) {
+    query.where({ name: new RegExp('^' + '[' + req.query.alphabet + ']', 'i') });
+  } else {
+    query.limit(12);
+  }
+  query.exec(function(err, shows) {
+    if (err) return next(err);
+    res.send(shows);
+  });
+});</pre>
+</div>
+
+
+
+<div style="margin-bottom:0.6em;">
+Initially I had 3 different routes for finding the most popular shows on the home page, finding by genre and finding by letter. But they were essentially doing the same thing so I merged them into a single route and used Mongoose query builder to dynamically construct a database query.
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">app.get('/api/shows/:id', function(req, res, next) {
+  Show.findById(req.params.id, function(err, show) {
+    if (err) return next(err);
+    res.send(show);
+  });
+});</pre>
+</div>
+
+
+
+<div style="margin-bottom:0.6em;">
+You may have noticed the <b>next</b> parameter. If there an error it will be passed on to the error middleware and handled there as well. How you handle that error is up to you. A typical approach is to print a stack trace to the console and return only an error message to the user.
+<br />
+<br />
+Add this error middleware at the end of your routes. When an error occurs a stack trace is output in the console and JSON response is returned with the error message.
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">app.use(function(err, req, res, next) {
+  console.error(err.stack);
+  res.send(500, { message: err.message });
+});</pre>
+</div>
+
+
+<div style="margin-bottom:.6em;">
+<img src="/images/angularjs/tvshow-tracker-13.png" style="max-width:100%;" />
+</div>
+
+
+<div style="margin-bottom:1em;">
+<img src="/images/angularjs/tvshow-tracker-14.png" style="max-width:100%;" />
+</div>
+
+
+
+<div style="margin-bottom:0.6em;">
+If you go to Add, Login or Signup pages right now and hit Refresh you will get a 404 error:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">Cannot GET /add</pre>
+</div>
+
+
+
+<div style="margin-bottom:0.6em;">
+This is a common problem when you use HTML5 pushState on the client-side. To get around this problem we have to create a redirect route. Add this route before the error handler:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">app.get('*', function(req, res) {
+  res.redirect('/#' + req.originalUrl);
+});</pre>
+</div>
+
+
+
+<div style="margin-bottom:0.6em;">
+It is very important that you add this route after all your other routes (excluding error handler) because we are using the <b>*</b> wild card that will match any route that you type.
+<br />
+<br />
+If you try going to <b>http://localhost:3000/asdf</b> this last route that we have just added will match it and you will be redirected to <b>http://localhost:3000/#asdf</b>. At that point AngularJS will try to match this URL with your routes defined in <b>$routeProvider</b>. Since we haven't defined a route that matches <b>/asdf</b> you will be redirected back to home page:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">.otherwise({
+ redirectTo: '/'
+});</pre>
+</div>
+
+                     ]]>
+    </c:sourceContent>
+
+
+
+
+
+
+
+
+    <c:sourceContent type="html" title="Step 6: Query and Parse The TVDB API" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+
+
+
+<div style="margin-bottom:0.6em;">
+To add a new TV show to the database we will create a separate route for it.
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">app.post('/api/shows', function(req, res, next) {
+  var apiKey = '9EF1D1E7D28FDA0B';
+  var parser = xml2js.Parser({
+    explicitArray: false,
+    normalizeTags: true
+  });
+  var seriesName = req.body.showName
+    .toLowerCase()
+    .replace(/ /g, '_')
+    .replace(/[^\w-]+/g, '');
+  
+  async.waterfall([
+    function(callback) {
+      request.get('http://thetvdb.com/api/GetSeries.php?seriesname=' + seriesName, function(error, response, body) {
+        if (error) return next(error);
+        parser.parseString(body, function(err, result) {
+          if (!result.data.series) {
+            return res.send(404, { message: req.body.showName + ' was not found.' });
+          }
+          var seriesId = result.data.series.seriesid || result.data.series[0].seriesid;
+          callback(err, seriesId);
+        });
+      });
+    },
+    function(seriesId, callback) {
+      request.get('http://thetvdb.com/api/' + apiKey + '/series/' + seriesId + '/all/en.xml', function(error, response, body) {
+        if (error) return next(error);
+        parser.parseString(body, function(err, result) {
+          var series = result.data.series;
+          var episodes = result.data.episode;
+          var show = new Show({
+            _id: series.id,
+            name: series.seriesname,
+            airsDayOfWeek: series.airs_dayofweek,
+            airsTime: series.airs_time,
+            firstAired: series.firstaired,
+            genre: series.genre.split('|').filter(Boolean),
+            network: series.network,
+            overview: series.overview,
+            rating: series.rating,
+            ratingCount: series.ratingcount,
+            runtime: series.runtime,
+            status: series.status,
+            poster: series.poster,
+            episodes: []
+          });
+          _.each(episodes, function(episode) {
+            show.episodes.push({
+              season: episode.seasonnumber,
+              episodeNumber: episode.episodenumber,
+              episodeName: episode.episodename,
+              firstAired: episode.firstaired,
+              overview: episode.overview
+            });
+          });
+          callback(err, show);
+        });
+      });
+    },
+    function(show, callback) {
+      var url = 'http://thetvdb.com/banners/' + show.poster;
+      request({ url: url, encoding: null }, function(error, response, body) {
+        show.poster = 'data:' + response.headers['content-type'] + ';base64,' + body.toString('base64');
+        callback(error, show);
+      });
+    }
+  ], function(err, show) {
+    if (err) return next(err);
+    show.save(function(err) {
+      if (err) {
+        if (err.code == 11000) {
+          return res.send(409, { message: show.name + ' already exists.' });
+        }
+        return next(err);
+      }
+      res.send(200);
+    });
+  });
+});</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+I have added an error handling code for duplicate Shows in the <b>show.save()</b> method . Error code <b>11000</b> refers to the duplicate key error. We cannot have duplicate <b>_id</b> fields in MongoDB. If you choose not to override <b>_id</b> and instead use another field such as <b>showId</b> then you would need to explicity set unique property like we did with the <b>userSchema</b> to avoid duplicate entries.
+<br />
+<br />
+Oh and there is nothing special about the code <b>409</b>. It's just a common HTTP status code to indicate some sort of conflict. For a full list of status codes check out <a target="_blank" href="http://httpstatus.es/">http://httpstatus.es</a>.<br />
+<br />
+This error message object will be processed and displayed in the next step when we create the AddCtrl controller for adding a new Show.<br />
+<br />
+I have also added a validation check to see if the seriesid exists. If it does not exist that means the TVDB API has no information on that show, so a 404 response is sent back to our AngularJS app with a message saying that a show was not found.
+</div>
+
+
+<div style="margin-bottom:1em;">
+<img src="/images/angularjs/tvshow-tracker-35.png" style="max-width:100%;" />
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+You must first <b>obtain an API key</b> from the TVDB. Or you could use my API key for the purposes of this tutorial. The <b>xml2js</b> parser is configured to normalize all tags to lowercase and disable conversion to arrays when there is only one child element.
+<br />
+<br />
+The TV show name is slugified with underscores instead of dashes because that's what the TVDB API expects. For example if you pass in <b>Breaking Bad</b> it will be converted to <b>breaking_bad</b>.
+<br />
+<br />
+I am using <a target="_blank" href="https://github.com/caolan/async#waterfalltasks-callback">async.waterfall</a> to manage multiple asynchronous operations. Here is how it works:
+</div>
+
+<ul style="line-height: 1.2em;margin-left: 2.5em;margin-bottom:1.5em;list-style-type: decimal;">
+  <li style="margin-bottom: .3em;">Get the Show ID given the Show Name and pass it on to the next function.</li>
+<li style="margin-bottom: .3em;">Get the show information using the Show ID from previous step and pass the new show object on to the next function.</li>
+<li style="margin-bottom: .3em;">Convert the poster image to Base64, assign it to show.poster and pass the show object to the final callback function.</li>
+<li style="margin-bottom: .3em;">Save the show object to database.</li>
+</ul>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+You may be surprised why are we storing Base64 images in MongoDB? The answer is I don't have an <b>Amazon S3</b> account to store these images. And even if I did, it is not for free, so I wouldn't expect everyone to have an AWS account just to follow this tutorial. As a side effect, each image is about 30% larger in the Base64 form, but don't worry, it is well within the 500MB free tier limit provided by <b>MongoLab</b> and <b>MongoHQ</b>.
+</div>
+
+
+<div style="margin-bottom:1em;">
+<img src="/images/angularjs/tvshow-tracker-15.png" style="max-width:100%;" />
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+Before moving on, don't forget to install and add these dependencies which are used in the route we have just created:
+</div>
+
+<div style="margin-bottom:.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">npm install --save async request xml2js lodash</pre>
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">var async = require('async');
+var request = require('request');
+var xml2js = require('xml2js');
+var _ = require('lodash');</pre>
+</div>
+                     ]]>
+    </c:sourceContent>
+
+
+
+
+
+
+
+
+
+    <c:sourceContent type="html" title="Step 7: Back to AngularJS" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+
+
+
+<div style="margin-bottom:0.6em;">
+Create a new template add.html in the <b>views</b> directory:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;div class="container"&gt;
+  &lt;div class="panel panel-default"&gt;
+    &lt;div class="panel-heading"&gt;Add TV Show&lt;/div&gt;
+    &lt;div class="panel-body"&gt;
+      &lt;form class="form" method="post" ng-submit="addShow()" name="addForm"&gt;
+        &lt;div class="form-group" ng-class="{ 'has-success' : addForm.showName.$valid && addForm.showName.$dirty, 'has-error' : addForm.showName.$invalid && addForm.showName.$dirty }"&gt;
+          &lt;input class="form-control" type="text" name="showName" ng-model="showName" placeholder="Enter TV show name" required autofocus&gt;
+          &lt;div class="help-block text-danger" ng-if="addForm.showName.$dirty" ng-messages="addForm.showName.$error"&gt;
+            &lt;div ng-message="required"&gt;TV show name is required.&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;button class="btn btn-primary" type="submit" ng-disabled="addForm.$invalid"&gt;Add&lt;/button&gt;
+      &lt;/form&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ I have added form validation and error messages to be consistent with the form on the Signup page in Step 8.
+ <br /><br />
+In a nutshell, we are using ng-class directive to dynamically add Bootstrap classes <b>has-success</b> and <b>has-error</b> depending on the state of the form. The reason for checking if the form field is <b>$dirty</b>, i.e. user interacted with it, is to avoid flagging it as invalid before a user even got a chance to enter any text.
+<br /><br />
+The <b>ng-disabled</b> is another useful directive provided by AngularJS that allows us to disable a button until form passes all validation rules. In this case it's just a <b>required</b> attribute on the <b>showName</b> field.
+<br /><br />
+When you hit the <b>Add</b> button, AngularJS will execute the <b>addShow()</b> function defined in the <b>AddCtrl</b> controller because of this line:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;form method="post" ng-submit="addShow()" name="addForm" class="form-inline"&gt;</pre>
+</div>
+
+
+<div style="margin-bottom:1em;">
+<img src="/images/angularjs/tvshow-tracker-16.png" style="max-width:100%;" />
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ We also need to create a controller for this page:
+</div>
+
+<div style="margin-bottom:.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;script src="controllers/add.js"&gt;&lt;/script&gt;</pre>
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">angular.module('MyApp')
+  .controller('AddCtrl', ['$scope', '$alert', 'Show', function($scope, $alert, Show) {
+    $scope.addShow = function() {
+      Show.save({ showName: $scope.showName },
+        function() {
+          $scope.showName = '';
+          $scope.addForm.$setPristine();
+          $alert({
+            content: 'TV show has been added.',
+            placement: 'top-right',
+            type: 'success',
+            duration: 3
+          });
+        },
+        function(response) {
+          $scope.showName = '';
+          $scope.addForm.$setPristine();
+          $alert({
+            content: response.data.message,
+            placement: 'top-right',
+            type: 'danger',
+            duration: 3
+          });
+        });
+    };
+  }]);</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ Instead of making a <b>$http.post('/api/shows')</b> request directly from the controller, I have injected the <b>Show</b> service so we could use the <b>save()</b> method provided by <b>$resource</b> module. The code is now slightly cleaner (URL is no longer hard coded in the controller) and more consistent with the rest of the code. I should have done that in the first place since I am advocating for keeping <b>$http</b> out of the controllers and leave that job to services.
+<br /><br />
+I have added a second callback function to the <b>Show.save()</b> method for handling errors. It's a convention you will see being used in AngularJS quite frequently. One such error could be if you type a Show name that does not exist on the TVDB. Another potential error is when a Show you are trying to add already exists in your database.<br /><br />
+
+I have also added the <b>$setPristine()</b> method to clear the form of any errors after adding a Show. Previously I only cleared the <b>showName</b> by setting it to an empty string but earlier today, after adding input validation and error messages to this form, we need to properly clear it by changing its state from <b>$dirty</b> to <b>$pristine</b>.<br /><br />
+
+This controller sends a POST request to <b>/api/shows</b> with the TV show name - the route we have created in the previous step. If the request has been successfull, the form is cleared and a successful notification is shown.<br /><br />
+
+Note: The <b>$alert</b> is part of the <a target="_blank" href="http://sahatyalkabov.com/create-a-tv-show-tracker-using-angularjs-nodejs-and-mongodb/mgcrea.github.io/angular-strap/">AngularStrap</a> library.
+</div>
+
+
+
+<div style="margin-bottom:1em;">
+<img src="/images/angularjs/tvshow-tracker-17.png" style="max-width:100%;" />
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ Now, create another template detail.html:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;div class="container"&gt;
+  &lt;div class="panel panel-default"&gt;
+    &lt;div class="panel-body"&gt;
+      &lt;div class="media"&gt;
+        &lt;div class="pull-left"&gt;
+          &lt;img class="media-object img-rounded" ng-src="{{show.poster}}"&gt;
+          &lt;div class="text-center" ng-if="currentUser"&gt;
+            &lt;div ng-show="!isSubscribed()"&gt;
+              &lt;button ng-click="subscribe()" class="btn btn-block btn-success"&gt;
+                &lt;span class="glyphicon glyphicon-plus"&gt;&lt;/span&gt; Subscribe
+              &lt;/button&gt;
+            &lt;/div&gt;
+            &lt;div ng-show="isSubscribed()"&gt;
+              &lt;button ng-click="unsubscribe()" class="btn btn-block btn-danger"&gt;
+                &lt;span class="glyphicon glyphicon-minus"&gt;&lt;/span&gt; Unsubscribe
+              &lt;/button&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class="text-center" ng-show="!currentUser"&gt;
+            &lt;a class="btn btn-block btn-primary" href="#/login"&gt;Login to Subscribe&lt;/a&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class="media-body"&gt;
+          &lt;h2 class="media-heading"&gt;
+            {{show.name}}
+            &lt;span class="pull-right text-danger"&gt;{{show.rating}}&lt;/span&gt;
+          &lt;/h2&gt;
+          &lt;h4 ng-show="show.status === 'Continuing'"&gt;
+            &lt;span class="glyphicon glyphicon-calendar text-danger"&gt;&lt;/span&gt;
+            {{show.airsDayOfWeek}} &lt;em&gt;{{show.airsTime}}&lt;/em&gt; on
+            {{show.network}}
+          &lt;/h4&gt;
+          &lt;h4 ng-show="show.status === 'Ended'"&gt;
+            Status: &lt;span class="text-danger"&gt;Ended&lt;/span&gt;
+          &lt;/h4&gt;
+          &lt;p&gt;{{show.overview}}&lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class="alert alert-info" ng-show="nextEpisode"&gt;
+    The next episode starts {{nextEpisode.firstAired | fromNow}}.
+  &lt;/div&gt;
+
+  &lt;div class="panel panel-default"&gt;
+    &lt;div class="panel-heading"&gt;
+      &lt;span class="glyphicon glyphicon-play"&gt;&lt;/span&gt; Episodes
+    &lt;/div&gt;
+    &lt;div class="panel-body"&gt;
+      &lt;div class="episode" ng-repeat="episode in show.episodes"&gt;
+        &lt;h4&gt;{{episode.episodeName}}
+        &lt;small&gt;Season {{episode.season}}, Episode {{episode.episodeNumber}}&lt;/small&gt;
+        &lt;/h4&gt;
+        &lt;p&gt;
+          &lt;span class="glyphicon glyphicon-calendar"&gt;&lt;/span&gt;
+          {{episode.firstAired | date: 'short'}}
+        &lt;/p&gt;
+        &lt;p&gt;{{episode.overview}}&lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ This template is a little more complicated so let's break it down.
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;div class="text-center" ng-if="currentUser"&gt;
+  &lt;div ng-show="!isSubscribed()"&gt;
+    &lt;button ng-click="subscribe()" class="btn btn-block btn-success"&gt;
+      &lt;span class="glyphicon glyphicon-plus"&gt;&lt;/span&gt; Subscribe
+    &lt;/button&gt;
+  &lt;/div&gt;
+  &lt;div ng-show="isSubscribed()"&gt;
+    &lt;button ng-click="unsubscribe()" class="btn btn-block btn-danger"&gt;
+      &lt;span class="glyphicon glyphicon-minus"&gt;&lt;/span&gt; Unsubscribe
+    &lt;/button&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ A subscribe/unsubscribe button is shown only if the user is logged in. The <b>isSubscribed</b> function defined in the <b>DetailCtrl</b> that we haven't created yet simply checks if current user ID is in the <b>subscribers</b> array of current TV show. It returns either <b>true</b> or <b>false</b>. Depending on which value is returned, either green subscribe button or red unbscribe button is shown.
+ <br /><br />
+If the user is not logged in then a different button is shown:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;div class="text-center" ng-show="!currentUser"&gt;
+  &lt;a class="btn btn-block btn-primary" href="#/login"&gt;Login to Subscribe&lt;/a&gt;
+&lt;/div&gt;</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ The main difference between <b>ng-show</b> and <b>ng-if</b> is that the former simply shows/hides a DOM element and the latter won't even insert a DOM element if the expression is false. For more detailed comparisson refer to this <a target="_blank" href="http://stackoverflow.com/questions/19177732/what-is-the-difference-between-ng-if-and-ng-show-ng-hide">StackOverflow post</a>.
+ <br />
+ <br />
+In this code block I am using a custom filter <b>fromNow</b> that we are about to create shortly. It uses moment.js library to output a friendly date like in 6 hours or in 5 days.
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;div class="alert alert-info" ng-show="nextEpisode"&gt;
+  The next episode starts {{nextEpisode.firstAired | fromNow}}.
+&lt;/div&gt;</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ Create a new file <b>fromNow.js</b> in the <b>public/filters</b> directory:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">angular.module('MyApp').
+  filter('fromNow', function() {
+    return function(date) {
+      return moment(date).fromNow();
+    }
+});</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ And as usual, do not forget to reference it in <b>index.html</b>:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;script src="filters/fromNow.js"&gt;&lt;/script&gt;</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ Next, we need to create the <b>DetailCtrl</b> controller:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;script src="controllers/detail.js"&gt;&lt;/script&gt;</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ Both <b>subscribe()</b> and <b>unsubscribe()</b> methods below no longer pass <b>$rootScope.currentUser</b> to the Subscription service. It is not too difficult to fake that object and subscribe as someone else. Instead of passing the current user to the server, we can already use <b>req.user</b> object on server to get currently signed-in user.
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">angular.module('MyApp')
+  .controller('DetailCtrl', ['$scope', '$rootScope', '$routeParams', 'Show', 'Subscription',
+    function($scope, $rootScope, $routeParams, Show, Subscription) {
+      Show.get({ _id: $routeParams.id }, function(show) {
+        $scope.show = show;
+
+        $scope.isSubscribed = function() {
+          return $scope.show.subscribers.indexOf($rootScope.currentUser._id) !== -1;
+        };
+
+        $scope.subscribe = function() {
+          Subscription.subscribe(show).success(function() {
+            $scope.show.subscribers.push($rootScope.currentUser._id);
+          });
+        };
+
+        $scope.unsubscribe = function() {
+          Subscription.unsubscribe(show).success(function() {
+            var index = $scope.show.subscribers.indexOf($rootScope.currentUser._id);
+            $scope.show.subscribers.splice(index, 1);
+          });
+        };
+
+        $scope.nextEpisode = show.episodes.filter(function(episode) {
+          return new Date(episode.firstAired) > new Date();
+        })[0];
+      });
+    }]);</pre>
+</div>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ The <b>nextEpisode</b> property is an object of an upcoming episode. If a Show is currently airing you will see an alert box with a date when the next episode starts. This <b>nextEpisode</b> property uses a built-in Javascript <b>filter()</b> method to find the next episode from today.
+ <br /><br />
+The <b>filter()</b> method creates a new array with all elements that pass the test implemented by the provided callback function. The <b>show.episodes</b> is an Array of all episodes for a Show, we know that. A <b>filter()</b> method goes through each and every episode and checks if it passes the following condition <b>new Date(episode.firstAired) &gt; new Date()</b> and if it passes, that episode will be added to a new Array. At the end we will have either an empty Array (no upcoming shows) or potentially multiple episodes in an Array (multiple upcoming episodes). We are only interested in the first upcoming episode. And so that explains <b>[0]</b> at the end of the <b>filter()</b> method. When all is done the `nex
+<br /><br />
+<b>Note:</b> You could also use a good old <b>for</b> loop to get a next episode, I just think it looks a lot cleaner and more elegant with <b>filter()</b>. I couldn't do a one-liner in this case but in many other cases it is certainly <a target="_blank" href="http://lodash.com/docs#filter">possible</a>.
+<br /><br />
+Remember our one-line <b>Show</b> service? By default it has the following methods:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">{ 'get':    {method:'GET'},
+  'save':   {method:'POST'},
+  'query':  {method:'GET', isArray:true},
+  'remove': {method:'DELETE'},
+  'delete': {method:'DELETE'} };</pre>
+</div>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ In other words, we use <b>Show.get()</b> to get a single show and <b>Show.query()</b> to get an array of shows.
+ <br /><br />
+When we get a response back, we add the show to <b>$scope</b> in order to make it available to the <b>detail.html</b> template. We also define a few functions to handle subscribe and unsbuscribe actions.
+<br /><br />
+Notice the separation of concerns. We are not handling any HTTP requests inside any of the controllers. Sure it would be less lines of code to do everything inside a controller but it will quickly turn into a big pile of mess. AngularJS services, providers, factories are there for this reason.
+<br /><br />
+Here is how subscribe/unsubscribe action works:
+</div>
+
+<ul style="line-height: 1.2em;margin-left: 2.5em;margin-bottom:1.5em;list-style-type: decimal;">
+  <li style="margin-bottom: .3em;">Current show and current user objects are passed to the <b>Subscription</b> service.</li>
+<li style="margin-bottom: .3em;">Subscription service sends a POST request to either <b>/api/subscribe</b> or <b>/api/unsubscribe</b> with just the Show ID and User ID.</li>
+<li style="margin-bottom: .3em;">Server reponds with 200 OK after updating MongoDB documents.</li>
+<li style="margin-bottom: .3em;">Current user is added or removed from the <b>subscribers</b> array of the current TV show to keep things in sync.</li>
+</ul>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ The last thing we will do in this step is create the <b>Subscription</b> service.
+ <br /><br />
+Create a new file <b>subscription.js</b> in  services directory:
+</div>
+
+
+<div style="margin-bottom:.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;script src="services/subscription.js"&gt;&lt;/script&gt;</pre>
+</div>
+
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">angular.module('MyApp')
+  .factory('Subscription', ['$http', function($http) {
+    return {
+      subscribe: function(show, user) {
+        return $http.post('/api/subscribe', { showId: show._id });
+      },
+      unsubscribe: function(show, user) {
+        return $http.post('/api/unsubscribe', { showId: show._id });
+      }
+    };
+  }]);</pre>
+</div>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ As I have mentioned above we no longer need to pass <b>{ userId: user._id }</b> to <b>/api/subscribe</b> and <b>/api/unsubsctibe</b>, just the show ID is enough since we already have access to a user on the server.
+</div>
+
+
+
+<div style="margin-bottom:1em;">
+<img src="/images/angularjs/tvshow-tracker-18.png" style="max-width:100%;" />
+</div>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ We will create Express routes <b>/api/subscribe</b> and <b>/api/unsubscribe</b> in Step 10, after we implement client-side and server-side authentication.
+</div>
+
+
+]]>
+    </c:sourceContent>
+
+
+
+
+
+
+
+
+
+    <c:sourceContent type="html" title="Step 8: Client-side Authentication" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ Create a new template <b>login.html</b>:
+</div>
+
+
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;div class="container"&gt;
+  &lt;div class="row"&gt;
+    &lt;div class="center-form panel"&gt;
+      &lt;div class="panel-body"&gt;
+        &lt;h2 class="text-center"&gt;Login&lt;/h2&gt;
+
+        &lt;form method="post" ng-submit="login()" name="loginForm"&gt;
+
+          &lt;div class="form-group"&gt;
+            &lt;input class="form-control input-lg" type="text" name="email"
+                   ng-model="email" placeholder="Email" required autofocus&gt;
+          &lt;/div&gt;
+
+          &lt;div class="form-group"&gt;
+            &lt;input class="form-control input-lg" type="password" name="password"
+                   ng-model="password" placeholder="Password" required&gt;
+          &lt;/div&gt;
+
+          &lt;button type="submit" ng-disabled="loginForm.$invalid"
+                  class="btn btn-lg btn-block btn-success"&gt;Sign In
+          &lt;/button&gt;
+        &lt;/form&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:1em;">
+<img src="/images/angularjs/tvshow-tracker-19.png" style="max-width:100%;" />
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ Create another template <b>signup.html:</b>:
+</div>
+
+
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;div class="container"&gt;
+  &lt;br/&gt;
+
+  &lt;div class="row"&gt;
+    &lt;div class="center-form panel"&gt;
+      &lt;form method="post" ng-submit="signup()" name="signupForm"&gt;
+        &lt;div class="panel-body"&gt;
+          &lt;h2 class="text-center"&gt;Sign up&lt;/h2&gt;
+
+          &lt;div class="form-group"
+               ng-class="{ 'has-success' : signupForm.email.$valid && signupForm.email.$dirty, 'has-error' : signupForm.email.$invalid && signupForm.email.$dirty }"&gt;
+            &lt;input class="form-control input-lg" type="email" id="email"
+                   name="email" ng-model="email" placeholder="Email" required
+                   autofocus&gt;
+
+            &lt;div class="help-block text-danger" ng-if="signupForm.email.$dirty"
+                 ng-messages="signupForm.email.$error"&gt;
+              &lt;div ng-message="required"&gt;Your email address is required.&lt;/div&gt;
+              &lt;div ng-message="email"&gt;Your email address is invalid.&lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;div class="form-group"
+               ng-class="{ 'has-success' : signupForm.password.$valid && signupForm.password.$dirty, 'has-error' : signupForm.password.$invalid && signupForm.password.$dirty }"&gt;
+            &lt;input class="form-control input-lg" type="password" name="password"
+                   ng-model="password" placeholder="Password" required&gt;
+
+            &lt;div class="help-block text-danger"
+                 ng-if="signupForm.password.$dirty"
+                 ng-messages="signupForm.password.$error"&gt;
+              &lt;div ng-message="required"&gt;Password is required.&lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;div class="form-group"
+               ng-class="{ 'has-success' : signupForm.confirmPassword.$valid && signupForm.confirmPassword.$dirty, 'has-error' : signupForm.confirmPassword.$invalid && signupForm.confirmPassword.$dirty }"&gt;
+            &lt;input class="form-control input-lg" type="password"
+                   name="confirmPassword" ng-model="confirmPassword"
+                   repeat-password="password" placeholder="Confirm Password"
+                   required&gt;
+
+            &lt;div class="help-block text-danger my-special-animation"
+                 ng-if="signupForm.confirmPassword.$dirty"
+                 ng-messages="signupForm.confirmPassword.$error"&gt;
+              &lt;div ng-message="required"&gt;You must confirm password.&lt;/div&gt;
+              &lt;div ng-message="repeat"&gt;Passwords do not match.&lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;button type="submit" ng-disabled="signupForm.$invalid"
+                  class="btn btn-lg btn-block btn-primary"&gt;Create Account
+          &lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/form&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</pre>
+</div>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ This template is a bit trickier than <b>login.html</b>. First, I am dynamically assigning <b>has-success</b> and <b>has-error</b> CSS classes depending on whether the form is valid or not. These CSS classes are part of the Bootstrap framework. Second, AngularJS is smart enough to use native HTML attributes such as <b>type="email"</b> and <b>required</b> for input validation.
+ <br /><br />
+The <b>ngMessages</b> is a new feature in the <b>AngularJS 1.3 Beta 8</b>. Check out <a target="_blank" href="http://www.yearofmoo.com/2014/05/how-to-use-ngmessages-in-angularjs.html">How to use ngMessages in AngularJS</a> for an in-depth overview of ngMessages.
+<br /><br />
+The only other thing that is worth mentioning is this directive:
+</div>
+
+
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">repeat-password="password"</pre>
+</div>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ It's a custom directive for checking that Confirm Password matches Password and vice versa.
+ <br /><br />
+Create a new file <b>repeatPassword.js</b> in the <b>public/directives</b> directory. Then add it to <b>index.html</b>:
+</div>
+
+<div style="margin-bottom:.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;script src="directives/repeatPassword.js"&gt;&lt;/script&gt;</pre>
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">angular.module('MyApp')
+  .directive('repeatPassword', function() {
+    return {
+      require: 'ngModel',
+      link: function(scope, elem, attrs, ctrl) {
+        var otherInput = elem.inheritedData("$formController")[attrs.repeatPassword];
+
+        ctrl.$parsers.push(function(value) {
+          if (value === otherInput.$viewValue) {
+            ctrl.$setValidity('repeat', true);
+            return value;
+          }
+          ctrl.$setValidity('repeat', false);
+        });
+
+        otherInput.$parsers.push(function(value) {
+          ctrl.$setValidity('repeat', value === ctrl.$viewValue);
+          return value;
+        });
+      }
+    };
+  });</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:1em;">
+<img src="/images/angularjs/tvshow-tracker-20.png" style="max-width:100%;" />
+</div>
+
+
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ Let's create controllers for <b>login.html</b> and <b>signup.html</b> templates:
+ <br /><br />
+Here is the Signup controller:
+</div>
+
+<div style="margin-bottom:.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;script src="controllers/signup.js"&gt;&lt;/script&gt;</pre>
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">angular.module('MyApp')
+  .controller('SignupCtrl', ['$scope', 'Auth', function($scope, Auth) {
+    $scope.signup = function() {
+      Auth.signup({
+        email: $scope.email,
+        password: $scope.password
+      });
+    };
+  }]);</pre>
+</div>
+
+
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ And here is the Login controller:
+</div>
+
+<div style="margin-bottom:.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;script src="controllers/login.js"&gt;&gt;/script&gt;</pre>
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">angular.module('MyApp')
+  .controller('LoginCtrl', ['$scope', 'Auth', function($scope, Auth) {
+    $scope.login = function() {
+      Auth.login({
+        email: $scope.email,
+        password: $scope.password
+      });
+    };
+  }]);</pre>
+</div>
+
+
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ Both Login and Signup controllers use <b>Auth</b> service which we are about to create.
+ <br /><br />
+Create a new service <b>auth.js</b> in the <b>services</b> directory:
+</div>
+
+<div style="margin-bottom:.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;script src="services/auth.js"&gt;&lt;/script&gt;</pre>
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">angular.module('MyApp')
+  .factory('Auth', ['$http', '$location', '$rootScope', '$cookieStore', '$alert',
+    function($http, $location, $rootScope, $cookieStore, $alert) {
+      $rootScope.currentUser = $cookieStore.get('user');
+      $cookieStore.remove('user');
+
+      return {
+        login: function(user) {
+          return $http.post('/api/login', user)
+            .success(function(data) {
+              $rootScope.currentUser = data;
+              $location.path('/');
+
+              $alert({
+                title: 'Cheers!',
+                content: 'You have successfully logged in.',
+                placement: 'top-right',
+                type: 'success',
+                duration: 3
+              });
+            })
+            .error(function() {
+              $alert({
+                title: 'Error!',
+                content: 'Invalid username or password.',
+                placement: 'top-right',
+                type: 'danger',
+                duration: 3
+              });
+            });
+        },
+        signup: function(user) {
+          return $http.post('/api/signup', user)
+            .success(function() {
+              $location.path('/login');
+
+              $alert({
+                title: 'Congratulations!',
+                content: 'Your account has been created.',
+                placement: 'top-right',
+                type: 'success',
+                duration: 3
+              });
+            })
+            .error(function(response) {
+              $alert({
+                title: 'Error!',
+                content: response.data,
+                placement: 'top-right',
+                type: 'danger',
+                duration: 3
+              });
+            });
+        },
+        logout: function() {
+          return $http.get('/api/logout').success(function() {
+            $rootScope.currentUser = null;
+            $cookieStore.remove('user');
+            $alert({
+              content: 'You have been logged out.',
+              placement: 'top-right',
+              type: 'info',
+              duration: 3
+            });
+          });
+        }
+      };
+    }]);</pre>
+</div>
+
+
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ In the next section we will create an Express middleware that creates a User cookie on each request. The <b>$cookieStore</b> service grabs that cookie, saves it locally on <b>$rootScope</b> and removes the cookie (we don't want to be authenticated forever).
+ <br /><br />
+Unfortunately I haven't found a cleaner and more straightforward authentication implementation in AngularJS yet. This will do for now. If you know of a better way, let me know.
+</div>
+
+<div style="margin-bottom:1em;">
+<img src="/images/angularjs/tvshow-tracker-21.png" style="max-width:100%;" />
+</div>
+
+
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ Go back to index.html and find this line:
+</div>
+
+<div style="margin-bottom:.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;li&gt;&lt;a href="javascript:void(0)" ng-click="logout()"&gt;Logout&lt;/a&gt;&lt;/li&gt;</pre>
+</div>
+
+
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ We are using <b>javascript:void(0)</b> instead of <b>#</b>, that you would typically see used to represent a dummy or null URLs, because hashes are used for routes in AngularJS.
+ <br /><br />
+Also, we are using the <b>logout()</b> function but we haven't created a controller to handle it. Since Navbar doesn't fall under any particular route in <b>$routeProvider</b> we have to assign the controller inline:
+</div>
+
+<div style="margin-bottom:.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;div ng-controller="NavbarCtrl" class="navbar navbar-default navbar-static-top" role="navigation" bs-navbar&gt;</pre>
+</div>
+
+<div style="margin-bottom:1em;">
+<img src="/images/angularjs/tvshow-tracker-22.png" style="max-width:100%;" />
+</div>
+
+
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ Then create a controller <b>navbar.js</b>:
+</div>
+
+<div style="margin-bottom:.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;script src="controllers/navbar.js"&gt;&lt;/script&gt;</pre>
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">angular.module('MyApp')
+  .controller('NavbarCtrl', ['$scope', 'Auth', function($scope, Auth) {
+    $scope.logout = function() {
+      Auth.logout();
+    };
+  }]);</pre>
+</div>
+
+
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ Of course we cannot login or create a new account because we haven't implemented that yet on the server. Let's do that next!
+</div>
+
+]]>
+    </c:sourceContent>
+
+
+
+
+
+
+
+
+
+    <c:sourceContent type="html" title="Step 9: Server-side Authentication" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+
+<div style="margin-bottom:0.6em;">
+ Install the following dependencies:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">npm install --save express-session passport passport-local</pre>
+</div>
+
+
+<div style="margin-bottom:0.6em;">
+ Then add them to your module dependencies:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">var session = require('express-session');
+var passport = require('passport');
+var LocalStrategy = require('passport-local').Strategy;</pre>
+</div>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ In order to setup <a target="_blank" href="http://passportjs.org/">Passport.js</a> we have to configure four things:
+</div>
+
+<ul style="line-height: 1.2em;margin-left: 2.5em;margin-bottom:1.5em;list-style-type: decimal;">
+  <li style="margin-bottom: .3em;">Passport serialize and deserialize methods</li>
+<li style="margin-bottom: .3em;">Passport strategy</li>
+<li style="margin-bottom: .3em;">Express session middleware</li>
+<li style="margin-bottom: .3em;">Passport middleware</li>
+</ul>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ Serialize and deserialize methods are used to keep you signed-in. More details <a target="_blank" href="http://passportjs.org/guide/configure/">here</a>.
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">passport.serializeUser(function(user, done) {
+  done(null, user.id);
+});
+
+passport.deserializeUser(function(id, done) {
+  User.findById(id, function(err, user) {
+    done(err, user);
+  });
+});</pre>
+</div>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ Passport comes with hundreds of different strategies for just about every third-party service out there. We will not be signing in with Facebook, Google or Twitter. Instead we will use Passport's LocalStrategy to sign in with username and password.
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">passport.use(new LocalStrategy({ usernameField: 'email' }, function(email, password, done) {
+  User.findOne({ email: email }, function(err, user) {
+    if (err) return done(err);
+    if (!user) return done(null, false);
+    user.comparePassword(password, function(err, isMatch) {
+      if (err) return done(err);
+      if (isMatch) return done(null, user);
+      return done(null, false);
+    });
+  });
+}));</pre>
+</div>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ <b>Note:</b> This code snippet is almost identical to the one found on the Passport | Configure page. The main difference here is we override username field to be called email field.
+ <br /><br />
+Add Express Session and Passport middleware right after the cookieParser() middleware:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">app.use(session({ secret: 'keyboard cat' }));
+app.use(passport.initialize());
+app.use(passport.session());</pre>
+</div>
+
+<div style="margin-bottom:1em;">
+<img src="/images/angularjs/tvshow-tracker-23.png" style="max-width:100%;" />
+</div>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ Also, add this function somewhere in the <b>server.js</b> that we will use shortly to protect our routes from unauthenticated requests.
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) next();
+  else res.send(401);
+}</pre>
+</div>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ Next, we will create <b>/login</b>, <b>/logout</b> and <b>/signup</b> routes.
+ <br /><br />
+When a user tries to sign-in from our AngularJS application, a POST request is sent with the following data:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">{
+  email: 'example@email.com',
+  password: '1234'
+}</pre>
+</div>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ This data is passed to the Passport LocalStrategy. If email is found and password is valid then a new cookie is created with the user object, additionally the user object is sent back to the client.
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">app.post('/api/login', passport.authenticate('local'), function(req, res) {
+  res.cookie('user', JSON.stringify(req.user));
+  res.send(req.user);
+});</pre>
+</div>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ Yes, I know it's a bad idea to send user's password over the network or to store it in a cookie, even if password is encryped. I have looked at so many different tutorials on AngularJS authentication and there is not a single approach that I like. It is either too complicated, too ugly or both. If I find a better solution I will update this tutorial but for now this will do.
+ <br /><br />
+The signup route should pretty straightforward. In fact I oversimplified it for the purposes of this tutorial. There is no input validation. If you need input validation then take a look at the <b>express-validator</b>. You can see it being used through the <b>hackathon-starter</b> project.
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">app.post('/api/signup', function(req, res, next) {
+  var user = new User({
+    email: req.body.email,
+    password: req.body.password
+  });
+  user.save(function(err) {
+    if (err) return next(err);
+    res.send(200);
+  });
+});</pre>
+</div>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ Passport exposes a <b>logout()</b> function on <b>req</b> object that can be called from any route which terminates a login session. Invoking <b>logout()</b> will remove the <b>req.user</b> property and clear the login session.
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">app.get('/api/logout', function(req, res, next) {
+  req.logout();
+  res.send(200);
+});</pre>
+</div>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ Finally, add the following custom middleware after the Express static middleware. If user is authenticated, this will create a new cookie that will be consumed by our AngularJS authentication service to read user information.
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">app.use(function(req, res, next) {
+  if (req.user) {
+    res.cookie('user', JSON.stringify(req.user));
+  }
+  next();
+});</pre>
+</div>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ Go ahead create a new account and try logging in. If you did everything correctly you should get a success notification and you will see your email address in the Navbar.
+</div>
+
+<div style="margin-bottom:1em;">
+<img src="/images/angularjs/tvshow-tracker-24.png" style="max-width:100%;" />
+</div>
+]]>
+    </c:sourceContent>
+
+
+
+
+
+
+
+
+
+    <c:sourceContent type="html" title="Step 10: Subscription" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+ In this step we will implement two routes for subscribing and unsubscribing to/from a show.
+</div>
+
+<div style="margin-bottom:.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">app.post('/api/subscribe', ensureAuthenticated, function(req, res, next) {
+  Show.findById(req.body.showId, function(err, show) {
+    if (err) return next(err);
+    show.subscribers.push(req.user.id);
+    show.save(function(err) {
+      if (err) return next(err);
+      res.send(200);
+    });
+  });
+});</pre>
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">app.post('/api/unsubscribe', ensureAuthenticated, function(req, res, next) {
+  Show.findById(req.body.showId, function(err, show) {
+    if (err) return next(err);
+    var index = show.subscribers.indexOf(req.user.id);
+    show.subscribers.splice(index, 1);
+    show.save(function(err) {
+      if (err) return next(err);
+      res.send(200);
+    });
+  });
+});</pre>
+</div>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  Using <b>req.user.id</b> of a currently signed-in user instead of a <b>req.body.userId</b> user object that was sent by in by the AngularJS app. As I have explained above, for security reasons we should not rely on a client because it is not to difficult to fake the value of <b>$routeScope.currentUser</b>.
+  <br /><br />
+We are using <b>ensureAuthenticated</b> middleware here to prevent unauthenticated users from accessing these route handlers.
+<br /><br />
+When users subscribe to a show this is how its MongoDB document may look:
+</div>
+
+<div style="margin-bottom:1em;">
+<img src="/images/angularjs/tvshow-tracker-25.png" style="max-width:100%;" />
+</div>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  Again, we are not storing actual users inside subscribers array, only ObjectId references to those users. When we need to "expand" those user objects we are going to use <b>populate</b> method provided by Mongoose.
+</div>
+]]>
+    </c:sourceContent>
+
+
+
+
+
+
+
+
+
+    <c:sourceContent type="html" title="Step 11: Email Notifications" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  For sending email notifications we are going to need <b>agenda</b>, <b>sugar.js</b> and <b>nodemailer</b>.
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">npm install --save agenda sugar nodemailer</pre>
+</div>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  Then add them to the list of module dependencies:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">var agenda = require('agenda')({ db: { address: 'localhost:27017/test' } });
+var sugar = require('sugar');
+var nodemailer = require('nodemailer');</pre>
+</div>
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  Next, we are going to create a new agenda task:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">agenda.define('send email alert', function(job, done) {
+  Show.findOne({ name: job.attrs.data }).populate('subscribers').exec(function(err, show) {
+    var emails = show.subscribers.map(function(user) {
+      return user.email;
+    });
+
+    var upcomingEpisode = show.episodes.filter(function(episode) {
+      return new Date(episode.firstAired) > new Date();
+    })[0];
+
+    var smtpTransport = nodemailer.createTransport('SMTP', {
+      service: 'SendGrid',
+      auth: { user: 'hslogin', pass: 'hspassword00' }
+    });
+
+    var mailOptions = {
+      from: 'Fred Foo ✔ <foo@blurdybloop.com>',
+      to: emails.join(','),
+      subject: show.name + ' is starting soon!',
+      text: show.name + ' starts in less than 2 hours on ' + show.network + '.\n\n' +
+        'Episode ' + upcomingEpisode.episodeNumber + ' Overview\n\n' + upcomingEpisode.overview
+    };
+
+    smtpTransport.sendMail(mailOptions, function(error, response) {
+      console.log('Message sent: ' + response.message);
+      smtpTransport.close();
+      done();
+    });
+  });
+});
+
+agenda.start();
+
+agenda.on('start', function(job) {
+  console.log("Job %s starting", job.attrs.name);
+});
+
+agenda.on('complete', function(job) {
+  console.log("Job %s finished", job.attrs.name);
+});</pre>
+</div>
+
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  It may not be immediately obvious how <a target="_blank" href="https://github.com/rschmukler/agenda">Agenda</a> works so I will try to explain it here. Agenda is a job scheduling library for Node.js similar to <a target="_blank" href="https://github.com/ncb000gt/node-cron">node-cron</a>. We define an agenda job called send email alert. Here, we don't concern ourselves with when it runs. We only care what it does, i.e. what should happen when send email alert job is dispatched.
+  <br /><br />
+When this job runs, name of the show will be passed in as an optional <b>data</b> object.
+<br /><br />
+Since we are not storing the entire user document in <b>subscribers</b> array (only references), we have to use Mongoose's <a target="_blank" href="http://mongoosejs.com/docs/populate.html">populate</a> method. Once the show is found, we need a list of emails of all subscribers that have to be notified.
+  <br /><br />
+We then find the upcoming episode so that we could include a brief summary of the next episode in the email message.
+  <br /><br />
+And then it's just your standard Nodemailer boilerplate for sending emails. Here is how an email message might look like when <b>send email alert</b> job runs:
+</div>
+
+
+<div style="margin-bottom:1em;">
+<img src="/images/angularjs/tvshow-tracker-33.png" style="max-width:100%;" />
+</div>
+
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  Go back to the <b>app.post('/api/shows')</b> route and add this code inside the <b>show.save()</b> callback, so that it can start the agenda task whenever a new show is added to the database:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">var alertDate = Date.create('Next ' + show.airsDayOfWeek + ' at ' + show.airsTime).rewind({ hour: 2});
+agenda.schedule(alertDate, 'send email alert', show.name).repeatEvery('1 week');</pre>
+</div>
+
+
+<div style="margin-bottom:1em;">
+<img src="/images/angularjs/tvshow-tracker-26.png" style="max-width:100%;" />
+</div>
+
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  Now that we have defined an agenda task, we are going to schedule it as soon as a new show is added.
+  <br /><br />
+There is a minor problem - how do we know when to schedule it? Do we schedule n jobs for every episode of every shows or would it be better to schedule a recurring job for each show? I chose the latter approach of using a recurring job per show.
+  <br /><br />
+The TVDB API gives us two pieces of information for each show: air time and air day, e.g. <b>9:00 PM</b> and <b>Tuesday</b>. Next challenge - how the heck do we construct a Date object from that?!
+  <br /><br />
+<a target="_blank" href="http://sugarjs.com/">Sugar.js</a> to the rescue. Sugar overrides built-in objects such as Date to provide us with extra functionality. The code below creates a <b>Date</b> object from something like Next Saturday at 8:00 PM then subtract two hours from that.
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">var alertDate = Date.create('Next ' + show.airsDayOfWeek + ' at ' + show.airsTime).rewind({ hour: 2});</pre>
+</div>
+
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  When a new job is scheduled, Agenda will save that job to MongoDB for guaranteed persistence:
+</div>
+
+
+<div style="margin-bottom:1em;">
+<img src="/images/angularjs/tvshow-tracker-34.png" style="max-width:100%;" />
+</div>
+
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  You can do so much more with Agenda so be sure to check out the <a target="_blank" href="https://github.com/rschmukler/agenda">README</a> if you are interested in running cron jobs with Node.js.
+</div>
+
+
+
+]]>
+    </c:sourceContent>
+
+
+
+
+
+
+
+
+
+
+    <c:sourceContent type="html" title="Step 12: Optimization" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+
+
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  Just because you have a fast internet connection you shouldn't assume that others do as well. If you want to deliver the best possible user experience it is important that your application loads fast.
+  <br /><br />
+Let's take a look at the Network tab in Google Chrome to see how many requests are we making and how many bytes are transferred when users visit our site.
+</div>
+
+
+<div style="margin-bottom:1em;">
+<img src="/images/angularjs/tvshow-tracker-27.png" style="max-width:100%;" />
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  Here is what we are going to do in this section:
+</div>
+
+<ul style="line-height: 1.2em;margin-left: 2.5em;margin-bottom:1.5em;list-style-type: decimal;">
+  <li style="margin-bottom: .3em;">Concatenate and minify the scripts</li>
+<li style="margin-bottom: .3em;">Minify the stylesheet</li>
+<li style="margin-bottom: .3em;">Cache AngularJS templates</li>
+<li style="margin-bottom: .3em;">Enable gzip compression</li>
+<li style="margin-bottom: .3em;">Enable static assets caching</li>
+</ul>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  We will use <a target="_blank" href="http://gulpjs.com/">gulp.js</a> for the first three tasks. Install the following gulp plugins:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">npm install --save-dev gulp-csso gulp-uglify gulp-concat gulp-angular-templatecache</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  Then add them at the top with the rest of module dependecies:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">var csso = require('gulp-csso');
+var uglify = require('gulp-uglify');
+var concat = require('gulp-concat');
+var templateCache = require('gulp-angular-templatecache');</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  To minify CSS simply add <b>.pipe(csso())</b> after <b>.pipe(sass())</b>. Here is how your <b>sass</b> gulp task should look now:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">gulp.task('sass', function() {
+  gulp.src('public/stylesheets/style.scss')
+    .pipe(plumber())
+    .pipe(sass())
+    .pipe(csso())
+    .pipe(gulp.dest('public/stylesheets'));
+});</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  To concatenate and minify JavaScript files add the following task:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">gulp.task('compress', function() {
+  gulp.src([
+    'public/vendor/angular.js',
+    'public/vendor/*.js',
+    'public/app.js',
+    'public/services/*.js',
+    'public/controllers/*.js',
+    'public/filters/*.js',
+    'public/directives/*.js'
+  ])
+    .pipe(concat('app.min.js'))
+    .pipe(uglify())
+    .pipe(gulp.dest('public'));
+});</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  The reason we are passing an array of strings in this particular order is because we need to concatenate them in the right order. It doesn't make sense to load <b>app.js</b> before <b>angular.js</b> is even loaded. That is why we first load AngularJS, then vendor fiiles, then main <b>app.js</b> file, then everything else. When you run this task a new file <b>app.min.js</b> is created.
+  <br /><br />
+Add <b>compress</b> task to the <b>default</b> task:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">gulp.task('default', ['sass', 'compress', 'watch']);</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  And finally add a new watcher for the JavaScript files:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">gulp.task('watch', function() {
+  gulp.watch('public/stylesheets/*.scss', ['sass']);
+  gulp.watch('public/views/**/*.html', ['templates']);
+  gulp.watch(['public/**/*.js', '!public/app.min.js', '!public/templates.js', '!public/vendor'], ['compress']);
+});</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  Gulp will watch for all JavaScript files in the <b>public</b> directory except for <b>app.min.js</b> or any files in the <b>vendor</b> directory.
+  <br /><br />
+Added <b>gulp.watch</b> for templates in the <b>public/views</b> directory. I have also added the string <b>!public/templates.js</b> in the watcher below, in order to avoid running compress task right after re-compiling templates because <b>public/**/*.js</b> in the compress task will match any JavaScript file, yes including <b>templates.js</b>.
+  <br /><br />
+Next, we are going to add a task for caching AngularJS templates.
+  <br /><br />
+Why do we need to cache AngularJS templates? If you haven't noticed yet, open the Network tab in Google Chrome and navigate between different pages in our ShowTrackr app. You will notice a separate HTTP request for template files: <b>add.html</b>, <b>login.html</b>, <b>signup.html</b>, etc. Your goal should always be to <b>minimize</b> the number of HTTP requests when building high-performance applications. This principle is especially true on mobile devices.
+  <br /><br />
+Add the following task for caching AngularJS templates:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">gulp.task('templates', function() {
+  gulp.src('public/views/**/*.html')
+    .pipe(templateCache({ root: 'views', module: 'MyApp' }))
+    .pipe(gulp.dest('public'));
+});</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  This task will create a file <b>templates.js</b> in the <b>public</b> directory that you have to include in the <b>index.html</b> in order for AngularJS to detect it. We will do that shortly.
+  <br /><br />
+Don't forget to update the <b>default</b> task:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">gulp.task('default', ['sass', 'compress', 'templates', 'watch']);</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  Here is what your <b>gulpfile.js</b> should look like at this point:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">var gulp = require('gulp');
+var sass = require('gulp-sass');
+var csso = require('gulp-csso');
+var uglify = require('gulp-uglify');
+var concat = require('gulp-concat');
+var plumber = require('gulp-plumber');
+var templateCache = require('gulp-angular-templatecache');
+
+gulp.task('sass', function() {
+  gulp.src('public/stylesheets/style.scss')
+    .pipe(plumber())
+    .pipe(sass())
+    .pipe(csso())
+    .pipe(gulp.dest('public/stylesheets'));
+});
+
+gulp.task('compress', function() {
+  gulp.src([
+    'public/vendor/angular.js',
+    'public/vendor/*.js',
+    'public/app.js',
+    'public/services/*.js',
+    'public/controllers/*.js',
+    'public/filters/*.js',
+    'public/directives/*.js'
+  ])
+    .pipe(concat('app.min.js'))
+    .pipe(uglify())
+    .pipe(gulp.dest('public'));
+});
+
+gulp.task('templates', function() {
+  gulp.src('public/views/**/*.html')
+    .pipe(templateCache({ root: 'views', module: 'MyApp' }))
+    .pipe(gulp.dest('public'));
+});
+
+gulp.task('watch', function() {
+  gulp.watch('public/stylesheets/*.scss', ['sass']);
+  gulp.watch(['public/**/*.js', '!public/app.min.js', '!public/vendor'], ['compress']);
+});
+
+gulp.task('default', ['sass', 'compress', 'templates', 'watch']);</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  3 out of 5 tasks are complete. Let's move on to gzip compression. Install the following Express middleware:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">npm install --save compression</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  Add it to the list of module dependencies:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">var compress = require('compression')</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  And finally add the middleware. This middleware should be placed "high" within the stack to ensure all responses may be compressed.
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">app.set('port', process.env.PORT || 3000);
+app.use(compress())
+app.use(logger('dev'));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded());
+app.use(cookieParser());
+app.use(session({ secret: 'keyboard cat' }));
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(function(req, res, next) {
+  if (req.user) {
+    res.cookie('user', JSON.stringify(req.user));
+  }
+  next();
+});</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  Enable static assets caching is pretty trivial. Update your static middleware with the following, where <b>maxAge</b> is the number in milliseconds:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">app.use(express.static(path.join(__dirname, 'public'), { maxAge: 86400000 }));</pre>
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  <b>Note:</b> 86400000 milliseconds is equivalent to 1 day. You may want to create a separate variable such as <b>oneDay</b>, <b>oneWeek</b>, <b>oneMonth</b> instead of defining milliseconds directly in the middleware.
+  <br /><br />
+Run <b>gulp</b> in the terminal and you should see two new files in the <b>public</b> directory:
+</div>
+
+
+<div style="margin-bottom:1em;">
+<img src="/images/angularjs/tvshow-tracker-28.png" style="max-width:100%;" />
+</div>
+
+
+
+
+<div style="margin-bottom:0.6em;">
+  <b>Note:</b> Our <b>default gulp.js</b> task will continue watching for file changes after all tasks have been executed. If you don't like this behavior feel free to separate it out into two separate tasks <b>gulp build</b> and <b>gulp watch</b>.
+  <br/><br/>
+In <b>index.html</b> add these two scripts and <b>comment/remove</b> all other scripts:
+</div>
+
+
+]]>
     </c:sourceContent>
 
     <c:comment>
