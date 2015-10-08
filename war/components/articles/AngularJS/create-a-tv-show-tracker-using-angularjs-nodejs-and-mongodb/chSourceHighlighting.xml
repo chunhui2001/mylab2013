@@ -1,0 +1,545 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+   This tutorial will show you how to build a REST API with Express, authentication and signup process with Passport, create and retrieve data from MongoDB using Mongoose. The front-end will be built using AngularJS and Bootstrap Sass. The last step involves using gulp.js to optimize your static assets.
+]]>
+  </c:abstract>
+
+
+
+
+
+  <c:entry style="margin-top:2em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>TL;DR</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<img src="/images/angularjs/tvshow-tracker-32.png" style="max-width:100%;" />
+<br />
+<br />
+
+
+<div style="margin-bottom:1em;">
+<b>August 18, 2014 Update:</b> GitHub repository code has been updated. Here is a brief overview of the main changes:
+</div>
+<ul style="line-height: 1.2em;margin-left: 1.5em;list-style-type: disc;color:rgb(22, 178, 255);">
+  <li style="margin-bottom: .3em;">Removed method-override, cookie-parser and express-session modules</li>
+  <li style="margin-bottom: .3em;">JSON Web Token authentication replaced cookie-based approach</li>
+  <li style="margin-bottom: .3em;">Login with Facebook</li>
+  <li style="margin-bottom: .3em;">Login with Google</li>
+  <li style="margin-bottom: .3em;">Use ngAnnotate instead of ngMin for AngularJS dependencies annotations</li>
+  <li style="margin-bottom: .3em;">New alert notifications based on Google's Material Design</li>
+  <li style="margin-bottom: .3em;">General UI tweaks and updates</li>
+  <li style="margin-bottom: .3em;">Page transitions via ng-animate</li>
+  <li style="margin-bottom: .3em;">Added unit tests along with a Karma configuration file</li>
+  <li style="margin-bottom: .3em;">Password strength directive on the Signup page similar to Stripe and Dropbox</li>
+  <li style="margin-bottom: .3em;">Email is already taken directive on the Signup page to provide live feedback</li>
+  <li style="margin-bottom: .3em;">Use promises instead of callbacks for $resource.save method</li>
+  <li style="margin-bottom: .3em;">Ionic fonts</li>
+  <li style="margin-bottom: .3em;">Updated AngularJS to Beta 17</li>
+  <li style="margin-bottom: .3em;">Lots of code refactoring and cleanup</li>
+</ul>
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="Step 1: New Express Project" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div style="margin-bottom:.6em;">
+<b>June 8, 2014 Update: </b>After installing express-generator we can quickly generate a minimal Express application using the express command.
+</div>
+<div style="margin-bottom:.6em;">
+Run <b>express showtrackr</b> to create a new Express project, where showtrackr is the name of our app that we are going to build today.
+</div>
+<div style="margin-bottom:0em;">
+<img src="/images/angularjs/tvshow-tracker-1.png" style="max-width:100%;" />
+</div>
+<div style="margin-bottom:.6em;">
+Navigate into the  <b>showtrackr</b> directory then run <b>npm install</b> command.
+</div>
+<div style="margin-bottom:.6em;">
+  Remove  <b>views</b>,  <b>routes</b> and  <b>bin</b> directories because you will not be needing them anymore. Also, rename app.js to server.js since we will have another app.js file for bootstraping the AngularJS application.
+</div>
+<div style="margin-bottom:.6em;">
+  Replace everything inside the <b>server.js</b> with the following code:
+</div>
+<div style="margin-bottom:.6em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">var express = require('express');
+var path = require('path');
+var logger = require('morgan');
+var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
+
+var app = express();
+
+app.set('port', process.env.PORT || 3000);
+app.use(logger('dev'));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded());
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.listen(app.get('port'), function() {
+  console.log('Express server listening on port ' + app.get('port'));
+});</pre>
+</div>
+
+
+  ]]>
+    </c:sourceContent>
+
+
+
+
+    <c:sourceContent type="html" title="Step 2: Bootstrapping AngularJS Application" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+<div style="margin-bottom:.6em;">
+  Download and extract the <a href="http://getbootstrap.com/getting-started/" target="_blank">Boostrap Sass</a>.
+</div>
+
+<div style="margin-bottom:0em;">
+<img src="/images/angularjs/tvshow-tracker-4.png" style="max-width:100%;" />
+</div>
+<div style="margin-bottom:.6em;">
+  Copy all glyphicons from <b>assets/fonts/bootstrap</b> to  <b>public/fonts</b> directory and everything inside <b>assets/stylesheets</b> directory to  <b>public/stylesheets/bootstrap</b> directory.
+</div>
+<div style="margin-bottom:.6em;">
+  Updated Bootstrap Sass path locations.
+</div>
+<div style="margin-bottom:0em;">
+<img src="/images/angularjs/tvshow-tracker-5.png" style="max-width:100%;" />
+</div>
+<div style="margin-bottom:.6em;">
+Download <a href="/images/angularjs/A38jRib.png">this favicon</a> and place it inside  <b>public</b> directory. You don't really need it but it's a nice touch.
+</div>
+<div style="margin-bottom:.6em;">
+You will also need to download the following scripts and place them inside the <b>public/vendor</b> directory:
+</div>
+<ul style="line-height: 1.2em;margin-left: 1.5em;list-style-type: disc;color:rgb(22, 178, 255);">
+  <li style="margin-bottom: .3em;"><a href="https://angularjs.org/">angular.js</a></li>
+  <li style="margin-bottom: .3em;"><a href="https://github.com/mgcrea/angular-strap/tree/master/dist">angular-strap.js</a></li>
+  <li style="margin-bottom: .3em;"><a href="https://github.com/mgcrea/angular-strap/tree/master/dist">angular-strap.tpl.js</a></li>
+  <li style="margin-bottom: .3em;"><a href="https://code.angularjs.org/1.3.5/">angular-message.js</a></li>
+  <li style="margin-bottom: .3em;"><a href="https://code.angularjs.org/1.3.5/">angular-resource.js</a></li>
+  <li style="margin-bottom: .3em;"><a href="https://code.angularjs.org/1.3.5/">angular-route.js</a></li>
+  <li style="margin-bottom: .3em;"><a href="https://code.angularjs.org/1.3.5/">angular-cookies.js</a></li>
+  <li style="margin-bottom: .3em;"><a href="http://momentjs.com/">moment.min.js</a></li>
+</ul>
+<div style="margin-bottom:0em;">
+<img src="/images/angularjs/tvshow-tracker-6.png" style="max-width:100%;" />
+</div>
+<div style="margin-bottom:.6em;">
+Create <b>index.html</b> in <b>public</b> directory with the following contents:
+</div>
+<div style="margin-bottom:.6em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;!DOCTYPE html&gt;
+&lt;html ng-app="MyApp"&gt;
+&lt;head&gt;
+  &lt;base href="/"&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;meta http-equiv="X-UA-Compatible" content="IE=edge"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+  &lt;title&gt;ShowTrackr&lt;/title&gt;
+  &lt;link rel="icon" type="image/png" href="favicon.png"/&gt;
+  &lt;link href="stylesheets/style.css" rel="stylesheet"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;div ng-view&gt;&lt;/div&gt;
+
+&lt;script src="vendor/angular.js"&gt;&lt;/script&gt;
+&lt;script src="vendor/angular-strap.js"&gt;&lt;/script&gt;
+&lt;script src="vendor/angular-strap.tpl.js"&gt;&lt;/script&gt;
+&lt;script src="vendor/angular-messages.js"&gt;&lt;/script&gt;
+&lt;script src="vendor/angular-resource.js"&gt;&lt;/script&gt;
+&lt;script src="vendor/angular-route.js"&gt;&lt;/script&gt;
+&lt;script src="vendor/angular-cookies.js"&gt;&lt;/script&gt;
+&lt;script src="vendor/moment.min.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+</div>
+
+<div style="margin-bottom:1em;">
+On <b>Line 2</b> the <b>ng-app</b> tells Angular to consider this to be the root element of our application. On <b>Line 4</b> the <b>&lt;base href="/"&gt;</b> tag is necessary to enable HTML5 History API in AngularJS. This will allow us to have clean URLs without the <b>#</b> symbol. The <b>ng-view</b> on <b>Line 14</b> is a directive that includes the rendered template of the current route. Every time the current route changes, the included view changes with it according to the configuration of the <b>$route</b> service that we will implement shortly.
+</div>
+
+<div style="margin-bottom:1em;">
+<b>Note:</b> This is similar to the <a href="http://emberjs.com/api/classes/Ember.Handlebars.helpers.html#method_outlet">outlet</a> in Ember.js.
+</div>
+
+<div style="margin-bottom:.6em;">
+Create a new file <b>app.js</b> and add it to the <b>index.html</b> after the vendor scripts.
+</div>
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">&lt;script src="app.js"&gt;&lt;/script&gt;</pre>
+</div>
+
+<div style="margin-bottom:.6em;">
+For now app.js will only include the following code just to get things started:
+</div>
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">angular.module('MyApp'
+    , ['ngCookies', 'ngResource', 'ngMessages', 'ngRoute', 'mgcrea.ngStrap'])
+  .config(function() {
+
+  });</pre>
+</div>
+
+<div style="margin-bottom:.6em;">
+Let's add an <a href="http://mgcrea.github.io/angular-strap/#/page-one#navbars">AngularStrap Navbar</a>. Place this code right after the opening <body> tag:
+</div>
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)"> &lt;div class="navbar navbar-default navbar-static-top"
+     role="navigation" bs-navbar&gt;
+  &lt;div class="navbar-header"&gt;
+    &lt;a class="navbar-brand" href="/"&gt;
+      &lt;span class="glyphicon glyphicon-film"&gt;&lt;/span&gt;
+      Show&lt;strong&gt;Trackr&lt;/strong&gt;&lt;/a&gt;
+  &lt;/div&gt;
+  &lt;ul class="nav navbar-nav"&gt;
+    &lt;li data-match-route="/$"&gt;&lt;a href="/"&gt;Home&lt;/a&gt;&lt;/li&gt;
+    &lt;li data-match-route="/add"&gt;&lt;a href="/add"&gt;Add&lt;/a&gt;&lt;/li&gt;
+  &lt;/ul&gt;
+  &lt;ul class="nav navbar-nav pull-right" ng-if="!currentUser"&gt;
+    &lt;li data-match-route="/login"&gt;&lt;a href="/login"&gt;Login&lt;/a&gt;&lt;/li&gt;
+    &lt;li data-match-route="/signup"&gt;&lt;a href="/signup"&gt;Sign up&lt;/a&gt;&lt;/li&gt;
+  &lt;/ul&gt;
+  &lt;ul class="nav navbar-nav pull-right" ng-if="currentUser"&gt;
+    &lt;li class="navbar-text" ng-bind="currentUser.email"&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href="javascript:void(0)" ng-click="logout()"&gt;Logout&lt;/a&gt;&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/div&gt;</pre>
+</div>
+
+
+<div style="margin-bottom:.6em;">
+There is only one reason we are using <a href="http://mgcrea.github.io/angular-strap/#/page-one#navbars">AngularStrap Navbar</a> instead of <a href="http://getbootstrap.com/components/#navbar">Bootstrap Navbar</a> - the <b>active</b> class is applied automatically to &lt;li&gt; elements when you change routes. Plus you get many other awesome directives that integrate with AngualrJS such as Alert, Typeahead, Tooltip, Tab and many more.
+<br /><br />
+You could try running the app to make sure there aren't any errors but you won't see a Navbar because we haven't included Bootstrap stylesheets yet. We will be using <a href="http://gulpjs.com/">gulp</a> to compile Sass stylesheets.
+<br /><br />
+Go ahead and install the gulp and gulp plugins:
+
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">// Step 1: Install gulp globally
+sudo npm install -g gulp
+
+// Step 2: Install gulp in your project
+npm install --save-dev gulp gulp-sass gulp-plumber</pre>
+</div>
+
+
+<div style="margin-bottom:1.5em;">
+You can install global NPM modules (with the -g flag) from any command line path but if you are installing local NPM modules like in the Step 2 above, you have to run npm install from anywhere within the project directory or any of its sub-directories, just as long as you are somewhere within the project directory.
+<br />
+<br />
+Passing the --save-dev flag will install and add packages to devDependencies in package.json.
+</div>
+
+<div style="margin-bottom:0.6em;">
+<img src="/images/angularjs/tvshow-tracker-7.png" style="max-width:100%;" />
+</div>
+
+<div style="margin-bottom:.6em;">
+Create a new file <b>gulpfile.js</b> in the project folder:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">var gulp = require('gulp');
+var sass = require('gulp-sass');
+var plumber = require('gulp-plumber');
+
+gulp.task('sass', function() {
+  gulp.src('public/stylesheets/style.scss')
+    .pipe(plumber())
+    .pipe(sass())
+    .pipe(gulp.dest('public/stylesheets'));
+});
+
+gulp.task('watch', function() {
+  gulp.watch('public/stylesheets/*.scss', ['sass']);
+});
+
+gulp.task('default', ['sass', 'watch']);</pre>
+</div>
+
+<div style="margin-bottom:0.6em;">
+<img src="/images/angularjs/tvshow-tracker-8.png" style="max-width:100%;" />
+</div>
+
+<div style="margin-bottom:0.6em;">
+The very last line specifies which gulp tasks to run when you execute gulp command in the terminal. For now it just compiles Sass stylesheets and watches for file changes, recompiling stylesheets automatically. You may be wondering what is <a href="https://github.com/floatdrop/gulp-plumber">gulp-plumber</a>? It will prevent pipe breaking caused by errors from gulp plugins. In other words when you make a syntax error in a Sass stylesheet, the gulp watcher will not crash and you won't see this crap happening in the middle of your workflow:
+</div>
+
+<div style="margin-bottom:0.6em;">
+<img src="/images/angularjs/tvshow-tracker-9.png" style="max-width:100%;" />
+</div>
+
+<div style="margin-bottom:0.6em;">
+Create a new file style.scss in the <b>public/stylesheets</b> directory:
+</div>
+
+<div style="margin-bottom:1.5em;">
+  <pre style="font-size:.8em;padding:1em;border: solid 1px rgb(213, 213, 213);background-color:rgba(3, 138, 138, 0.13)">@import url(http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,400,300,600,700);
+
+$icon-font-path: '../fonts/';
+$body-bg: #e4e7ec;
+
+$font-family-base: 'Open Sans', sans-serif;
+$headings-color: #111;
+$headings-font-family: Avenir, sans-serif;
+$headings-font-weight: bold;
+
+$brand-success: #22ae5f;
+$brand-primary: #1d7cf4;
+$brand-danger: #b30015;
+$brand-warning: #ffd66a;
+
+$text-muted: #90939a;
+$link-color: #000;
+
+$navbar-default-link-active-bg: #f7f7f7;
+$navbar-default-link-color: #848484;
+$navbar-default-bg: #fff;
+$navbar-default-border: #e3e9ec;
+
+$navbar-default-brand-color: #333;
+$navbar-default-brand-hover-color: #ffe939;
+$navbar-default-brand-hover-bg: #333;
+
+$btn-success-bg: $brand-success;
+$btn-success-border: darken($btn-success-bg, 3%);
+$btn-primary-bg: $brand-primary;
+$btn-primary-border: darken($btn-primary-bg, 3%);
+
+$jumbotron-padding: 16px;
+$jumbotron-bg: #f4f6f8;
+
+$alert-border-radius: 0;
+$input-border-radius: 0;
+
+$alert-success-text: #fff;
+$alert-success-bg: #60c060;
+$alert-success-border: darken($alert-success-bg, 3%);
+
+$alert-danger-text: #fff;
+$alert-danger-bg: $brand-danger;
+$alert-danger-border: darken($alert-danger-bg, 3%);
+
+$alert-info-bg: #e5f7fd;
+$alert-info-border: #bcf8f3;
+$alert-info-text: #25484e;
+
+@import 'bootstrap/bootstrap';
+
+body {
+  padding-bottom: 20px;
+}
+
+em {
+  font-style: normal;
+  text-decoration: underline;
+}
+
+.alphabet {
+  cursor: pointer;
+  font-size: 22px;
+  text-align: center;
+
+  li {
+    display: inline-block;
+    padding-left: 5px;
+    padding-right: 5px;
+
+    &:hover {
+      color: $brand-primary;
+    }
+  }
+}
+
+.genres {
+  cursor: pointer;
+
+  li {
+    margin-right: 5px;
+    @extend .label;
+    @extend .label-default;
+
+    &:active {
+      box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.250);
+    }
+  }
+}
+
+.jumbotron {
+  margin-top: -20px;
+  border-bottom: 1px solid #dae2e4;
+}
+
+.media-object {
+  max-width: 200px;
+  margin-bottom: 10px;
+}
+
+.episode {
+  border-left: 5px solid #111;
+  padding-left: 10px;
+}
+
+.alert {
+  box-shadow: 0 0px 5px rgba(0, 0, 0, 0.3);
+}
+
+.alert.top-right {
+  position: fixed;
+  top: 50px;
+  right: 0;
+  margin: 20px;
+  z-index: 1050;
+  outline: none;
+
+  .close {
+    padding-left: 10px
+  }
+}
+
+.btn {
+  border-radius: 2px;
+}
+
+.center-form {
+  width: 330px;
+  margin: 10% auto;
+
+  input {
+    border-radius: 0;
+  }
+}
+
+.search {
+  color: #4f4f4f;
+  font-weight: 300;
+  font-size: 1.5em;
+  padding: 7px;
+  margin-top: -10px;
+  border: 0;
+  background-color: transparent;
+  outline: none;
+  -webkit-appearance: none;
+
+  &:focus {
+    -webkit-transition: all .4s ease;
+    transition: all .4s ease;
+  }
+}
+
+.panel {
+  border-color: #cfd9D7;
+  border-radius: 2px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+  -webkit-box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+}
+
+.panel-default > .panel-heading {
+  color: #444;
+  border-color: #cfd9db;
+  font-weight: bold;
+  font-size: 85%;
+  text-transform: uppercase;
+  background-color: #f6f6f6;
+}
+
+.label {
+  display: inline-block;
+  margin-bottom: 5px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 3px;
+  font-size: 12px;
+  transition: 0.1s all;
+  -webkit-font-smoothing: antialiased;
+}
+
+.label-default {
+  background-color: #e4e7ec;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+  color: #90939a;
+
+  &:hover {
+    background-color: #90939a;
+    color: #f4f6f8;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2);
+  }
+}
+
+.navbar {
+  box-shadow: 0 3px 2px -3px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-header {
+  float: left;
+  padding-left: 15px;
+
+}
+
+.navbar-brand {
+  background-color: #ffe939;
+  transition: 0.25s all;
+  margin-left: -15px;
+}
+
+.navbar-nav {
+  float: left;
+  margin: 0;
+
+  &gt; li {
+    float: left;
+
+    &gt; a {
+      padding: 15px;
+    }
+  }
+}</pre>
+</div>
+
+<div style="margin-bottom:0.6em;">
+Run the gulp command from the project directory and refresh the browser.
+<br />
+<br />
+<b>Note:</b> I typically have node server.js running in one terminal tab, mongod in another tab, gulp in a third tab and the last tab is used for general purpose commands such as git add or git commit.
+</div>
+
+<div style="margin-bottom:0.6em;">
+<img src="/images/angularjs/tvshow-tracker-10.png" style="max-width:100%;" />
+</div>
+
+<div style="margin-bottom:0.6em;">
+Everything in the style.scss should be very straightforward if you are not completely new to Bootstrap. There are only a few custom classes, everything else simply overrides core Bootstrap classes to make it look prettier.
+</div>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+</c:component>
