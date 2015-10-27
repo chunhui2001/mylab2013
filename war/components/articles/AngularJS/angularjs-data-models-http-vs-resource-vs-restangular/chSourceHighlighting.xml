@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+   Sauce Labs software developer <a href="https://twitter.com/alanctkc">Alan Christopher Thomas</a> and his team have been hard at work updating our stack. He shared with us some insight into their dev process, so we thought we’d show off what he’s done. 
+   <br />
+   <br />
+   Over the past few months, the Sauce Labs web team has fixed its crosshairs on several bits of our stack that needed to be refreshed. One of those bits is the list of jobs all customers see when they first log into their account. It looks like this:
+   <br />
+   <br />
+   <img src="/images/angularjs/stack.png" style="max-width:100%" />
+   Our current app is built in Backbone.js. We vetted lots of options for frontend MVC frameworks and data binding that could replace and simplify the existing Backbone code: Ember, Angular, React, Rivets, Stapes, etc.
+   <br />
+   <br />
+After lots of research, building some stuff, and personal preference, our team decided we were most comfortable with Angular.
+   <br />
+   <br />
+We had one more thing we wanted to verify, though, before settling.
+]]>
+  </c:abstract>
+
+
+
+
+
+  <c:entry style="margin-top:2em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>How complicated will it be to model our data?</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>This was the first question on most of our minds, and it was the one question about Angular that Google fell into a void of silence. Backbone has models and collections. Ember.js has Ember Data and ember-model. Stapes has extensible observable objects that can function as collections. But what about Angular? Most examples we found were extremely thin on the data layer, just returning simple JavaScript objects and assigning them directly to a $scope model.
+   <br />
+   <br />
+So, we built a small proof of concept using three different AngularJS data modeling techniques. This is a dumbed down version of our Jobs page, which only displays a list of jobs and their results. Our only basic requirement was that we kept business logic out of our controllers so they wouldn’t become bloated.
+   <br />
+   <br />
+We gave ourselves some flexibility with the API responses and allowed them to be wrapped with an object or not wrapped to emphasize the strengths of each approach. However, all calls require limit and full parameters to be passed in the GET query string.
+   <br />
+   <br />
+Here’s what we wanted the resulting DOM template to look like:
+<br /><br />
+</div>
+
+<div class="jobs">
+<table class="table table-striped">
+<tbody>
+<tr>
+<td><span class="badge {{ job.getResult()|lowercase }}">{{ job.getResult() }}</span></td>
+<td><span class="badge {{ job.getResult()|lowercase }}">{{ job.name }}</span></td>
+</tr>
+</tbody>
+</table>
+<br />
+</div>
+
+<div>
+  Note that each resulting job should be able to have a getResult() method that displays a human-readable outcome in a badge. The rendered page looks like this:
+  <br />
+   <img src="/images/angularjs/jobs.png" style="max-width:100%" />
+</div>
+  ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  <c:entry style="margin-top:2em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>The Code: $http vs $resource vs Restangular</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        <div style="font-size:1.2em;">
+      So, here’s the resulting code for all three approaches, each implementing a getResult() method on every job.</div>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="$http" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>In this approach, we created a service that made the API calls and wrapped each result as a Job() object with a getResult() method defined on the prototype.</div>
+
+<h3 style="font-size:1em;margin-top:1.2em;"><b>API Response Format:</b></h3>
+<div>
+<pre style="border:1px solid #DADADA;background-color:#ECECEC;padding:.5em;font-size:.8em;">{
+  "meta": {}, 
+  "objects": [
+    {
+      "breakpointed": null, 
+      "browser": "android", 
+      "browser_short_version": "4.3",
+      ...
+    },
+    {
+      ...
+    },
+    ...
+  ]
+}</pre>
+</div>
+
+<h3 style="font-size:1em;margin-top:1.2em;"><b>models.js:</b></h3>
+<div>
+<pre style="border:1px solid #DADADA;background-color:#ECECEC;padding:.5em;font-size:.8em;">angular.module('job.models', [])
+    .service('JobManager', ['$q', '$http', 'Job', function($q, $http, Job) {
+        return {
+            getAll: function(limit) {
+                var deferred = $q.defer();
+ 
+                $http.get('/api/jobs?limit=' + limit + '&full=true').success(function(data) {
+                    var jobs = [];
+                    for (var i = 0; i < data.objects.length; i ++) {
+                        jobs.push(new Job(data.objects[i]));
+                    }
+                    deferred.resolve(jobs);
+                });
+ 
+                return deferred.promise;
+            }
+        };
+    }])
+    .factory('Job', function() {
+        function Job(data) {
+            for (attr in data) {
+                if (data.hasOwnProperty(attr))
+                    this[attr] = data[attr];
+            }
+        }
+ 
+        Job.prototype.getResult = function() {
+            if (this.status == 'complete') {
+                if (this.passed === null) return "Finished";
+                else if (this.passed === true) return "Pass";
+                else if (this.passed === false) return "Fail";
+            }
+            else return "Running";
+        };
+ 
+        return Job;
+    });</pre>
+</div>
+
+<h3 style="font-size:1em;margin-top:1.2em;"><b>controllers.js:</b></h3>
+<div>
+<pre style="border:1px solid #DADADA;background-color:#ECECEC;padding:.5em;font-size:.8em;">angular.module('job.controllers', [])
+    .controller('jobsController', ['$scope', 'JobManager', function($scope, JobManager) {
+        var limit = 20;
+        $scope.loadJobs = function() {
+            JobManager.getAll(limit).then(function(jobs) {
+                $scope.jobs = jobs;
+                limit += 10;
+            });
+        };
+ 
+        $scope.loadJobs();
+    }]);</pre>
+</div>
+<div style="margin-top:1em;">This approach made for a pretty simple controller, but since we needed a custom method on the model, our services and factories quickly became verbose. Also, if we were to abstract away this behavior to apply to other data types (sub-accounts, tunnels, etc.), we might end up writing a whole lot of boilerplate.</div>
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="$resource" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>Angular provides its own <a target="_blank" href="https://docs.angularjs.org/api/ngResource/service/%24resource">$resource factory</a>, which has to be included in your project as a separate dependency. It takes away some of the pain we felt in writing our JobManager service boilerplate code and allows us to apply our custom method directly to the $resource prototype, then transform responses to be wrapped in itself.</div>
+
+<h3 style="font-size:1em;margin-top:1.2em;"><b>API Response Format:</b></h3>
+<div>
+<pre style="border:1px solid #DADADA;background-color:#ECECEC;padding:.5em;font-size:.8em;">{
+  "items": [
+    {
+      "breakpointed": null, 
+      "browser": "android", 
+      "browser_short_version": "4.3", 
+      ...
+    }, 
+    {
+      ...
+    }
+    ...
+  ]
+}</pre>
+</div>
+
+<h3 style="font-size:1em;margin-top:1.2em;"><b>models.js:</b></h3>
+<div>
+<pre style="border:1px solid #DADADA;background-color:#ECECEC;padding:.5em;font-size:.8em;">angular.module('job.models', [])
+    .factory('Job', ['$resource', function($resource) {
+        var Job = $resource('/api/jobs/:jobId', { full: 'true', jobId: '@id' }, {
+            query: {
+                method: 'GET',
+                isArray: false,
+                transformResponse: function(data, header) {
+                    var wrapped = angular.fromJson(data);
+                    angular.forEach(wrapped.items, function(item, idx) {
+                        wrapped.items[idx] = new Job(item);
+                    });
+                    return wrapped;
+                }
+            }
+        });
+ 
+        Job.prototype.getResult = function() {
+            if (this.status == 'complete') {
+                if (this.passed === null) return "Finished";
+                else if (this.passed === true) return "Pass";
+                else if (this.passed === false) return "Fail";
+            }
+            else return "Running";
+        };
+ 
+        return Job;
+    }]);</pre>
+</div>
+
+<h3 style="font-size:1em;margin-top:1.2em;"><b>controllers.js:</b></h3>
+<div>
+<pre style="border:1px solid #DADADA;background-color:#ECECEC;padding:.5em;font-size:.8em;">angular.module('job.controllers', [])
+    .controller('jobsController', ['$scope', 'Job', function($scope, Job) {
+        var limit = 20;
+        $scope.loadJobs = function() {
+            var jobs = Job.query({ limit: limit }, function(jobs) {
+                $scope.jobs = jobs.items;
+                limit += 10;
+            });
+        };
+ 
+        $scope.loadJobs();
+    }]);</pre>
+</div>
+<div style="margin-top:1em;">This approach also makes for a pretty elegant controller, except we really didn’t like that the query() method didn’t return a <b>promise</b> directly, but gave us an object with the promise in a $promise attribute. It felt pretty un-Angular a little ugly. Also, the process of transforming result objects and wrapping them felt like a strange dance to achieve some simple behavior. We’d probably end up writing more boilerplate to abstract that part away.
+
+</div>
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="Restangular" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>Last, but not least, we gave <a target="_blank" href="https://github.com/mgonto/restangular">Restangular</a> a shot. Restangular is a third-party library that attempts to abstract away pain points of dealing with API responses, reduce boilerplate, and do it in the most Angular-y way possible.</div>
+
+<h3 style="font-size:1em;margin-top:1.2em;"><b>API Response Format:</b></h3>
+<div>
+<pre style="border:1px solid #DADADA;background-color:#ECECEC;padding:.5em;font-size:.8em;">[
+  {
+    "breakpointed": null, 
+    "browser": "android", 
+    "browser_short_version": "4.3", 
+    ...
+  }, 
+  {
+    ...
+  }
+  ...
+]</pre>
+</div>
+
+<h3 style="font-size:1em;margin-top:1.2em;"><b>models.js:</b></h3>
+<div>
+<pre style="border:1px solid #DADADA;background-color:#ECECEC;padding:.5em;font-size:.8em;">angular.module('job.models', [])
+  .service('Job', ['Restangular', function(Restangular) {
+    var Job = Restangular.service('jobs');
+ 
+    Restangular.extendModel('jobs', function(model) {
+      model.getResult = function() {
+        if (this.status == 'complete') {
+          if (this.passed === null) return "Finished";
+          else if (this.passed === true) return "Pass";
+          else if (this.passed === false) return "Fail";
+        }
+        else return "Running";
+      };
+ 
+      return model;
+    });
+ 
+    return Job;
+  }]);</pre>
+</div>
+
+<h3 style="font-size:1em;margin-top:1.2em;"><b>controllers.js:</b></h3>
+<div>
+<pre style="border:1px solid #DADADA;background-color:#ECECEC;padding:.5em;font-size:.8em;">angular.module('job.controllers', [])
+  .controller('jobsController', ['$scope', 'Job', function($scope, Job) {
+    var limit = 20;
+    $scope.loadJobs = function() {
+      Job.getList({ full: true, limit: limit }).then(function(jobs) {
+        $scope.jobs = jobs;
+        limit += 10;
+      });
+    };
+$scope.loadJobs();
+}]);</pre>
+</div>
+<div style="margin-top:1em;">In this one, we got to cheat and use Restangular.service(), which provides all the RESTful goodies for us. It even abstracted away writing out full URLs for our API calls. Restangular.extendModel() gives us an elegant way to attach methods to each of our model results, making getResult() straightforward and readable. Lastly, the call in our controller returns a promise! This let us write the controller logic a bit more cleanly and allows us to be more flexible with the response in the future.
+</div>
+  ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+  <c:entry style="margin-top:2em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>tldr; Concluding Thoughts</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        <div style="font-size:1.2em;">
+      Each of the three approaches have their appropriate use cases, but I think in ours we’re leaning toward Restangular.</div>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[<b>$http</b> - $http is built into Angular, so there’s no need for the extra overhead of loading in an external dependency. $http is good for quick retrieval of server-side data that doesn’t really need any specific structure or complex behaviors. It’s probably best injected directly into your controllers for simplicity’s sake.
+<br /><br />
+<b>$resource</b> - $resouce is good for situations that are slightly more complex than $http. It’s good when you have pretty structured data, but you plan to do most of your crunching, relationships, and other operations on the server side before delivering the API response. $resource doesn’t let you do much once you get the data into your JavaScript app, so you should deliver it to the app in its final state and make more REST calls when you need to manipulate or look at it from a different angle. Any custom behavior on the client side will need a lot of boilerplate.
+<br /><br />
+<b>Restangular</b> - Restangular is a perfect option for complex operations on the client side. It lets you easily attach custom behaviors and interact with your data in much the same way as other model paradigms you’ve used in the past. It’s promise-based, clean, and feature-rich. However, it might be overkill if your needs are basic, and it carries along with it any extra implications that come with bringing in additional third-party dependencies.
+<br /><br />
+Restangular seems to be a <a href="https://github.com/mgonto/restangular/graphs/commit-activity" target="_blank">decently active project</a> with the <a href="https://github.com/mgonto/restangular/graphs/commit-activity" target="_blank">prospect of a 2.0</a> that’s compatible with Angular 2.0, currently a private repository. However, a lot of the project’s progress seem to be dependent on the work of a single developer for the time being.
+<br /><br />
+We’re looking forward to seeing how Restangular progresses and whether or not it seems like a good fit for us at Sauce! If this blog post has piqued your interest and you’ll feel as passionate about web development as we do feel free to check out <a target="_blank" href="https://saucelabs.com/careers?_ga=1.179801508.102871989.1445916697">our career opportunities</a> here at Sauce or send us a note.]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+</c:component>
