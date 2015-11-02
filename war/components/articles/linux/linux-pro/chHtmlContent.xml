@@ -610,6 +610,75 @@ http://stackoverflow.com/questions/305035/how-to-use-ssh-to-run-shell-script-on-
   <br />
   <br />
   <br />
+
+
+
+
+  
+  <h1><b>PostgreSQL</b> </h1>
+  # <b>install</b><br />
+  $ <b>sudo apt-get update</b><br />
+  $ <b>sudo apt-get install postgresql postgresql-contrib</b><br />
+  $ <b>sudo apt-get install pdadmin3</b>
+  <br />
+  <br />
+  # <b>change to postgres user</b><br />
+  $ <b>sudo su - postgres</b>
+  <br />
+  <br />
+  # <b>login to psql</b><br />
+  $ <b>psql -d postgres -U postgres -h localhost</b>
+  <br />
+  <br />
+  # <b>show all databases:</b><br />
+  > <b>SELECT datname FROM pg_database WHERE datistemplate = false;</b>
+  <br />
+  <br />
+  # <b>show all tables in current database:</b><br />
+  > <b>SELECT table_schema || '.' || table_name FROM information_schema.tables <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog', 'information_schema');
+</b><br /><br />
+  # <b>update postgres password:</b><br />
+  > <b>alter user postgres with password 'Cc';</b>
+  <br />
+  <br />
+  # <b>create user with password:</b><br />
+  > <b>create user bob with password 'MyPass';</b>
+  <br />
+  <br />
+  # <b>logout:</b><br />
+  > <b>\quit</b>
+  <br />
+  <br />
+  # <b>create the database dir:</b><br />
+  $ <b>mkdir /data/estudo</b><br />
+  $ <b>sudo chown -c -R postgres: /data/estudo</b>
+  <br />
+  <br />
+  # <b>create tablespace in psql:</b><br />
+  > <b>CREATE TABLESPACE pg-estudo OWNER postgres LOCATION '/data/estudo';</b>
+  <br />
+  <br />
+  # <b>create database:</b><br />
+  > <b>create database mydb owner postgres tablespace "pg-estudo" encoding "UTF8";</b>
+  <br />
+  <br />
+  # <b>create table:</b><br />
+  > <pre style="background-color:#E6E6E6;border:solid 1px #B9B9B9;padding: 1em">CREATE TABLE pg_equipment (
+  equip_id serial PRIMARY KEY,
+  type varchar (50) NOT NULL,
+  color varchar (25) NOT NULL,
+  location varchar(25) 
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;check (location in ('north', 'south', 'west', 'east', 'northeast', 'southeast', 'southwest', 'northwest')),
+  install_date date
+);</pre><br />
+  <br />
+  <br />
+
+  <br />
+  <br />
+  <br />
+  <br />
 ]]>
     </c:content>
 </c:component>
