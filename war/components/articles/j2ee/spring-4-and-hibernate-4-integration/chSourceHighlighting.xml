@@ -1,0 +1,1288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract style="font-size:1em;line-height:1.6em;">
+    <![CDATA[<div style="margin-bottom:.8em;">In enterprise Java application development, perhaps Spring and Hibernate integration is one of the most-demanded topic which most programmers are looking for and are facing with. Spring is the leading enterprise application framework, and Hibernate is the leading ORM framework so combination of these two guys would be a preferable choice in order to develop robust enterprise applications.
+</div><div style="margin-bottom:.8em;">
+This is a step-by-step tutorial that helps you build a Spring-Hibernate application easily in a clear and concise way. In this first part, we demonstrate how to code a simple Spring MVC application that displays a list of users from MySQL database. The DAO implementation uses Hibernate’s SessionFactory to query against the database, instead of using <a target="_blank" href="http://www.codejava.net/frameworks/spring/spring-mvc-with-jdbctemplate-example">JdbcTemplate</a>.
+</div>]]>
+  </c:abstract>
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-top:1.5em;"> The following configuration approaches are used in the demo application:</div>
+<ul style="list-style-type:disc;margin-left:1.5em;">
+  <li>Spring MVC: Annotations for controller and XML for bean definitions.</li>
+  <li>Hibernate: XML mapping for model class.</li>
+  <li>Web Application: using web.xml deployment descriptor file.</li>
+</ul>
+
+
+<div style="margin-top:1.5em;">The following technologies and pieces of software are used throughout this tutorial:</div>
+<ul style="list-style-type:disc;margin-left:1.5em;">
+  <li>Java 7</li>
+  <li>Java EE: Servlet 3.1, JSP 2.3, JSTL 1.2</li>
+  <li>Spring framework 4.0.3.RELEASED</li>
+  <li>Hibernate ORM 4.3.5.Final</li>
+  <li>Spring Tool Suite IDE 3.5.1</li>
+  <li>Maven 3</li>
+  <li>Tomcat 7</li>
+</ul>
+
+
+
+
+
+
+
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">How Spring supports Hibernate Integration</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[<div style="font-size:1em;font-family:monospace;">Basically, in order to support Hibernate integration, Spring provides two key beans available in the org.springframework.orm.hibernate4 package:</div>]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+
+
+<ul style="list-style-type:disc;margin-left:1.5em;">
+  <li><b>LocalSessionFactoryBean</b>: creates a Hibernate’s <b>SessionFactory</b> which is injected into Hibernate-based DAO classes.</li>
+
+<li><b>HibernateTransactionManager</b>: provides transaction support code for a <b>SessionFactory</b>. Programmers can use @Transactional annotation in DAO methods to avoid writing boiler-plate transaction code explicitly.
+</li>
+</ul>
+
+<div style="margin-top:1.2em;">Let’s see how these concepts are implemented in a real project.</div>
+
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Setting up Project</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[<div style="font-size:1em;font-family:monospace;">Let’s create a Spring MVC project using Spring Tool Suite IDE (See example: <a target="_blank" href="http://www.codejava.net/frameworks/spring/spring-mvc-beginner-tutorial-with-spring-tool-suite-ide">Spring MVC beginner tutorial with Spring Tool Suite IDE</a>), name it as SpringMvcHibernateXML.</div>]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Setting up Database" id="sourceContent1"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div>Execute the following MySQL script in order to create a database named usersdb with a table named users:</div>
+
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">CREATE TABLE `users` (
+  `user_id` int(11) NOT NULL AUTO_INCREMENT,
+  `username` varchar(45) NOT NULL,
+  `password` varchar(45) NOT NULL,
+  `email` varchar(45) NOT NULL,
+  PRIMARY KEY (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=latin1</pre>
+
+<div>Remember to insert some dummy data for testing purspose.</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Project Structure" id="sourceContent1"
+                      style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.6em;">The following screenshot shows final structure of the project:</div>
+
+
+<div style="margin-bottom:.6em;">
+<img src="/images/j2ee/Spring_MVC_Hibernate_project_structure.png" /></div>
+
+<div><b>NOTE:</b> After completing this tutorial, you will create a project structure looks like the above.</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Maven Dependencies" id="sourceContent1"
+                      style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div>Declare versions for Java and Spring framework:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">&lt;properties&gt;
+    &lt;java-version&gt;1.7&lt;/java-version&gt;
+    &lt;org.springframework-version&gt;4.0.3.RELEASE&lt;/org.springframework-version&gt;
+&lt;/properties&gt;</pre>
+
+<div style="margin-top:1em;">Spring framework dependencies:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-context&lt;/artifactId&gt;
+    &lt;version&gt;${org.springframework-version}&lt;/version&gt;
+&lt;/dependency&gt;
+ 
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-webmvc&lt;/artifactId&gt;
+    &lt;version&gt;${org.springframework-version}&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-orm&lt;/artifactId&gt;
+    &lt;version&gt;${org.springframework-version}&lt;/version&gt;
+    &lt;type&gt;jar&lt;/type&gt;
+    &lt;scope&gt;compile&lt;/scope&gt;
+&lt;/dependency&gt;</pre>
+
+<div style="margin-top:1em;">Hibernate ORM framework dependencies:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">&lt;dependency&gt;
+    &lt;groupId&gt;org.hibernate&lt;/groupId&gt;
+    &lt;artifactId&gt;hibernate-core&lt;/artifactId&gt;
+    &lt;version&gt;4.3.5.Final&lt;/version&gt;
+&lt;/dependency&gt;</pre>
+
+<div style="margin-top:1em;">Java Servlet and JSP dependencies (for compilation only):</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">&lt;dependency&gt;
+    &lt;groupId&gt;javax.servlet&lt;/groupId&gt;
+    &lt;artifactId&gt;javax.servlet-api&lt;/artifactId&gt;
+    &lt;version&gt;3.1.0&lt;/version&gt;
+    &lt;scope&gt;provided&lt;/scope&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;javax.servlet.jsp&lt;/groupId&gt;
+    &lt;artifactId&gt;javax.servlet.jsp-api&lt;/artifactId&gt;
+    &lt;version&gt;2.3.1&lt;/version&gt;
+    &lt;scope&gt;provided&lt;/scope&gt;
+&lt;/dependency&gt;</pre>
+
+<div style="margin-top:1em;">JSTL dependency:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">&lt;dependency&gt;
+    &lt;groupId&gt;jstl&lt;/groupId&gt;
+    &lt;artifactId&gt;jstl&lt;/artifactId&gt;
+    &lt;version&gt;1.2&lt;/version&gt;
+&lt;/dependency&gt;</pre>
+
+<div style="margin-top:1em;">Apache Commons DBCP dependency (for database connection pooling):</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">&lt;dependency&gt;
+    &lt;groupId&gt;org.apache.commons&lt;/groupId&gt;
+    &lt;artifactId&gt;commons-dbcp2&lt;/artifactId&gt;
+    &lt;version&gt;2.0&lt;/version&gt;
+&lt;/dependency&gt;</pre>
+
+<div style="margin-top:1em;">MySQL Connector Java dependency (JDBC driver for MySQL):</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">&lt;dependency&gt;
+    &lt;groupId&gt;mysql&lt;/groupId&gt;
+    &lt;artifactId&gt;mysql-connector-java&lt;/artifactId&gt;
+    &lt;version&gt;5.1.30&lt;/version&gt;
+&lt;/dependency&gt;</pre>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Coding Model Class Configuring Hibernate Mapping</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div style="font-size:1.2em;"><b>Writing Model Class</b></div>
+
+<div style="margin-top:.6em;">Create a new class named User.java in the package net.codejava.spring.model with the following source code:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">package net.codejava.spring.model;
+ 
+public class User {
+    private int id;
+    private String username;
+    private String password;
+    private String email;
+ 
+    // getters and setters are removed for brevity
+ 
+}</pre>
+
+<div>This model class is used to map the table users and the database to a plain-old Java object (POJO).</div>
+
+
+
+<div style="font-size:1.2em;margin-top:2em;"><b>Creating Hibernate XML Mapping for the Model Class</b></div>
+
+<div style="margin-top:.6em;">We need to create a Hibernate XML mapping file to map the <b>User</b> class to the <b>users</b> table in database. Create a <b>User.hbm.xml</b> file under the same package as the <b>User</b> class with the following XML code:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd"&gt;
+&lt;hibernate-mapping package="net.codejava.spring.model"&gt;
+    &lt;class name="User" table="USERS"&gt;
+        &lt;id name="id" column="USER_ID"&gt;
+            &lt;generator class="native"/&gt;
+        &lt;/id&gt;
+        &lt;property name="username" column="USERNAME" /&gt;
+        &lt;property name="password" column="PASSWORD" /&gt;
+        &lt;property name="email" column="EMAIL" /&gt;
+    &lt;/class&gt; 
+&lt;/hibernate-mapping&gt;</pre>
+
+<div><b>NOTE:</b> For more information about Hibernate XML mapping, see: Hibernate One-to-Many XML Mapping Example.</div>
+
+
+
+<div style="font-size:1.2em;margin-top:2em;"><b>Creating Hibernate XML Configuration File</b></div>
+
+<div style="margin-top:.6em;">Create hibernate.cfg.xml file under the root of classpath (right in src directory in the project) with the following XML code:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">&lt;?xml version='1.0' encoding='utf-8'?&gt;
+&lt;!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd"&gt;
+&lt;hibernate-configuration&gt;       
+  &lt;session-factory&gt;
+    &lt;property name="dialect"&gt;org.hibernate.dialect.MySQLDialect&lt;/property&gt;
+    &lt;property name="show_sql"&gt;true&lt;/property&gt; 
+    &lt;mapping resource="net/codejava/spring/model/User.hbm.xml"/&gt;
+  &lt;/session-factory&gt;
+&lt;/hibernate-configuration&gt;</pre>
+
+<div>This Hibernate configuration file declares which resources need to be mapped (the User.hbm.xml file in this case).</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Coding DAO Classes</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div style="font-size:1.2em;"><b>Writing UserDAO interface</b></div>
+
+<div style="margin-top:.6em;">Create a very simple DAO interface for the User class as the following UserDAO.java class:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">package net.codejava.spring.dao;
+ 
+import java.util.List;
+ 
+import net.codejava.spring.model.User;
+ 
+public interface UserDAO {
+    public List<User> list();
+}</pre>
+
+<div>This interface declares only one method list() that retrieves all users from the database.</div>
+
+
+<div style="font-size:1.2em;margin-top:2em;"><b>Writing UserDAO implementation</b></div>
+
+<div style="margin-top:.6em;">Here’s we code an implementation of the UserDAO interface, the UserDAOImpl class as follows:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">package net.codejava.spring.dao;
+ 
+import java.util.List;
+ 
+import net.codejava.spring.model.User;
+ 
+import org.hibernate.Criteria;
+import org.hibernate.SessionFactory;
+import org.springframework.transaction.annotation.Transactional;
+ 
+public class UserDAOImpl implements UserDAO {
+    private SessionFactory sessionFactory;
+ 
+    public UserDAOImpl(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
+    }
+ 
+    @Override
+    @Transactional
+    public List<User> list() {
+        @SuppressWarnings("unchecked")
+        List<User> listUser = (List<User>) sessionFactory.getCurrentSession()
+                .createCriteria(User.class)
+                .setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).list();
+ 
+        return listUser;
+    }
+ 
+}</pre>
+
+<div style="margin-bottom:.6em;">Notice in this class, a Hibernate’s SessionFactory object is injected via constructor by Spring. The list() method simply obtains the current session from the SessionFactory and queries for a list of all users in the database.</div>
+<div>
+Pay attention to the @Transactional annotation provided by Spring - when a method is annotated by this annotation, Spring will inject transaction support code into the method - thus we don’t have two write any code to handle transaction explicitly.</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Configuring Spring Application Context</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[Now, we come to the most important part that wires Spring and Hibernate together through some XML configuration. Open the <b>servlet-context.xml</b> file under <b>src/main/webapp/WEB-INF/spring/appServlet</b> and update its content as follows.]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div style="font-size:1.2em;"><b>Configuring Spring MVC View Resolvers</b></div>
+
+<div style="margin-top:.6em;">As usual, add the following declarations for Spring MVC annotation driven approach:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">&lt;mvc:annotation-driven /&gt;
+&lt;mvc:resources mapping="/resources/**" location="/resources/" /&gt;
+&lt;context:component-scan base-package="net.codejava.spring" /&gt;</pre>
+
+<div style="margin-top:1em;">The following declaration for a common view resolver that converts logical view names to actual JSP pages:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">&lt;bean class="org.springframework.web.servlet.view.InternalResourceViewResolver"&gt;
+    &lt;property name="prefix" value="/WEB-INF/views/" /&gt;
+    &lt;property name="suffix" value=".jsp" /&gt;
+&lt;/bean&gt;</pre>
+
+
+
+
+<div style="font-size:1.2em;margin-top:2em;"><b>Configuring DataSource Bean</b></div>
+
+<div style="margin-top:.6em;">We use Apache Commons DBCP for a data source with connection pooling capability:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">&lt;bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close"&gt;
+    &lt;property name="driverClassName" value="com.mysql.jdbc.Driver"/&gt;
+    &lt;property name="url" value="jdbc:mysql://localhost:3306/usersdb"/&gt;
+    &lt;property name="username" value="root"/&gt;
+    &lt;property name="password" value="secret"/&gt;
+&lt;/bean&gt;</pre>
+
+<div style="margin-top:1em;"><b>NOTE:</b> Change database URL, username and password according to values in your environment. This data source will be injected to a SessionFactory bean below.</div>
+
+
+
+
+<div style="font-size:1.2em;margin-top:2em;"><b>Configuring SessionFactory Bean</b></div>
+
+<div style="margin-top:.6em;">Spring 4 provides support for Hibernate 4’s <b>SessionFactory</b> through a <b>LocalSessionFactoryBean</b> which is actually a <b>FactoryBean</b> that creates a Hibernate’s <b>SessionFactory</b> which is then injected to Hibernate-based DAO beans. Here’s the bean declaration:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">&lt;bean id="sessionFactory"
+    class="org.springframework.orm.hibernate4.LocalSessionFactoryBean"&gt;
+    &lt;property name="dataSource" ref="dataSource" /&gt;
+    &lt;property name="configLocation" value="classpath:hibernate.cfg.xml" /&gt;
+&lt;/bean&gt;</pre>
+
+<div style="margin-top:1em;">Note that this <b>LocalSessionFactoryBean</b> requires a <b>DataSource</b> bean which is declared previously. The <b>configLocation</b> property specifies where Hibernate configuration file will be searched for. In this case, it is the <b>hibernate.cfg.xml</b> file in the classpath.</div>
+
+
+
+
+<div style="font-size:1.2em;margin-top:2em;"><b>Configuring TransactionManager Bean</b></div>
+
+<div style="margin-top:.6em;">The following declaration is for automatic transaction support for the <b>SessionFactory</b>:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">&lt;tx:annotation-driven /&gt;
+&lt;bean id="transactionManager"
+    class="org.springframework.orm.hibernate4.HibernateTransactionManager"&gt;
+    &lt;property name="sessionFactory" ref="sessionFactory" /&gt;
+&lt;/bean&gt;</pre>
+
+<div style="margin-top:1em;">As mentioned in the <b>UserDAOImpl</b> class, we can specify transaction support by using the <b>@Transactional</b> annotation for transaction-aware methods.</div>
+
+
+
+
+<div style="font-size:1.2em;margin-top:2em;"><b>Configuring DAO Bean</b></div>
+
+<div style="margin-top:.6em;">And finally, configuration for our <b>UserDAOImpl</b> bean - pretty simple:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">&lt;bean id="userDao" class="net.codejava.spring.dao.UserDAOImpl"&gt;
+    &lt;constructor-arg&gt;
+        &lt;ref bean="sessionFactory" /&gt;
+    &lt;/constructor-arg&gt;
+&lt;/bean&gt;</pre>
+
+<div style="margin-top:1em;">This bean will be then injected to a Spring MVC controller class which is described below.</div>
+<div style="margin-top:.425em;"><b>NOTE:</b> For the whole content of Spring application context configuration file, see the corresponding file in the attached project.</div>
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;"> Coding Controller Classes</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+
+<div style="margin-top:.6em;">Write our Spring MVC controller class (HomeController.java) under the net.codejava.spring package with the following code:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">package net.codejava.spring;
+ 
+import java.util.List;
+ 
+import net.codejava.spring.dao.UserDAO;
+import net.codejava.spring.model.User;
+ 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+ 
+/**
+ * Handles requests for the application home page.
+ */
+@Controller
+public class HomeController {
+     
+    @Autowired
+    private UserDAO userDao;
+     
+    @RequestMapping(value="/")
+    public ModelAndView home() {
+        List<User> listUsers = userDao.list();
+        ModelAndView model = new ModelAndView("home");
+        model.addObject("userList", listUsers);
+        return model;
+    }
+     
+}</pre>
+
+<div style="margin-top:1em;">Here, an implementation of the <b>UserDAO</b> is injected automatically by Spring (because <b>@Autowired</b> annotation is used). Remember the <b>UserDAOImpl</b> bean we declared in the Spring application context configuration file previously? It is injected to this controller automatically so that the handling method home() can use it to list all users from the database. And eventually, the home() method returns a view named home which is resolved an actual JSP page which is described below.</div>
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Coding View Page</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+
+<div style="margin-top:.6em;">Create a <b>home.jsp</b> under the <b>src/main/webapp/WEB-INF/views</b> directory with the following content:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">&lt;%@page contentType="text/html" pageEncoding="UTF-8"%&gt;
+&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd"&gt;
+&lt;%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %&gt;
+ 
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;meta http-equiv="Content-Type" content="text/html; charset=UTF-8"&gt;
+        &lt;title&gt;Home&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;div align="center"&gt;
+            &lt;h1&gt;Contact List&lt;/h1&gt;
+            &lt;table border="1"&gt;
+                &lt;th&gt;No&lt;/th&gt;
+                &lt;th&gt;Username&lt;/th&gt;
+                &lt;th&gt;Email&lt;/th&gt;
+                 
+                &lt;c:forEach var="user" items="${userList}" varStatus="status"&gt;
+                &lt;tr&gt;
+                    &lt;td&gt;${status.index + 1}&lt;/td&gt;
+                    &lt;td&gt;${user.username}&lt;/td&gt;
+                    &lt;td&gt;${user.email}&lt;/td&gt;
+                             
+                &lt;/tr&gt;
+                &lt;/c:forEach&gt;             
+            &lt;/table&gt;
+        &lt;/div&gt;
+    &lt;/body&gt;
+&lt;/html&gt;</pre>
+
+<div style="margin-top:1em;">This JSP page simply displays a list of users which is passed by the controller, by using JSTL tags.</div>
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Testing the Application</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+
+<div style="margin-top:.6em;">Deploy the SpringMvcHibernateXML application on Tomcat server and access its default page via the following URL: <b>http://localhost:8080/SpringMvcHibernateXML</b>.
+<br />
+<br />
+Congratulations! You have completed our first part of Spring-Hibernate Integration series. You can download the attached project and experiment yourself. A deployable WAR file is also provided for your convenience.</div>
+
+
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <c:entry style="margin-top:4em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Bootstrapping Spring Dispatcher Servlet</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[<div style="font-size:1em;font-family:monospace;">Instead of using XML in <b>web.xml</b> to register the Spring Dispatcher Servlet, we can move the bootstrap code into a Java class that implements the <b>ServletContainerInitializer</b> interface which is introduced from Servlet 3.0. Spring framework provides an implementation - the <b>SpringServletContainerInitializer</b> class which delegates a Servlet context to any implementations of the <b>WebApplicationInitializer</b> interface.</div>]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+
+<div style="margin-top:.6em;">Thus, let’s create <b>SpringWebAppInitializer</b> class to put our bootstrap code like the following:</div>
+
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">package net.codejava.spring.config;
+ 
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRegistration;
+ 
+import org.springframework.web.WebApplicationInitializer;
+import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
+import org.springframework.web.servlet.DispatcherServlet;
+ 
+public class SpringWebAppInitializer implements WebApplicationInitializer {
+ 
+    @Override
+    public void onStartup(ServletContext servletContext) throws ServletException {
+        AnnotationConfigWebApplicationContext appContext = new AnnotationConfigWebApplicationContext();
+        appContext.register(ApplicationContextConfig.class);
+         
+        ServletRegistration.Dynamic dispatcher = servletContext.addServlet(
+                "SpringDispatcher", new DispatcherServlet(appContext));
+        dispatcher.setLoadOnStartup(1);
+        dispatcher.addMapping("/");
+         
+    }
+}</pre>
+
+<div style="margin-top:1em;">Here, code in the onStartup() method is invoked when the Servlet container initializes the application. This method creates Spring Dispatcher Servlet dynamically to handle all requests coming through the application (denoted by the mapping “/”). The Spring Dispatcher Servlet takes an AnnotationConfigWebApplicationContext which is responsible for Spring-related initializations using annotations. The actual class that does the configurations is ApplicationContextConfig, which is covered in section 4 below.</div>
+<div><b>NOTE:</b> The spring-web-VERSION.jar must present on the classpath for this bootstrap mechanism takes effect.</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Mapping Model Class using JPA Annotations</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+
+<div style="margin-top:.6em;">Instead of using Hibernate XML mapping for model class, we embed JPA annotations directly into the model class as follows (User.java):</div>
+
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">package net.codejava.spring.model;
+ 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+ 
+@Entity
+@Table(name = "USERS")
+public class User {
+    private int id;
+    private String username;
+    private String password;
+    private String email;
+ 
+    @Id
+    @GeneratedValue
+    @Column(name = "USER_ID")
+    public int getId() {
+        return id;
+    }
+ 
+    // other getters and setters are hidden for brevity
+ 
+}</pre>
+
+<div style="margin-top:1em;">Note that if the attribute names of the model class are identical to column names in database, we don’t need to specify column mapping explicitly.</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Extending DAO Classes</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+
+<div style="margin-top:.6em;">Now we extend it for full CRUD operations. Hence, update the <b>UserDAO</b> interface as the following code:</div>
+
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">package net.codejava.spring.dao;
+ 
+import java.util.List;
+ 
+import net.codejava.spring.model.User;
+ 
+public interface UserDAO {
+    public List<User> list();
+     
+    public User get(int id);
+     
+    public void saveOrUpdate(User user);
+     
+    public void delete(int id);
+}</pre>
+
+<div style="margin-top:2em;">Its implementation - UserDAOImpl class is then updated as the following code:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">package net.codejava.spring.dao;
+ 
+import java.util.List;
+ 
+import net.codejava.spring.model.User;
+ 
+import org.hibernate.Criteria;
+import org.hibernate.Query;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+ 
+@Repository
+public class UserDAOImpl implements UserDAO {
+    @Autowired
+    private SessionFactory sessionFactory;
+ 
+    public UserDAOImpl() {
+         
+    }
+     
+    public UserDAOImpl(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
+    }
+ 
+    @Override
+    @Transactional
+    public List<User> list() {
+        @SuppressWarnings("unchecked")
+        List<User> listUser = (List<User>) sessionFactory.getCurrentSession()
+                .createCriteria(User.class)
+                .setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).list();
+ 
+        return listUser;
+    }
+ 
+    @Override
+    @Transactional
+    public void saveOrUpdate(User user) {
+        sessionFactory.getCurrentSession().saveOrUpdate(user);
+    }
+ 
+    @Override
+    @Transactional
+    public void delete(int id) {
+        User userToDelete = new User();
+        userToDelete.setId(id);
+        sessionFactory.getCurrentSession().delete(userToDelete);
+    }
+ 
+    @Override
+    @Transactional
+    public User get(int id) {
+        String hql = "from User where id=" + id;
+        Query query = sessionFactory.getCurrentSession().createQuery(hql);
+         
+        @SuppressWarnings("unchecked")
+        List<User> listUser = (List<User>) query.list();
+         
+        if (listUser != null && !listUser.isEmpty()) {
+            return listUser.get(0);
+        }
+         
+        return null;
+    }
+}</pre>
+<div style="margin-top:2em;">We’ll see how the SessionFactory and TransationManager are configured in the next section below.</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Configuring Spring Application Context using Java-based Configuration</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+
+<div style="margin-top:.6em;">Now, we come to the most important and interesting part of the application, which configures beans definitions using Java code instead of XML. Create <b>ApplicationContextConfig</b> class with the following Spring annotations:</div>
+
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">@Configuration
+@ComponentScan("net.codejava.spring")
+@EnableTransactionManagement
+public class ApplicationContextConfig {
+ 
+    // @Bean configurations go here...
+ 
+}</pre>
+
+<div style="margin-top:2em;">The @Configuration annotation is required for any Java-based configuration in Spring. The @ComponentScan annotation tells Spring to scan the specified package for annotated classes (the HomeController class in case of this tutorial). The @EnableTransactionManager annotation enables Spring’s annotation-driven transaction management capability. Let’s see how each component is configured using Java code.</div>
+
+
+
+<div style="font-size:1.2em;margin-top:2em;"><b>Configuring Spring MVC View Resolvers</b></div>
+
+<div style="margin-top:.6em;">The following method configures a view resolver that converts logical view names to actual JSP pages:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">@Bean(name = "viewResolver")
+public InternalResourceViewResolver getViewResolver() {
+    InternalResourceViewResolver viewResolver = new InternalResourceViewResolver();
+    viewResolver.setPrefix("/WEB-INF/views/");
+    viewResolver.setSuffix(".jsp");
+    return viewResolver;
+}</pre>
+
+
+
+<div style="font-size:1.2em;margin-top:2em;"><b>Configuring DataSource Bean</b></div>
+
+<div style="margin-top:.6em;">The following method configures a DataSource to be used with Hibernate’s SessionFactory:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">@Bean(name = "dataSource")
+public DataSource getDataSource() {
+    BasicDataSource dataSource = new BasicDataSource();
+    dataSource.setDriverClassName("com.mysql.jdbc.Driver");
+    dataSource.setUrl("jdbc:mysql://localhost:3306/usersdb");
+    dataSource.setUsername("root");
+    dataSource.setPassword("secret");
+ 
+    return dataSource;
+}</pre>
+<div style="margin-top:1em;">
+  <b>NOTE:</b><br />
+<ul style="list-style-type:disc;margin-left:1.5em;">
+  <li>We create a DataSource from Apache Commons DBCP for standard database connection pooling capability.</li>
+  <li>Remember to change attributes of the DataSource according to your environment.</li>
+</ul>
+</div>
+<div style="margin-top:.6em;">This data source will be injected to a Hibernate’s SessionFactory bean as below.</div>
+
+
+
+
+<div style="font-size:1.2em;margin-top:2em;"><b>Configuring SessionFactory Bean</b></div>
+
+<div style="margin-top:.6em;">The following method configures a SessionFactory bean:</div>
+
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">@Autowired
+@Bean(name = "sessionFactory")
+public SessionFactory getSessionFactory(DataSource dataSource) {
+ 
+    LocalSessionFactoryBuilder sessionBuilder = new LocalSessionFactoryBuilder(dataSource);
+ 
+    sessionBuilder.addAnnotatedClasses(User.class);
+ 
+    return sessionBuilder.buildSessionFactory();
+}</pre>
+
+<div style="margin-top:2em;"><b>NOTE:</b> For Java-based configuration, Spring provides the <b>LocalSessionFactoryBuilder</b> that facilitates the creation of Hibernate’s <b>SessionFactory</b>. For XML configuration, a <b>LocalSessionFactoryBean</b> is used instead. Notice this statement tells Hibernate to load the User class into its mapping definitions:</div>
+
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">sessionBuilder.addAnnotatedClasses(User.class);</pre>
+
+<div style="margin-top:1em;">If you want to add more classes:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">sessionBuilder.addAnnotatedClasses(User.class, Object.class);</pre>
+
+<div style="margin-top:1em;">Or scan packages for annotated classes:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">sessionBuilder.scanPackages("net.codejava.model");</pre>
+
+<div style="margin-top:1em;">In case you want to specify a specific Hibernate property:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">sessionBuilder.setProperty("hibernate.show_sql", "true");</pre>
+
+<div style="margin-top:1em;">Or specify a set of Hibernate properties:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">sessionBuilder.addProperties(getHibernateProperties());</pre>
+
+<div style="margin-top:1em;">Whereas the <b>getHibernateProperties()</b> method is implemented as followings:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">private Properties getHibernateProperties() {
+    Properties properties = new Properties();
+    properties.put("hibernate.show_sql", "true");
+    properties.put("hibernate.dialect", "org.hibernate.dialect.MySQLDialect");
+    return properties;
+}</pre>
+
+<div style="margin-top:1em;">This SessionFactory bean will be wired into the UserDAO bean below.</div>
+
+
+
+
+
+
+
+<div style="font-size:1.2em;margin-top:2em;"><b>Configuring TransactionManager Bean</b></div>
+<div style="margin-top:.6em;">The following method configures a HibernateTransactionManager for the SessionFactory:</div>
+
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">@Autowired
+@Bean(name = "transactionManager")
+public HibernateTransactionManager getTransactionManager(
+        SessionFactory sessionFactory) {
+    HibernateTransactionManager transactionManager = new HibernateTransactionManager(
+            sessionFactory);
+ 
+    return transactionManager;
+}</pre>
+
+<div style="margin-top:1em;">By configuring a transaction manager, code in the DAO class doesn’t have to take care of transaction management explicitly. Instead, the @Transactional annotation is used to tell Spring automatically inserts transaction management code into the bytecode.</div>
+
+
+
+
+
+
+
+<div style="font-size:1.2em;margin-top:2em;"><b>Configuring DAO Bean</b></div>
+<div style="margin-top:.6em;">The following method configures a bean which is a UserDAO implementation:</div>
+
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">@Autowired
+@Bean(name = "userDao")
+public UserDAO getUserDao(SessionFactory sessionFactory) {
+    return new UserDAOImpl(sessionFactory);
+}</pre>
+
+<div style="margin-top:1em;">This UserDAO bean is injected into the controller class which is listed below.</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  
+
+  
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Updating Spring Controller Class</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+
+<div style="margin-top:.6em;">The HomeController class is now updated to handle CRUD operations of a list of users:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">package net.codejava.spring.controller;
+ 
+import java.util.List;
+ 
+import javax.servlet.http.HttpServletRequest;
+ 
+import net.codejava.spring.dao.UserDAO;
+import net.codejava.spring.model.User;
+ 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.ModelAndView;
+ 
+/**
+ * Handles requests for the application home page.
+ */
+@Controller
+public class HomeController {
+     
+    @Autowired
+    private UserDAO userDao;
+ 
+    @RequestMapping("/")
+    public ModelAndView handleRequest() throws Exception {
+        List<User> listUsers = userDao.list();
+        ModelAndView model = new ModelAndView("UserList");
+        model.addObject("userList", listUsers);
+        return model;
+    }
+     
+    @RequestMapping(value = "/new", method = RequestMethod.GET)
+    public ModelAndView newUser() {
+        ModelAndView model = new ModelAndView("UserForm");
+        model.addObject("user", new User());
+        return model;      
+    }
+     
+    @RequestMapping(value = "/edit", method = RequestMethod.GET)
+    public ModelAndView editUser(HttpServletRequest request) {
+        int userId = Integer.parseInt(request.getParameter("id"));
+        User user = userDao.get(userId);
+        ModelAndView model = new ModelAndView("UserForm");
+        model.addObject("user", user);
+        return model;      
+    }
+     
+    @RequestMapping(value = "/delete", method = RequestMethod.GET)
+    public ModelAndView deleteUser(HttpServletRequest request) {
+        int userId = Integer.parseInt(request.getParameter("id"));
+        userDao.delete(userId);
+        return new ModelAndView("redirect:/");     
+    }
+     
+    @RequestMapping(value = "/save", method = RequestMethod.POST)
+    public ModelAndView saveUser(@ModelAttribute User user) {
+        userDao.saveOrUpdate(user);
+        return new ModelAndView("redirect:/");
+    }  
+}</pre>
+
+<div style="margin-top:2em;">This controller class is responsible for handling workflow of the application such as listing users, creating new, editing and deleting a user.</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  
+
+  
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Updating User Listing Page</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+
+<div style="margin-top:.6em;">The UserList.jsp uses <a target="_blank" href="http://www.codejava.net/java-ee/jstl/introduction-to-jstl">JSTL</a> to enumerate the list of users passed from the controller:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">&lt;%@page contentType="text/html" pageEncoding="UTF-8"%&gt;
+&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd"&gt;
+&lt;%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %&gt;
+ 
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;meta http-equiv="Content-Type" content="text/html; charset=UTF-8"&gt;
+        &lt;title&gt;Home&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;div align="center"&gt;
+            &lt;h1&gt;Users List&lt;/h1&gt;
+            &lt;h2&gt;&lt;a href="/new"&gt;New User&lt;/a&gt;&lt;/h2&gt;
+             
+            &lt;table border="1"&gt;
+                &lt;th&gt;No&lt;/th&gt;
+                &lt;th&gt;Username&lt;/th&gt;
+                &lt;th&gt;Email&lt;/th&gt;
+                &lt;th&gt;Actions&lt;/th&gt;
+                 
+                &lt;c:forEach var="user" items="${userList}" varStatus="status"&gt;
+                &lt;tr&gt;
+                    &lt;td&gt;${status.index + 1}&lt;/td&gt;
+                    &lt;td&gt;${user.username}&lt;/td&gt;
+                    &lt;td&gt;${user.email}&lt;/td&gt;
+                    &lt;td&gt;
+                        &lt;a href="/edit?id=${user.id}"&gt;Edit&lt;/a&gt;
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        &lt;a href="/delete?id=${user.id}"&gt;Delete&lt;/a&gt;
+                    &lt;/td&gt;
+                &lt;/tr&gt;
+                &lt;/c:forEach&gt;             
+            &lt;/table&gt;
+        &lt;/div&gt;
+    &lt;/body&gt;
+&lt;/html&gt;</pre>
+
+<div style="margin-top:1em;">This page lists all users and provides corresponding actions like create new, edit and delete.</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  
+
+  
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Coding User Form Page</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+
+<div style="margin-top:.6em;">The UserForm.jsp uses Spring’s form tags to map between the User object in the model and the HTML form:</div>
+<pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">&lt;%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%&gt;
+&lt;!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"&gt;
+&lt;%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%&gt;
+&lt;html&gt;
+&lt;head&gt;
+&lt;meta http-equiv="Content-Type" content="text/html; charset=UTF-8"&gt;
+&lt;title&gt;New or Edit User&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div align="center"&gt;
+        &lt;h1&gt;New/Edit User&lt;/h1&gt;
+        &lt;table&gt;
+            &lt;form:form action="save" method="post" modelAttribute="user"&gt;
+            &lt;form:hidden path="id"/&gt;
+            &lt;tr&gt;
+                &lt;td&gt;Username:&lt;/td&gt;
+                &lt;td&gt;&lt;form:input path="username"/&gt;&lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr&gt;
+                &lt;td&gt;Email:&lt;/td&gt;
+                &lt;td&gt;&lt;form:input path="email"/&gt;&lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr&gt;
+                &lt;td&gt;Password:&lt;/td&gt;
+                &lt;td&gt;&lt;form:password path="password"/&gt;&lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr&gt;
+                &lt;td colspan="2" align="center"&gt;
+                    &lt;input type="submit" value="Save"&gt;
+                &lt;/td&gt;
+            &lt;/tr&gt;        
+            &lt;/form:form&gt;
+        &lt;/table&gt;
+    &lt;/div&gt;
+     
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+
+<div style="margin-top:1em;">This page is used when creating new user or editing an existing one.</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  
+
+  
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Final Project Structure</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+
+<div style="margin-top:.6em;">For your reference, the following screenshot shows final project structure in Eclipse/STS:</div>
+<div style="margin-bottom:.6em;">
+<img src="/images/j2ee/Spring_MVC_Hibernate_Java-based_project_structure.png" /></div>
+<div style="margin-bottom:.6em;">Congratulations! You have completed our second part of the Spring-Hibernate integration series. For your convenience, we provide downloads for the project and a deployable WAR file in the attachments section.</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+</c:component>
