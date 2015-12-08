@@ -3,7 +3,11 @@
   <c:abstract style="font-size:1em;line-height:1.6em;">
     <![CDATA[<div style="margin-bottom:.8em;">In enterprise Java application development, perhaps Spring and Hibernate integration is one of the most-demanded topic which most programmers are looking for and are facing with. Spring is the leading enterprise application framework, and Hibernate is the leading ORM framework so combination of these two guys would be a preferable choice in order to develop robust enterprise applications.
 </div><div style="margin-bottom:.8em;">
-This is a step-by-step tutorial that helps you build a Spring-Hibernate application easily in a clear and concise way. In this first part, we demonstrate how to code a simple Spring MVC application that displays a list of users from MySQL database. The DAO implementation uses Hibernate’s SessionFactory to query against the database, instead of using <a target="_blank" href="http://www.codejava.net/frameworks/spring/spring-mvc-with-jdbctemplate-example">JdbcTemplate</a>.
+This is a step-by-step tutorial that helps you build a Spring-Hibernate application easily in a clear and concise way. In this first part, we demonstrate how to code a simple Spring MVC application that displays a list of users from MySQL database. The DAO implementation uses Hibernate’s SessionFactory to query against the database, instead of using <a target="_blank" href="http://www.codejava.net/frameworks/spring/spring-mvc-with-jdbctemplate-example">JdbcTemplate</a>
+
+<br />
+<br />
+<h1 style="margin:0;padding:0;color:blue;font-weight:bold;font-size:1.5em;">http://www.mkyong.com/maven/how-to-create-a-web-application-project-with-maven/</h1>
 </div>]]>
   </c:abstract>
   
@@ -51,6 +55,256 @@ This is a step-by-step tutorial that helps you build a Spring-Hibernate applicat
       </c:comment1>
     </c:comment>
   </c:entry>
+
+
+
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Generator the project with maven</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[<pre style="border:solid 1px #DAD5D5;padding:1em;margin:1em 0;background-color:#F9F9F9;font-size:.9em;color:green;">
+$ mvn archetype:generate -DgroupId=com.mkyong -DartifactId=CounterWebApp -DarchetypeArtifactId=maven-archetype-webapp -DinteractiveMode=false</pre>
+<br />
+<b>convert and import to eclipse</b>
+<br />
+<pre style="border:solid 1px #DAD5D5;padding:1em;margin:1em 0;background-color:#F9F9F9;font-size:.9em;color:green;">$ mvn eclipse:eclipse -Dwtpversion=2.0 --> Eclipse Java web project (WAR)</pre>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="pom.xml" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<pre style="border:solid 1px #DAD5D5;padding:1em;margin:1em 0;background-color:#F9F9F9;font-size:.9em;color:green;">
+&lt;project xmlns="http://maven.apache.org/POM/4.0.0" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+  http://maven.apache.org/maven-v4_0_0.xsd"&gt;
+  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+  &lt;groupId&gt;com.mkyong&lt;/groupId&gt;
+  &lt;artifactId&gt;CounterWebApp&lt;/artifactId&gt;
+  &lt;packaging&gt;war&lt;/packaging&gt;
+  &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+  &lt;name&gt;CounterWebApp Maven Webapp&lt;/name&gt;
+  &lt;url&gt;http://maven.apache.org&lt;/url&gt;
+  &lt;dependencies&gt;
+     &lt;!-- jUnit --&gt;
+     &lt;dependency&gt;
+        &lt;groupId&gt;junit&lt;/groupId&gt;
+        &lt;artifactId&gt;junit&lt;/artifactId&gt;
+        &lt;version&gt;4.8.1&lt;/version&gt;
+        &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+            &lt;groupId&gt;org.mockito&lt;/groupId&gt;
+          &lt;artifactId&gt;mockito-all&lt;/artifactId&gt;
+          &lt;version&gt;1.8.5&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-test&lt;/artifactId&gt;
+      &lt;version&gt;3.0.0.RELEASE&lt;/version&gt;
+    &lt;/dependency&gt;
+  &lt;/dependencies&gt;
+  &lt;build&gt;
+    &lt;finalName&gt;CounterWebApp&lt;/finalName&gt;
+  &lt;/build&gt;
+&lt;/project&gt;
+</pre>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="web.xml" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<pre style="border:solid 1px #DAD5D5;padding:1em;margin:1em 0;background-color:#F9F9F9;font-size:.9em;color:green;">
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd" id="WebApp_ID" version="3.1"&gt;
+  &lt;display-name&gt;FirstSpringProj&lt;/display-name&gt;
+
+  &lt;servlet&gt;
+      &lt;servlet-name&gt;spring-dispatcher&lt;/servlet-name&gt;
+      &lt;servlet-class&gt;org.springframework.web.servlet.DispatcherServlet&lt;/servlet-class&gt;
+  &lt;/servlet&gt;
+
+  &lt;servlet-mapping&gt;
+      &lt;servlet-name&gt;spring-dispatcher&lt;/servlet-name&gt;
+      &lt;url-pattern&gt;/&lt;/url-pattern&gt;
+  &lt;/servlet-mapping&gt;
+  
+  &lt;filter&gt;
+    &lt;filter-name&gt;CharacterEncodingFilter&lt;/filter-name&gt;
+    &lt;filter-class&gt;org.springframework.web.filter.CharacterEncodingFilter&lt;/filter-class&gt;
+    &lt;init-param&gt;
+      &lt;param-name&gt;encoding&lt;/param-name&gt;
+      &lt;param-value&gt;utf-8&lt;/param-value&gt;
+    &lt;/init-param&gt;
+  &lt;/filter&gt;
+  
+  &lt;filter-mapping&gt;
+    &lt;filter-name&gt;CharacterEncodingFilter&lt;/filter-name&gt;
+    &lt;url-pattern&gt;/*&lt;/url-pattern&gt;
+  &lt;/filter-mapping&gt;
+&lt;/web-app&gt;
+</pre>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="spring-dispatcher-servlet.xml" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<pre style="border:solid 1px #DAD5D5;padding:1em;margin:1em 0;background-color:#F9F9F9;font-size:.9em;color:green;">
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;beans xmlns="http://www.springframework.org/schema/beans"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xmlns:mvc="http://www.springframework.org/schema/mvc"
+xmlns:tx="http://www.springframework.org/schema/tx"
+xmlns:context="http://www.springframework.org/schema/context"
+xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.1.xsd
+                    http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.1.xsd     
+                    http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+                    http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd"&gt;
+
+    &lt;bean id="HandlerMapping" class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping"&gt;&lt;/bean&gt;
+
+    &lt;bean name="/welcome.htm" 
+                class="net.counter.controller.HelloWorldController" /&gt;
+
+  &lt;context:annotation-config /&gt;
+  &lt;mvc:annotation-driven /&gt;
+  &lt;tx:annotation-driven transaction-manager="transactionManager"/&gt;
+  &lt;mvc:resources mapping="/resources/**" location="/resources/" /&gt;
+  &lt;context:component-scan base-package="net.counter.controller, net.counter.dao" /&gt;
+
+    &lt;bean id="viewResolver"
+        class="org.springframework.web.servlet.view.InternalResourceViewResolver" &gt;
+        &lt;property name="prefix"&gt;
+            &lt;value&gt;/WEB-INF/&lt;/value&gt;
+        &lt;/property&gt;
+        &lt;property name="suffix"&gt;
+            &lt;value&gt;.jsp&lt;/value&gt;
+        &lt;/property&gt;
+    &lt;/bean&gt;
+    
+    &lt;bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource"&gt;
+      &lt;property name="driverClassName" value="com.mysql.jdbc.Driver"/&gt;
+      &lt;property name="url" value="jdbc:mysql://localhost:3306/mydb"/&gt;
+      &lt;property name="username" value="root"/&gt;
+      &lt;property name="password" value="Cc"/&gt;
+  &lt;/bean&gt;
+  
+  &lt;bean id="sessionFactory"
+      class="org.springframework.orm.hibernate4.LocalSessionFactoryBean"&gt;
+      &lt;property name="dataSource" ref="dataSource" /&gt;
+      &lt;property name="configLocation" value="classpath:hibernate.cfg.xml" /&gt;
+  &lt;/bean&gt;
+  
+  &lt;tx:annotation-driven /&gt;
+  &lt;bean id="transactionManager"
+      class="org.springframework.orm.hibernate4.HibernateTransactionManager"&gt;
+      &lt;property name="sessionFactory" ref="sessionFactory" /&gt;
+  &lt;/bean&gt;
+  
+  &lt;bean id="userDaoImpl" class="net.counter.dao.UserDaoImpl"&gt;
+      &lt;constructor-arg&gt;
+          &lt;ref bean="sessionFactory" /&gt;
+      &lt;/constructor-arg&gt;
+  &lt;/bean&gt;
+
+  &lt;bean id="homeController" class="net.counter.controller.HomeController" scope="prototype"&gt;
+      &lt;property name="userDao" ref="userDaoImpl"/&gt;
+  &lt;/bean&gt;
+
+&lt;/beans&gt;
+</pre>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="hibernate.cfg.xml" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<pre style="border:solid 1px #DAD5D5;padding:1em;margin:1em 0;background-color:#F9F9F9;font-size:.9em;color:green;">
+&lt;?xml version='1.0' encoding='utf-8'?&gt;
+&lt;!--
+  ~ Hibernate, Relational Persistence for Idiomatic Java
+  ~
+  ~ Copyright (c) 2010, Red Hat Inc. or third-party contributors as
+  ~ indicated by the @author tags or express copyright attribution
+  ~ statements applied by the authors.  All third-party contributions are
+  ~ distributed under license by Red Hat Inc.
+  ~
+  ~ This copyrighted material is made available to anyone wishing to use, modify,
+  ~ copy, or redistribute it subject to the terms and conditions of the GNU
+  ~ Lesser General Public License, as published by the Free Software Foundation.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  --&gt;
+&lt;!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd"&gt;
+
+&lt;hibernate-configuration&gt;
+
+    &lt;session-factory&gt;
+
+        &lt;!-- Database connection settings --&gt;
+        &lt;property name="connection.driver_class"&gt;org.h2.Driver&lt;/property&gt;
+        &lt;property name="connection.url"&gt;jdbc:h2:mem:db1;DB_CLOSE_DELAY=-1;MVCC=TRUE&lt;/property&gt;
+        &lt;property name="connection.username"&gt;sa&lt;/property&gt;
+        &lt;property name="connection.password"&gt;&lt;/property&gt;
+
+        &lt;!-- JDBC connection pool (use the built-in) --&gt;
+        &lt;property name="connection.pool_size"&gt;1&lt;/property&gt;
+
+        &lt;!-- SQL dialect --&gt;
+        &lt;property name="dialect"&gt;org.hibernate.dialect.H2Dialect&lt;/property&gt;
+
+        &lt;!-- Disable the second-level cache  --&gt;
+        &lt;property name="cache.provider_class"&gt;org.hibernate.cache.NoCacheProvider&lt;/property&gt;
+
+        &lt;!-- Echo all executed SQL to stdout --&gt;
+        &lt;property name="show_sql"&gt;true&lt;/property&gt;
+
+        &lt;!-- Drop and re-create the database schema on startup --&gt;
+        &lt;property name="hbm2ddl.auto"&gt;create&lt;/property&gt;
+
+        &lt;!-- Names the annotated entity class --&gt;
+        &lt;mapping class="org.hibernate.tutorial.annotations.Event"/&gt;
+
+    &lt;/session-factory&gt;
+
+&lt;/hibernate-configuration&gt;
+</pre>
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
 
 
 
