@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+   Apache Tomcat is a web server and servlet container that is used to serve Java applications. Tomcat is an open source implementation of the Java Servlet and JavaServer Pages technologies, released by the Apache Software Foundation. This tutorial covers the basic installation and some configuration of the latest release of Tomcat 8 on your Ubuntu 14.04 server.
+]]>
+  </c:abstract>
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title>Prerequisites</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+      Before you begin with this guide, you should have a separate, non-root user account set up on your server. You can learn how to do this by completing steps 1-3 in the initial server setup for Ubuntu 14.04. We will be using the demo user created here for the rest of this tutorial.
+    ]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title>Install Java</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+      ...
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title>Create Tomcat User</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[<div style="font-family:monospace;line-height:1.8em;">For security purposes, Tomcat should be run as an unprivileged user (i.e. not root). We will create a new user and group that will run the Tomcat service.</div>]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+      <h3 style="font-style:italic;font-size:1.3em;">create a new tomcat group:</h3>
+      <pre style="font-size:.9em;border-radius: 4px; border: 1px solid rgb(216, 216, 216); padding: .5em .8em; background-color: rgb(241, 241, 241);margin-bottom:1em;">sudo groupadd tomcat</pre>
+
+
+      <h3 style="font-style:italic;font-size:1.3em;">Then <b>create a new tomcat user</b>. We'll make this user <b>a member of the tomcat group</b>, with a <b>home directory of /opt/tomcat</b> (where we will install Tomcat), and with a shell of <b>/bin/false (so nobody can log into the account)</b>:</h3>
+      <pre style="font-size:.9em;border-radius: 4px; border: 1px solid rgb(216, 216, 216); padding: .5em .8em; background-color: rgb(241, 241, 241);margin-bottom:1em;">sudo useradd -s /bin/false -g tomcat -d /opt/tomcat tomcat</pre>
+
+      <div style="margin-bottom:1em;">Now that our tomcat user is set up, let's download and install Tomcat.</div>
+
+
+      <h3 style="font-style:italic;font-size:1.3em;">Download Tomcat Binary:</h3>
+      <pre style="font-size:.9em;border-radius: 4px; border: 1px solid rgb(216, 216, 216); padding: .5em .8em; background-color: rgb(241, 241, 241);margin-bottom:1em;">wget http://mirror.sdunix.com/apache/tomcat/tomcat-8/v8.0.23/bin/apache-tomcat-8.0.23.tar.gz</pre>
+      <pre style="font-size:.9em;border-radius: 4px; border: 1px solid rgb(216, 216, 216); padding: .5em .8em; background-color: rgb(241, 241, 241);margin-bottom:1em;">sudo mkdir /opt/tomcat
+sudo tar xvf apache-tomcat-8*tar.gz -C /opt/tomcat --strip-components=1</pre>
+
+      <h3 style="font-style:italic;font-size:1.3em;">Update Permissions:</h3>
+      <pre style="font-size:.9em;border-radius: 4px; border: 1px solid rgb(216, 216, 216); padding: .5em .8em; background-color: rgb(241, 241, 241);margin-bottom:1em;">$ cd /opt/tomcat
+$ sudo chgrp -R tomcat conf
+$ sudo chmod g+rwx conf
+$ sudo chmod g+r conf/*
+$ sudo chown -R tomcat work/ temp/ logs/</pre>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title>Install Upstart Script</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+      sudo nano /etc/init/tomcat.conf
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+description "Tomcat Server"
+
+start on runlevel [2345]
+stop on runlevel [!2345]
+respawn
+respawn limit 10 5
+
+setuid tomcat
+setgid tomcat
+
+env JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/jre
+env CATALINA_HOME=/opt/tomcat
+
+# Modify these options as needed
+env JAVA_OPTS="-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom"
+env CATALINA_OPTS="-Xms512M -Xmx1024M -server -XX:+UseParallelGC"
+
+exec $CATALINA_HOME/bin/catalina.sh run
+
+# cleanup temp directory after stop
+post-stop script
+rm -rf $CATALINA_HOME/temp/*
+end script
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ sudo initctl reload-configuration
+$ sudo initctl start tomcat
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+Tomcat is not completely set up yet, but you can access the default splash page by going to your domain or IP address followed by :8080 in a web browser:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Configure Tomcat Web Management Interface" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+<div>
+In order to use the manager webapp that comes with Tomcat, we must add a login to our Tomcat server. We will do this by editing the tomcat-users.xml file:</div>
+<pre style="margin: .3em 0; font-size:.9em;border-radius: 4px; border: 1px solid rgb(216, 216, 216); padding: .5em .8em; background-color: rgb(241, 241, 241);margin-bottom:1em;">$ sudo nano /opt/tomcat/conf/tomcat-users.xml</pre>
+
+<div style="margin-top:1.5em;">
+This file is filled with comments which describe how to configure the file. You may want to delete all the comments between the following two lines, or you may leave them if you want to reference the examples:</div>
+<pre style="margin: .3em 0; font-size:.9em;border-radius: 4px; border: 1px solid rgb(216, 216, 216); padding: .5em .8em; background-color: rgb(241, 241, 241);margin-bottom:1em;">&lt;tomcat-users&gt;
+...
+&lt;/tomcat-users&gt;</pre>
+
+<div style="margin-top:1.5em;">
+You will want to add a user who can access the <b>manager-gui</b> and <b>admin-gui</b> (webapps that come with Tomcat). You can do so by defining a user similar to the example below. Be sure to change the username and password to something secure:</div>
+<pre style="margin: .3em 0; font-size:.9em;border-radius: 4px; border: 1px solid rgb(216, 216, 216); padding: .5em .8em; background-color: rgb(241, 241, 241);margin-bottom:1em;">&lt;tomcat-users&gt;
+    &lt;user username="admin" password="password" roles="manager-gui,admin-gui"/&gt;
+&lt;/tomcat-users&gt;</pre>
+
+<div style="margin-top:1.5em;">
+Save and quit the tomcat-users.xml file. To put our changes into effect, restart the Tomcat service:</div>
+<pre style="margin: .3em 0; font-size:.9em;border-radius: 4px; border: 1px solid rgb(216, 216, 216); padding: .5em .8em; background-color: rgb(241, 241, 241);margin-bottom:1em;">sudo initctl restart tomcat</pre>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Access the Web Interface" id="sourceContent1" style="margin-top:2em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+<div>
+Now that Tomcat is up and running, let's access the web management interface in a web browser. You can do this by accessing the public IP address of the server, on port 8080:</div>
+<pre style="margin: .3em 0; font-size:.9em;border-radius: 4px; border: 1px solid rgb(216, 216, 216); padding: .5em .8em; background-color: rgb(241, 241, 241);margin-bottom:1em;">http://server_IP_address:8080</pre>
+
+<div style="margin-top:1.5em;">
+You will see something like the following image:</div>
+<div>
+  <img src="/images/linux/tomcat-yi.png" style="max-width:100%;" />
+</div>
+
+<div style="margin-top:1.5em;">
+As you can see, there are links to the admin webapps that we configured an admin user for.
+<br />
+<br />
+Let's take a look at the Manager App, accessible via the link or
+</div>
+<pre style="margin: .3em 0; font-size:.9em;border-radius: 4px; border: 1px solid rgb(216, 216, 216); padding: .5em .8em; background-color: rgb(241, 241, 241);margin-bottom:1em;">http://server_IP_address:8080/manager/html:</pre>
+<div><img src="/images/linux/tomcat-yi-mana.png" style="max-width:100%;" /></div>
+
+<div style="margin-top:1.5em;">
+The Web Application Manager is used to manage your Java applications. You can Start, Stop, Reload, Deploy, and Undeploy here. You can also run some diagnostics on your apps (i.e. find memory leaks). Lastly, information about your server is available at the very bottom of this page.
+<br />
+<br />
+Now let's take a look at the Host Manager, accessible via the link or</div>
+<pre style="margin: .3em 0; font-size:.9em;border-radius: 4px; border: 1px solid rgb(216, 216, 216); padding: .5em .8em; background-color: rgb(241, 241, 241);margin-bottom:1em;">http://server_IP_address:8080/host-manager/html/:</pre>
+<div><img src="/images/linux/host-manager.png" style="max-width:100%;" /></div>
+
+<div><br />From the Virtual Host Manager page, you can add virtual hosts to serve your applications from.</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+</c:component>
