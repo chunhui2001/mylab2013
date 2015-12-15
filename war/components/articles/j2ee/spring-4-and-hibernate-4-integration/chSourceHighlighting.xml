@@ -414,7 +414,22 @@ xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springf
     &lt;version&gt;${org.springframework-version}&lt;/version&gt;
     &lt;type&gt;jar&lt;/type&gt;
     &lt;scope&gt;compile&lt;/scope&gt;
-&lt;/dependency&gt;</pre>
+&lt;/dependency&gt;
+
+
+&lt;!-- Spring Security --&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.security&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-security-web&lt;/artifactId&gt;
+  &lt;version&gt;3.2.3.RELEASE&lt;/version&gt;
+&lt;/dependency&gt;
+
+&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.security&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-security-config&lt;/artifactId&gt;
+  &lt;version&gt;3.2.3.RELEASE&lt;/version&gt;
+&lt;/dependency&gt;
+</pre>
 
 <div style="margin-top:1em;">Hibernate ORM framework dependencies:</div>
 <pre style="font-size:.9em;border:solid 1px #D8D6D6;padding:1em; margin:.625em 0;background-color:#F7F7F7;">&lt;dependency&gt;
@@ -1905,6 +1920,424 @@ Is this additional code worth it? If you need or want to use design prototypes, 
       <![CDATA[
 In the code above you can see how we used HTML code instead of a collection of JSP tags from an external library. Not only this makes our code much clearer and more readable, but also more standard and understandable by browsers, which will allow us to use this template as a static prototype. Again, we will see the advantages of this in the next section.
     ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
+]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  
+
+  <c:entry style="margin-top:6em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Spring Security hello world example</h1>
+<b>Refer to:</b><br />
+http://www.mkyong.com/spring-security/spring-security-hello-world-example/<br/><br/>
+    ]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[In this section, we will show you how to integrate Spring Security with a Spring MVC web application to secure a URL access. After implementing Spring Security, to access the content of an “admin” page, users need to key in the correct “username” and “password”.]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Directory Structure" id="sourceContent1"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<img src="/images/j2ee/spring-security-custom-login-xml-directory.png" style="max-width:100%" />
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Spring Security Dependencies" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+  <![CDATA[
+<!-- Spring Security -->
+<dependency>
+  <groupId>org.springframework.security</groupId>
+  <artifactId>spring-security-web</artifactId>
+  <version>${spring.security.version}</version>
+</dependency>
+
+<dependency>
+  <groupId>org.springframework.security</groupId>
+  <artifactId>spring-security-config</artifactId>
+  <version>${spring.security.version}</version>
+</dependency>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Spring MVC Web Application" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+  <![CDATA[
+
+<div>A simple controller :</div>
+<ul style="list-style-type:decimal;margin:.5em 0; margin-left:2.5em;color:gray;">
+  <li>login-page=”/login” – The page to display the custom login form</li>
+<li>authentication-failure-url=”/login?error” – If authentication failed, forward to page /login?error</li>
+<li>logout-success-url=”/login?logout” – If logout successful, forward to view /logout</li>
+<li>username-parameter=”username” – The name of the request which contains the “username”. In HTML, this is the name of the input text.</li>
+<li>&lt;csrf/&gt; – Enable the Cross Site Request Forgery (CSRF) protection, refer to this link. In XML, by default, CSRF protection is disabled.</li>
+</ul>
+
+<div>
+ Normally, we don’t involve in the authentication like login or logout processing, let Spring handle it, we just handle the successful or failed page to display.</div>
+
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="mvc-dispatcher-servlet.xml" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="padding-left:0;font-style:italic;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+  <![CDATA[<beans xmlns="http://www.springframework.org/schema/beans"
+  xmlns:context="http://www.springframework.org/schema/context"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="
+        http://www.springframework.org/schema/beans     
+        http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+        http://www.springframework.org/schema/context 
+        http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+  <context:component-scan base-package="com.mkyong.*" />
+
+  <bean
+    class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+    <property name="prefix">
+    <value>/WEB-INF/pages/</value>
+    </property>
+    <property name="suffix">
+    <value>.jsp</value>
+    </property>
+  </bean>
+
+</beans>]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="padding-left:0;font-style:italic;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+  <![CDATA[To integrate Spring security with a Spring MVC web application, just declares <b>DelegatingFilterProxy</b> as a servlet filter to intercept any incoming request.]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="web.xml" id="sourceContent1"
+                     style="margin-top:0.3em;"
+                     titleStyle="padding-left:0;font-style:italic;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+  <![CDATA[<web-app id="WebApp_ID" version="2.4"
+  xmlns="http://java.sun.com/xml/ns/j2ee" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee 
+  http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
+
+  <display-name>Spring MVC Application</display-name>
+
+  <!-- Spring MVC -->
+  <servlet>
+    <servlet-name>mvc-dispatcher</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet
+    </servlet-class>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>mvc-dispatcher</servlet-name>
+    <url-pattern>/</url-pattern>
+  </servlet-mapping>
+
+  <listener>
+    <listener-class>org.springframework.web.context.ContextLoaderListener
+    </listener-class>
+  </listener>
+
+  <!-- Loads Spring Security config file -->
+  <context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>
+      /WEB-INF/spring-security.xml
+    </param-value>
+  </context-param>
+
+  <!-- Spring Security -->
+  <filter>
+    <filter-name>springSecurityFilterChain</filter-name>
+    <filter-class>org.springframework.web.filter.DelegatingFilterProxy
+    </filter-class>
+  </filter>
+
+  <filter-mapping>
+    <filter-name>springSecurityFilterChain</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+</web-app>]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="spring-security.xml" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="padding-left:0;font-style:italic;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+  <![CDATA[<beans:beans xmlns="http://www.springframework.org/schema/security"
+  xmlns:beans="http://www.springframework.org/schema/beans" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans
+  http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+  http://www.springframework.org/schema/security
+  http://www.springframework.org/schema/security/spring-security-3.2.xsd">
+
+  <http auto-config="true">
+    <intercept-url pattern="/admin**" access="ROLE_USER" />
+    <form-login 
+        login-page="/login" 
+        default-target-url="/welcome" 
+      authentication-failure-url="/login?error" 
+      username-parameter="username"
+      password-parameter="password" />
+    <logout logout-success-url="/login?logout" />
+    <!-- enable csrf protection -->
+    <csrf/>
+  </http>
+
+  <authentication-manager>
+    <authentication-provider>
+      <user-service>
+      <user name="mkyong" password="123456" authorities="ROLE_USER" />
+      </user-service>
+    </authentication-provider>
+  </authentication-manager>
+
+</beans:beans>]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+  <![CDATA[
+
+<div>In above congratulation, the /admin and sub-folders of it are all password protected.
+<br />
+<b>Cross Site Request Forgery (CSRF) Protection</b>
+<br />
+If CSRF is enabled, you have to include a _csrf.token in the page you want to login or logout. Refer to below login.jsp and admin.jsp (logout form). Otherwise, both login and logout function will be failed.
+<br />
+<b>Password in clear-text?</b>
+<br />
+A pretty bad idea, you should always hash the password with SHA algorithm, this tutorial show you how – Spring Security password hashing example.</div>
+
+    ]]>
+    </c:sourceContent>
+    
+    <c:sourceContent type="" title="login.jsp" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;font-style:italic;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+  <![CDATA[<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<html>
+<head>
+<title>Login Page</title>
+<style>
+.error {
+  padding: 15px;
+  margin-bottom: 20px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #a94442;
+  background-color: #f2dede;
+  border-color: #ebccd1;
+}
+
+.msg {
+  padding: 15px;
+  margin-bottom: 20px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #31708f;
+  background-color: #d9edf7;
+  border-color: #bce8f1;
+}
+
+#login-box {
+  width: 300px;
+  padding: 20px;
+  margin: 100px auto;
+  background: #fff;
+  -webkit-border-radius: 2px;
+  -moz-border-radius: 2px;
+  border: 1px solid #000;
+}
+</style>
+</head>
+<body onload='document.loginForm.username.focus();'>
+  <h1>Spring Security Custom Login Form (XML)</h1>
+  <div id="login-box">
+    <h2>Login with Username and Password</h2>
+    <c:if test="${not empty error}">
+      <div class="error">${error}</div>
+    </c:if>
+    <c:if test="${not empty msg}">
+      <div class="msg">${msg}</div>
+    </c:if>
+
+    <form name='loginForm'
+      action="<c:url value='j_spring_security_check' />" method='POST'>
+      <table>
+      <tr>
+        <td>User:</td>
+        <td><input type='text' name='username' value=''></td>
+      </tr>
+      <tr>
+        <td>Password:</td>
+        <td><input type='password' name='password' /></td>
+      </tr>
+      <tr>
+        <td colspan='2'><input name="submit" type="submit"
+          value="submit" /></td>
+      </tr>
+      </table>
+      <input type="hidden" name="${_csrf.parameterName}"
+      value="${_csrf.token}" />
+    </form>
+  </div>
+</body>
+</html>]]>
+    </c:sourceContent>
+    
+    <c:sourceContent type="" title="hello.jsp" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;font-style:italic;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+  <![CDATA[<%@page session="false"%>
+<html>
+<body>
+  <h1>Title : ${title}</h1> 
+  <h1>Message : ${message}</h1> 
+</body>
+</html>]]>
+    </c:sourceContent>
+    
+    <c:sourceContent type="" title="admin.jsp + logout" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;font-style:italic;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+  <![CDATA[<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@page session="true"%>
+<html>
+<body>
+  <h1>Title : ${title}</h1>
+  <h1>Message : ${message}</h1>
+
+  <c:url value="/j_spring_security_logout" var="logoutUrl" />
+
+  <!-- csrt for log out-->
+  <form action="${logoutUrl}" method="post" id="logoutForm">
+    <input type="hidden" 
+    name="${_csrf.parameterName}"
+    value="${_csrf.token}" />
+  </form>
+  
+  <script>
+    function formSubmit() {
+      document.getElementById("logoutForm").submit();
+    }
+  </script>
+
+  <c:if test="${pageContext.request.userPrincipal.name != null}">
+    <h2>
+      Welcome : ${pageContext.request.userPrincipal.name} | <a
+        href="javascript:formSubmit()"> Logout</a>
+    </h2>
+  </c:if>
+
+</body>
+</html>]]>
+    </c:sourceContent>
+    
+    <c:sourceContent type="" title="HelloController.java" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="padding-left:0;font-style:italic;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+  <![CDATA[package com.mkyong.web.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+
+@Controller
+public class HelloController {
+
+  @RequestMapping(value = { "/", "/welcome**" }, method = RequestMethod.GET)
+  public ModelAndView welcomePage() {
+    ModelAndView model = new ModelAndView();
+    model.addObject("title", "Spring Security Custom Login Form");
+    model.addObject("message", "This is welcome page!");
+    model.setViewName("hello");
+    return model;
+  }
+
+  @RequestMapping(value = "/admin**", method = RequestMethod.GET)
+  public ModelAndView adminPage() {
+    ModelAndView model = new ModelAndView();
+    model.addObject("title", "Spring Security Custom Login Form");
+    model.addObject("message", "This is protected page!");
+    model.setViewName("admin");
+
+    return model;
+  }
+
+  //Spring Security see this :
+  @RequestMapping(value = "/login", method = RequestMethod.GET)
+  public ModelAndView login(
+    @RequestParam(value = "error", required = false) String error,
+    @RequestParam(value = "logout", required = false) String logout) {
+
+    ModelAndView model = new ModelAndView();
+    if (error != null) {
+      model.addObject("error", "Invalid username and password!");
+    }
+
+    if (logout != null) {
+      model.addObject("msg", "You've been logged out successfully.");
+    }
+    model.setViewName("login");
+
+    return model;
+  }
+}]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Demo" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="padding-left:0;font-style:italic;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+  <![CDATA[
+
+<div>That’s all, but wait… where’s the login form? No worry, if you do not define any custom login form, Spring will create a simple login form automatically. Read this “<a target="_blank" href="http://www.mkyong.com/spring-security/spring-security-form-login-example/">Spring Security form login example</a>” to understand how to create a custom login form in Spring Security.
+
+</div>
+
+<h4 style="font-size:1em;margin:.5em 0;margin-bottom:0em;font-weight:bold;">1. Welcome Page – http://localhost:8080/spring-security-helloworld-xml/welcome</h4>
+<div>
+  <img src="/images/j2ee/spring-security-helloworld-welcome.png" style="max-width:100%" /> 
+</div>
+
+<h4 style="font-size:1em;margin:.5em 0;margin-bottom:0em;font-weight:bold;">2. Try to access /admin page, Spring Security will intercept the request and redirect to /spring_security_login, and a predefined login form is displayed.</h4>
+<div>
+  <img src="/images/j2ee/spring-security-helloworld-login.png" style="max-width:100%" /> 
+</div>
+
+<h4 style="font-size:1em;margin:.5em 0;margin-bottom:0em;font-weight:bold;">3. If username and password is incorrect, error messages will be displayed, and Spring will redirect to this URL /spring_security_login?login_error.
+
+</h4>
+<div>
+  <img src="/images/j2ee/spring-security-helloworld-login-error.png" style="max-width:100%" /> 
+</div>
+
+<h4 style="font-size:1em;margin:.5em 0;margin-bottom:0em;font-weight:bold;">4. If username and password are correct, Spring will redirect the request to the original requested URL and display the page.</h4>
+<div>
+  <img src="/images/j2ee/spring-security-helloworld-admin.png" style="max-width:100%" /> 
+</div>
+  ]]>
     </c:sourceContent>
 
     <c:comment>
