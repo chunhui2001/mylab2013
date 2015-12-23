@@ -419,15 +419,25 @@ xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springf
 
 &lt;!-- Spring Security --&gt;
 &lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.security&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-security-core&lt;/artifactId&gt;
+    &lt;version&gt;${org.springframework-version}&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
   &lt;groupId&gt;org.springframework.security&lt;/groupId&gt;
   &lt;artifactId&gt;spring-security-web&lt;/artifactId&gt;
   &lt;version&gt;3.2.3.RELEASE&lt;/version&gt;
 &lt;/dependency&gt;
-
 &lt;dependency&gt;
   &lt;groupId&gt;org.springframework.security&lt;/groupId&gt;
   &lt;artifactId&gt;spring-security-config&lt;/artifactId&gt;
   &lt;version&gt;3.2.3.RELEASE&lt;/version&gt;
+&lt;/dependency&gt;
+
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.security&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-security-taglibs&lt;/artifactId&gt;
+    &lt;version&gt;3.1.3.RELEASE&lt;/version&gt;
 &lt;/dependency&gt;
 </pre>
 
@@ -2004,6 +2014,11 @@ http://www.mkyong.com/spring-security/spring-security-hello-world-example/<br/><
 
   <context:component-scan base-package="com.mkyong.*" />
 
+  <!-- To prevent browser's back button on displaying secured resource after logout -->
+  <bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">
+    <property name="cacheSeconds" value="0" />
+  </bean>
+  
   <bean
     class="org.springframework.web.servlet.view.InternalResourceViewResolver">
     <property name="prefix">
@@ -2208,8 +2223,16 @@ A pretty bad idea, you should always hash the password with SHA algorithm, this 
                      titleStyle="padding-left:0;font-style:italic;font-size:1.3em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
   <![CDATA[<%@page session="false"%>
+<%@taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <html>
 <body>
+<sec:authentication property="name" />
+<sec:authentication property="authorities" />
+<br />
+<sec:authorize access="hasRole('ADMIN')">
+  User has ADMIN role
+</sec:authorize>
+<br />
   <h1>Title : ${title}</h1> 
   <h1>Message : ${message}</h1> 
 </body>
@@ -2348,4 +2371,130 @@ public class HelloController {
       </c:comment1>
     </c:comment>
   </c:entry>
+
+
+
+
+
+  <c:entry style="margin-top:6em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Spring Security (DAO Authentication)</h1>
+    ]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="UserEntity" id="sourceContent1"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+@Entity
+@Table(name="USERS")
+public class UserEntity implements Serializable {
+    private String id;
+    private String name;
+    private String passwd;
+
+    @Enumerated(EnumType.STRING)
+    private UserStatus status;
+    
+    @ManyToMany
+    @JoinTable(name="USERS_ROLES_REFERENCES",
+               joinColumn=@JoinColumn(name="USER_ID"),
+               inverseJoinColumns=@JoinColumn(name="ROLE_ID"))
+    private Collection<RoleEntity> listOfRoles = new ArrayList<RoleEntity>();
+    private Date createDate;
+
+    public UserEntity() {}
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="RoleEntity" id="sourceContent1"
+      style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+@Entity
+@Table(name="ROLES")
+public class RoleEntity implements Serializable {
+    private String id;
+    private String name;
+    private String passwd;
+    private String status;
+    private Date createDate;
+
+    @ManyToMany(mappedBy="listOfRoles")
+    private Collection<UserEntity> listOfUsers = new ArrayList<UserEntity>();
+
+    public RoleEntity() {}
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="UserStatus" id="sourceContent1"
+      style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+public enum UserStatus  {
+    ACTIVE,
+    LOCKED
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="IUserDAO" id="sourceContent1"
+      style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+...
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="UserDaoImpl" id="sourceContent1"
+      style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+@Repository
+public class UserDaoImpl implements IUserDAO {
+    @Override
+    public UserEntity findByName(String username) {
+        Criteria criteria = sessionFactory.getCurrentSession().createCriteria(UserEntity.class);
+        
+        criteria.add(Restrictions.eq("name", username));
+
+        return (UserEntity)criteria.uniqueResult();
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="UserDetailServiceImpl" id="sourceContent1"
+      style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+/*
+  This class will be used by Spring Security to pickup users and authenticate them internally
+*/
+@Service(userDetailService)
+public class UserDetailServiceImpl 
+          implements org.springframework.security.core.userdetails.UserDetailService {
+    @Overrice
+    public UserDetail loadUserByUsername(String name)
+                        throws UsernameNotFoundException {
+
+        return null;
+    }
+}
+
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
+]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
 </c:component>
