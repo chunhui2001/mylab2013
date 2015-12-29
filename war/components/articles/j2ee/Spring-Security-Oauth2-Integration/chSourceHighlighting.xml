@@ -1,0 +1,575 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract style="font-size:1em;line-height:1.6em;">
+    <![CDATA[
+    <div>OAuth (Open Authentication) is an open standard or kind of protocol that lets one site to share its content with some other site without sharing credentials.</div>
+    <div style="margin-top:.5em;">
+The source code of this application can be found on Git Hub: <a href="https://github.com/neel4software/SpringSecurityOAuth2">Download Source Code </a></div>
+    <div style="margin-top:.5em;">
+In this post we will discuss how to secure Restful Web Services using Spring security and OAuth2, we will use Spring Security to validate a user on server and OAuth to manage authentication tokens to be used in communication. After applying this implementation only authenticated users and applications will get a valid access token from OAuth and using that token the user can access authorized API’s on server.</div>
+]]>
+  </c:abstract>
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">Instrnction</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="The flow of application will go something like this:" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div><b>1) User sends a GET request to server with five parameters: grant_type, username, password, client_id, client_secret; something like this: </b>
+<br /><span style="color:#FF0095;">
+http://localhost:8080/SpringRestSecurityOauth/oauth/token?<b>grant_type</b>=password&<b>client_id</b>=restapp&<b>client_secret</b>=restapp&<b>username</b>=beingjavaguys&<b>password</b>=your_password_here<span></div>
+
+<div style="margin-top:1em;margin-bottom:.5em;"><b>2) Server validates the user with help of spring security, and if the user is authenticated, OAuth generates a access token and sends back to user in following format.
+</b></div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[{  
+  "access_token": "22cb0d50-5bb9-463d-8c4a-8ddd680f553f",  
+  "token_type": "bearer",  
+  "refresh_token": "7ac7940a-d29d-4a4c-9a47-25a2167c8c49",  
+  "expires_in": 119  
+}  
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      <div style="margin-top:.6em;">
+ Here we got <b>access_token</b> for further communication with server or to get some protected resourses(API’s), it mentioned a <b>expires_in</b> time that indicates the validation time of the token and a <b>refresh_token</b> that is being used to get a new token when token is expired.</div>
+
+<div style="margin-top:1em;margin-bottom:.5em;"><b>3) We access protected resources by passing this access token as a parameter, the request goes something like this:</b>
+<br /><span style="color:#FF0095;">
+http://localhost:8080/SpringRestSecurityOauth/api/users/?access_token=<b>8c191a0f-ebe8-42cb-bc18-8e80f2c4238e</b> <span></div>
+
+<div style="margin-top:1em;margin-bottom:.5em;">Here <b>http://localhost:8080/SpringRestSecurityOauth</b> is the server path, and <b>/api/users/</b> Is an API URL that returns a list of users and is being protected to be accessed.</div>
+
+<div style="margin-top:1em;margin-bottom:.5em;"><b>4) If the token is not expired and is a valid token, the requested resources will be returned.</b></div>
+
+<div style="margin-top:1em;margin-bottom:.5em;"><b>5) In case the token is expired, user needs to get a new token using its refreshing token that was accepted in step(2). A new access token request after expiration looks something like this:</b>
+<br /><span style="color:#FF0095;">
+http://localhost:8080/SpringRestSecurityOauth/oauth/token?<b>grant_type</b>=refresh_token&<b>client_id</b>=restapp&<b>client_secret</b>=restapp&<b>refresh_token</b>=7ac7940a-d29d-4a4c-9a47-25a2167c8c49 </span>
+<br />
+<br />
+And you will get a new access token along with a new refresh token. </div>
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">Integrating Spring Security with OAuth2 to secure Restful Web Services.</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[In this section we will see how the application works and how to integrate Spring Security with OAuth2, so for now we have a simple Spring Rest structure that returns a list of users for authenticated user, we have a simple spring controller that’s taking the responsibility: ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="RestController.java" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[import java.util.List;  
+  
+import org.springframework.beans.factory.annotation.Autowired;  
+import org.springframework.stereotype.Controller;  
+import org.springframework.web.bind.annotation.RequestMapping;  
+import org.springframework.web.bind.annotation.RequestMethod;  
+import org.springframework.web.bind.annotation.ResponseBody;  
+  
+import com.beingjavaguys.models.User;  
+import com.beingjavaguys.services.DataService;  
+  
+/** 
+ * @author Nagesh.Chauhan 
+ * 
+ */  
+@Controller  
+@RequestMapping("/api/users")  
+public class RestController {  
+  
+    @Autowired  
+    DataService dataService;  
+
+    @RequestMapping(value = "/", method = RequestMethod.GET)  
+    @ResponseBody  
+    public List<user> list() {  
+        return dataService.getUserList();  
+    }  
+}  
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:green;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      The code is self explainer, we are having an URI (/api/users/) to be accessed by a GET request and it will return a list of users as a response. 
+<br />
+<br />
+We are using simple service structure to get data, for now the data is being returned in a harcoded way but it can be kind of dynamic of from database. 
+<br />
+<br />
+
+More on Spring Rest Web Services : <a href="http://www.beingjavaguys.com/2014/08/spring-restful-web-services.html">Here </a>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="DataService.java" id="sourceContent1"
+                     style="margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:green;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[import java.util.List;  
+  
+import com.beingjavaguys.models.User;  
+
+public interface DataService {  
+    public List<user> getUserList();  
+}  
+  
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="DataServiceImpl.java" id="sourceContent1"
+                     style="margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:green;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[import java.util.ArrayList;  
+import java.util.List;  
+  
+import org.springframework.stereotype.Service;  
+  
+import com.beingjavaguys.models.User;  
+
+@Service  
+public class DataServiceImpl implements DataService {    
+    @Override  
+    public List<user> getUserList() {        
+        // preparing user list with few hard coded values  
+        List<user> userList = new ArrayList<user>();          
+        userList.add(new User(1, "user_a", "user_a@example.com", "9898989898"));  
+        userList.add(new User(2, "user_b", "user_b@example.com", "9767989898"));  
+        userList.add(new User(3, "user_c", "user_c@example.com", "9898459898"));            
+        return userList;  
+    }    
+}  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Dependencies" id="sourceContent1"
+                     style="margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:green;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[<project 
+      xmlns="http://maven.apache.org/POM/4.0.0" 
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  
+      xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">  
+ <modelVersion>4.0.0</modelVersion>  
+ <groupId>com.beingjavaguys.sample</groupId>  
+ <artifactId>SpringRestSecurityOauth</artifactId>  
+ <packaging>war</packaging>  
+ <version>1.0-SNAPSHOT</version>  
+ <name>SpringRestSecurityOauth Maven Webapp</name>  
+ <url>http://maven.apache.org</url>  
+ <!-- @author Nagesh.Chauhan(neel4soft@gmail.com) -->  
+ <properties>  
+  <spring.version>4.0.7.RELEASE</spring.version>  
+  <log4j.version>1.2.17</log4j.version>  
+  <jdk.version>1.7</jdk.version>  
+  <context.path>SpringRestSecurityOauth</context.path>  
+  <spring.security.version>3.2.5.RELEASE</spring.security.version>  
+ </properties>  
+ <build>  
+  <finalName>${pom.artifactId}</finalName>  
+  <plugins>  
+   <plugin>  
+    <artifactId>maven-compiler-plugin</artifactId>  
+    <configuration>  
+     <source>${jdk.version}</source>  
+     <target>${jdk.version}</target>  
+    </configuration>  
+   </plugin>  
+  </plugins>  
+ </build>  
+ <dependencies>  
+  
+  <dependency>  
+   <groupId>org.apache.commons</groupId>  
+   <artifactId>commons-io</artifactId>  
+   <version>1.3.2</version>  
+  </dependency>  
+  
+  <!-- log4j -->  
+  <dependency>  
+   <groupId>log4j</groupId>  
+   <artifactId>log4j</artifactId>  
+   <version>${log4j.version}</version>  
+  </dependency>  
+  
+  
+  <dependency>  
+   <groupId>org.springframework</groupId>  
+   <artifactId>spring-web</artifactId>  
+   <version>${spring.version}</version>  
+  </dependency>  
+  <dependency>  
+   <groupId>org.springframework</groupId>  
+   <artifactId>spring-webmvc</artifactId>  
+   <version>${spring.version}</version>  
+  </dependency>  
+  
+  <!-- Spring Security -->  
+  <dependency>  
+   <groupId>org.springframework.security</groupId>  
+   <artifactId>spring-security-web</artifactId>  
+   <version>${spring.security.version}</version>  
+  </dependency>  
+  <dependency>  
+   <groupId>org.springframework.security</groupId>  
+   <artifactId>spring-security-config</artifactId>  
+   <version>${spring.security.version}</version>  
+  </dependency>  
+  <dependency>  
+   <groupId>org.springframework.security.oauth</groupId>  
+   <artifactId>spring-security-oauth2</artifactId>  
+   <version>1.0.0.RELEASE</version>  
+  </dependency>  
+  <dependency>  
+   <groupId>com.google.code.gson</groupId>  
+   <artifactId>gson</artifactId>  
+   <version>2.2.2</version>  
+  </dependency>  
+  <dependency>  
+   <groupId>org.codehaus.jackson</groupId>  
+   <artifactId>jackson-mapper-asl</artifactId>  
+   <version>1.9.10</version>  
+  </dependency>  
+  <dependency>  
+   <groupId>commons-httpclient</groupId>  
+   <artifactId>commons-httpclient</artifactId>  
+   <version>3.1</version>  
+  </dependency>  
+  <dependency>  
+   <groupId>org.springframework</groupId>  
+   <artifactId>spring-context-support</artifactId>  
+   <version>${spring.version}</version>  
+  </dependency>  
+  <dependency>  
+   <groupId>javax.servlet</groupId>  
+   <artifactId>javax.servlet-api</artifactId>  
+   <version>3.0.1</version>  
+   <scope>provided</scope>  
+  </dependency>  
+ </dependencies>  
+</project>]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="spring-security.xml" id="sourceContent1"
+                     style="margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:green;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[<?xml version="1.0" encoding="UTF-8" ?>  
+<beans xmlns="http://www.springframework.org/schema/beans"  
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+ xmlns:oauth="http://www.springframework.org/schema/security/oauth2"  
+ xmlns:context="http://www.springframework.org/schema/context"  
+ xmlns:sec="http://www.springframework.org/schema/security" 
+ xmlns:mvc="http://www.springframework.org/schema/mvc"  
+ xsi:schemaLocation="
+      http://www.springframework.org/schema/security/oauth2 
+      http://www.springframework.org/schema/security/spring-security-oauth2-2.0.xsd  
+      http://www.springframework.org/schema/mvc 
+      http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd  
+      http://www.springframework.org/schema/security 
+      http://www.springframework.org/schema/security/spring-security-3.2.xsd   
+      http://www.springframework.org/schema/beans 
+      http://www.springframework.org/schema/beans/spring-beans-4.1.xsd  
+      http://www.springframework.org/schema/context 
+      http://www.springframework.org/schema/context/spring-context-4.1.xsd">  
+  
+ <!-- @author Nagesh.Chauhan(neel4soft@gmail.com) -->  
+ <!-- This is default url to get a token from OAuth -->  
+ <http pattern="/oauth/token" create-session="stateless"  
+  authentication-manager-ref="clientAuthenticationManager"  
+  xmlns="http://www.springframework.org/schema/security">  
+  <intercept-url pattern="/oauth/token" access="IS_AUTHENTICATED_FULLY" />  
+  <anonymous enabled="false" />  
+  <http-basic entry-point-ref="clientAuthenticationEntryPoint" />  
+  <!-- include this only if you need to authenticate clients via request   
+   parameters -->  
+  <custom-filter ref="clientCredentialsTokenEndpointFilter"  
+   after="BASIC_AUTH_FILTER" />  
+  <access-denied-handler ref="oauthAccessDeniedHandler" />  
+ </http>  
+  
+ <!-- This is where we tells spring security what URL should be protected   
+  and what roles have access to them -->  
+ <http pattern="/api/**" create-session="never"  
+  entry-point-ref="oauthAuthenticationEntryPoint"  
+  access-decision-manager-ref="accessDecisionManager"  
+  xmlns="http://www.springframework.org/schema/security">  
+  <anonymous enabled="false" />  
+  <intercept-url pattern="/api/**" access="ROLE_APP" />  
+  <custom-filter ref="resourceServerFilter" before="PRE_AUTH_FILTER" />  
+  <access-denied-handler ref="oauthAccessDeniedHandler" />  
+ </http>  
+  
+  
+ <bean id="oauthAuthenticationEntryPoint"  
+  class="org.springframework.security.oauth2.provider.error.OAuth2AuthenticationEntryPoint">  
+  <property name="realmName" value="test" />  
+ </bean>  
+  
+ <bean id="clientAuthenticationEntryPoint"  
+  class="org.springframework.security.oauth2.provider.error.OAuth2AuthenticationEntryPoint">  
+  <property name="realmName" value="test/client" />  
+  <property name="typeName" value="Basic" />  
+ </bean>  
+  
+ <bean id="oauthAccessDeniedHandler"  
+  class="org.springframework.security.oauth2.provider.error.OAuth2AccessDeniedHandler" />  
+  
+ <bean id="clientCredentialsTokenEndpointFilter"  
+  class="org.springframework.security.oauth2.provider.client.ClientCredentialsTokenEndpointFilter">  
+  <property name="authenticationManager" ref="clientAuthenticationManager" />  
+ </bean>  
+  
+ <bean id="accessDecisionManager" class="org.springframework.security.access.vote.UnanimousBased"  
+  xmlns="http://www.springframework.org/schema/beans">  
+  <constructor-arg>  
+   <list>  
+    <bean class="org.springframework.security.oauth2.provider.vote.ScopeVoter" />  
+    <bean class="org.springframework.security.access.vote.RoleVoter" />  
+    <bean class="org.springframework.security.access.vote.AuthenticatedVoter" />  
+   </list>  
+  </constructor-arg>  
+ </bean>  
+  
+ <authentication-manager id="clientAuthenticationManager"  
+  xmlns="http://www.springframework.org/schema/security">  
+  <authentication-provider user-service-ref="clientDetailsUserService" />  
+ </authentication-manager>  
+  
+  
+ <!-- This is simple authentication manager, with a hardcoded user/password   
+  combination. We can replace this with a user defined service to get few users   
+  credentials from DB -->  
+ <authentication-manager alias="authenticationManager"  
+  xmlns="http://www.springframework.org/schema/security">  
+  <authentication-provider>  
+   <user-service>  
+    <user name="beingjavaguys" password="spring@java" authorities="ROLE_APP" />  
+   </user-service>  
+  </authentication-provider>  
+ </authentication-manager>  
+  
+ <bean id="clientDetailsUserService"  
+  class="org.springframework.security.oauth2.provider.client.ClientDetailsUserDetailsService">  
+  <constructor-arg ref="clientDetails" />  
+ </bean>  
+  
+  
+ <!-- This defined token store, we have used inmemory tokenstore for now   
+  but this can be changed to a user defined one -->  
+ <bean id="tokenStore"  
+  class="org.springframework.security.oauth2.provider.token.InMemoryTokenStore" />  
+  
+ <!-- This is where we defined token based configurations, token validity   
+  and other things -->  
+ <bean id="tokenServices"  
+  class="org.springframework.security.oauth2.provider.token.DefaultTokenServices">  
+  <property name="tokenStore" ref="tokenStore" />  
+  <property name="supportRefreshToken" value="true" />  
+  <property name="accessTokenValiditySeconds" value="120" />  
+  <property name="clientDetailsService" ref="clientDetails" />  
+ </bean>  
+  
+ <bean id="userApprovalHandler"  
+  class="org.springframework.security.oauth2.provider.approval.TokenServicesUserApprovalHandler">  
+  <property name="tokenServices" ref="tokenServices" />  
+ </bean>  
+  
+ <oauth:authorization-server  
+  client-details-service-ref="clientDetails" token-services-ref="tokenServices"  
+  user-approval-handler-ref="userApprovalHandler">  
+  <oauth:authorization-code />  
+  <oauth:implicit />  
+  <oauth:refresh-token />  
+  <oauth:client-credentials />  
+  <oauth:password />  
+ </oauth:authorization-server>  
+  
+ <oauth:resource-server id="resourceServerFilter"  
+  resource-id="test" token-services-ref="tokenServices" />  
+  
+ <oauth:client-details-service id="clientDetails">  
+  <!-- client -->  
+  <oauth:client client-id="restapp"  
+   authorized-grant-types="authorization_code,client_credentials"  
+   authorities="ROLE_APP" scope="read,write,trust" secret="secret" />  
+  
+  <oauth:client client-id="restapp"  
+   authorized-grant-types="password,authorization_code,refresh_token,implicit"  
+   secret="restapp" authorities="ROLE_APP" />  
+  
+ </oauth:client-details-service>  
+  
+ <sec:global-method-security  
+  pre-post-annotations="enabled" proxy-target-class="true">  
+  <!--you could also wire in the expression handler up at the layer of the   
+   http filters. See https://jira.springsource.org/browse/SEC-1452 -->  
+  <sec:expression-handler ref="oauthExpressionHandler" />  
+ </sec:global-method-security>  
+  
+ <oauth:expression-handler id="oauthExpressionHandler" />  
+ <oauth:web-expression-handler id="oauthWebExpressionHandler" />  
+</beans>]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="mvc-dispatcher-servlet.xml" id="sourceContent1"
+                     style="margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:green;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[<?xml version="1.0" encoding="UTF-8"?>  
+<beans xmlns="http://www.springframework.org/schema/beans"  
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+ xmlns:context="http://www.springframework.org/schema/context"  
+ xmlns:util="http://www.springframework.org/schema/util" 
+ xmlns:mvc="http://www.springframework.org/schema/mvc"  
+ xsi:schemaLocation="http://www.springframework.org/schema/mvc 
+      http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd  
+      http://www.springframework.org/schema/beans 
+      http://www.springframework.org/schema/beans/spring-beans.xsd  
+      http://www.springframework.org/schema/util 
+      http://www.springframework.org/schema/util/spring-util-3.2.xsd  
+      http://www.springframework.org/schema/context 
+      http://www.springframework.org/schema/context/spring-context-3.2.xsd">  
+ <!-- @author Nagesh.Chauhan(neel4soft@gmail.com) -->  
+ <context:component-scan base-package="com.beingjavaguys" />  
+ <mvc:annotation-driven />  
+</beans>]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="web.xml" id="sourceContent1"
+                     style="margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:green;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[<web-app xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  
+ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee   
+       http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"  
+ version="2.5">  
+  
+ <display-name>Sample Spring Maven Project</display-name>  
+ <!-- @author Nagesh.Chauhan(neel4soft@gmail.com) -->  
+  
+ <servlet>  
+  <servlet-name>mvc-dispatcher</servlet-name>  
+  <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>  
+  <load-on-startup>1</load-on-startup>  
+ </servlet>  
+ <servlet-mapping>  
+  <servlet-name>mvc-dispatcher</servlet-name>  
+  <url-pattern>/</url-pattern>  
+ </servlet-mapping>  
+ <listener>  
+  <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>  
+ </listener>  
+  
+ <context-param>  
+  <param-name>contextConfigLocation</param-name>  
+  <param-value>    
+    /WEB-INF/mvc-dispatcher-servlet.xml,    
+    /WEB-INF/spring-security.xml  
+  </param-value>  
+ </context-param>  
+  
+ <!-- Spring Security -->  
+  
+ <filter>  
+  <filter-name>springSecurityFilterChain</filter-name>  
+  <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>  
+ </filter>  
+  
+ <filter-mapping>  
+  <filter-name>springSecurityFilterChain</filter-name>  
+  <url-pattern>/*</url-pattern>  
+ </filter-mapping>  
+  
+</web-app>  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="User.java" id="sourceContent1"
+                     style="margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:green;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[public class User {  
+    private int id;  
+    private String name;  
+    private String email;  
+    private String phone;  
+
+    public User() {  
+        super();  
+        // TODO Auto-generated constructor stub  
+    }  
+
+    public User(int id, String name, String email, String phone) {  
+        super();  
+        this.id = id;  
+        this.name = name;  
+        this.email = email;  
+        this.phone = phone;  
+    }  
+
+    public int getId() {  
+        return id;  
+    }  
+
+    public void setId(int id) {  
+        this.id = id;  
+    }  
+
+    public String getName() {  
+        return name;  
+    }  
+
+    public void setName(String name) {  
+        this.name = name;  
+    }  
+
+    public String getEmail() {  
+        return email;  
+    }  
+
+    public void setEmail(String email) {  
+        this.email = email;  
+    }  
+
+    public String getPhone() {  
+        return phone;  
+    }  
+
+    public void setPhone(String phone) {  
+        this.phone = phone;  
+    }    
+}]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:green;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;line-height:1.6em;font-family:monospace;">
+      <![CDATA[This is all about, securing restful web services with spring security and oauth2, in this article we look into how to configure spring security with oauth2 to use a token based authentication mechanism. In upcoming articles we will see more about security in java EE applications. ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+</c:component>

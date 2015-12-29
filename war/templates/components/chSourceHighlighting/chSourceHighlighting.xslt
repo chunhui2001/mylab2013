@@ -130,7 +130,7 @@
                           <!-- Language hints can be put in XML application directive style comments. -->
                           <?prettify lang=html linenums=false?>
                           <pre class="prettyprint"
-                              style="border-radius:4px;border:1px solid #D8D8D8;padding:1em;background-color:#F1F1F1;">
+                              style="border-radius:4px;border:1px solid #D8D8D8;padding:1em;background-color:#F1F1F1;font-size:.8em;">
                               <xsl:value-of disable-output-escaping="no" select="$content-code"/>
                           </pre>
                       </xsl:otherwise>
