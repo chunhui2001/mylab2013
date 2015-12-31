@@ -1,0 +1,474 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract style="font-size:1em;line-height:1.6em;">
+    <![CDATA[
+<div style="margin-bottom:.6em;">What can you use when you’ve to let the access of protected resources by a third part application? The Open Authentication standard (briefly OAuth) is useful in order to authenticate and authorize user credentials from an external application and grant the access of your resources.</div>
+<div style="margin-bottom:.6em;">
+The Open Authentication is a standard defined by the RFC (Request For Comments) number 6749 and is used when we’re not in common scenario to be the system application and the system validator and we’ve everything under our control.</div>
+
+]]>
+  </c:abstract>
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">Instruction</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.6em;">
+We’re in the scenario when the application who consume the resource (consumer) is not the same which hold the information (server). Let me show it by using a graph.</div>
+<div>
+<img src="/images/j2ee/spring-oauth/oauth12.jpg" style="max-width:100%;margin:auto;" />
+</div>
+
+<div style="margin-bottom:.6em;margin-top:.5em;">
+The client access to his application <b>(1)</b> and makes the request to be grant to access a protected resource <b>(2)</b>. The Authentication Server returns an access token based on the posted user credential <b>(3)</b>. Afterward, the user makes the request passing the access token just got by the user <b>(4)</b>. Once the token is validated, the Resource Server returns the protected resource to the Client Application <b>(5)</b>.</div>
+<div style="margin-bottom:.6em;margin-top:1.5em;">
+Quite easy, isn’t it? Take a look at sequence diagram to clarify the concept above.</div>
+
+<div>
+<img src="/images/j2ee/spring-oauth/oauth21.png" style="max-width:100%;margin:auto;" />
+</div>
+
+<div style="margin-bottom:.6em;margin-top:.5em;">
+The client request contains the user and the client credential. We use the “grant_type=password” to send the user credential. The standard accepts four types of grant_type (authorization_code, password, client_credentials and refresh_token); more details are available on reference page.</div>
+
+<div style="margin-bottom:.6em;">
+So, if the Authentication Server validates the credential, it returns the access token composed by the access token itself, the token type, the expires date of the token and the refresh token (we’ll see the use of that later).</div>
+
+<div style="margin-bottom:.6em;">
+Using the access token in the header, we can access the protected resource from the Resource Server.</div>
+
+<div style="margin-bottom:.6em;">
+What happens when the token expires? Well, you get the  message “invalid_token” but we can get another valid token using the refresh_token and changing the “grant_type” in “refresh_token”.</div>
+
+<div style="margin-top:1.6em;">
+Have a look at the sequence diagram.</div>
+
+<div>
+<img src="/images/j2ee/spring-oauth/oauth3.png" style="max-width:100%;margin:auto;" />
+</div>
+
+<div style="margin-bottom:.6em;margin-top:.5em;">
+Once the user get the new access token, the process goes on as normal described in the first diagram.</div>
+
+<div style="margin-bottom:.6em;">
+Now, it’s time to take a look at some code. Before starting I’ve to say that is useful to be familiar with Spring Security to understand all the configuration blocks because Spring OAuth 2.0 is based on Spring Security. We’ve a system with 2 Rest.</div>
+
+<div style="margin-bottom:.6em;">
+The first is for getting and refreshing the access token (/oauth/token). The second is for accessing the protected resource (/protected/userresource/userprofile).</div>
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">The core of the system is the spring configuration file.</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      <?xml version="1.0" encoding="UTF-8" ?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xmlns:oauth="http://www.springframework.org/schema/security/oauth2"
+    xmlns:sec="http://www.springframework.org/schema/security" 
+    xmlns:mvc="http://www.springframework.org/schema/mvc"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="
+        http://www.springframework.org/schema/security/oauth2 
+        http://www.springframework.org/schema/security/spring-security-oauth2-1.0.xsd
+        http://www.springframework.org/schema/mvc 
+        http://www.springframework.org/schema/mvc/spring-mvc-3.1.xsd
+        http://www.springframework.org/schema/security 
+        http://www.springframework.org/schema/security/spring-security-3.1.xsd
+        http://www.springframework.org/schema/beans 
+        http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+        http://www.springframework.org/schema/context 
+        http://www.springframework.org/schema/context/spring-context-3.1.xsd">
+ 
+    <sec:http pattern="/oauth/token" create-session="stateless"
+        authentication-manager-ref="authenticationManager">
+        <sec:intercept-url pattern="/oauth/token" access="IS_AUTHENTICATED_FULLY" />
+        <sec:anonymous enabled="false" />
+        <sec:http-basic entry-point-ref="clientAuthenticationEntryPoint" />
+        <sec:custom-filter ref="clientCredentialsTokenEndpointFilter" before="BASIC_AUTH_FILTER" />
+        <sec:access-denied-handler ref="oauthAccessDeniedHandler" />
+    </sec:http>
+ 
+    <sec:http pattern="/protected/**" create-session="never"
+        entry-point-ref="oauthAuthenticationEntryPoint">
+        <sec:anonymous enabled="false" />
+        <sec:intercept-url pattern="/protected/**" method="GET" access="IS_AUTHENTICATED_FULLY" />
+        <sec:custom-filter ref="resourceServerFilter" before="PRE_AUTH_FILTER" />
+        <sec:access-denied-handler ref="oauthAccessDeniedHandler" />
+    </sec:http>
+ 
+    <bean id="oauthAuthenticationEntryPoint"
+        class="org.springframework.security.oauth2.provider.error.OAuth2AuthenticationEntryPoint">
+    </bean>
+ 
+    <bean id="clientAuthenticationEntryPoint"
+        class="org.springframework.security.oauth2.provider.error.OAuth2AuthenticationEntryPoint">
+        <property name="realmName" value="springsec/client" />
+        <property name="typeName" value="Basic" />
+    </bean>
+ 
+    <bean id="oauthAccessDeniedHandler"
+        class="org.springframework.security.oauth2.provider.error.OAuth2AccessDeniedHandler">
+    </bean>
+ 
+    <bean id="clientCredentialsTokenEndpointFilter"
+        class="org.springframework.security.oauth2.provider.client.ClientCredentialsTokenEndpointFilter">
+        <property name="authenticationManager" ref="authenticationManager" />
+    </bean>
+ 
+    <sec:authentication-manager alias="authenticationManager">
+        <sec:authentication-provider user-service-ref="clientDetailsUserService" />
+    </sec:authentication-manager>
+ 
+    <bean id="clientDetailsUserService"
+        class="org.springframework.security.oauth2.provider.client.ClientDetailsUserDetailsService">
+        <constructor-arg ref="clientDetails" />
+    </bean>
+ 
+    <bean id="clientDetails" class="it.iol.oauthaaa.security.AAAGuestServiceImpl">
+        <property name="id" value="mysupplycompany" />
+        <property name="secretKey" value="mycompanykey" />
+    </bean>
+ 
+    <sec:authentication-manager id="userAuthenticationManager">
+        <sec:authentication-provider ref="customUserAuthenticationProvider" />
+    </sec:authentication-manager>
+ 
+    <bean id="customUserAuthenticationProvider"
+        class="it.iol.oauthaaa.security.AAAUserAuthenticationProvider">
+    </bean>
+ 
+    <oauth:authorization-server
+        client-details-service-ref="clientDetails" token-services-ref="tokenServices">
+        <oauth:authorization-code />
+        <oauth:implicit/>
+        <oauth:refresh-token/>
+        <oauth:client-credentials />
+        <oauth:password authentication-manager-ref="userAuthenticationManager"/>
+    </oauth:authorization-server>
+ 
+    <oauth:resource-server id="resourceServerFilter"
+        resource-id="springsec" token-services-ref="tokenServices" />
+ 
+    <bean id="tokenStore"
+        class="org.springframework.security.oauth2.provider.token.InMemoryTokenStore" />
+ 
+    <bean id="tokenServices"
+        class="org.springframework.security.oauth2.provider.token.DefaultTokenServices">
+        <property name="tokenStore" ref="tokenStore" />
+        <property name="supportRefreshToken" value="true" />
+        <property name="accessTokenValiditySeconds" value="120"></property>
+        <property name="clientDetailsService" ref="clientDetails" />
+    </bean>
+ 
+    <mvc:annotation-driven />
+ 
+    <mvc:default-servlet-handler />
+ 
+    <context:annotation-config/>
+ 
+    <bean id="MyResource" class="it.iol.oauthaaa.resources.UserResource"></bean>
+    <bean id="aaaProxy" class="it.iol.oauthaaa.security.AAAProxy"></bean
+</beans>
+   ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      Once the process has started, the first part invoked is <b>&lt;sec:http pattern=”/oauth/token”.. </b>which, by the filter, extracts the client credential from the data request. Thery’re processed in this code:
+   ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="AAAGuestServiceImpl" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[@Service
+public class AAAGuestServiceImpl implements ClientDetailsService {
+ 
+    private String id;
+    private String secretKey;
+ 
+    @Override
+    public ClientDetails loadClientByClientId(String clientId)
+            throws OAuth2Exception {
+ 
+        if (clientId.equals(id))
+        {
+            List<String> authorizedGrantTypes = new ArrayList<String>();
+            authorizedGrantTypes.add("password");
+            authorizedGrantTypes.add("refresh_token");
+            authorizedGrantTypes.add("client_credentials");
+ 
+            BaseClientDetails clientDetails = new BaseClientDetails();
+            clientDetails.setClientId(id);
+            clientDetails.setClientSecret(secretKey);
+            clientDetails.setAuthorizedGrantTypes(authorizedGrantTypes);
+ 
+            return clientDetails;
+        }
+        else {
+            throw new NoSuchClientException("No client recognized with id: "
+                    + clientId);
+        }
+    }
+ 
+    public String getId() {
+        return id;
+    }
+ 
+    public void setId(String id) {
+        this.id = id;
+    }
+ 
+    public String getSecretKey() {
+        return secretKey;
+    }
+ 
+    public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
+    } 
+}
+   ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      Now it’s time to validate the user credential based of username and password (remember the grant_type=password). That happens in the <b>&lt;oauth:authorization-server</b> block by the definition of “userAuthenticationManager”. The code is the following.
+   ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="AAAUserAuthenticationProvider" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[public class AAAUserAuthenticationProvider implements AuthenticationProvider {
+ 
+    @Autowired
+    AAAProxy aaaProxy;
+ 
+    @Override
+    public Authentication authenticate(Authentication authentication)
+            throws AuthenticationException {
+ 
+        boolean result = aaaProxy.isValidUser(authentication.getPrincipal()
+                .toString(), authentication.getCredentials().toString());
+ 
+        if (result) {
+            List<GrantedAuthority> grantedAuthorities =
+ 
+new ArrayList<GrantedAuthority>();
+            AAAUserAuthenticationToken auth =
+ 
+new AAAUserAuthenticationToken(authentication.getPrincipal(),
+            authentication.getCredentials(), grantedAuthorities);
+ 
+            return auth;
+        } else {
+            throw new BadCredentialsException("Bad User Credentials.");
+        }
+    }
+ 
+    public boolean supports(Class<?> arg0) {
+        return true;
+    }
+}]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      <div>A little note; aaaProxy is the object used to authenticate the user with its credential. It’s not topic of this article describing how it works. If the user is valid, these steps will be completed:</div>
+<ul style="list-style-type:disc;margin:.5em 0;margin-left:1.5em;"><li>
+The framework will update object in the security context;</li><li>
+The TokenServices will generate a new token object (with expire date of 120 seconds);</li><li>
+The TokenStore will store the new token generated (stored with InMemoryTokenStore);</li><li>
+Then, the token will be send to the client.</li></ul>
+<div>
+The last codes are the AuthenticationToken and the protected resource:</div>
+   ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="AAAUserAuthenticationToken" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[public class AAAUserAuthenticationToken extends AbstractAuthenticationToken {
+ 
+    private static final long serialVersionUID = -1092219614309982278L;
+    private final Object principal;
+    private Object credentials;
+ 
+    public AAAUserAuthenticationToken(Object principal, Object credentials,
+            Collection<? extends GrantedAuthority> authorities) {
+        super(authorities);
+        this.principal = principal;
+        this.credentials = credentials;
+        super.setAuthenticated(true);
+    }
+ 
+    public Object getCredentials() {
+        return this.credentials;
+    }
+ 
+    public Object getPrincipal() {
+        return this.principal;
+    }
+}
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="UserResource (The protected resource)" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[@Path("/userresource")
+public class UserResource {
+ 
+    @GET
+    @Path("/userprofile")
+    public String getUserProfile(){
+        return "Welcome in protected Area. User enabled.";
+    }
+}]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      <div style="margin-bottom:.5em;">Let’s try to test this code. I used fiddler but, obviously, you can use what you want to make the request (wget, curl, etc…).</div>
+      <div style="margin-bottom:.5em;"><b>The first request:</b></div>
+<div style="margin-bottom:.5em;color:#D000B3;">/OAuthAAA/oauth/token?username=myuser&password=mypassword&client_id=mysupplycompany&client_secret=mycompanykey&grant_type=password</div>
+      <div style="margin-bottom:.5em;"><b>And produce this output:</b></div>
+
+<div>
+<img src="/images/j2ee/spring-oauth/oauth41.png" style="max-width:100%;margin:auto;" />
+</div>
+
+<div style="margin-bottom:.5em;margin-top:1.5em;"><b>The resource request:</b></div>
+
+<div style="margin-bottom:.5em;color:#D000B3;">
+/OAuthAAA/protected/userresource/userprofile<br />
+<b>Authorization: Bearer 5cf0732b-6bbb-40c7-8fab-dcfefcc2fcfe</b></div>
+
+<div style="margin-bottom:.5em;"><b>And produce this output:</b></div>
+<div>
+<img src="/images/j2ee/spring-oauth/oauth51.png" style="max-width:100%;margin:auto;" />
+</div>
+<div style="margin-bottom:.5em;margin-top:1.5em;">We’ve arrived at the end of the article. My recommendation is to take a look at the document RFC6749. A special thanks to Nitin Gupta for his post <a href="http://www.e-zest.net/blog/rest-authentication-using-oauth-2-0-resource-owner-password-flow-protocol/">“REST Authentication using OAUTH 2.0“</a>.</div>
+
+   ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="AAAProxy" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.Proxy.Type;
+import java.util.List;
+ 
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
+ 
+public class AAAProxy {
+ 
+    private Proxy proxy;
+    private RestTemplate template;
+ 
+    public AAAProxy() {
+        proxy = new Proxy(Type.HTTP, new InetSocketAddress(
+                "proxy.abc.net", 3001));
+ 
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+ 
+        requestFactory.setProxy(proxy);
+ 
+        template = new RestTemplate(requestFactory);
+    }
+ 
+    public boolean isValidUser(String user, String password) {
+ 
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>();
+        map.add("user", user);
+        map.add("password", password);
+ 
+        HttpEntity<String> response = template.postForEntity(
+                "https://authentication.local/auth", map,
+                String.class);
+ 
+        HttpHeaders headers = response.getHeaders();
+ 
+        List<String> cookies = headers.get("Set-Cookie");
+ 
+        for (String cookie : cookies) {
+            if (cookie.indexOf("Auth")!=-1)
+                return true;
+        }
+ 
+        return false;
+    } 
+}]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[<div style="margin-bottom:.5em;">
+      As Shlomi said, another available configuration is using the “client_credentials” in the “grant_type”.
+As the diagram shows, the interaction is quite similar to the “password” client credentials.
+</div>
+
+<div>
+<img src="/images/j2ee/spring-oauth/oauth_client_credentials.jpg" style="max-width:100%;margin:auto;" />
+</div>
+<div>Notice that the refresh_token tag is missing in the Json.<br />
+The reason is explained in the chapter 4.4.3. “Access Token Response” of the rfc-6749 specification.<br />
+“…  A refresh token SHOULD NOT be included…”</div>
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+</c:component>
