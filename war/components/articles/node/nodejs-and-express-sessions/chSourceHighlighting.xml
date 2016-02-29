@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+Using sessions to keep track of users as they journey through your site is key to any respectable application. Luckily, as usual, using Express with your Node.js application makes it super simple to get sessions up and running. 
+]]>
+  </c:abstract>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Express App</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      Before we do anything else, we need an Express application. Creating an Express app is extremely simple, and the makers of Express do a pretty good job documenting the process.
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="package.json" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[{
+  "name": "SessionsExample",
+  "version": "0.0.1",
+  "dependencies": {
+    "express": "3.x"
+  }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="app.js" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[var express = require('express');
+var app = express();
+
+app.get('/awesome', function(req, res) {
+  res.send("You're Awesome.");
+});
+
+app.get('/radical', function(req, res) {
+  res.send('What a radical visit!');
+});
+
+app.get('/tubular', function(req, res) {
+  res.send('Are you a surfer?');
+});
+
+app.listen(process.env.PORT || 8080);]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.7em;font-family:monospace;">
+      <![CDATA[Now we have three routes defined and available to visit. If you visit one page, it's like you are visiting it for the first time. However, what if we wanted to remember the last page someone visited? We can easily do that with sessions.]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  
+
+  <c:entry style="margin-top:2.5em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Remembering Things</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      Before we dive in, there is a little bit of setup necessary. We need to “use” the cookie parser and the session features of express before the sessions will be made available. You do this before you define any routes, which in our case would look like so:
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="app.js" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[var express = require('express');
+var app = express();
+
+app.use(express.cookieParser());
+app.use(express.session({secret: '1234567890QWERTY'}));
+
+app.get('/awesome', function(req, res) {
+  res.send('Your Awesome.');
+});
+
+app.get('/radical', function(req, res) {
+  res.send('What a radical visit!');
+});
+
+app.get('/tubular', function(req, res) {
+  res.send('Are you a surfer?');
+});
+
+app.listen(process.env.PORT || 8080);]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.7em;font-family:monospace;">
+      <![CDATA[<div style="margin-bottom:.7em;">Since sessions use cookies to keep track users we need both the cookie parser and the session framework. It is important to note that the cookie parser is used before the session, this order is required for sessions to work.
+</div><div style="margin-bottom:.7em;">
+We also provide a secret to the session initializer, which provides a little more security for our session data. Of course you might what to use a key that is a little more secure.
+</div><div>
+Sessions are accessible through the request object in each route. You can get and set properties just like you would when handling an object normally. For example, lets set some session data in the awesome route.</div>]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.7em;font-family:monospace;">
+      <![CDATA[app.get('/awesome', function(req, res) {
+  req.session.lastPage = '/awesome';
+  res.send('Your Awesome.');
+});]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.7em;font-family:monospace;">
+      <![CDATA[It really is as easy as accessing the session object in the request. Let’s say we want to print the last page the user visited as well.]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.7em;font-family:monospace;">
+      <![CDATA[app.get('/awesome', function(req, res) {
+ if(req.session.lastPage) {
+   res.write('Last page was: ' + req.session.lastPage + '. ');
+ }
+
+ req.session.lastPage = '/awesome';
+ res.send('Your Awesome.');
+});]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.7em;font-family:monospace;">
+      <![CDATA[Lastly we can apply this to the rest of the routes.]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.7em;font-family:monospace;">
+      <![CDATA[var express = require('express');
+var app = express();
+
+app.use(express.cookieParser());
+app.use(express.session({secret: '1234567890QWERTY'}));
+
+app.get('/awesome', function(req, res) {
+  if(req.session.lastPage) {
+    res.write('Last page was: ' + req.session.lastPage + '. ');
+  }
+
+  req.session.lastPage = '/awesome';
+  res.send('Your Awesome.');
+});
+
+app.get('/radical', function(req, res) {
+  if(req.session.lastPage) {
+    res.write('Last page was: ' + req.session.lastPage + '. ');
+  }
+
+  req.session.lastPage = '/radical';
+  res.send('What a radical visit!');
+});
+
+app.get('/tubular', function(req, res) {
+  if(req.session.lastPage) {
+    res.write('Last page was: ' + req.session.lastPage + '. ');
+  }
+
+  req.session.lastPage = '/tubular';
+  res.send('Are you a surfer?');
+});
+
+app.listen(process.env.PORT || 8080);]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.7em;font-family:monospace;">
+      <![CDATA[And there it is, a session enabled application.]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  
+
+  <c:entry style="margin-top:2.5em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Using Redis</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="margin-bottom:.7em;">There is only one major issue with our sessions. Anytime we restart our app, all of the user sessions are lost. I think we can all agree this presents a problem with our updating process.</div>
+<div style="margin-bottom:.7em;">
+There are several ways around this problem, but one of the best ways is to use an external store for the session data. More specifically, we can use a Redis store. This way the session data is completely separate from our running application.</div>
+<div>
+To set up Redis with Express sessions, we need an extra module. This module is the Redis client used by connect and helps create a streamlined solution for connecting Redis to Express. First we have to make sure its in our package.json.
+<div>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.7em;font-family:monospace;">
+      <![CDATA[package.json]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="margin-top:.2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[{
+  "name": "SessionsExample",
+  "version": "0.0.1",
+  "dependencies": {
+    "express": "3.x",
+    "connect-redis": "1.4.x"
+  }
+}]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.7em;font-family:monospace;">
+      <![CDATA[Then we have to require it.]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="margin-top:.2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.7em;font-family:monospace;">
+      <![CDATA[var express = require('express');
+var app = express();
+var RedisStore = require('connect-redis')(express);
+
+app.use(express.cookieParser());
+app.use(express.session({secret: '1234567890QWERTY'}));
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.7em;font-family:monospace;">
+      <![CDATA[<div style="margin-bottom:.7em;">Notice that we pass Express to the Redis connector. This is required for Express and the Redis store to play nice with each other, which makes the process a whole lot easier later.</div>
+<div>
+In order to set up the Redis store with our sessions, we are going to modify our app.use call. The session initializer not only takes a secret, but a store as well. As you can probably guess, this is used to tell the session manager where to put all the session data. All we have to do is pass in an object it can use instead of its native storage.</div>]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.7em;font-family:monospace;">
+      <![CDATA[var express = require('express');
+var app = express();
+var RedisStore = require('connect-redis')(express);
+
+app.use(express.cookieParser());
+app.use(express.session({
+  store: new RedisStore({
+    host: 'localhost',
+    port: 6379,
+    db: 2,
+    pass: 'RedisPASS'
+  }),
+  secret: '1234567890QWERTY'
+}));
+
+//...
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.7em;font-family:monospace;">
+      <![CDATA[<div style="margin-bottom:.7em;">It’s as simple as that. The RedisStore constructor can take all the normal options you would expect. In this case we are going to use database 2 with the password we use to authenticate with our Redis instance.</div>
+<div>Now all of our session data will stored safely in our Redis database. This also means that any time we restart our node application, the session data is immune from being reset because it is not stored under the same process as our application.</div>]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  
+
+  <c:entry style="margin-top:2.5em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>What about Mongo?</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[So some of you out there might be wondering if you can use MongoDB to store your session data. Well, using Mongo in place of Redis in our previous example is actually just as simple as using Redis. Instead of connect-redis you just use, you guessed it, connect-mongo.
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.7em;font-family:monospace;">
+      <![CDATA[package.json]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="margin-top:.2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.7em;font-family:monospace;">
+      <![CDATA[{
+  "name" : "SessionsExample",
+  "version" : "0.0.1",
+  "dependencies" : {
+    "express" : "3.x",
+    "connect-mongo" : "0.3.x"
+  }
+}]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.7em;font-family:monospace;">
+      <![CDATA[Just add a few “Mongo”s where you see “Redis” and it all falls into place.]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="margin-top:.2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.7em;font-family:monospace;">
+      <![CDATA[var express = require('express');
+var app = express();
+var MongoStore = require('connect-mongo')(express);
+
+app.use(express.cookieParser());
+app.use(express.session({
+  store: new MongoStore({
+    url: 'mongodb://root:myPassword@mongo.onmodulus.net:27017/3xam9l3'
+  }),
+  secret: '1234567890QWERTY'
+}));
+
+//...]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.9em;line-height:1.7em;font-family:monospace;">
+      <![CDATA[<div style="margin-bottom:.5em;">It is honestly that simple. Of course there are a <a target="_blank" href="https://github.com/kcbanner/connect-mongo#options">lot more options</a> you have when creating your MongoStore instance, but the example above gets you the basic functionality and will start storing your session data in your Mongo database.</div><div>
+
+So there are the basics behind Express sessions. As you can see, it is not complicated, and just requires a little setup to get rolling. Don’t forget, if you have any questions or comments, throw them out below. We are never afraid of feedback.</div>]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+</c:component>

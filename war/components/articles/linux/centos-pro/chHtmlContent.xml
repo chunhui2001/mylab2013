@@ -53,7 +53,7 @@
   <b style="color:rgb(211, 98, 49);"># netstat -tulpn | grep :22</b></span>
   </div>
   
-  <h2 style="color:green;font-size:1.5em;">&diams; Firewall Settings</h2>
+  <h2 style="color:green;font-size:1.5em;">&diams; Firewall Settings (Open 22 port)</h2>
   <div style="margin-bottom:2.5em;">
   <span><b style="color:rgb(211, 98, 49);"># vi /etc/sysconfig/iptables</b></span>
   <br />
@@ -73,6 +73,22 @@
   <span>Save and close the file. Restart iptables:<br />
   <b style="color:rgb(211, 98, 49);"># service iptables restart</b></span>
   </div>
+
+
+
+  <h2 style="color:green;font-size:1.5em;">&diams; Create the client private/public key pair</h2>
+  <div style="margin-bottom:2.5em;">
+  <span><b style="color:rgb(211, 98, 49);"># ssh-keygen -t rsa</b></span>
+  <br />
+  <br />
+  <span>Copy the client public key to the SSH computer<br />
+  <b style="color:rgb(211, 98, 49);">
+    # cat ~/.ssh/id_rsa.pub | ssh root@Server_IP_Address "cat >> ~/.ssh/authorized_keys"</b>
+  <br />
+  <span>OR<br />
+  <b style="color:rgb(211, 98, 49);">
+    # ssh-copy-id user@server_ip_address or hostname</b></span>
+  </div>
   
   <h2 style="color:green;font-size:1.5em;">&diams; OpenSSH Server Configuration</h2>
   <div style="margin-bottom:2.5em;">
@@ -87,8 +103,17 @@
   <b style="color:rgb(211, 98, 49);">AllowUsers tom jerry</b></span>
   <br />
   <br />
+  <span>Edit SSH file configuration to only allow key log on<br />
+  <b style="color:rgb(211, 98, 49);">PubkeyAuthentication yes <br />
+AuthorizedKeyFile  .ssh/authorized_keys <br />
+PasswordAuthentication no <br />
+ChallengeResponseAuthentication no</b></span>
+  <br />
+  <br />
   <span>Restart sshd:<br />
-  <b style="color:rgb(211, 98, 49);">service sshd restart</b></span>
+  <b style="color:rgb(211, 98, 49);">service sshd restart<br />
+OR <br />
+service sshd reload</b></span>
 
 
   </div>
@@ -460,6 +485,89 @@ Restarting php-fpm<br />
 
 
 
+
+<h2 style="color:rgb(189, 21, 208);font-size:2.5em;margin-top:2em;">Install Apache Tomcat 8 on CentOS 7</h2>
+<h2 style="color:green;font-size:1.5em;">&diams; Install Java</h2>
+<div style="margin-bottom:2.5em;">
+<span><b style="color:rgb(211, 98, 49);"># ...</b></span><br />
+</div>
+
+<h2 style="color:green;font-size:1.5em;">&diams; Create Tomcat User</h2>
+<div style="margin-bottom:2.5em;">
+<b style="color:rgb(211, 98, 49);">
+# sudo groupadd tomcat<br />
+# sudo useradd -M -s /bin/nologin -g tomcat -d /opt/tomcat tomcat</b>
+</div>
+
+<h2 style="color:green;font-size:1.5em;">&diams; Download Tomcat Binary and Create Folder</h2>
+<div style="margin-bottom:2.5em;">
+<b style="color:rgb(211, 98, 49);">
+# wget http://mirror.sdunix.com/apache/tomcat/tomcat-8/v8.0.23/bin/apache-tomcat-8.0.23.tar.gz
+<br />
+<br />
+# sudo mkdir /opt/tomcat
+<br />
+# sudo tar xvf apache-tomcat-8*tar.gz -C /opt/tomcat --strip-components=1</b>
+</div>
+
+<h2 style="color:green;font-size:1.5em;">&diams; Update Permissions</h2>
+<div style="margin-bottom:2.5em;">
+<b style="color:rgb(211, 98, 49);">
+# cd /opt/tomcat
+<br />
+# sudo chgrp -R tomcat conf
+<br />
+# sudo chmod g+rwx conf
+<br />
+# sudo chmod g+r conf/* <br />
+<br />
+# sudo chown -R tomcat webapps/ work/ temp/ logs/</b>
+</div>
+
+
+<h2 style="color:green;font-size:1.5em;">&diams; Install Systemd Unit File</h2>
+<div style="margin-bottom:.5em;">
+<span><b style="color:rgb(211, 98, 49);"># sudo vi /etc/systemd/system/tomcat.service</b></span>
+</div>
+<pre style="margin:.3em 0;color:gray;background-color:rgb(236, 236, 236);padding:1em;">
+# Systemd unit file for tomcat
+[Unit]
+Description=Apache Tomcat Web Application Container
+After=syslog.target network.target
+
+[Service]
+Type=forking
+
+Environment=JAVA_HOME=/usr/lib/jvm/jre
+Environment=CATALINA_PID=/opt/tomcat/temp/tomcat.pid
+Environment=CATALINA_HOME=/opt/tomcat
+Environment=CATALINA_BASE=/opt/tomcat
+Environment='CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC'
+Environment='JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom'
+
+ExecStart=/opt/tomcat/bin/startup.sh
+ExecStop=/bin/kill -15 $MAINPID
+
+User=tomcat
+Group=tomcat
+
+[Install]
+WantedBy=multi-user.target
+</pre>
+
+
+<div style="margin-bottom:.5em;margin-top:2em;">
+<b style="color:rgb(211, 98, 49);"># sudo systemctl daemon-reload <br />
+# sudo systemctl start tomcat<br />
+# sudo systemctl enable tomcat</b>
+</div>
+
+
+<div style="margin-bottom:.5em;margin-top:2em;">
+  Open in web browser:<br />
+<b style="color:rgb(211, 98, 49);">
+http://server_IP_address:8080</b>
+</div>
 
 
 
