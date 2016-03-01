@@ -1616,7 +1616,11 @@ https://looksok.wordpress.com/2014/06/28/spring-website-layouts-ssi-with-thymele
 https://doanduyhai.wordpress.com/2012/04/14/spring-mvc-part-iii-thymeleaf-integration <br />
 http://blog.codeleak.pl/2013/11/thymeleaf-template-layouts-in-spring.html <br />
 http://www.thymeleaf.org/doc/articles/layouts.html <br />
-http://www.thymeleaf.org/doc/articles/petclinic.html <br/><br/>
+http://www.thymeleaf.org/doc/articles/petclinic.html <br/>
+https://doanduyhai.wordpress.com/2012/04/14/spring-mvc-part-iv-thymeleaf-advanced-usage/ <br/>
+http://stackoverflow.com/questions/18309864/secauthorize-and-secauthentication-annotations-dont-work<br />
+http://www.thymeleaf.org/doc/articles/springsecurity.html<br />
+<br/>
     ]]></c:title>
     <c:desc>
       <c:desc1> <![CDATA[After some years with JSP/JSTL and Apache Tiles I started discovering Thymeleaf for my Spring MVC applications. Thymeleaf is a really great view engine and it simplifies and speeds up the development despite that lack of good IntelliJ (vote here: <b>http://youtrack.jetbrains.com/issue/IDEABKL-6713</b>) support at the moment (there is an <b><a target="_blank" href="https://github.com/thymeleaf/thymeleaf-extras-eclipse-plugin">Eclipse plugin</a></b> though). While learning how to use Thymeleaf I investigated different possibilities of working with layouts.
@@ -1635,38 +1639,70 @@ http://www.thymeleaf.org/doc/articles/petclinic.html <br/><br/>
 </ul>
     ]]>
     </c:sourceContent>
+    <c:sourceContent type="" title="pom.xml" id="sourceContent1"
+                     style="margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<!-- thymeleaf -->
+<dependency>
+    <groupId>org.thymeleaf</groupId>
+    <artifactId>thymeleaf-spring4</artifactId>
+    <version>3.0.0.ALPHA03</version>
+    <scope>compile</scope>
+    <optional>true</optional>
+</dependency>
+<dependency>
+    <groupId>org.thymeleaf</groupId>
+    <artifactId>thymeleaf</artifactId>
+    <version>3.0.0.ALPHA03</version>
+    <scope>compile</scope>
+</dependency>
+<dependency>
+    <groupId>org.thymeleaf.extras</groupId>
+    <artifactId>thymeleaf-extras-springsecurity4</artifactId>
+    <version>3.0.0.ALPHA03</version>
+</dependency>
+    ]]>
+    </c:sourceContent>
+
     <c:sourceContent type="" title="mvc-view-config.xml" id="sourceContent1"
                      style="margin-top:1.5em;"
                      titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
       <![CDATA[
 <bean id="templateResolver" class="org.thymeleaf.templateresolver.ServletContextTemplateResolver">
-  <property name="prefix" value="/WEB-INF/thymeleaf/" />
-  <property name="suffix" value=".html" />
-  <property name="templateMode" value="HTML5" />
-  <!-- Template cache is set to false (default is true). -->
-  <property name="cacheable" value="false" />
+    <property name="prefix" value="/WEB-INF/thymeleaf/" />
+    <property name="suffix" value=".html" />
+    <property name="templateMode" value="HTML5" />
+    <!-- Template cache is set to false (default is true). -->
+    <property name="cacheable" value="false" />
 </bean>
- 
-<bean id="templateEngine" class="org.thymeleaf.spring3.SpringTemplateEngine">
-  <property name="templateResolver" ref="templateResolver" />
+
+<bean id="templateEngine" class="org.thymeleaf.spring4.SpringTemplateEngine">
+    <property name="templateResolver" ref="templateResolver" />
+    <property name="additionalDialects">
+        <set>
+            <bean class="org.thymeleaf.extras.springsecurity4.dialect.SpringSecurityDialect" />
+        </set>
+    </property>
 </bean>
- 
+
 <bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
-  <property name="contentNegotiationManager" ref="cnManager"/>
-  <property name="viewResolvers">
-    <list>
-      <!-- Used here for 'xml' and 'atom' views  -->
-      <bean class="org.springframework.web.servlet.view.BeanNameViewResolver">
-        <property name="order" value="1"/>
-      </bean>
-      <!-- Used for Thymeleaf views  -->
-      <bean class="org.thymeleaf.spring3.view.ThymeleafViewResolver">
-        <property name="templateEngine" ref="templateEngine" />
-        <property name="order" value="2"/>
-      </bean>
-    </list>
-  </property>
+    <!--<property name="contentNegotiationManager" ref="cnManager"/>-->
+    <property name="viewResolvers">
+        <list>
+            <!-- Used here for 'xml' and 'atom' views  -->
+            <bean class="org.springframework.web.servlet.view.BeanNameViewResolver">
+                <property name="order" value="1"/>
+            </bean>
+            <!-- Used for Thymeleaf views  -->
+            <bean class="org.thymeleaf.spring4.view.ThymeleafViewResolver">
+                <property name="templateEngine" ref="templateEngine" />
+                <property name="order" value="2"/>
+            </bean>
+        </list>
+    </property>
 </bean>
     ]]>
     </c:sourceContent>
@@ -1702,7 +1738,10 @@ In <b>WEB-INF/views</b> directory I <b>created a layouts folder</b> where I plac
                      bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
       <![CDATA[
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org"> 
+<html 
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4"> 
 <head>...</head>
 <body>
 <div th:raplace="fragments/header :: header">
@@ -1748,7 +1787,10 @@ I edited <b>WEB-INF/views/homeNotSignedIn.html</b> and I defined the content fra
                      bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
       <![CDATA[
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org"> 
+<html
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4"> 
 <head>...</head>
 <body>
 <div class="container" th:fragment="content">
@@ -1757,7 +1799,7 @@ I edited <b>WEB-INF/views/homeNotSignedIn.html</b> and I defined the content fra
         <div th:replace="fragments/alert :: alert (type=${#strings.toLowerCase(message.type)}, message=${message.message})">&nbsp;</div>
     </th:block>
     <p>
-        Hello <span th:text="${#authentication.name}">User</span>!
+        Hello <span sec:authentication="name">miquel</span>!
         Welcome to the Spring MVC Quickstart application!
     </p>
 </div>
