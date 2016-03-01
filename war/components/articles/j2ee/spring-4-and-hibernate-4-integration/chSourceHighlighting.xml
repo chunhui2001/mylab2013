@@ -1704,7 +1704,88 @@ http://www.thymeleaf.org/doc/articles/springsecurity.html<br />
         </list>
     </property>
 </bean>
+
+
+
+
+
+<mvc:interceptors>
+    <bean class="**.ThymeleafLayoutInterceptor" />
+</mvc:interceptors>
     ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="ThymeleafLayoutInterceptor.java" id="sourceContent1"
+                     style="margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[public class ThymeleafLayoutInterceptor extends HandlerInterceptorAdapter {
+
+    private static final String DEFAULT_LAYOUT = "layouts/default";
+    private static final String DEFAULT_VIEW_ATTRIBUTE_NAME = "view";
+
+    private String defaultLayout = DEFAULT_LAYOUT;
+    private String viewAttributeName = DEFAULT_VIEW_ATTRIBUTE_NAME;
+
+    public void setDefaultLayout(String defaultLayout) {
+        this.defaultLayout = defaultLayout;
+    }
+
+    public void setViewAttributeName(String viewAttributeName) {
+        this.viewAttributeName = viewAttributeName;
+    }
+
+    @Override
+    public void postHandle(
+        HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) 
+                                          throws Exception {
+        if (modelAndView == null || !modelAndView.hasView()) {
+            return;
+        }
+        String originalViewName = modelAndView.getViewName();
+        if (isRedirectOrForward(originalViewName)) {
+            return;
+        }
+        String layoutName = getLayoutName(handler);
+        modelAndView.setViewName(layoutName);
+        modelAndView.addObject(this.viewAttributeName, originalViewName);
+    }
+
+    private boolean isRedirectOrForward(String viewName) {
+        return viewName.startsWith("redirect:") || viewName.startsWith("forward:");
+    }
+
+    private String getLayoutName(Object handler) {
+        HandlerMethod handlerMethod = (HandlerMethod) handler;
+        Layout layout = getMethodOrTypeAnnotation(handlerMethod);
+        if (layout == null) {
+            return this.defaultLayout;
+        } else {
+            return layout.value();
+        }
+    }
+
+    private Layout getMethodOrTypeAnnotation(HandlerMethod handlerMethod) {
+        Layout layout = handlerMethod.getMethodAnnotation(Layout.class);
+        if (layout == null) {
+            return handlerMethod.getBeanType().getAnnotation(Layout.class);
+        }
+        return layout;
+    }
+}]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="Layout.java" id="sourceContent1"
+                     style="margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+@Target({ElementType.METHOD, ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface Layout {
+    String value() default "";
+}]]>
     </c:sourceContent>
 
     <c:sourceContent type="html" title="" id="sourceContent1"
