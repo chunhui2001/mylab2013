@@ -2216,7 +2216,9 @@ http://kh-yiu.blogspot.jp/2012/12/spring-mvc-security-custom.html<br/><br/>
 
 
   <security:http pattern="/resources/**" security="none"/>
-  <security:http pattern="/login" security="none"/>
+  <!-- if you will apply security="none" then no csrf token will be generated. 
+        page will not pass through security filter. Use role ANONYMOUS. -->
+  <!-- <security:http pattern="/login" security="none"/> -->
 
   <security:http auto-config="true" use-expressions="true"> 
      <security:form-login login-page="/login" 
@@ -2224,8 +2226,9 @@ http://kh-yiu.blogspot.jp/2012/12/spring-mvc-security-custom.html<br/><br/>
               authentication-failure-url="/login?error"
               username-parameter="username"
               password-parameter="password" /> 
-     <security:intercept-url pattern="/**" access="hasRole('ADMIN')" /> 
-     <security:logout logout-success-url="/login?logout" logout-url="/j_spring_security_logout" />
+      <security:intercept-url pattern="/login" access="isAnonymous()" />
+      <security:intercept-url pattern="/**"  access="isAuthenticated()" />
+      <security:logout logout-success-url="/login?logout" logout-url="/j_spring_security_logout" />
     <security:csrf/>
   </security:http>
   
