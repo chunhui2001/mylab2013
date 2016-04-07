@@ -1,0 +1,561 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<div>
+nginx pronounced as "engine x" is an HTTP and reverse proxy server, as well as a mail proxy server.
+</div><div style="margin-top:.5em;">
+nginx is an opensource web server which uses epoll mechanism to serve clients as opposed to Apache which uses a thread based model which delegates the requests to an instance in the thread pool. nginx is being used more over Apache because of its speed. nginx has over 13% market share and increasing continuously.</div>
+]]>
+  </c:abstract>
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title>Why compile from source</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+<div><b>Compiling from the source code is useful when:</b></div>
+<ul style="list-style-type: decimal;margin-left: 2.5em;">
+  <li>Upgrading to the latest version right after the release.</li>
+  <li>Fixing security vulnerabilities</li>
+  <li>Fixing known bugs which has been impacting your service</li>
+  <li>Modifying defaults like the server name</li>
+  <li>Applying patches with fixing known bugs</li>
+  <li>Software repositories are not upgraded with the latest version because of the dependency hierarchy</li>
+</ul>
+<div style="margin-top:.5em;"><b>Its painful because:</b></div>
+<ul style="list-style-type: decimal;margin-left: 2.5em;">
+  <li>You need to keep up to date with software versions</li>
+  <li>Your server software might depend on older versions in the dependency tree</li>
+</ul>
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title>Setup</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+      apt-get -y update && apt-get -y upgrade
+apt-get install -y build-essential autoconf libssl-dev curl libcurl4-gnutls-dev zlib1g zlib1g-dev libxml2 libxml2-dev libxslt-dev libreadline6-dev
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Install LuaJIT (Option: if /usr/local/include/luajit-2.0 not exists)" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ wget "http://luajit.org/download/LuaJIT-2.0.1.tar.gz"
+$ tar -xzvf LuaJIT-2.0.1.tar.gz
+$ cd LuaJIT-2.0.1
+$ make
+$ sudo make install
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Install Lua (Option: ..)" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ apt-get install -y lua5.1 liblua5.1-0 liblua5.1-0-dev
+
+# Make sure to symlink library so linker can find it 
+$ ln -s /usr/lib/x86_64-linux-gnu/liblua5.1.so /usr/lib/liblua.so
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Download dependencies" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+# Download all files
+$ wget -O "nginx-1.0.15.tar.gz" "http://nginx.org/download/nginx-1.0.15.tar.gz"
+$ wget -O "pcre-8.30.tar.gz" "ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.30.tar.gz"
+$ wget -O "zlib-1.2.7.tar.gz" "http://zlib.net/zlib-1.2.7.tar.gz"
+$ wget -O "openssl-1.0.1c.tar.gz" "http://www.openssl.org/source/openssl-1.0.1c.tar.gz"
+$ wget -O "nginx_devkit.tar.gz" "https://github.com/simpl/ngx_devel_kit/tarball/v0.2.17rc2"
+$ wget -O "nginx_lua.tar.gz" "https://github.com/chaoslawful/lua-nginx-module/tarball/v0.5.0rc31"
+
+# Extract everything
+$ tar -zxf nginx-1.0.15.tar.gz
+$ tar -zxf pcre-8.30.tar.gz
+$ tar -zxf zlib-1.2.7.tar.gz
+$ tar -zxf openssl-1.0.1c.tar.gz
+$ tar -zxf nginx_devkit.tar.gz
+$ tar -zxf nginx_lua.tar.gz
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Config and build" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+# Configure and build nginx
+$ cd nginx-1.0.15
+$ export LUAJIT_LIB=/usr/local/lib
+$ export LUAJIT_INC=/usr/local/include/luajit-2.0
+
+./configure --prefix=/usr/local/nginx \
+            --with-http_gzip_static_module \
+            --with-http_ssl_module \
+            --with-http_stub_status_module \
+            --with-zlib=../zlib-1.2.7 \
+            --with-pcre=../pcre-8.30 \
+            --with-openssl=../openssl-1.0.1c \
+            --add-module=../simpl-ngx_devel_kit-bc97eea \
+            --add-module=../chaoslawful-lua-nginx-module-ead78b7
+
+# Build and install
+$ make && make install
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+OR
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+./configure \
+  --user=nginx                          \
+  --group=nginx                         \
+  --prefix=/etc/nginx                   \
+  --sbin-path=/usr/sbin/nginx           \
+  --conf-path=/etc/nginx/nginx.conf     \
+  --pid-path=/var/run/nginx.pid         \
+  --lock-path=/var/run/nginx.lock       \
+  --error-log-path=/var/log/nginx/error.log \
+  --http-log-path=/var/log/nginx/access.log \
+  --with-http_gzip_static_module        \
+  --with-http_stub_status_module        \
+  --with-http_ssl_module                \
+  --with-pcre                           \
+  --with-file-aio                       \
+  --with-http_realip_module             \
+  --without-http_scgi_module            \
+  --without-http_uwsgi_module           \
+  --without-http_fastcgi_module
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+<ul style="list-style-type: decimal;margin-left: 2.5em;">
+  <li><b>--with-http_gzip_static_module</b> option enables nginx to use gzip (Before serving a file from disk to a gzip-enabled client, this module will look for a precompressed file in the same location that ends in ".gz". The purpose is to avoid compressing the same file each time it is requested.).[recommended for reducing size of information sent]</li>
+
+<li><b>--with-http_stub_status_module</b> option enables other plugins over nginx to allow us to get the status (This module provides the ability to get some status from nginx.). [recommended for getting stats]</li>
+
+<li><b>--with-http_ssl_module</b> - required if you want to run a HTTPS server. See <a href="https://www.digitalocean.com/community/articles/how-to-create-a-ssl-certificate-on-nginx-for-centos-6" target="_blank">How To Create a SSL Certificate on nginx for CentOS 6</a></li>
+
+<li><b>--with-pcre</b> option enables to match routes via <a href="https://www.digitalocean.com/community/articles/using-grep-regular-expressions-to-search-for-text-patterns-in-linux" target="_blank">Regular Expression Matching</a> when defining routes. [recommended, you will find more use of this once you start adding and matching routes]</li>
+
+<li><b>--with-file-aio</b> - enables asynchronous I/O, better than the default send file option (recommended if you are allowing users to download static files)</li>
+
+<li><b>--with-http_realip_module</b> is used for getting the IP of the client when behind a load balancer. This is useful when serving content behind <a href="https://www.cloudflare.com/" target="_blank">CloudFlare</a> like services.</li>
+
+<li><b>--without-http_scgi_module</b> - Disable SCGI module (normally used when running CGI scripts)</li>
+
+<li><b>--without-http_uwsgi_module</b> - Disable UWSGI module (normally used when running CGI scripts)</li>
+
+<li><b>--without-http_fastcgi_module</b> - Disable FastCGI module (normally used when running CGI scripts)</li>
+</ul>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="Lua extensions" id="sourceContent1"
+                     style="margin-top:3em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+# Install socket library
+$ apt-get install liblua5.1-socket2
+
+# Install redis library
+$ mkdir -p /usr/local/lib/lua/5.1
+$ cd /usr/local/lib/lua/5.1
+$ wget https://raw.github.com/nrk/redis-lua/version-2.0/src/redis.lua
+    ]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;margin-top:3em;">
+    <c:title>Running the NGINX</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Add the user nginx to the system" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ useradd -r nginx
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="We need to setup the file /etc/init.d/nginx to run when system starts:" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+#!/bin/sh
+#
+# nginx - this script starts and stops the nginx daemin
+#
+# chkconfig:   - 85 15
+# description:  Nginx is an HTTP(S) server, HTTP(S) reverse \
+#               proxy and IMAP/POP3 proxy server
+# processname: nginx
+# config:      /etc/nginx/nginx.conf
+# pidfile:     /var/run/nginx.pid
+# user:        nginx
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Source networking configuration.
+. /etc/sysconfig/network
+
+# Check that networking is up.
+[ "$NETWORKING" = "no" ] && exit 0
+
+nginx="/usr/sbin/nginx"
+prog=$(basename $nginx)
+
+NGINX_CONF_FILE="/etc/nginx/nginx.conf"
+
+lockfile=/var/run/nginx.lock
+
+start() {
+    [ -x $nginx ] || exit 5
+    [ -f $NGINX_CONF_FILE ] || exit 6
+    echo -n $"Starting $prog: "
+    daemon $nginx -c $NGINX_CONF_FILE
+    retval=$?
+    echo
+    [ $retval -eq 0 ] && touch $lockfile
+    return $retval
+}
+
+stop() {
+    echo -n $"Stopping $prog: "
+    killproc $prog -QUIT
+    retval=$?
+    echo
+    [ $retval -eq 0 ] && rm -f $lockfile
+    return $retval
+}
+
+restart() {
+    configtest || return $?
+    stop
+    start
+}
+
+reload() {
+    configtest || return $?
+    echo -n $"Reloading $prog: "
+    killproc $nginx -HUP
+    RETVAL=$?
+    echo
+}
+
+force_reload() {
+    restart
+}
+
+configtest() {
+  $nginx -t -c $NGINX_CONF_FILE
+}
+
+rh_status() {
+    status $prog
+}
+
+rh_status_q() {
+    rh_status >/dev/null 2>&1
+}
+
+case "$1" in
+    start)
+        rh_status_q && exit 0
+        $1
+        ;;
+    stop)
+        rh_status_q || exit 0
+        $1
+        ;;
+    restart|configtest)
+        $1
+        ;;
+    reload)
+        rh_status_q || exit 7
+        $1
+        ;;
+    force-reload)
+        force_reload
+        ;;
+    status)
+        rh_status
+        ;;
+    condrestart|try-restart)
+        rh_status_q || exit 0
+            ;;
+    *)
+        echo $"Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload|configtest}"
+        exit 2
+esac
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;margin-top:3em;">
+    <c:title>First Lua site</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+Create a simple plain text file named conf/nginx.conf with the following contents in it:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+worker_processes  1;
+error_log logs/error.log;
+events {
+    worker_connections 1024;
+}
+http {
+    server {
+        listen 8080;
+        location / {
+            default_type text/html;
+            content_by_lua '
+                ngx.say("<p>hello, world</p>")
+            ';
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+Then we start the nginx server with our config file this way:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+nginx -p `pwd`/ -c conf/nginx.conf
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+We can use curl to access our new web service that says HelloWorld:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+curl http://localhost:8080/
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;margin-top:3em;">
+    <c:title>Dynamic Upstreams</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[Now, to the implementation. The idea behind dynamic upstreams is to simply invoke a standard proxy_pass to a backend address:port pair that was defined in redis key. Lets assume that we have a few sample keys:]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+site1.com 192.168.1.1:3000
+site2.com 192.168.1.2:4000
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Nginx configuration" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+server {
+  listen 80;
+  server_name _;
+  server_name_in_redirect off;
+  port_in_redirect off;
+  root /root/html;
+
+  location / {
+    set $upstream "";
+    rewrite_by_lua '
+      -- load global route cache into current request scope
+      -- by default vars are not shared between requests
+      local routes = _G.routes
+
+      -- setup routes cache if empty
+      if routes == nil then
+        routes = {}
+        ngx.log(ngx.ALERT, "Route cache is empty.")
+      end
+
+      -- try cached route first
+      local route = routes[ngx.var.http_host]
+      if route == nil then
+        local redis  = require "redis"
+        local client = redis.connect("localhost", 6379)
+        route        = client:get(ngx.var.http_host)
+      end
+
+      -- fallback to redis for lookups
+      if route ~= nil then
+        ngx.var.upstream = route
+        routes[ngx.var.http_host] = route
+        _G.routes = routes
+      else
+        ngx.exit(ngx.HTTP_NOT_FOUND)
+      end
+    ';
+
+    proxy_buffering             off;
+    proxy_set_header            Host $host;
+    proxy_set_header            X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_redirect              off;
+    proxy_connect_timeout       10;
+    proxy_send_timeout          30;
+    proxy_read_timeout          30;
+    proxy_pass                  http://$upstream;
+  }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Nginx configuration" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+<div>If you notice, there is a _G variable used, which points to the global environment. This quick hack allows us to to persist route data between requests since lua extensions works only in per-request mode.</div>
+
+<div style="margin-top:.5em;">
+To test if it works set a sample route (which leads to google page):</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+SET localhost 74.125.225.136:80
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+Test:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+curl -i -X HEAD "http://127.0.0.1/" # -> 404 page
+curl -i -X HEAD "http://localhost/" # -> shows content from google
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;margin-top:3em;">
+    <c:title>Summary</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+With a little overhead in form of custom compilation process, nginx could be used as a base for more advanced routing logic powered by Lua. Maybe it isn't that flexible as any other programming language for web, as node.js or ruby, but it surely battle-hardened and proved itself as a stable and performant solution. In fact, the modifications made does not really affect any routing logic under the hood and only redefine static upstream declaration. Give it a try.
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+</c:component>
