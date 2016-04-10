@@ -145,7 +145,7 @@
     <xsl:for-each select="$entry/c:comment">
       <xsl:if test="count(current()/*[normalize-space(text()) != '']) &gt; 0">
         <xsl:variable name="st">
-          <xsl:value-of select="'background-color:#EAEAF9;padding:1.5em;border-radius:4px;font-size:.98em;
+          <xsl:value-of select="'background-color:#EAEAF9;padding:1em;border-radius:4px;font-size:.98em;
                 border:1px solid #BABACE;margin-top:1em;list-style:inherit;list-style-type:square;padding-left:3em;word-break:break-all;'"/>
         </xsl:variable>
         
@@ -178,7 +178,7 @@
                 </xsl:when>
                 <xsl:otherwise>
                   <li style="color:rgb(205, 76, 0);">
-                    <span style="font-weight:bold;display:block;">
+                    <span style="display:block;">
                       <xsl:value-of disable-output-escaping="yes" select="current()"/>
                     </span>
                   </li>

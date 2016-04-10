@@ -1,0 +1,888 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<div style="margin-bottom:.7em;">
+  Gitlab is a web-based git repository management application written on Ruby. It is similar to GitHub and includes features like a project wiki and issue tracking system. The Gitlab project was started by Dmitriy Zaporozhets and the software is used by more than 100.000 technology companies including IBM, StackExchange, NASA, Alibaba, Red Hat, etc. Gitlab is one of the best solutions for to build your own git server.</div>
+
+<div style="margin-bottom:.7em;">
+Gitlab is supported by the major Linux distributions such as Ubuntu, Debian, and CentOS. Gitlab provides a .deb package for Debian/Ubuntu and .rpm packages for Rhel and CentOS. The package contains all dependencies including Ruby, Redis, Nginx, Unicorn and PostgreSQL. Gitlab is available in 2 versions, the Community Edition (Gitlab CE) and Enterprise Edition (Gitlab EE). If you want to build your own git server then most likely the free CE edition will offer all features that you need.</div>
+
+<div style="margin-bottom:.7em;">
+In this tutorial, I will guide you step by step trough the installation of Gitlab CE with PostgreSQL as the database system, and Nginx as the web server on Ubuntu 15.04 version. We will use Ruby version 2.x.x, gitlab stable version 8.x.</div>
+]]>
+  </c:abstract>
+
+
+
+
+
+  <c:entry style="margin-top:2em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Update the Linux System and Install Gitlab Dependencies</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      Gitlab has many software dependencies such as a redis-server, git-core, nodejs and postfix to send email notifications. I will install them with a single apt command:
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ apt-get update
+
+$ sudo apt-get install -y build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl openssh-server redis-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate python-docutils pkg-config cmake nodejs git-core postfix
+  ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
+        <b>Note1: </b>During postfix installation, select "internet site" and then press enter to cofirm the hostname.
+        ]]>
+      </c:comment1>
+      <c:comment1>
+        <![CDATA[
+        <b>Note2: </b>check the git version and make sure git version is 1.7.x or higher.
+        ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Install Ruby and Go</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Install Ruby" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Gitlab requires a ruby version 2.x or higher. In this tutorial, we will use ruby version 2.7. In this stage, we have to install ruby manually (from source). If you have ruby installed on your system before, remove it and download source pacjage as below command:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ curl -O --progress https://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.7.tar.gz
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Now verify and extract the ruby.tar.gz, then enter the ruby directory:
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ echo 'e2e195a4a58133e3ad33b955c829bb536fa3c075  ruby-2.1.7.tar.gz' | shasum -c - 
+$ tar xzf ruby-2.1.7.tar.gz
+$ cd ruby-2.1.7
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Compile and install Ruby:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ ./configure --disable-install-rdoc --prefix=/usr/local
+$ make
+$ make install
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Install Go" id="sourceContent1" 
+                     style="background-color:white;margin-top:2.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+As next step, we have to install Go. Since gitlab 8.0, git HTTP request is handled by gitlab-workhorse which is written in Go. To install gitlab-workhorse, we need the go compiler, download and install  it.
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ curl -O --progress https://storage.googleapis.com/golang/go1.5.1.linux-amd64.tar.gz
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Verify and extract it to the "/usr/local/" directory:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ echo '46eecd290d8803887dec718c691cc243f2175fe0  go1.5.1.linux-amd64.tar.gz' | shasum -c - 
+$ sudo tar -C /usr/local -xzf go1.5.1.linux-amd64.tar.gz
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Now make a symlink for Go in the bin directory:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo ln -sf /usr/local/go/bin/{go,godoc,gofmt} /usr/local/bin/
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<b>Check versions</b>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ ruby --version
+$ go version
+  ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  <c:entry style="margin-top:2em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Create a new Linux user and configure the PostgreSQL database</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+In this step, we will create a new Linux system user called <b>"git"</b> with the home directory <b>"/home/git"</b>. Gitlab will run as git user later.
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo adduser --disabled-login --gecos 'GitLab' git
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Now we configure the database for gitlab. Gitlab supports MySQL and PostgreSQL, in this tutorial we will use the recommended database type PostGreSQL.
+Install PostgreSQL with the apt command below:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo apt-get install -y postgresql postgresql-client libpq-dev
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Once it is done, log in to PostgreSQL and create new role/user called "git" for gitlab:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo -u postgres psql -d template1
+CREATE USER git CREATEDB;
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Then create new database for gitlab called <b>"gitlabhq_production"</b> and grant the database to git user/role:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+CREATE DATABASE gitlabhq_production OWNER git;
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Now exit for the postgresql shell and test the new role/user with the database that we have created:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+\q
+sudo -u git -H psql -d gitlabhq_production
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  <c:entry style="margin-top:2em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Configure the Redis server</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Before we edit the redis configuration file in the "/etc/redis" directory, we will create a backup copy with the name redis.conf.original.
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ cd /etc/redis/
+$ cp redis.conf redis.conf.original
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Then edit the file "redis.conf" with the vim editor:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ vim redis.conf
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Go to the line 45 and change the value to <b>0</b>, because we want Redis to listen on a unix socket only and not a port:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Listen 0
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Then go to the end of the file and add a redis socket and the permission for it:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+unixsocket /var/run/redis/redis.sock
+unixsocketperm 777
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Next, create a new directory for the redis socket in the "/var/run" directory and adjust the owner and permissions of the directory:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ mkdir -p /var/run/redis
+$ chown redis:redis /var/run/redis
+$ chmod 755 /var/run/redis
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Go to redis socket directory and run the command below:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ cd /var/run/redis
+$ if [ -d /etc/tmpfiles.d ]; then
+  echo 'd  /var/run/redis  0755  redis  redis  10d  -' | sudo tee -a /etc/tmpfiles.d/redis.conf
+fi
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+If all is done, restart the redis server and add the user "git" to group "redis":
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo service redis-server restart
+$ sudo usermod -aG redis git
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  <c:entry style="margin-top:2em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Install GitLab</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Go to the directory "/home/git" and download gitlab from it's GIT repository:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ cd /home/git
+$ sudo -u git -H git clone https://gitlab.com/gitlab-org/gitlab-ce.git -b 8-2-stable gitlab
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Configure GitLab" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Go to gitlab directory to configure gitlab:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ cd /home/git/gitlab
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Copy the example of gitlab configuration file gitlab.yml.example to gitlab.yml in the "config" directory:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo -u git -H cp config/gitlab.yml.example config/gitlab.yml
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+In the gitlab directory, change the owner of the sub directories "log and tmp" to the git user:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo chown -R git {log,tmp}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Then change the permissions for the other directories so gitlab (the git user) can write to them:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ mkdir -p public/uploads/
+$ sudo chmod -R u+rwX,go-w log/
+$ sudo chmod -R u+rwX {tmp,tmp/pids,tmp/sockets,builds,shared/artifacts}
+$ sudo chmod -R 0750 public/uploads
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Copy the examples of the unicorn and Rack attack configurations:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo -u git -H cp config/unicorn.rb.example config/unicorn.rb
+$ sudo -u git -H cp config/initializers/rack_attack.rb.example config/initializers/rack_attack.rb
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Now we have to configure global settings for the git user with git command below:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo -u git -H git config --global core.autocrlf input
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+And we have to configure the redis connection by copying file "resque.yml" into the config directory, then edit it with vim to change the redis configuration, use unix socket as we configured redis to listen on a socket:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo -u git -H cp config/resque.yml.example config/resque.yml
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Database Configuration" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+The next step is to configure the GitLab DB settings, we use postgreSQL for our database. Copy the configuration file and change the permissions:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo -u git -H cp config/database.yml.postgresql config/database.yml
+$ sudo -u git -H chmod o-rwx config/database.yml
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Install the Gem's" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+The next step is to configure the GitLab DB settings, we use postgreSQL for our database. Copy the configuration file and change the permissions:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo gem install bundler
+$ sudo -u git -H bundle install --deployment --without development test mysql aws kerberos
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Install Gitlab-shell" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Gitlab-shell allows SSH access and repository management for Gitlab. We will use the default configuration, so we do not need to edit it. Run command below to install the gitlab-shell:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo -u git -H bundle exec rake gitlab:shell:install[v2.6.8] REDIS_URL=unix:/var/run/redis/redis.sock RAILS_ENV=production
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Install gitlab-workhorse" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Gitlab-workhorse is a small deamon to handle Git HTTP traffic from unicorn, coded in Go. Clone and install it:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ cd /home/git
+$ sudo -u git -H git clone https://gitlab.com/gitlab-org/gitlab-workhorse.git
+
+$ cd gitlab-workhorse
+$ sudo -u git -H git checkout 0.4.2
+$ sudo -u git -H make
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Initialize the database and activate gitlab features" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Go to gitlab installation directory and run the command below:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ cd /home/git/gitlab
+$ sudo -u git -H bundle exec rake gitlab:setup RAILS_ENV=production
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+type <b>"yes"</b> to create the tables. The result will be a gitlab account with username <b>"root"</b> and password <b>"5iveL!fe"</b>.
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Configure the Init Script" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Copy gitlab init script form gitlab installation directory and add gitlab to start at boot time with update-rc.d command:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo cp lib/support/init.d/gitlab /etc/init.d/gitlab
+$ sudo update-rc.d gitlab defaults 21
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Then copy the gitlab logrotate configuration for log management:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo cp lib/support/logrotate/gitlab /etc/logrotate.d/gitlab
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+And check application status and compile assets:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo -u git -H bundle exec rake gitlab:env:info RAILS_ENV=production
+$ sudo -u git -H bundle exec rake assets:precompile RAILS_ENV=production
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+If there is no error, start gitlab with:
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ /etc/init.d/gitlab start
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Install and Configure Nginx" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+We will use Nginx as the front end web server to handle browser requests. Just install it with this apt command:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ apt-get install nginx -y
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Copy Nginx virtual host configuration from the gitlab directory and remove default Nginx default virtualhost:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo cp lib/support/nginx/gitlab /etc/nginx/sites-available/gitlab
+$ sudo rm /etc/nginx/sites-enabled/default
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Edit the config file with vim:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo vim /etc/nginx/sites-available/gitlab
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Change value of the Listen and ServerName lines in the HTTP section:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Listen *:80; #Port Default
+
+#Listen 0.0.0.0:80; #comment one of this
+
+ServerName my.gitlab.me; #Gitlab FQDN/Domain
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Save and exit. Activate the gitlab virtualhost, start nginx and restart gitlab:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo ln -s /etc/nginx/sites-available/gitlab /etc/nginx/sites-enabled/gitlab
+$ service nginx start
+$ /etc/init.d/gitlab restart
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>
+  Now you can access gitlab with your browser at <b>my.gitlab.me</b> (the hostname you have choosen for your server) and log in with the default username "root" and password <b>"5iveL!fe"</b>.
+  </div>
+<div style="margin-top:.3em;">
+  <img src="/images/linux/gitlab-1.png" style="max-width:100%;" />
+</div>
+
+<div style="margin-top:1em;">
+  <b>Gitlab 8</b> with <b>PostgreSQL</b> and Nginx on ubuntu 15.04 is successfully installed now.
+  </div>
+<div style="margin-top:.3em;">
+  <img src="/images/linux/gitlab-2.png" style="max-width:100%;" />
+</div>
+
+<div style="margin-top:1em;">
+  <b>Note :</b> If you have error, for an example "502 bad gateway", then fix it with by increasing the unicorn time out or upgrade your hardware. Go to gitlab installation directory and edit unicorn.rb file with vim:
+  </div>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo -u git -H vim config/unicorn.rb
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Conclusion" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.6em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Gitlab is an open source git repository management software written in Ruby. It is one of the best solutions to build your own git server. Gitlab is created by Dmitriy Zaporozhets and is available in 2 versions, Gitlab CE (Community Edition) and Gitlab EE (Enterprise Edition). Gitlab is easy to install and configure with a beautifull interface, used by more 100.000 technology companies. It is very powerfull software that helps developers to build applications together with other developers.
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+</c:component>
