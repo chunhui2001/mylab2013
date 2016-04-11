@@ -1620,6 +1620,7 @@ http://www.thymeleaf.org/doc/articles/petclinic.html <br/>
 https://doanduyhai.wordpress.com/2012/04/14/spring-mvc-part-iv-thymeleaf-advanced-usage/ <br/>
 http://stackoverflow.com/questions/18309864/secauthorize-and-secauthentication-annotations-dont-work<br />
 http://www.thymeleaf.org/doc/articles/springsecurity.html<br />
+http://www.thymeleaf.org/doc/articles/springmail.html<br />
 <br/>
     ]]></c:title>
     <c:desc>
@@ -3073,6 +3074,91 @@ public class UserDetailServiceImpl
     </c:comment>
   </c:entry>
 
+
+
+
+
+
+
+
+  <c:entry style="margin-top:3em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">
+      Spring oauth2 oauth/token http 405 error POST method not supported</h1>
+    ]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+@Configuration
+public class OAuth2ProviderTokenGetAllowedBackwardsCompatible implements InitializingBean
+{
+    @Autowired
+    private TokenEndpoint tokenEndpoint;
+
+    @Override
+    public void afterPropertiesSet() {
+        tokenEndpoint.setAllowedRequestMethods(new HashSet<HttpMethod>() {{
+            add(HttpMethod.GET);
+            add(HttpMethod.POST);
+        }});
+    }
+}
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
+]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+  <c:entry style="margin-top:3em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">
+      Redis Token Store</h1>
+    ]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:#545454;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<!--Use Redis Token Store-->
+<beans:bean id="tokenStore"
+            class="org.springframework.security.oauth2.provider.token.store.redis.RedisTokenStore">
+    <beans:constructor-arg name="connectionFactory" ref="redisConnectionFactory"/>
+</beans:bean>
+
+<!--create redis connection factory and set db 1-->
+<beans:bean id="redisConnectionFactory"
+            class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
+    <beans:property name="hostName" value="localhost"/>
+    <beans:property name="port" value="6379"/>
+    <beans:property name="password" value=""/>
+    <beans:property name="database" value="1"/>
+</beans:bean>
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
+]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 
 
 
