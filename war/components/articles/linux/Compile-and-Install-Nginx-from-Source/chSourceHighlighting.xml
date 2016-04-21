@@ -92,6 +92,8 @@ $ wget -O "zlib-1.2.7.tar.gz" "http://zlib.net/zlib-1.2.7.tar.gz"
 $ wget -O "openssl-1.0.1c.tar.gz" "http://www.openssl.org/source/openssl-1.0.1c.tar.gz"
 $ wget -O "nginx_devkit.tar.gz" "https://github.com/simpl/ngx_devel_kit/tarball/v0.2.17rc2"
 $ wget -O "nginx_lua.tar.gz" "https://github.com/chaoslawful/lua-nginx-module/tarball/v0.5.0rc31"
+$ git clone https://github.com/FRiCKLE/ngx_cache_purge.git
+$ git clone https://github.com/msva/nginx-ey-balancer.git
 
 # Extract everything
 $ tar -zxf nginx-1.0.15.tar.gz
@@ -100,6 +102,16 @@ $ tar -zxf zlib-1.2.7.tar.gz
 $ tar -zxf openssl-1.0.1c.tar.gz
 $ tar -zxf nginx_devkit.tar.gz
 $ tar -zxf nginx_lua.tar.gz
+
+
+$ cd nginx-XXX
+$ mkdir modules && mv ../nginx-ey-balancer ./modules
+
+# edit first line of load balancer module's Makefile to point to your build dir
+$ vim modules/nginx-ey-balancer/Makefile
+
+# apply a patch from load balancer module
+patch -p0 < modules/nginx-ey-balancer/patches/nginx-XXX.patch
     ]]>
     </c:sourceContent>
     <c:sourceContent type="" title="Config and build" id="sourceContent1"
@@ -112,16 +124,26 @@ $ cd nginx-1.0.15
 $ export LUAJIT_LIB=/usr/local/lib
 $ export LUAJIT_INC=/usr/local/include/luajit-2.0
 
-./configure --prefix=/usr/local/nginx \
-            --with-http_gzip_static_module \
-            --with-http_ssl_module \
-            --with-http_stub_status_module \
-            --with-zlib=../zlib-1.2.7 \
-            # --with-pcre=../pcre-8.30 \
-            --with-pcre \
-            --with-openssl=../openssl-1.0.1c \
-            --add-module=../simpl-ngx_devel_kit-bc97eea \
-            --add-module=../chaoslawful-lua-nginx-module-ead78b7
+./configure \
+        --prefix=/usr/local/nginx \
+        --with-http_gzip_static_module \
+        --with-http_ssl_module \
+        --with-http_stub_status_module \
+        --with-ipv6 \
+        --with-debug \
+        --with-pcre \
+        --with-file-aio \
+        --with-http_realip_module \
+        --with-http_flv_module \
+        --with-http_dav_module \
+        --with-mail \
+        --with-mail_ssl_module \
+        --with-zlib=../zlib-1.2.8 \
+        --with-openssl=../openssl-1.0.2g \
+        --add-module=../ngx_devel_kit-0.3.0rc1 \
+        --add-module=../lua-nginx-module-0.10.2 \
+        --add-module=../ngx_cache_purge \
+        --add-module=./modules/nginx-ey-balancer
 
 # Build and install
 $ make && make install
@@ -185,6 +207,15 @@ OR
 <li><b>--without-http_uwsgi_module</b> - Disable UWSGI module (normally used when running CGI scripts)</li>
 
 <li><b>--without-http_fastcgi_module</b> - Disable FastCGI module (normally used when running CGI scripts)</li>
+
+<li><b>ngx_cache_purge</b> - This module to clear a single page from the caching proxy.   
+Get it from <a target="_blank" href="https://github.com/FRiCKLE/ngx_cache_purge">https://github.com/FRiCKLE/ngx_cache_purge</a>.</li>
+
+<li><b>nginx-ey-balancer</b> - Allows to load balance requests across multiple servers and limit the number of concurrent connections sent to the backend. Since version 1.2 of Nginx you need to use this forked version 
+<a href="https://github.com/msva/nginx-ey-balancer.git">https://github.com/msva/nginx-ey-balancer.git </a>
+if you plan on using a previous version you can get it from 
+<a href="https://github.com/ry/nginx-ey-balancer">https://github.com/ry/nginx-ey-balancer</a>
+. Either versions require a patch to be applied</li>
 </ul>
     ]]>
     </c:sourceContent>
@@ -206,7 +237,7 @@ OR
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="" title="Add the user nginx to the system" id="sourceContent1"
+    <c:sourceContent type="" title="Add the user nginx to the system (Optional)" id="sourceContent1"
                      titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
       <![CDATA[
@@ -647,7 +678,7 @@ curl -i -X HEAD "http://localhost/" # -> shows content from google
 
 
 
-  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;margin-top:3em;">
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;margin-top:2em;">
     <c:title>Summary</c:title>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
@@ -657,6 +688,260 @@ curl -i -X HEAD "http://localhost/" # -> shows content from google
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
       <![CDATA[
 With a little overhead in form of custom compilation process, nginx could be used as a base for more advanced routing logic powered by Lua. Maybe it isn't that flexible as any other programming language for web, as node.js or ruby, but it surely battle-hardened and proved itself as a stable and performant solution. In fact, the modifications made does not really affect any routing logic under the hood and only redefine static upstream declaration. Give it a try.
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;margin-top:6em;">
+    <c:title>Compiling PHP (with Php-fpm) For Nginx</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[ <div style="font-size:1.1em;">In this part we will be adding the php-fpm daemon. Php-fpm is the way to go if you want to run php inside nginx. So let’s get started.</div>]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Compiling Php (with php-fpm)" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+Download latest stable version of PHP from <a href="http://php.net/downloads.php">http://php.net/downloads.php</a>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ wget http://ca.php.net/get/php-5.4.32.tar.gz/from/this/mirror -O php-5.4.32.tar.gz
+$ tar -xzf php-5.4.32.tar.gz
+$ cd php-5.4.32
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Install Dependencies" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ sudo apt-get install build-essential autoconf libtool \
+    libxml2 libxml2-dev openssl \
+    libcurl4-openssl-dev  \
+    libbz2-1.0 libbz2-dev libjpeg-dev libpng12-dev libfreetype6 libfreetype6-dev \
+    libldap-2.4-2 libldap2-dev libmcrypt4 libmcrypt-dev libmysqlclient-dev \
+    libxslt1.1 libxslt1-dev libxt-dev
+
+$ sudo apt-get install libxml2-dev libpcre3-dev libbz2-dev \
+    libcurl4-openssl-dev libjpeg-dev libpng12-dev libxpm-dev \
+    libfreetype6-dev libmysqlclient-dev libgd2-xpm-dev \
+    libgmp-dev libsasl2-dev libmhash-dev unixodbc-dev \
+    freetds-dev libpspell-dev libsnmp-dev libtidy-dev \
+    libxslt1-dev libmcrypt-dev 
+
+# Install the necessary development headers for compiling PHP from source: 
+$ sudo apt-get install aptitude
+$ sudo aptitude build-dep php5 LD_LIBRARY_PATH=/usr/local/lib/ 
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Configuration" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+I like to create a create a script called <b>configure.sh</b> which can be reused to recompile with updates later on. Note that you might have to change the location of <b>--with-libdir=lib/x86_64-linux-gnu</b> to something else depending on your version of linux.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+#!/bin/bash
+#!/bin/bash
+./configure \
+        --with-config-file-path=/etc/php5/apache2 \
+        --with-apxs2=/usr/bin/apxs2 \
+        --enable-fpm \
+        --enable-pdo \
+        --with-pdo-mysql \
+        --enable-sockets \
+        --enable-exif \
+        --enable-soap \
+        --enable-ftp \
+        --enable-shmop \
+        --enable-wddx \
+        --enable-pcntl \
+        --enable-soap \
+        --enable-bcmath \
+        --enable-mbstring \
+        --enable-dba \
+        --enable-gd-native-ttf \
+        --enable-zip \
+        --enable-calendar \
+        --with-mysqli \
+        --with-pdo-sqlite \
+        --with-iconv \
+        --with-zlib \
+        --with-bz2 \
+        --with-gettext \
+        --with-xmlrpc \
+        --with-openssl \
+        --with-mhash \
+        --with-mcrypt \
+        --with-xsl \
+        --with-curl \
+        --with-pcre-regex \
+        --with-gd \
+        --with-imap-ssl \
+        --with-freetype-dir=/usr \
+        --with-jpeg-dir=/usr \
+        --with-png-dir=/usr \
+        --with-ldap \
+        --with-pear \
+        --with-fpm-user=www-data \
+        --with-fpm-group=www-data \
+        --with-config-file-path=/etc/php/ \
+        --with-config-file-scan-dir=/etc/php/conf.d/ \
+        (change the location something else depending on your version of linux)
+        --with-libdir=lib/x86_64-linux-gnu 
+
+
+
+$ chmod +x ./configure.sh
+$ ./configure.sh
+ 
+$ make && sudo make install
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+PHP is now installed you can test by issuing the following command
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+/usr/local/bin/php -v
+# Outputs: 
+# PHP 5.4.4 (cli) (built: Jun 29 2012 17:00:35)
+# Copyright (c) 1997-2012 The PHP Group
+# Zend Engine v2.4.0, Copyright (c) 1998-2012 Zend Technologiesnginx version: nginx/1.2.1
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+Lastly we copy the provided init.d scripts and php.ini
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ sudo mkdir -p /etc/php
+$ sudo cp php.ini-production /etc/php/php.ini
+ 
+$ sudo cp sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm
+$ sudo chmod +x /etc/init.d/php-fpm
+$ sudo update-rc.d php-fpm defaults
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+Before starting php-fpm you need to create the php-fpm configuration
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ sudo cp /usr/local/etc/php-fpm.conf.default /usr/local/etc/php-fpm.conf
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+Then uncoment the pid and error_log lines in /usr/local/etc/php-fpm.conf.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+We’re now ready to start php-fpm
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+# start it
+$ sudo /etc/init.d/php-fpm start
+ 
+# check that it's running
+$ sudo netstat -tlnp |grep php-fpm
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Fix an error" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+<p style="color:red;">ERROR: Unable to globalize ‘/usr/local/NONE/etc/php-fpm.d/*.conf’ (ret=2) from /usr/local/etc/php-fpm.conf at line 125.
+ERROR: failed to load configuration file ‘/usr/local/etc/php-fpm.conf’ </p>
+<br />
+<p style="color:blue;">解决方案:<br />
+编辑 /usr/local/etc/php-fpm.conf 文件,引入 *.conf 部分, 修改为正确的路径 include=/usr/local/etc/php-fpm.d/*.conf</p>
+
+<br />
+<p style="color:green;">
+$ cd /usr/local/etc/php-fpm.d
+<br />
+$ cp www.conf.default www.conf <br />
+$ sudo service php-fpm start <br />
+$ sudo netstat -tlnp |grep php-fpm</p>
+
+<br />
+<br />
+
+<p style="color:red;">ERROR: Apache is running a threaded MPM, but your PHP Module is not compiled to be threadsafe.  You need to recompile PHP.</p>
+<br />
+<p style="color:blue;">解决方案:<br />
+1. Check if modules are disabled for Apache:<br />
+$ apache2ctl -M | egrep "mpm|php"<br />
+Syntax OK<br />
+<br />
+2. Enable php and mpm_prefork modules:<br />
+$ ln -s /etc/apache2/mods-available/php5.conf /etc/apache2/mods-enabled/php5.conf<br />
+$ ln -s /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf<br />
+$ ln -s /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mpm_prefork.load<br />
+<br />
+3. Reload Apache configuration:<br />
+$ service apache reload
+</p>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+That’s it we now have a working php installation.
     ]]>
     </c:sourceContent>
 
