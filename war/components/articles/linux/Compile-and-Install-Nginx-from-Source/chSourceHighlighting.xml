@@ -717,6 +717,10 @@ Download latest stable version of PHP from <a href="http://php.net/downloads.php
                      titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
       <![CDATA[
+# remove current php5
+$ sudo apt-get remove --purge php5
+$ sudo aptitude search php5
+
 $ wget http://ca.php.net/get/php-5.4.32.tar.gz/from/this/mirror -O php-5.4.32.tar.gz
 $ tar -xzf php-5.4.32.tar.gz
 $ cd php-5.4.32
@@ -730,9 +734,9 @@ $ cd php-5.4.32
 $ sudo apt-get install build-essential autoconf libtool \
     libxml2 libxml2-dev openssl \
     libcurl4-openssl-dev  \
-    libbz2-1.0 libbz2-dev libjpeg-dev libpng12-dev libfreetype6 libfreetype6-dev \
+    libbz2-1.0 libbz2-dev libjpeg-dev libpng-dev libpng12-dev libfreetype6 libfreetype6-dev \
     libldap-2.4-2 libldap2-dev libmcrypt4 libmcrypt-dev libmysqlclient-dev \
-    libxslt1.1 libxslt1-dev libxt-dev
+    libxslt1.1 libxslt1-dev libxt-dev libpq-dev libicu-dev libxslt-dev
 
 $ sudo apt-get install libxml2-dev libpcre3-dev libbz2-dev \
     libcurl4-openssl-dev libjpeg-dev libpng12-dev libxpm-dev \
@@ -740,6 +744,8 @@ $ sudo apt-get install libxml2-dev libpcre3-dev libbz2-dev \
     libgmp-dev libsasl2-dev libmhash-dev unixodbc-dev \
     freetds-dev libpspell-dev libsnmp-dev libtidy-dev \
     libxslt1-dev libmcrypt-dev 
+
+$ sudo apt-get install apache2 apache2-dev
 
 # Install the necessary development headers for compiling PHP from source: 
 $ sudo apt-get install aptitude
@@ -759,13 +765,11 @@ I like to create a create a script called <b>configure.sh</b> which can be reuse
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
       <![CDATA[
 #!/bin/bash
-#!/bin/bash
 ./configure \
-        --with-config-file-path=/etc/php5/apache2 \
+        --with-config-file-path=/usr/local/php7/apache2 \
         --with-apxs2=/usr/bin/apxs2 \
         --enable-fpm \
         --enable-pdo \
-        --with-pdo-mysql \
         --enable-sockets \
         --enable-exif \
         --enable-soap \
@@ -780,7 +784,11 @@ I like to create a create a script called <b>configure.sh</b> which can be reuse
         --enable-gd-native-ttf \
         --enable-zip \
         --enable-calendar \
+        --with-mysql \
         --with-mysqli \
+        --enable-embedded-mysqli \
+        --with-pgsql \
+        --with-pdo-mysql \
         --with-pdo-sqlite \
         --with-iconv \
         --with-zlib \
@@ -795,15 +803,15 @@ I like to create a create a script called <b>configure.sh</b> which can be reuse
         --with-pcre-regex \
         --with-gd \
         --with-imap-ssl \
-        --with-freetype-dir=/usr \
-        --with-jpeg-dir=/usr \
-        --with-png-dir=/usr \
+        --with-freetype-dir \
+        --with-jpeg-dir \
+        --with-png-dir \
         --with-ldap \
+        --enable-intl \
         --with-pear \
         --with-fpm-user=www-data \
         --with-fpm-group=www-data \
-        --with-config-file-path=/etc/php/ \
-        --with-config-file-scan-dir=/etc/php/conf.d/ \
+        --with-config-file-scan-dir= \
         (change the location something else depending on your version of linux)
         --with-libdir=lib/x86_64-linux-gnu 
 
@@ -846,13 +854,41 @@ Lastly we copy the provided init.d scripts and php.ini
                      titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
       <![CDATA[
-$ sudo mkdir -p /etc/php
-$ sudo cp php.ini-production /etc/php/php.ini
+$ sudo cp php.ini-production /usr/local/lib/php.ini
+$ sudo ln -s /usr/local/lib/php.ini /etc (Optional)
  
 $ sudo cp sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm
 $ sudo chmod +x /etc/init.d/php-fpm
 $ sudo update-rc.d php-fpm defaults
     ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+Apache's configuration file will now require some changes in order to correctly handle PHP files. Ubuntu's Apache configuration is a little strange and could be a whole discussion by itself. Essentially, you need to add the following lines:    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+LoadModule php5_module  modules/libphp5.so
+
+AddHandler php7-script .php
+AddType application/x-http-php  .php
+
+DirectoryIndex  index.php  index.html
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:2em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+The first two can be stuck at the end of /etc/apache2/apache2.conf and the DirectoryIndex by checking <b>mods-available/dir.conf</b> and ensuring that index.php is in the list. Strictly speaking, you would create a file in mods-available and enable it with the a2enmod command but this is left as an exercise!
+<br /><br />
+Once this has been completed, you just need to restart Apache...   ]]>
     </c:sourceContent>
     <c:sourceContent type="html" title="" id="sourceContent1"
                      style="margin-top:2em;"
