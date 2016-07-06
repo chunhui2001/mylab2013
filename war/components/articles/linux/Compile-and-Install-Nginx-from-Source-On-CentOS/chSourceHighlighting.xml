@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<div>
+nginx pronounced as "engine x" is an HTTP and reverse proxy server, as well as a mail proxy server.
+</div><div style="margin-top:.5em;">
+nginx is an opensource web server which uses epoll mechanism to serve clients as opposed to Apache which uses a thread based model which delegates the requests to an instance in the thread pool. nginx is being used more over Apache because of its speed. nginx has over 13% market share and increasing continuously.</div>
+]]>
+  </c:abstract>
+
+
+
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title>Installation Dependencies</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+ 
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+# yum install -y httpd-devel pcre perl pcre-devel zlib zlib-devel GeoIP GeoIP-devel
+# yum install -y gc gcc gcc-c++ pcre-devel zlib-devel make wget openssl-devel libxml2-devel 
+# yum install -y libxslt-devel gd-devel perl-ExtUtils-Embed GeoIP-devel 
+# yum install -y gperftools gperftools-devel libatomic_ops-devel perl-devel
+# yum install -y readline-devel ncurses-devel openssl-devel
+    ]]>
+    </c:sourceContent>
+
+ 
+    <c:sourceContent type="html" title="Install GeoIP" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ wget http://geolite.maxmind.com/download/geoip/api/c/GeoIP.tar.gz <br />
+$ tar -zxvf GeoIP.tar.gz && cd GeoIP-* <br />
+$ ./configure && make <br />
+$ sudo make install  <br /> 
+$ echo '/usr/local/lib' > /etc/ld.so.conf.d/geoip.conf <br />
+$ sudo ldconfig <br />
+$ ldconfig -v | grep GeoIP
+    ]]>
+    </c:sourceContent>
+
+ 
+    <c:sourceContent type="html" title="Install Lua" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+# wget http://www.lua.org/ftp/lua-5.2.0.tar.gz <br />
+# tar zxf lua-5.2.0.tar.gz  <br />
+# cd lua-5.2.0 <br />
+# vim Makefile <br />
+  修改： <br />
+  INSTALL_TOP= /usr/local/lua <br />
+# make linux <br />
+# make install <br /> <br />
+
+# wget "http://luajit.org/download/LuaJIT-2.0.1.tar.gz" <br />
+# tar -xzvf LuaJIT-2.0.1.tar.gz <br />
+# cd LuaJIT-2.0.1 <br />
+# make <br />
+# sudo make install <br /> <br />
+
+# ln -s /usr/local/lib/libluajit-5.1.so.2 /lib64/libluajit-5.1.so.2
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title>Why compile from source</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+ 
+    <c:sourceContent type="" title="Config and build" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+# Configure and build nginx
+$ cd nginx-1.0.15
+$ export LUAJIT_LIB=/usr/local/lib
+$ export LUAJIT_INC=/usr/local/include/luajit-2.0
+
+./configure \
+        --user=nginx \
+        --group=nginx \
+        --prefix=/usr/local/nginx \
+        --with-http_gzip_static_module \
+        --with-http_ssl_module \
+        --with-http_stub_status_module \
+        --with-http_geoip_module \
+        --with-ipv6 \
+        --with-debug \
+        --with-pcre \
+        --with-file-aio \
+        --with-http_realip_module \
+        --with-http_addition_module \
+        --with-http_sub_module \
+        --with-http_flv_module \
+        --with-http_dav_module \
+        --with-http_perl_module \
+        --with-mail \
+        --with-mail_ssl_module \
+        --with-select_module \
+        --with-poll_module \
+        --with-file-aio \
+        --with-http_xslt_module \
+        --with-http_image_filter_module \
+        --with-http_mp4_module \
+        --with-http_gunzip_module \
+        --with-http_gzip_static_module \
+        --with-http_auth_request_module \
+        --with-http_random_index_module \
+        --with-http_secure_link_module \
+        --with-http_degradation_module \
+        --with-cpp_test_module \
+        --with-cpu-opt=CPU \
+        --with-pcre-jit \
+        --with-md5-asm \
+        --with-sha1-asm  \
+        --with-zlib-asm=CPU \
+        --with-ld-opt="-Wl,-E" \
+        --with-libatomic \
+        --with-zlib=../zlib-1.2.8 \
+        --with-openssl=../openssl-1.0.2h \
+        --add-module=../ngx_devel_kit-0.3.0 \
+        --add-module=../lua-nginx-module-0.10.5 \
+        --with-pcre=../pcre-8.30 \
+        --add-module=../ngx_cache_purge \
+        --add-module=./modules/nginx-ey-balancer
+
+
+
+# Build and install
+$ make && make install
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+</c:component>
