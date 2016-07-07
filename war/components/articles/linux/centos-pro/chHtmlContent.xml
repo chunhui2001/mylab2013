@@ -11,6 +11,12 @@
         <b style="color:rgb(211, 98, 49);"># yum groupinstall "Development Tools"</b>
         </div>
         
+        
+        <h2 style="color:green;font-size:1.5em;">&diams; install lsb_release</h2>
+        <div style="margin-bottom:2.5em;">
+        <b style="color:rgb(211, 98, 49);"># sudo yum install redhat-lsb-core</b>
+        </div>
+
         <h2 style="color:green;font-size:1.5em;">&diams; JDK Download</h2>
         <div style="margin-bottom:2.5em;">
         <b># wget   <br />
@@ -129,7 +135,8 @@ service sshd reload</b></span>
   <h2 style="color:green;font-size:1.5em;">&diams; MySQL Install</h2>
   <div style="margin-bottom:2.5em;">
     <span><b style="color:rgb(211, 98, 49);"># yum -y install mysql-server </b> (The MySQL server and related files)</span><br />
-    <span><b style="color:rgb(211, 98, 49);"># yum -y install mysql</b> (MySQL client programs and shared libraries)</span>
+    <span><b style="color:rgb(211, 98, 49);"># yum -y install mysql</b> (MySQL client programs and shared libraries)</span><br />
+    <span><b style="color:rgb(211, 98, 49);"># yum -y install mysql</b> # service mysqld status</span>
   </div>
   
   <h2 style="color:green;font-size:1.5em;">&diams; MySQL Configuration files</h2>
@@ -174,6 +181,34 @@ service sshd reload</b></span>
     <br />
     <span>Save and close the file. To <b>restart the firewall on CentOS/RHEL</b>, enter:<br />
     <b style="color:rgb(211, 98, 49);"># service iptables restart</b> </span>
+    <br />
+    <br />
+    <span>OR:<br />
+    <b style="color:rgb(211, 98, 49);"># Use this command to find your active zone(s):<br />
+
+# sudo firewall-cmd --get-active-zones<br />
+It will say either public, dmz, or something else. You should only apply to the zones required.<br />
+
+In the case of dmz try:<br />
+
+# sudo firewall-cmd --zone=dmz --add-port=2888/tcp --permanent<br />
+Otherwise, substitute dmz for your zone, for example, if your zone is public:<br />
+
+# sudo firewall-cmd --zone=public --add-port=2888/tcp --permanent<br />
+Then remember to reload the firewall for changes to take effect.<br />
+
+# sudo firewall-cmd --reload
+And check whether the port was added to ipatables rules:.<br />
+
+# sudo iptables-save | grep 80</b> </span>
+
+
+    <br />
+    <br />
+    <span>OR:<br />
+    <b style="color:rgb(211, 98, 49);"># sudo iptables -I INPUT -p tcp --dport 3030 -j ACCEPT</b> </span>
+
+
     </div>
     
     <h2 style="color:green;font-size:1.5em;">&diams; View mysql server logs</h2>
@@ -309,6 +344,7 @@ service sshd reload</b></span>
 <div style="margin-bottom:2.5em;">
 <span>
 <b style="color:rgb(211, 98, 49);">
+# adduser --system --no-create-home --user-group -s /sbin/nologin nginx <br />
 # yum -y install nginx  <br />
 # /etc/init.d/nginx start </b></span>
 <br />
@@ -323,7 +359,8 @@ service sshd reload</b></span>
 <div style="margin-bottom:2.5em;">
 <span>
 <b style="color:rgb(211, 98, 49);">
-# netstat -ntl | grep :80</b></span>
+# netstat -ntl | grep :80</b><br />
+<b style="color:rgb(211, 98, 49);"># telnet 127.0.0.1 80</b></span>
 <br />
 <br />
 <span>
