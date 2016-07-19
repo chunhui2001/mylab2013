@@ -310,15 +310,18 @@
 
         <span>
           <b>
-            	export JAVA_HOME=/usr/lib/jvm/java-8-oracle (run: sudo update-alternatives --config java to get JAVA_HOME) <br />
-            	export HADOOP_HOME=/usr/local/hadoop <br /><br />
-
-		export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop/ <br />
-		export HADOOP_MAPRED_HOME=$HADOOP_HOME <br />
-		export HADOOP_COMMON_HOME=$HADOOP_HOME <br />
-		export HADOOP_HDFS_HOME=$HADOOP_HOME <br />
-		export HADOOP_YARN_HOME=$HADOOP_HOME <br />
-		export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_INSTALL/sbin <br />
+export JAVA_HOME=/usr/local/jdk1.8.0_91 <br />
+export HADOOP_HOME=/usr/local/hadoop <br />
+export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop <br />
+export HADOOP_MAPRED_HOME=$HADOOP_HOME <br />
+export HADOOP_COMMON_HOME=$HADOOP_HOME <br />
+export HADOOP_HDFS_HOME=$HADOOP_HOME <br />
+export YARN_HOME=$HADOOP_HOME <br />
+export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native <br />
+export JAVA_LIBRARY_PATH=${HADOOP_HOME}/lib/native <br />
+export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib" <br />
+ <br />
+export PATH=$PATH:$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin <br />
           </b>
         </span>
         <br />
@@ -381,6 +384,8 @@
         <br />
         <br />
         
+
+         (COMMANT OUT)<br />
         Also, change this line:
         <br />
         <br />
@@ -412,7 +417,8 @@
         <br />
 
         <b>
-          export HADOOP_CONF_LIB_NATIVE_DIR=${HADOOP_HOME:-"/lib/native"} <br />
+           (COMMANT OUT)<br />
+          export HADOOP_COMMON_LIB_NATIVE_DIR=${HADOOP_HOME:-"/lib/native"} <br />
           export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib"
         </b>
       </p>
@@ -426,11 +432,11 @@
         &lt;configuration&gt;<br />
         &nbsp;&nbsp;&nbsp;&nbsp;  &lt;property&gt;<br />
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    &lt;name&gt;fs.default.name&lt;/name&gt;<br />
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    &lt;value&gt;hdfs://localhost:9000&lt;/value&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    &lt;value&gt;hdfs://localhost:54310&lt;/value&gt;<br />
         &nbsp;&nbsp;&nbsp;&nbsp;  &lt;/property&gt;<br />
         &nbsp;&nbsp;&nbsp;&nbsp;  &lt;property&gt;<br />
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    &lt;name&gt;hadoop.tmp.dir&lt;/name&gt;<br />
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    &lt;value&gt;/usr/local/hadoop/data&lt;/value&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    &lt;value&gt;/usr/local/hadoop/tmp&lt;/value&gt;<br />
         &nbsp;&nbsp;&nbsp;&nbsp;  &lt;/property&gt;<br />
         &lt;/configuration&gt;
       </p>
@@ -443,8 +449,8 @@
         &lt;?xml-stylesheet type="text/xsl" href="configuration.xsl"?&gt; <br />
         &lt;configuration&gt;<br />
         &nbsp;&nbsp;&nbsp;&nbsp;    &lt;property&gt;<br />
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;name&gt;mapreduce.framework.name&lt;/name&gt;<br />
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;value&gt;yarn&lt;/value&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;name&gt;mapred.job.tracker&lt;/name&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;value&gt;localhost:54311&lt;/value&gt;<br />
         &nbsp;&nbsp;&nbsp;&nbsp;    &lt;/property&gt;<br />
         &lt;/configuration&gt;
       </p>
@@ -460,11 +466,21 @@
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;name&gt;dfs.replication&lt;/name&gt; <br />
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;value&gt;3&lt;/value&gt; <br />
         &nbsp;&nbsp;&nbsp;&nbsp;    &lt;/property&gt; <br />
+
+        &nbsp;&nbsp;&nbsp;&nbsp;    &lt;property&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;name&gt;dfs.namenode.name.dir&lt;/name&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;value&gt;file:/usr/local/hadoop/data/hdfs/namenode&lt;/value&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;    &lt;/property&gt; <br />
+        
+        &nbsp;&nbsp;&nbsp;&nbsp;    &lt;property&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;name&gt;dfs.datanode.data.dir&lt;/name&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        &lt;value&gt;file:/usr/local/hadoop/data/hdfs/datanode&lt;/value&gt; <br />
+        &nbsp;&nbsp;&nbsp;&nbsp;    &lt;/property&gt; <br />
         &lt;/configuration&gt;
       </p>
       
       <h6 style="margin-bottom:1em;font-size:1em;margin-top:2.5em;color:rgb(209, 81, 9);">
-        <b>6.) /usr/local/hadoop/etc/hadoop/yarn-site.xml</b>
+        <b>6.) /usr/local/hadoop/etc/hadoop/yarn-site.xml (COMMANT OUT)</b>
       </h6>
       <p>
         &lt;?xml version="1.0"?&gt; <br />
@@ -561,6 +577,26 @@
         <b>$ cd $HADOOP_INSTALL</b> <br />
 	<b>$ hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.2.0.jar pi 2 5</b>
       </p>
+
+
+      
+      
+      <h4 style="margin-bottom:1em;font-size:1.5em;margin-top:2.5em;color:green;">HDFS 文件操作</h4>
+      <p>
+        <b>$ hadoop fs -cmd <args></b> <br />
+        <b>$ hadoop fs -ls</b> <br />
+        <b>$ hadoop fs -mkdir -p /user/keesh          创建目录 (将自动创建父级目录)</b> <br />
+<b>$ hadoop fs -lsr /          查看所有文件和子目录</b> <br />
+<b>$ hadoop fs -put example.txt .          将 example.txt 复制到 Hadoop 的默认工作目录 (. 代表默认目录)</b> <br />
+<b>$ hadoop fs -put example.txt /user/keesh          等价于上面的命令</b> <br />
+<b>$ hadoop fs -get example.txt .          将 example.txt 文件从 Hadoop 中复制到本地当前目录</b> <br />
+<b>$ hadoop fs -cat example.txt          显示 example.txt 文件的内容</b> <br />
+<b>$ hadoop fs -rm example.txt          删除文件或目录</b>
+      </p>
+
+
+      
+      
 
 
       
