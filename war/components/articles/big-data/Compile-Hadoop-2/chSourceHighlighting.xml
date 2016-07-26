@@ -1,0 +1,529 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+In order to build Apache Hadoop from Source, first step is install all required softwares and then checkout latest Apache Hadoop code from trunk and build it.
+]]>
+  </c:abstract>
+
+
+
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+ 
+    <c:sourceContent type="" title="Verify prerequisites" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+Unix System
+JDK 1.6+
+Maven 3.0 or later
+ProtocolBuffer 2.5.0
+CMake 2.6 or newer (if compiling native code), must be 3.0 or newer on Mac
+Zlib devel (if compiling native code)
+openssl devel ( if compiling native hadoop-pipes )
+Internet connection for first build (to fetch all Maven and Hadoop dependencies)
+    ]]>
+    </c:sourceContent>
+ 
+    <c:sourceContent type="" title="Maven build goals" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+Build distribution: mvn package [-Pdist][-Pdocs][-Psrc][-Pnative][-Dtar]
+Snappy build options: -Drequire.snappy
+OpenSSL build options: -Drequire.openssl
+Tests options: -DskipTests
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title>For CentOS</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+ 
+    <c:sourceContent type="" title="Install Maven" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+# cd /home/maidinh/maven
+# wget http://mirror.apache-kr.org/maven/maven-3/3.2.5/binaries/apache-maven-3.2.5-bin.tar.gz
+# tar xvf apache-maven-3.2.5-bin.tar.gz
+    ]]>
+    </c:sourceContent>
+ 
+    <c:sourceContent type="" title="Update .bashrc" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+export JAVA_HOME=/usr/java/latest
+unset M2
+unset M2_HOME
+export PATH=/home/maidinh/maven/apache-maven-3.2.5/bin:$PATH
+# source ~/.bashrc
+# mvn -version
+    ]]>
+    </c:sourceContent>
+ 
+    <c:sourceContent type="" title="Install ProtocolBuffer 2.5.0" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+# wget https://protobuf.googlecode.com/files/protobuf-2.5.0.tar.gz
+# tar xvf protobuf-2.5.0.tar.gz
+# cd protobuf-2.5.0
+# ./configure
+# make
+# sudo make install
+# protoc --version
+    ]]>
+    </c:sourceContent>
+ 
+    <c:sourceContent type="" title="Install cmake, zlib, openssl, snappy" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+# sudo yum install cmake zlib-devel openssl-devel snappy-devel
+    ]]>
+    </c:sourceContent>
+ 
+    <c:sourceContent type="" title="Compile Hadoop" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+# tar xvf hadoop-2.6.0-src.tar.gz
+# cd hadoop-2.6.0-src
+# mvn package -Pdist,native -DskipTests -Dtar -Dmaven.javadoc.skip=true \
+      -Drequire.snappy -Drequire.openssl
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+
+
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title>For Ubuntu</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+ 
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+# sudo apt-get install maven libssl-dev build-essential pkgconf cmake libprotobuf8 protobuf-compiler
+# tar xvf hadoop-2.6.0-src.tar.gz
+# cd hadoop-2.6.0-src
+# mvn package -Pdist,native -DskipTests -Dtar -Dmaven.javadoc.skip=true -Drequire.snappy -Drequire.openssl
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+
+
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title>Common errors</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+ 
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+<div>
+<p>Error message: “maven-javadoc-plugin”</p>
+
+<p style="background-color:#e4e4e4;padding:.5em;margin-bottom:2em;margin-top:.5em;">-Dmaven.javadoc.skip=true</p>
+
+<p style="margin-bottom:1em;">Other packages: make, gcc-c++, openssh, libtool, autoconf, automake, xz-devel</p>
+<p>Error message:</p>
+
+<p style="background-color:#e4e4e4;padding:.5em;margin-top:.5em;">
+[ERROR] around Ant part … … @ 10: 123 in /opt/soft/hadoop-2.7.1-src/hadoop-hdfs-project/hadoop-hdfs-httpfs/target/antrun/build-main.xml<br />
+[ERROR] -> [Help 1]
+</p>
+
+<p style="margin-top:2em;">The main reason is: ../ hadoop-2.7.1-src / hadoop-hdfs-project / hadoop-hdfs-httpfs / downloads / apache-tomcat-6.0.41.tar.gz did not download the file complete, you can manually download release With this, you can delete the download again.</p>
+</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title>(GFS) Creating a highly available file server cluster for a web farm using Ubuntu 12.04 LTS</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+ 
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+<a href="http://blog.bobbyallen.me/2013/01/26/creating-a-highly-available-file-server-cluster-for-a-web-farm-using-ubuntu-12-04-lts/">http://blog.bobbyallen.me/2013/01/26/creating-a-highly-available-file-server-cluster-for-a-web-farm-using-ubuntu-12-04-lts/</a>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title>Configuring Mountable HDFS</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<a href="http://www.cloudera.com/documentation/enterprise/5-6-x/topics/cdh_ig_hdfs_mountable.html">
+  http://www.cloudera.com/documentation/enterprise/5-6-x/topics/cdh_ig_hdfs_mountable.html
+</a>
+<br /><br />
+CDH 5 includes a FUSE (Filesystem in Userspace) interface into HDFS. The hadoop-hdfs-fuse package enables you to use your HDFS cluster as if it were a traditional filesystem on Linux. Proceed as follows.
+        ]]></c:desc1>
+    </c:desc>
+ 
+    <c:sourceContent type="" title="Add CDH5 Repository:" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ wget http://archive.cloudera.com/cdh5/one-click-install/trusty/amd64/cdh5-repository_1.0_all.deb
+$ sudo dpkg -i cdh5-repository_1.0_all.deb.
+
+$ sudo apt-get update
+$ sudo apt-get install hadoop-hdfs-fuse
+    ]]>
+    </c:sourceContent>
+ 
+    <c:sourceContent type="html" title="Before you start:" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+You must have a working HDFS cluster and know the hostname and port that your NameNode exposes.
+    ]]>
+    </c:sourceContent>
+ 
+    <c:sourceContent type="" title="To install hadoop-hdfs-fuses On Red Hat-compatible systems:" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ sudo yum install hadoop-hdfs-fuse (CentOS)
+OR
+$ sudo apt-get install hadoop-hdfs-fuse (Ubuntu)
+OR
+$ sudo zypper install hadoop-hdfs-fuse (SLES)
+    ]]>
+    </c:sourceContent>
+ 
+    <c:sourceContent type="" title="To set up and test your mount point in a non-HA installation:" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ mkdir -p <mount_point>
+$ hadoop-fuse-dfs dfs://<name_node_hostname>:<namenode_port> <mount_point>
+    ]]>
+    </c:sourceContent>
+ 
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+where namenode_port is the NameNode's RPC port, dfs.namenode.servicerpc-address.
+    ]]>
+    </c:sourceContent>
+ 
+    <c:sourceContent type="" title="To set up and test your mount point in an HA installation:" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ mkdir -p <mount_point>
+$ hadoop-fuse-dfs dfs://<nameservice_id> <mount_point>
+    ]]>
+    </c:sourceContent>
+ 
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:1em;">Where <b>nameservice_id</b> is the value of <b>fs.defaultFS</b>. In this case the port defined for <b>dfs.namenode.rpc-address.[nameservice ID].[name node ID]</b> is used automatically. See <a href="http://www.cloudera.com/documentation/enterprise/5-6-x/topics/cdh_hag_hdfs_ha_enabling.html#topic_2_3">Enabling HDFS HA</a> for more information about these properties.</div>
+
+<div>You can now run operations as if they are on your mount point. Press Ctrl+C to end the fuse-dfs program, and umount the partition if it is still mounted.</div>
+    ]]>
+    </c:sourceContent>
+
+
+ 
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+<b>Note:</b><br />
+To find its configuration directory, hadoop-fuse-dfs uses the HADOOP_CONF_DIR configured at the time the mount command is invoked.
+    ]]>
+    </c:sourceContent>
+
+
+ 
+    <c:sourceContent type="" title="To clean up your test:" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ umount <mount_point>
+    ]]>
+    </c:sourceContent>
+
+ 
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+You can now add a permanent HDFS mount which persists through reboots.
+    ]]>
+    </c:sourceContent>
+
+    
+ 
+    <c:sourceContent type="html" title="To add a system mount:" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+Open /etc/fstab and add lines to the bottom similar to these:
+    ]]>
+    </c:sourceContent>
+ 
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="margin-top:.3em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+hadoop-fuse-dfs#dfs://<name_node_hostname>:<namenode_port> <mount_point> fuse allow_other,usetrash,rw 2 0
+    ]]>
+    </c:sourceContent>
+
+    
+ 
+    <c:sourceContent type="html" title="To add a system mount:" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+For example:
+    ]]>
+    </c:sourceContent>
+ 
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="margin-top:.3em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+hadoop-fuse-dfs#dfs://localhost:8020 /mnt/hdfs fuse allow_other,usetrash,rw 2 0
+    ]]>
+    </c:sourceContent>
+ 
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+<b>Note:</b><br />
+In an HA deployment, use the HDFS nameservice instead of the NameNode URI; that is, use the value of dfs.nameservices in hdfs-site.xml.
+    ]]>
+    </c:sourceContent>
+
+    
+ 
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+Test to make sure everything is working properly:
+    ]]>
+    </c:sourceContent>
+ 
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="margin-top:.3em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ mount <mount_point>
+    ]]>
+    </c:sourceContent>
+ 
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+Your system is now configured to allow you to use the ls command and use that mount point as if it were a normal system disk.
+<br /><br />
+For more information, see the help for hadoop-fuse-dfs:
+    ]]>
+    </c:sourceContent>
+ 
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="margin-top:.3em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ hadoop-fuse-dfs --help
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title>Optimizing Mountable HDFS</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+ 
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+Cloudera recommends that you use the -obig_writes option on kernels later than 2.6.26. This option allows for better performance of writes.
+<br /><br />
+By default, the CDH 5 package installation creates the /etc/default/hadoop-fuse file with a maximum heap size of 128 MB. You might need to change the JVM minimum and maximum heap size for better performance. For example:
+    ]]>
+    </c:sourceContent>
+
+ 
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="margin-top:.3em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+export LIBHDFS_OPTS="-Xms64m -Xmx256m"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+Be careful not to set the minimum to a higher value than the maximum.
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+</c:component>
