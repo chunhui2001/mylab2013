@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+
+]]>
+  </c:abstract>
+
+
+
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+ 
+ 
+    <c:sourceContent type="" title="package.json" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+
+{
+  "name": "node-socket-chat",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.14.0",
+    "serve-favicon": "^2.3.0",
+    "socket.io": "^1.4.8"
+  }
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="server.js" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+
+var express   = require('express');
+var http    = require('http');
+var socketIO  = require('socket.io');
+var path    = require('path');
+var favicon   = require('serve-favicon');
+
+
+var app   = express();
+var server  = http.createServer(app);
+var io    = socketIO.listen(server);
+
+app.use(favicon(__dirname + '/public/favicon.ico'));
+
+
+var _USERS_LIST = {};
+ 
+function startServer() {
+  server.listen(3000, function() {
+      console.log('Express server listening on port ' + 3000);
+  });
+}
+ 
+if (require.main == module) {
+    startServer();
+} else {
+    module.exports = startServer;
+}
+
+
+app.get('/', function (req, res) {
+  return res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+
+io.sockets.on('connection', function(socket) {
+
+  socket.on('send message', function(data) {
+    
+    console.log(data, 'data');
+
+    var msg   = data.trim();
+    console.log(data, 'data3');
+
+    if (msg.substring(0, 3) != '/w ') {
+      io.sockets.emit('new message', {msg: data, username: socket.username});
+      // socket.broadcast.emit('new message', data);
+      return;
+    }
+
+    var msgTmp  = msg.replace(/\s+/, ' ');
+    var toUser  = msgTmp.split(' ') [1];
+
+    if (!_USERS_LIST[toUser]) {
+      socket.emit('new message', {msg: 'wrong user name!' + toUser, username: 'SYS'});
+      return;
+    }
+
+
+    var idx = data.indexOf(toUser + ' ') + (toUser + ' ').length;
+    _USERS_LIST[toUser].emit('new message', {
+            msg: data.substring(idx).replace(new RegExp(/ /g),'&nbsp;'), 
+            username: socket.username + ' to ' + toUser
+          });
+  });
+
+
+  socket.on('set username', function(data, callback) {
+
+    if (_USERS_LIST[data]) {
+      return callback(false);
+    }
+
+    // _USERS_LIST.push(socket.username);
+    socket.username   = data;
+    _USERS_LIST[data]   = socket;
+
+    io.sockets.emit('user joined', Object.keys(_USERS_LIST));
+    // socket.broadcast.emit('user joined', data);
+
+    callback(true);
+  });
+  
+  socket.on('disconnect', function(data) {
+
+    if (!socket.username) return;
+
+    if (_USERS_LIST[data]) {
+      delete _USERS_LIST[data];
+    }
+
+    io.sockets.emit('user joined' , Object.keys(_USERS_LIST));
+  });
+
+});
+
+    ]]>
+    </c:sourceContent>
+ 
+ 
+    <c:sourceContent type="" title="index.html" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+<!DOCTYPE html>
+<html lang="en" style="height: 100%;" id="ng-app" ng-app="app">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Chat with socket.io and node.js</title>
+
+    <style type="text/css">
+      #chat {
+        height: 260px;
+        /*border-radius: 10px;*/
+        background-color: whitesmoke;
+        max-width: 600px;
+        margin-bottom: .5em;
+        padding: .5em;
+        border: 1px solid #909090;
+        overflow-y:scroll;
+      }
+      #nickWrap {
+        margin-bottom: .3em;
+      }
+      p {
+        margin:0;
+      }
+      #nickError {
+        color: red;
+        font-style: oblique;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="nickWrap" style="margin-bottom:1em;">
+    <p style="padding: .2em 0;">Enter a user name:</p>
+    <form id="setNick">
+      <input type="text" size="35" id="nickname" />
+      <input type="submit" />
+      <span id="nickError" style="font-size:1em;margin:.2em;">&nbsp;</span>
+    </form>     
+    </div>
+ 
+  <div id="contentWrap">
+    <div id="chatWrap">
+        <div id="chat"></div>
+        <form id="send-message">
+          <input type="text" id="message" size="35" />
+          <input type="submit" />
+        </form>
+      </div>
+
+      <h3>Users List:</h3>
+      <div id="users"></div>
+    </div>
+
+    <script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+    <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+
+    <script type="text/javascript">
+      jQuery(function ($) {
+        var socket = io.connect();
+
+        var $nickForm   = $("#setNick");
+        var $nickError  = $("#nickError");
+        var $nickBox  = $("#nickname");
+        var $usersBox   = $("#users");
+
+        var $messageForm  = $("#send-message");
+        var $messageBox   = $("#message");
+        var $chatBox    = $("#chat");
+
+        $nickForm.submit(function(e) {
+          e.preventDefault();
+          $nickError.html("");
+
+          var username  = $.trim($nickBox.val());
+
+          if (username.length == 0) {
+            $nickError.html("请输入用户名！");
+            return;
+          }
+
+          socket.emit('set username', username, function(data) {
+            if (!data) {
+              $nickError.html("Invalid user name!");
+              return;
+            }
+          });
+
+          $nickBox.val('');
+        });
+
+        $messageForm.submit(function(e) {
+          e.preventDefault();
+          if ($messageBox.val().length == 0) return;
+
+          socket.emit('send message', $messageBox.val());
+          $messageBox.val('');
+
+          $("#chat").animate({ scrollTop: $('#chat')[0].scrollHeight}, 10);
+        });
+
+        socket.on('new message', function(data) {
+          $chatBox.append( "<b>" + data.username + "</b>" + ":" + data.msg + "<br />");
+        });
+
+        socket.on('user joined', function(data) {
+          $usersBox.html('');
+          $usersBox.append(data + "<br />");
+        });
+
+
+      });
+    </script>
+  </body>
+  </html>
+
+    ]]>
+    </c:sourceContent>
+ 
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+</c:component>
