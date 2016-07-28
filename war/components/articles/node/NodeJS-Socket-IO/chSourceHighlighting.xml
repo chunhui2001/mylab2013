@@ -83,7 +83,7 @@ app.get('/', function (req, res) {
 
 io.sockets.on('connection', function(socket) {
 
-  socket.on('send message', function(data) {
+  socket.on('send message', function(data, callback) {
     
     console.log(data, 'data');
 
@@ -100,8 +100,8 @@ io.sockets.on('connection', function(socket) {
     var toUser  = msgTmp.split(' ') [1];
 
     if (!_USERS_LIST[toUser]) {
-      socket.emit('new message', {msg: 'wrong user name!' + toUser, username: 'SYS'});
-      return;
+      // socket.emit('new message', {msg: 'wrong user name!' + toUser, username: 'SYS'});
+      return callback('Wrong user name!');
     }
 
 
@@ -247,7 +247,10 @@ io.sockets.on('connection', function(socket) {
           e.preventDefault();
           if ($messageBox.val().length == 0) return;
 
-          socket.emit('send message', $messageBox.val());
+          socket.emit('send message', $messageBox.val(), function(data) {
+            // TODO
+          });
+
           $messageBox.val('');
 
           $("#chat").animate({ scrollTop: $('#chat')[0].scrollHeight}, 10);
