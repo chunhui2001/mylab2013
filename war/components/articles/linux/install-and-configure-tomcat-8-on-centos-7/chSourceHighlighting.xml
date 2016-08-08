@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<div style="margin-bottom:.3em;">
+Apache Tomcat is an open-source web server and servlet container that is used to serve Java applications.
+</div><div style="margin-bottom:.3em;">
+It is developed by the Apache Software Foundation, written in Java and released under Apache License 2.0.
+</div><div style="margin-bottom:1em;">
+It is a top level project of the Apache foundation. Apache Tomcat currently implements Java Servlet, JavaServer Pages, Java Expression Language and Java WebSocket.</div>
+<div style="margin-bottom:.3em;">
+  Apache tomcat 8 has upgraded some features. Some of them are listed below:
+</div>
+
+<ul style="margin-bottom:1em;list-style-type: decimal;margin-left: 2em;">
+  <li>Tomcat 8 requires JAVA 7 or Higher to work.</li>
+  <li>Tomcat 8 supports Java Servlet 3.1</li>
+  <li>Tomcat 8 supports JavaServer Pages 2.3</li>
+  <li>Tomcat 8 supports Java Unified Expression Language 3.0</li>
+  <li>Tomcat 8 supports Java WebSocket 1.0</li>
+</ul>
+<div>
+In this tutorial, we'll learn how to install and configure latest release of Apache Tomcat 8 on CentOS 7 server.</div>
+]]>
+  </c:abstract>
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title>Requirements</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+   A server running CentOS v. 7. A static IP Address for your server. A non-root user account with sudo privilege set up on your server.
+    ]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;margin-top:1em;">
+    <c:title>Create Tomcat User</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+Before proceeding with the Tomcat installation. First create a separate system user and group which will run the Tomcat server:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="margin-top:.5em;"
+                     titleStyle="margin-top:0em; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+# First, create a new tomcat group:
+$ sudo groupadd tomcat
+
+# Then create a new tomcat user with a home directory of /opt/tomcat and group tomcat by running the following command:
+$ sudo useradd -M -s /bin/nologin -g tomcat -d /opt/tomcat tomcat
+    ]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;margin-top:1em;">
+    <c:title>Download and install</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ sudo wget http://mirror.fibergrid.in/apache/tomcat/tomcat-8/v8.0.33/bin/apache-tomcat-8.0.33.tar.gz
+$ tar -xvf apache-tomcat-x.x.x.tar.gz && sudo mv *tomcat-* /usr/local/tomcat
+$ sudo chown -R tomcat:tomcat /opt/tomcat
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Create a systemd Service File" id="sourceContent1" style="margin-top:.5em;"
+                     titleStyle="margin-top:0em; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ sudo vi /etc/systemd/system/tomcat8.service
+
+[Unit]
+Description=Apache Tomcat8
+After=syslog.target network.target
+
+[Service]
+
+Type=forking
+User=tomcat
+Group=tomcat
+
+Environment=JAVA_HOME=/usr/lib/jvm/jre
+Environment=CATALINA_PID=/opt/tomcat/temp/tomcat.pid
+Environment=CATALINA_HOME=/opt/tomcat
+Environment=CATALINA_BASE=/opt/tomcat
+Environment='CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC'
+Environment='JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom'
+
+ExecStart=/opt/tomcat/bin/startup.sh
+ExecStop=/bin/kill -15 $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+
+$ sudo systemctl daemon-reload sudo systemctl start tomcat8 
+$ sudo systemctl enable tomcat8
+    ]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;margin-top:1em;">
+    <c:title>Test Apache Tomcat</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.5em;">By default tomcat runs on port 8080, So you will need to open port 8080 in your firewall to access tomcat from network.</div>
+<div style="margin-bottom:0em;">
+You can allow port 8080 through firewall by running the following command:</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="margin-top:.2em;"
+                     titleStyle="margin-top:0em; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ sudo firewall-cmd --permanent --add-port=8080/tcp sudo firewall-cmd --reload
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="margin-top:1em;"
+                     titleStyle="margin-top:0em; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+After that, you can access apache tomcat by typing URL http://server-ip-address:8080. You should see the default Tomcat splash page as below:
+    ]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;margin-top:1em;">
+    <c:title>Update Tomcat Port</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.5em;">Tomcat uses, by default, port number 8080 on your system. It is very important to rememeber that you would have a port number conflict if there is another service running on the same port on your system. So, to get around this you will need to change the tomcat port from 8080 to something else.
+
+</div>
+<div style="margin-bottom:.5em;">
+You can change the port number for your tomcat server by changing in the configuration file. 
+You can do this by editing server.xml file located under /opt/tomcat/conf directory.</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="margin-top:.2em;"
+                     titleStyle="margin-top:0em; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ sudo vi /opt/tomcat/conf/server.xml
+
+# Change port number from 8080 to 8081 as below:
+<!-- A "Connector" represents an endpoint by which requests are received
+     and responses are returned. Documentation at :
+     Java HTTP Connector: /docs/config/http.html (blocking & non-blocking)
+     Java AJP  Connector: /docs/config/ajp.html
+     APR (HTTP/AJP) Connector: /docs/apr.html
+     Define a non-SSL/TLS HTTP/1.1 Connector on port 8081
+-->
+<Connector port="8081" protocol="HTTP/1.1"
+           connectionTimeout="20000"
+           redirectPort="8443" />
+<!-- A "Connector" using the shared thread pool-->
+
+# Save and exit the file and restart Tomcat8 service.
+$ :wq
+
+$ sudo systemctl restart tomcat8.service
+
+# Next, open port 8081 in firewall to access tomcat from network.
+$ sudo firewall-cmd --permanent --add-port=8081/tcp sudo firewall-cmd --reload
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;margin-top:1em;">
+    <c:title>Configure Apache Tomcat</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.5em;">By default, you can not access admin and other sections like Server Status, Manager App and Host Manager.</div>
+<div style="margin-bottom:.5em;">To access all these sections, you will need to add user accounts for admins and managers. You can do this by editing tomcat-users.xml file:</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="margin-top:.2em;"
+                     titleStyle="margin-top:0em; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ sudo vi /opt/tomcat/conf/tomcat-users.xml
+
+# Find the section </tomcat-users> and add the following lines before that:
+> <user username="admin" password="password" roles="manager-gui,admin-gui"/>
+
+# Save and close the file, restart tomcat service to take new changes into effect.
+$ sudo systemctl restart tomcat8.service
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="margin-top:1em;"
+                     titleStyle="margin-top:0em; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.5em;">Finally, Tomcat is setup and running. You can access the admin and other sections by typing URL http://server-ip-address:8081 in your web browser:</div>
+<div>After clicking Manager App, you will be asked to enter the username and password, you just created above, after login you will see below interface:</div>
+
+
+    ]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;margin-top:1em;">
+    <c:title>Access Tomcat Manager App from different host</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.5em;">Each deployed webapp has a context.xml file that lives in <b>$CATALINA_BASE/conf/[enginename]/[hostname] (conf/Catalina/localhost by default) </b>and has the same name as the webapp (manager.xml in this case). If no file is present, default values are used.
+</div>
+<div style="margin-bottom:.5em;">
+So, you need to create a file <b>conf/Catalina/localhost/manager.xml</b> and specify the rule you want to allow remote access. For example, the following content of manager.xml will allow access from all machines:</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="margin-top:.2em;"
+                     titleStyle="margin-top:0em; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+<Context privileged="true" antiResourceLocking="false" 
+         docBase="${catalina.home}/webapps/manager">
+    <Valve className="org.apache.catalina.valves.RemoteAddrValve" allow="^.*$" />
+</Context>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.5em;">Note that the allow attribute of the Valve element is a regular expression that matches the IP address of the connecting host. Other Valve classes cater for other rules (e.g. RemoteHostValve for matching host names).
+
+</div>
+<div style="margin-bottom:.5em;">Once the changes above have been made, you should be presented with an authentication dialog when accessing the manager URL. If you enter the details you have supplied in tomcat-users.xml you should have access to the Manager.</div>
+    ]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+</c:component>
