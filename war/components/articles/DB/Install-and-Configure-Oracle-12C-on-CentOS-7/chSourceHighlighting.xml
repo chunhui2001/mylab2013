@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+The article Shows You Step-by-Step How to Install the Oracle 12c R1 Amd64 Database on CentOS7 Desktop/Server.
+<br /><br />
+<b># hostnamectl</b> <br />
+   Static hostname: <b>centos7.example.com</b><br />
+         Icon name: <b>computer</b><br />
+           Chassis: <b>n/a</b><br />
+        Machine ID: <b>583b4d69eaea465ea4bb96ac3b891e15</b><br />
+           Boot ID: <b>931ed1af622046ebbde071a87844a7d5</b><br />
+    Virtualization: <b>kvm</b><br />
+  Operating System: <b>CentOS Linux 7 (Core)</b><br />
+       CPE OS Name: <b>cpe:/o:centos:centos:7</b><br />
+            Kernel: <b>Linux 3.10.0-229.11.1.el7.x86_64</b><br />
+      Architecture: <b>x86_64</b>
+]]>
+  </c:abstract>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>先决条件</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+## 将 SELinux 维持在 enforcing 模式，并启用防火墙<br />
+
+<b># sestatus</b><br />
+SELinux status:                 <b>enabled</b><br />
+SELinuxfs mount:                <b>/sys/fs/selinux</b><br />
+SELinux root directory:         <b>/etc/selinux</b><br />
+Loaded policy name:             <b>targeted</b><br />
+Current mode:                   <b>enforcing</b><br />
+Mode from config file:          <b>enforcing</b><br />
+Policy MLS status:              <b>enabled</b><br />
+Policy deny_unknown status:     <b>allowed</b><br />
+Max kernel policy version:      <b>28</b><br />
+<br /><br />
+## 启用防火墙<br />
+<b># firewall-cmd --state</b><br />
+<b>running</b>
+
+<br />
+<br /><br />
+## 把 CentOS 系统更新至最新组件<br />
+<b># yum update -y</b>
+
+<br />
+<br /><br />
+## 下载 Oracle 数据库 12c 的 Linux x86-64 版本：<br />
+<b><a href="http://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html">
+  http://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html</a></b>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>安装步骤</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+## 为 Oracle 数据库创建所须的操作系统用户及群组。<br />
+
+<b># groupadd oinstall</b><br />
+<b># groupadd dba</b><br />
+<b># useradd -g oinstall -G dba oracle</b><br />
+<b># passwd oracle</b><br /><br />
+
+
+## 在 /etc/sysctl.conf 加入下列内核参数<br />
+
+fs.aio-max-nr = 1048576<br />
+fs.file-max = 6815744<br />
+kernel.shmall = 2097152<br />
+kernel.shmmax = 1987162112<br />
+kernel.shmmni = 4096<br />
+kernel.sem = 250 32000 100 128<br />
+net.ipv4.ip_local_port_range = 9000 65500<br />
+net.core.rmem_default = 262144<br />
+net.core.rmem_max = 4194304<br />
+net.core.wmem_default = 262144<br />
+net.core.wmem_max = 1048586<br /><br />
+
+
+## 检查并运用新的数值<br />
+
+<b># sysctl -p</b><br />
+<b># sysctl -a</b><br /><br />
+
+
+## 在 /etc/security/limits.conf 为 oracle 用户设置上限<br />
+
+oracle soft nproc 2047<br />
+oracle hard nproc 16384<br />
+oracle soft nofile 1024<br />
+oracle hard nofile 65536<br /><br />
+
+
+## 将 Oracle 数据库软件的 zip 文件（linuxamd64_12102_database_1of2.zip, linuxamd64_12102_database_2of2.zip）解压至 /tmp 目录。<br />
+<b># yum install -y zip unzip</b><br />
+<b># unzip linuxamd64_12102_database_1of2.zip -d /tmp/</b><br />
+<b># unzip linuxamd64_12102_database_2of2.zip -d /tmp/</b><br /><br />
+
+
+## 修改　/tmp/database 的权限<br />
+<b># chown -R oracle:oinstall /tmp/database/</b><br /><br />
+
+
+## 为 Oracle 软件创建 /u01 目录，及为数据库文件创建 /u02 目录。<br />
+<b># mkdir /u01</b><br />
+<b># mkdir /u02</b><br />
+<b># chown -R oracle:oinstall /u01</b><br />
+<b># chown -R oracle:oinstall /u02</b><br />
+<b># chmod -R 775 /u01</b><br />
+<b># chmod -R 775 /u02</b><br />
+<b># chmod g+s /u01</b><br />
+<b># chmod g+s /u02</b><br /><br />
+
+
+## 安装所须组件：<br />
+<b># yum install -y binutils.x86_64 compat-libcap1.x86_64 gcc.x86_64 gcc-c++.x86_64 glibc.i686 glibc.x86_64 \
+glibc-devel.i686 glibc-devel.x86_64 ksh compat-libstdc++-33 libaio.i686 libaio.x86_64 libaio-devel.i686 libaio-devel.x86_64 \
+libgcc.i686 libgcc.x86_64 libstdc++.i686 libstdc++.x86_64 libstdc++-devel.i686 libstdc++-devel.x86_64 libXi.i686 libXi.x86_64 \
+libXtst.i686 libXtst.x86_64 make.x86_64 sysstat.x86_64
+</b><br /><br />
+
+
+## 还有安装 X Window System 组件群组<br />
+<b># yum groupinstall -y "X Window System"</b><br /><br /><br /><br />
+
+
+## 由于 Oracle 的安装采用图像界面，你可通过以下两个简单的方法进行:<br />
+## 方案 1: 通过 SSH 从一台图像化 Linux 计算机远程登录。<br />
+<b>$ ssh -X oracle@centos7.example.com</b><br />
+## 方案 2: 利用一台拥有 SSH 客户端（PuTTY）及 X-Windows 终端機仿真器（Xming）的微软 Windows 桌面。<br />
+<b>## 以下文档描述如何在 Windows 系统上安装 Xming。https://wiki.centos.org/zh/HowTos/Xming</b><br />
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>安装</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+## 请采用上述的方案登录为 oracle 用户：<br />
+
+## 配置环境变量<br />
+
+<b> 
+export TMP=/tmp; <br />
+export TMPDIR=$TMP;  <br />
+export ORACLE_HOSTNAME=<i style="color:green;">[HOSTNAME]</i>; <br />
+export ORACLE_UNQNAME=DB12C; <br />
+export ORACLE_BASE=/u01/app/oracle; <br />
+export ORACLE_HOME=$ORACLE_BASE/product/12/dbhome_1; <br />
+export ORACLE_SID=<i style="color:green;">[DBSID]</i>; <br />
+export PATH=/usr/sbin:$ORACLE_HOME/bin:$PATH; <br />
+export LD_LIBRARY_PATH=$ORACLE_HOME/lib:/lib:/usr/lib:/usr/lib64; <br />
+export CLASSPATH=$ORACLE_HOME/jlib:$ORACLE_HOME/rdbms/jlib; </b><br /><br />
+
+<i style="color:green;"># Replace [HOSTNAME] with IP and [DBSID] with SID Name, example: <br />
+HOSTNAME = 127.0.0.1<br />
+DBSID = orcl</i><br /><br /><br />
+
+
+## 然后执行 Oracle 安装程序：<br />
+<b># /tmp/database/runInstaller (将启动安装画面)</b><br />
+<b># Oracle 12c DB Troubleshooting: <br /><a href="http://paperiniktips.sviluppo-siti-web.com/oracle-11g-solving-issue-check-if-the-display-variable-isset-failed/">Oracle 11g/12c Solving Issue: “Check if the DISPLAY variable isset Failed”</a></b><br />
+
+
+
+<img src="/images/oracle-install/Screenshot-Oracle-Database-12c-Release-1-Installer---Installing-database---Step-1-of-10.png" /><br />
+
+<img src="/images/oracle-install/Screenshot-Oracle-Database-12c-Release-1-Installer---Installing-database---Step-2-of-10.png" /><br />
+
+<img src="/images/oracle-install/Screenshot-Oracle-Database-12c-Release-1-Installer---Installing-database---Step-3-of-10.png" /><br />
+
+<img src="/images/oracle-install/Screenshot-Oracle-Database-12c-Release-1-Installer---Installing-database---Step-4-of-10.png" /><br />
+
+<img src="/images/oracle-install/Screenshot-Oracle-Database-12c-Release-1-Installer---Installing-database---Step-5-of-10.png" /><br />
+
+<img src="/images/oracle-install/Screenshot-Oracle-Database-12c-Release-1-Installer---Installing-database---Step-6-of-12.png" /><br />
+
+<img src="/images/oracle-install/Screenshot-Oracle-Database-12c-Release-1-Installer---Installing-database---Step-7-of-12.png" /><br />
+
+<img src="/images/oracle-install/Screenshot-Oracle-Database-12c-Release-1-Installer---Installing-database---Step-8-of-12.png" /><br />
+
+<img src="/images/oracle-install/Screenshot-Oracle-Database-12c-Release-1-Installer---Installing-database---Step-8.1-of-12.png" /><br />
+<img src="/images/oracle-install/Screenshot-Oracle-Database-12c-Release-1-Installer---Installing-database---Step-10-of-13.png" /><br />
+
+<img src="/images/oracle-install/Screenshot-Oracle-Database-12c-Release-1-Installer---Installing-database---Step-11-of-13.png" /><br />
+
+
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>runInstaller</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+## 请采用上述的方案登录为 oracle 用户：<br />
+
+## 配置环境变量<br />
+
+<b> 
+export TMP=/tmp; <br />
+export TMPDIR=$TMP;  <br />
+export ORACLE_HOSTNAME=<i style="color:green;">[HOSTNAME]</i>; <br />
+export ORACLE_UNQNAME=DB12C; <br />
+export ORACLE_BASE=/u01/app/oracle; <br />
+export ORACLE_HOME=$ORACLE_BASE/product/12/dbhome_1; <br />
+export ORACLE_SID=<i style="color:green;">[DBSID]</i>; <br />
+export PATH=/usr/sbin:$ORACLE_HOME/bin:$PATH; <br />
+export LD_LIBRARY_PATH=$ORACLE_HOME/lib:/lib:/usr/lib:/usr/lib64; <br />
+export CLASSPATH=$ORACLE_HOME/jlib:$ORACLE_HOME/rdbms/jlib; </b><br /><br />
+
+<i style="color:green;"># Replace [HOSTNAME] with IP and [DBSID] with SID Name, example: <br />
+HOSTNAME = 127.0.0.1<br />
+DBSID = orcl</i><br /><br /><br />
+
+
+## 然后执行 Oracle 安装程序：<br />
+<b># /tmp/database/runInstaller (将启动安装画面)</b><br />
+<b># Oracle 12c DB Troubleshooting: <br /><a href="http://paperiniktips.sviluppo-siti-web.com/oracle-11g-solving-issue-check-if-the-display-variable-isset-failed/">Oracle 11g/12c Solving Issue: “Check if the DISPLAY variable isset Failed”</a></b><br />
+
+
+
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>安装后的任务</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+## 请登录成为 root 并检查已引导的本地<br />
+<b># firewall-cmd --get-active-zones</b> <br /><br />
+
+## 打开相关的端口<br />
+<b># firewall-cmd \<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--zone=public \<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--add-port=1521/tcp \<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--add-port=5500/tcp \<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--add-port=5520/tcp \<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--add-port=3938/tcp \ <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--permanent</b> <br /><br /><br />
+
+<b># firewall-cmd --reload \<br />
+<b># firewall-cmd --list-ports \<br />
+
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title> Create a Database </c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+## Before to Create a Database for Oracle 12c will be Necessary also to Create and Run a Listener.<br />
+<b># ./netca</b><br /><br />
+
+## In Case of Error: <b>Oracle Net Services configuration failed. The exit code is 1</b><br />
+<b># sudo xhost +</b><br /><br />
+
+
+<img src="/images/oracle-install/createRunListener-1.jpg" /><br />
+<img src="/images/oracle-install/createRunListener-2.jpg" /><br />
+<img src="/images/oracle-install/createRunListener-3.jpg" /><br />
+<img src="/images/oracle-install/createRunListener-4.jpg" /><br />
+<img src="/images/oracle-install/createRunListener-5.jpg" /><br />
+<img src="/images/oracle-install/createRunListener-6.jpg" /><br />
+<img src="/images/oracle-install/createRunListener-7.jpg" /><br /><br /><br /><br />
+
+## Create a Database<br />
+<b># ./dbca</b><br /><br />
+
+<b>
+> choose Create a Database<br />
+> choose General Purpose or Transaction Progressing<br />
+> Database Name: orcl<br />
+> SID: orcl<br />
+> uncheck Configuration Enterprise Manager<br />
+</b><br />
+<img src="/images/oracle-install/1-selectCreateDatabase.png" /><br />
+<img src="/images/oracle-install/2-setUpDb.png" /><br />
+<img src="/images/oracle-install/3-dbSummary.png" /><br />
+<img src="/images/oracle-install/4-creatingDb.png" /><br />
+<img src="/images/oracle-install/5a-managePassword.png" /><br />
+<img src="/images/oracle-install/5b-setPasswords.png" /><br />
+<img src="/images/oracle-install/6-clone.png" /><br />
+
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+## 检查运行状态<br />
+<b># su - oracle && sudo lsnrctl status</b> <br /><br />
+
+## 启动程序<br />
+<b># sudo lsnrctl start</b> <br /><br />
+
+## 登陆数据库<br />
+<b># sqlplus system@orcl</b> <br /><br />
+
+## 利用 Oracle 企业级管理员来管理数据库：<br />
+<b>https://<主机名称>:5500/em</b> <br /><br />
+
+## 匿名登陆<br />
+<b># sqlplus /nolog</b> <br />
+<b>SQL> connect sys as sysdba</b> (切换到数据库)<br />
+<b>SQL> startup</b>  (启动数据库)<br />
+<b>SQL> select username from dba_users;</b>  (查询所有用户)<br /><br />
+
+## 修改管理员密码：<br />
+<b>SQL> conn /as sysdba;</b> <br />
+<b>SQL> alter user sys identified by admin123;</b> <br />
+<b>SQL> commit;</b> <br /><br />
+
+## remote connect<br />
+<b># rman</b> <br />
+<b>TMAN> connect target system/Cc@orcl</b> <br /><br />
+
+## unlock user<br />
+<b>SQL> alter user scott account unlock;</b> <br />
+<b>SQL> ALTER USER scott IDENTIFIED BY tiger;</b> <br />
+<b>SQL> grant connect, resource to scott;</b> <br />
+<b>SQL> commit;</b> <br /><br />
+
+## 查看实例状态<br />
+<b>SQL> select status from V$instance;<br />
+SQL> desc V$instance;<br />
+SQL> select instance_name, host_name, status, version from V$instance;<br />
+SQL> col instance_name for a10;<br />
+SQL> col host_name for a20;<br />
+SQL> col version for a10;</b> <br /><br />
+
+## 测试连接<br />
+<b># tnsping 192.168.9.154:1521/orcl<br />
+# tnsping 127.0.0.1:1521<br />
+# tnsping 192.168.9.102:1521</b> <br /><br />
+
+## fixed 12514 error to corrected "servicename"<br />
+<b>SQL> connect / as sysdba</b> <br />
+<b>SQL> show parameter service_name</b> <br />
+<pre>NAME              TYPE      VALUE
+----------------------------------------
+service_names     string    orcl</pre><br />
+
+<b>### the above service_name: orcl should same as $ORACLE_SID</b>
+<br /><br />
+<b># vi /u01/app/oracle/product/12.1.0/dbhome_1/network/admin/tnsnames.ora</b> <br /><br />
+
+## create a new user<br />
+<b>SQL> create user keesh identified by secret; <br />
+SQL> grant dba to keesh;<br />
+SQL> connect keesh/Cc@install_name_here</b><br /><br />
+
+## connect by Oracle SQL Developer<br />
+<b>Username: sys as sysdba</b><br /><br />
+
+## maven<br />
+<b>https://www.mkyong.com/hibernate/maven-3-hibernate-3-6-oracle-11g-example-xml-mapping/<br />
+http://www.mkyong.com/maven/how-to-add-oracle-jdbc-driver-in-your-maven-local-repository/</b>
+
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+</c:component>
