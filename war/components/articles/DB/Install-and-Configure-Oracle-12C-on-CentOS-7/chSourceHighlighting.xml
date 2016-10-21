@@ -138,15 +138,15 @@ libXtst.i686 libXtst.x86_64 make.x86_64 sysstat.x86_64
 </b><br /><br />
 
 
+## added hostname to /etc/hosts：<br />
+<b>127.0.0.1 hostname
+</b><br /><br />
+
+
 ## 还有安装 X Window System 组件群组<br />
 <b># yum groupinstall -y "X Window System"</b><br /><br /><br /><br />
 
 
-## 由于 Oracle 的安装采用图像界面，你可通过以下两个简单的方法进行:<br />
-## 方案 1: 通过 SSH 从一台图像化 Linux 计算机远程登录。<br />
-<b>$ ssh -X oracle@centos7.example.com</b><br />
-## 方案 2: 利用一台拥有 SSH 客户端（PuTTY）及 X-Windows 终端機仿真器（Xming）的微软 Windows 桌面。<br />
-<b>## 以下文档描述如何在 Windows 系统上安装 Xming。https://wiki.centos.org/zh/HowTos/Xming</b><br />
     ]]>
     </c:sourceContent>
     <c:comment>
@@ -156,8 +156,10 @@ libXtst.i686 libXtst.x86_64 make.x86_64 sysstat.x86_64
     </c:comment>
   </c:entry>
 
+
+
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title>安装</c:title>
+    <c:title>runInstaller</c:title>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
@@ -165,6 +167,35 @@ libXtst.i686 libXtst.x86_64 make.x86_64 sysstat.x86_64
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
       <![CDATA[
+
+## 由于 Oracle 的安装采用图像界面，你可通过以下两个简单的方法进行:<br />
+## 通过 SSH 从一台图像化 Linux 计算机远程登录。<br />
+<b>$ ssh -X oracle@centos7.example.com (For CentOS 7)</b><br />
+<br />
+
+<b>For CentOS 6.5: (On the remote machine)</b><br />
+<a href="http://www.cyberciti.biz/faq/how-to-fix-x11-forwarding-request-failed-on-channel-0/">Fixed: X11 forwarding request failed on channel 0</a><br />
+# sudo vi /etc/ssh/sshd_config
+<br />
+<span style="color:gray;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;> Set the following two options:<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;> X11Forwarding yes<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;> X11UseLocalhost yes</span><br />
+# sudo /etc/init.d/sshd reload<br />
+# sudo yum install xauth<br /><br />
+# which xdpyinfo ? OR yum install xdpyinfo<br />
+<br />
+<b>Try ssh command as follows:</b><br />
+$ ssh -X -o options -A -p 22 user@remote machine<br />
+<br />
+<b>Sample outputs:</b><br />
+<span style="color:gray;">Last login: Sun Mar 23 16:25:09 2014 from 1.2.3.4<br />
+<b>/usr/bin/xauth:  creating new authority file /home/vivek/.Xauthority</b></span>
+
+<br />
+<br />
+<br />
+<br />
+
 ## 请采用上述的方案登录为 oracle 用户：<br />
 
 ## 配置环境变量<br />
@@ -189,6 +220,28 @@ DBSID = orcl</i><br /><br /><br />
 ## 然后执行 Oracle 安装程序：<br />
 <b># /tmp/database/runInstaller (将启动安装画面)</b><br />
 <b># Oracle 12c DB Troubleshooting: <br /><a href="http://paperiniktips.sviluppo-siti-web.com/oracle-11g-solving-issue-check-if-the-display-variable-isset-failed/">Oracle 11g/12c Solving Issue: “Check if the DISPLAY variable isset Failed”</a></b><br />
+
+
+
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>安装</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
 
 
 
@@ -212,51 +265,6 @@ DBSID = orcl</i><br /><br /><br />
 <img src="/images/oracle-install/Screenshot-Oracle-Database-12c-Release-1-Installer---Installing-database---Step-10-of-13.png" /><br />
 
 <img src="/images/oracle-install/Screenshot-Oracle-Database-12c-Release-1-Installer---Installing-database---Step-11-of-13.png" /><br />
-
-
-    ]]>
-    </c:sourceContent>
-    <c:comment>
-      <c:comment1>
-        <![CDATA[]]>
-      </c:comment1>
-    </c:comment>
-  </c:entry>
-
-  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title>runInstaller</c:title>
-    <c:desc>
-      <c:desc1> <![CDATA[]]></c:desc1>
-    </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1"
-                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
-      <![CDATA[
-## 请采用上述的方案登录为 oracle 用户：<br />
-
-## 配置环境变量<br />
-
-<b> 
-export TMP=/tmp; <br />
-export TMPDIR=$TMP;  <br />
-export ORACLE_HOSTNAME=<i style="color:green;">[HOSTNAME]</i>; <br />
-export ORACLE_UNQNAME=DB12C; <br />
-export ORACLE_BASE=/u01/app/oracle; <br />
-export ORACLE_HOME=$ORACLE_BASE/product/12/dbhome_1; <br />
-export ORACLE_SID=<i style="color:green;">[DBSID]</i>; <br />
-export PATH=/usr/sbin:$ORACLE_HOME/bin:$PATH; <br />
-export LD_LIBRARY_PATH=$ORACLE_HOME/lib:/lib:/usr/lib:/usr/lib64; <br />
-export CLASSPATH=$ORACLE_HOME/jlib:$ORACLE_HOME/rdbms/jlib; </b><br /><br />
-
-<i style="color:green;"># Replace [HOSTNAME] with IP and [DBSID] with SID Name, example: <br />
-HOSTNAME = 127.0.0.1<br />
-DBSID = orcl</i><br /><br /><br />
-
-
-## 然后执行 Oracle 安装程序：<br />
-<b># /tmp/database/runInstaller (将启动安装画面)</b><br />
-<b># Oracle 12c DB Troubleshooting: <br /><a href="http://paperiniktips.sviluppo-siti-web.com/oracle-11g-solving-issue-check-if-the-display-variable-isset-failed/">Oracle 11g/12c Solving Issue: “Check if the DISPLAY variable isset Failed”</a></b><br />
-
 
 
     ]]>
@@ -312,7 +320,10 @@ DBSID = orcl</i><br /><br /><br />
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
       <![CDATA[
 ## Before to Create a Database for Oracle 12c will be Necessary also to Create and Run a Listener.<br />
-<b># ./netca</b><br /><br />
+<b># ./netca</b><br />
+(Will created a file: <b>/u01/app/oracle/product/12/dbhome_1/network/admin/listener.ora</b>)
+<br />
+<br />
 
 ## In Case of Error: <b>Oracle Net Services configuration failed. The exit code is 1</b><br />
 <b># sudo xhost +</b><br /><br />
@@ -327,7 +338,10 @@ DBSID = orcl</i><br /><br /><br />
 <img src="/images/oracle-install/createRunListener-7.jpg" /><br /><br /><br /><br />
 
 ## Create a Database<br />
-<b># ./dbca</b><br /><br />
+<b># ./dbca</b><br />
+(Will created a file: <b>/u01/app/oracle/product/12/dbhome_1/network/admin/tnsnames.ora</b>)
+<br />
+<br />
 
 <b>
 > choose Create a Database<br />
@@ -385,11 +399,7 @@ DBSID = orcl</i><br /><br /><br />
 ## 修改管理员密码：<br />
 <b>SQL> conn /as sysdba;</b> <br />
 <b>SQL> alter user sys identified by admin123;</b> <br />
-<b>SQL> commit;</b> <br /><br />
-
-## remote connect<br />
-<b># rman</b> <br />
-<b>TMAN> connect target system/Cc@orcl</b> <br /><br />
+<b>SQL> commit;</b>  <br /><br />
 
 ## unlock user<br />
 <b>SQL> alter user scott account unlock;</b> <br />
@@ -397,13 +407,19 @@ DBSID = orcl</i><br /><br /><br />
 <b>SQL> grant connect, resource to scott;</b> <br />
 <b>SQL> commit;</b> <br /><br />
 
-## 查看实例状态<br />
-<b>SQL> select status from V$instance;<br />
-SQL> desc V$instance;<br />
-SQL> select instance_name, host_name, status, version from V$instance;<br />
-SQL> col instance_name for a10;<br />
-SQL> col host_name for a20;<br />
-SQL> col version for a10;</b> <br /><br />
+## create a new user and grang all privileges<br />
+<b>SQL> create user keesh identified by secret; <br />
+SQL> grant connect, resource to keesh;<br />
+SQL> grang all privileges to keesh;<br />
+SQL> commit;<br /><br />
+SQL> show user;<br />
+SQL> show con_name;<br />
+SQL> connect keesh/secret@instance_name_here</b><br /> <br /><br />
+
+
+## test remote connect<br />
+<b># rman</b> <br />
+<b>TMAN> connect target system/Cc@orcl</b><br /><br /><br />
 
 ## 测试连接<br />
 <b># tnsping 192.168.9.154:1521/orcl<br />
@@ -418,16 +434,19 @@ SQL> col version for a10;</b> <br /><br />
 service_names     string    orcl</pre><br />
 
 <b>### the above service_name: orcl should same as $ORACLE_SID</b>
-<br /><br />
-<b># vi /u01/app/oracle/product/12.1.0/dbhome_1/network/admin/tnsnames.ora</b> <br /><br />
-
-## create a new user<br />
-<b>SQL> create user keesh identified by secret; <br />
-SQL> grant dba to keesh;<br />
-SQL> connect keesh/Cc@install_name_here</b><br /><br />
+<br />
+<b>### vi /u01/app/oracle/product/12.1.0/dbhome_1/network/admin/tnsnames.ora</b> <br /><br />
 
 ## connect by Oracle SQL Developer<br />
 <b>Username: sys as sysdba</b><br /><br />
+
+## 查看实例状态<br />
+<b>SQL> select status from V$instance;<br />
+SQL> desc V$instance;<br />
+SQL> select instance_name, host_name, status, version from V$instance;<br />
+SQL> col instance_name for a10;<br />
+SQL> col host_name for a20;<br />
+SQL> col version for a10;</b><br /><br />
 
 ## maven<br />
 <b>https://www.mkyong.com/hibernate/maven-3-hibernate-3-6-oracle-11g-example-xml-mapping/<br />
