@@ -448,6 +448,50 @@ SQL> col instance_name for a10;<br />
 SQL> col host_name for a20;<br />
 SQL> col version for a10;</b><br /><br />
 
+
+## 查看字符集<br />
+<b>
+SQL> select VALUE from nls_database_parameters where parameter='NLS_CHARACTERSET';</b><br />
+
+
+
+<br />
+
+## 设置命令行字符集<br />
+<b>
+$ export NLS_LANG=AMERICAN_AMERICA.AL32UTF8</b><br />
+
+
+
+<br />
+
+## 查看所有用户表<br />
+<b>
+SQL> select table_name from user_tables;</b><br /><br />
+
+
+
+<br />
+
+
+## show DDL<br />
+<b>
+SQL> set heading off;<br />
+SQL> set echo off;<br />
+SQL> set pages 999;<br />
+SQL> set long 90000;<br /><br />
+
+SQL> spool ddl_list.sql<br />
+
+SQL> select dbms_metadata.get_ddl('TABLE', 'TABLE2', 'KEESH') from dual;<br />
+SQL> select dbms_metadata.get_ddl('TABLE', 'TABLE2_IDX', 'KEESH') from dual;<br /><br />
+
+SQL> spool off;</b><br /><br />
+
+
+
+<br /><br />
+
 ## maven<br />
 <a target="_blank" href="https://www.mkyong.com/hibernate/maven-3-hibernate-3-6-oracle-11g-example-xml-mapping/">
   https://www.mkyong.com/hibernate/maven-3-hibernate-3-6-oracle-11g-example-xml-mapping/</a><br />
@@ -470,4 +514,173 @@ SQL> col version for a10;</b><br /><br />
       </c:comment1>
     </c:comment>
   </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Install OCI8 on Ubuntu 14.04 and PHP 5.6</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<a style="font-size:1.2em;" href="http://www.syahzul.com/2016/04/06/how-to-install-oci8-on-ubuntu-14-04-and-php-5-6/">
+http://www.syahzul.com/2016/04/06/how-to-install-oci8-on-ubuntu-14-04-and-php-5-6/
+</a>
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Install Oracle Instant Client and SDK" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div style="line-height:1.5em;">Download the Oracle Instant Client and SDK from <a target="_blank" href="http://www.oracle.com/technetwork/database/features/instant-client/index-097480.html?source=syahzul.com">Oracle website</a>. Make sure you choose the correct architecture for your Ubuntu installation (32bit is x86, 64bit is x86_64). You’ll need to upload the files to your server using whatever method suits you.
+<br />
+<br />
+Create a new folder to store Oracle Instant Client zip files on your server.
+</div>
+
+<pre style="margin: 1em 0;margin-top:.6em;border:solid #c7c7c7 1px; background-color:#dadada;padding:.6em;">$ mkdir /opt/oracle</pre>
+
+
+<div style="line-height:1.5em;margin-top:1.5em;">extract the files.</div>
+<pre style="margin: 1em 0;margin-top:.6em;border:solid #c7c7c7 1px; background-color:#dadada;padding:.6em;">
+$ cd /opt/oracle
+$ unzip instantclient-basic-linux-12.1.0.2.0.zip
+$ unzip instantclient-sdk-linux-12.1.0.2.0.zip
+</pre>
+
+
+<div style="line-height:1.5em;margin-top:1.5em;">create a symlink to Instant Client files.</div>
+<pre style="margin: 1em 0;margin-top:.6em;border:solid #c7c7c7 1px; background-color:#dadada;padding:.6em;">
+$ ln -s /opt/oracle/instantclient_12_1/libclntsh.so.12.1 /opt/oracle/instantclient_12_1/libclntsh.so
+$ ln -s /opt/oracle/instantclient_12_1/libocci.so.12.1 /opt/oracle/instantclient_12_1/libocci.so
+</pre>
+
+
+<div style="line-height:1.5em;margin-top:1.5em;">Add the folder to ldconfig.</div>
+<pre style="margin: 1em 0;margin-top:.6em;border:solid #c7c7c7 1px; background-color:#dadada;padding:.6em;">
+$ echo /opt/oracle/instantclient_12_1 > /etc/ld.so.conf.d/oracle-instantclient && ldconfig
+</pre>
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Install Additional Packages" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+
+
+<div style="line-height:1.5em;margin-top:1.5em;">
+To install the OCI8 extension, we need to install below additional package on our server.
+</div>
+<pre style="margin: 1em 0;margin-top:.6em;border:solid #c7c7c7 1px; background-color:#dadada;padding:.6em;">
+$ apt-get install php-pear php5-dev build-essential libaio1
+</pre>
+
+<div style="line-height:1.5em;margin-top:1.5em;">
+Once installed, we need to get the OCI8 file.
+</div>
+<pre style="margin: 1em 0;margin-top:.6em;border:solid #c7c7c7 1px; background-color:#dadada;padding:.6em;">
+$ pecl install oci8-2.0.10
+</pre>
+
+<div style="line-height:1.5em;margin-top:1.5em;">
+When you are prompted for the Instant Client location, enter the following:
+</div>
+<pre style="margin: 1em 0;margin-top:.6em;border:solid #c7c7c7 1px; background-color:#dadada;padding:.6em;">
+$ instantclient,/opt/oracle/instantclient_12_1
+</pre>
+
+<div style="line-height:1.5em;margin-top:1.5em;">
+We need to tell PHP to load the OCI8 extension.
+</div>
+<pre style="margin: 1em 0;margin-top:.6em;border:solid #c7c7c7 1px; background-color:#dadada;padding:.6em;">
+$ echo "extension = oci8.so" >> /etc/php5/fpm/php.ini
+$ echo "extension = oci8.so" >> /etc/php5/cli/php.ini
+</pre>
+
+<div style="line-height:1.5em;margin-top:1.5em;">
+Restart your PHP and nginx.
+</div>
+<pre style="margin: 1em 0;margin-top:.6em;border:solid #c7c7c7 1px; background-color:#dadada;padding:.6em;">
+$ service php5-fpm restart
+$ service nginx restart
+</pre>
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="PHP Connect To Oracle Example" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+$conn = oci_connect('keesh', 'Cc', '192.168.9.210/orcl', 'AL32UTF8');
+
+if (!$conn) {
+  $err = oci_error();
+  trigger_error(htmlentities($err['message'], ENT_QUOTES), E_USER_ERROR);
+  return;
+}
+
+echo "connected";
+
+$query = oci_parse($conn, 'select * from TABLE1');
+
+oci_execute($query);
+
+while (($row=oci_fetch_array($query, OCI_BOTH)) != false) {
+  echo $row[0];
+}
+
+oci_free_statement($query);
+oci_close($query);
+
+return;
+
+
+echo " insert into";
+$insert = oci_parse($conn, 
+                    "INSERT INTO TABLE2 (ID, NAME, BIRTHDAY, PHONE) "
+                    ."VALUES(:ID, :NAME, to_date(:BIRTHDAY,'yyyy-mm-dd'), :PHONE)");
+
+$ID       = 2;
+$name     = '春晖';
+$birthday = '1916-12-03';
+$phone    = '18500183080';
+
+oci_bind_by_name($insert, ':ID', $ID);
+oci_bind_by_name($insert, ':NAME', $name);
+oci_bind_by_name($insert, ':BIRTHDAY', $birthday);
+oci_bind_by_name($insert, ':PHONE', $phone);
+
+$r = oci_execute($insert);  // executes and commits
+
+if (!$r) {
+  $err = oci_error();
+  trigger_error(htmlentities($err['message'], ENT_QUOTES), E_USER_ERROR);
+  die;    
+}
+
+print "One row inserted";
+
+oci_free_statement($insert);
+oci_close($insert);
+
+return;
+
+
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
 </c:component>
