@@ -643,14 +643,16 @@ return;
 
 
 echo " insert into";
-$insert = oci_parse($conn, 
-                    "INSERT INTO TABLE2 (ID, NAME, BIRTHDAY, PHONE) "
-                    ."VALUES(:ID, :NAME, to_date(:BIRTHDAY,'yyyy-mm-dd'), :PHONE)");
+$insert = oci_parse($conn, "INSERT INTO TABLE2 (ID, NAME, BIRTHDAY, PHONE, JOIN_DATETIME) "
+                           ."VALUES(:ID, :NAME, to_date(:BIRTHDAY,'YYYY-MM-DD HH24:MI:SS'), :PHONE, "
+                           ."to_timestamp(:JOIN_DATETIME, 'YYYY-MM-DD HH24:MI:SS'))");
 
-$ID       = 2;
-$name     = '春晖';
-$birthday = '1916-12-03';
-$phone    = '18500183080';
+
+$ID         = 2;
+$name       = '春晖';
+$birthday   = '1916-12-03';
+$phone      = '18500183080';
+$join_date  = '1916-12-03 06:33:40';
 
 oci_bind_by_name($insert, ':ID', $ID);
 oci_bind_by_name($insert, ':NAME', $name);
