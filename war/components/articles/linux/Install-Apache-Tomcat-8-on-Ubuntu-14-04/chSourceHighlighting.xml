@@ -89,7 +89,7 @@ $ sudo chown -R tomcat work/ temp/ logs/</pre>
 
 
   <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
-    <c:title>Install Upstart Script</c:title>
+    <c:title>Install Upstart Script (Ubuntu 16.04 above)</c:title>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
@@ -144,7 +144,92 @@ $ sudo initctl start tomcat
 Tomcat is not completely set up yet, but you can access the default splash page by going to your domain or IP address followed by :8080 in a web browser:
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="html" title="Configure Tomcat Web Management Interface" id="sourceContent1" style="margin-top:2em;"
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title>Install Upstart Script (Ubuntu 16.04+)</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+      sudo vi /etc/systemd/system/tomcat.service
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+[Unit]
+Description=Apache Tomcat Web Application Container
+After=network.target
+
+[Service]
+Type=forking
+
+Environment=JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/jre
+Environment=CATALINA_PID=/opt/tomcat/temp/tomcat.pid
+Environment=CATALINA_HOME=/opt/tomcat
+Environment=CATALINA_BASE=/opt/tomcat
+Environment='CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC'
+Environment='JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom'
+
+ExecStart=/opt/tomcat/bin/startup.sh
+ExecStop=/opt/tomcat/bin/shutdown.sh
+
+User=tomcat
+Group=tomcat
+UMask=0007
+RestartSec=10
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+$ sudo systemctl daemon-reload
+$ sudo systemctl start tomcat
+$ sudo systemctl status tomcat
+
+# Allow traffic to 8080 port by typing
+$ sudo ufw allow 8080
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title>Configure Tomcat Web Management Interface</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="margin-top:0em;"
                      titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
       <![CDATA[
@@ -221,4 +306,6 @@ Restart Eclipse<br />
       </c:comment1>
     </c:comment>
   </c:entry>
+
+
 </c:component>
