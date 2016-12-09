@@ -58,10 +58,16 @@ var app   = express();
 var server  = http.createServer(app);
 var io    = socketIO.listen(server);
 
+
+
+io.adapter(redis({ host: 'localhost', port: 6379 }));
+
+
+
 app.use(favicon(__dirname + '/public/favicon.ico'));
 
 
-var _USERS_LIST = {};
+var _USERS_LIST = {};   // should be store in redis
  
 function startServer() {
   server.listen(3000, function() {
