@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract style="font-size:1em;line-height:1.6em;">
+    <![CDATA[
+Netty is an NIO (non blocking input/output) client server framework for Java. It simplifies the process of writing servers and clients that talk to each other under the hood using your typical DatagramSocket, ServerSocket and Socket classes. In this example I'll show you how to write a very simple server that will accept connections over a TCP port, read and decode JSON and do something with it.
+
+                <br />
+
+                In real life you're probably more likely to use something binary like <b>Thrify</b>, <b>Protocol Buffers</b> or <b>Smile</b>, instead of JSON.
+
+]]>
+  </c:abstract>
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">Get Started</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.6em;">
+I am assuming you have imported Netty using the dependency manager of your choice and are already to start typing code.</div>
+
+<div style="margin-bottom:.6em;margin-top:.5em;">
+First off we need instances of NioEventLoopGroup. This class implements a multi-threaded Event Loop. That is, something that constantly and frequently polls IO abstractions ofr stuff to do like read data or start a new connection. There is also the EpollEventLoopGroup avaliable if you're on Linux, which makes use of the more performant Epoll.</div>
+   ]]>
+    </c:sourceContent>
+<c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+NioEventLoopGroup acceptorGroup = new NioEventLoopGroup(2); // 2 threads
+NioEventLoopGroup handlerGroup = new NioEventLoopGroup(10); // 10 threads
+   ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      We need two of them, one to accept new connections and one to handle existing connections. If you've worked with an HTTP server you'll know it typically uses the same thing.
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">Configuring the Server</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.6em;">
+Next we must configure the server proper. Lets walk through.</div>
+   ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+ServerBootstrap b = new ServerBootstrap();
+
+b.group(acceptorGroup, handlerGroup)
+ .channel(NioServerSocketChannel.class)
+ .childHandler(new MySocketInitialiser())
+ .option(ChannelOption.SO_BACKLOG, 5)
+ .childOption(ChannelOption.SO_KEEPALIVE, true);
+
+b.localAddress(port).bind().sync();
+
+LOG.info("Started on port {}", port);
+   ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+      <div style="margin-bottom:.6em;margin-top:.5em;">ServerBootstrap is a helper of sorts that lets you avoid configuring every single aspect of the highly complex ServerChannel implementations. Basically does what is says on th tin, it bootstraps a server for us.</div>
+      <div style="margin-bottom:.6em;margin-top:.5em;">
+      It needs setting up with a few things, first we give it the event loops we created earlier which allows our server to accept and handle connections.
+      </div>
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+</c:component>
