@@ -13,6 +13,32 @@ Netty is an NIO (non blocking input/output) client server framework for Java. It
   
 
   <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Generator simple Java project with maven</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+$ mvn archetype:generate -DgroupId=com.mycompany.app \
+                         -DartifactId=my-app \
+                         -DarchetypeArtifactId=maven-archetype-quickstart \
+                         -DinteractiveMode=false
+$ cd my-app
+$ mvn clean package
+$ java -cp target/my-app-1.0-SNAPSHOT.jar com.mycompany.app.App
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:2em;">
     <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">Get Started</div>]]></c:title>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
@@ -79,7 +105,7 @@ ServerBootstrap b = new ServerBootstrap();
 
 b.group(acceptorGroup, handlerGroup)
  .channel(NioServerSocketChannel.class)
- .childHandler(new MySocketInitialiser())
+ .childHandler(new MySocketInitializer())
  .option(ChannelOption.SO_BACKLOG, 5)
  .childOption(ChannelOption.SO_KEEPALIVE, true);
 
@@ -99,7 +125,336 @@ LOG.info("Started on port {}", port);
       <div style="margin-bottom:.6em;margin-top:.5em;">
       It needs setting up with a few things, first we give it the event loops we created earlier which allows our server to accept and handle connections.
       </div>
+      <div style="margin-bottom:.6em;margin-top:.5em;">
+      Next is a call to <b>.channel()</b> with a class. Netty will creates instances of this class and uses them to accept new connections. In this case that's <b>NioServerSocketChannel</b> which is an implementation of <b>ServerChannel</b>.
+      </div>
+      <div style="margin-bottom:.6em;margin-top:.5em;">
+      Then a call to <b>.childHandler()</b> with an instance of <b>ChannelHandler</b>. This is where interesting things will happen, it sets up the pipeline that accepted connections are handled throught. Here I'm using a class called <b>MySocketInitializer</b>, my own creation, we'll come back to this.</b>.
+      </div>
+      <div style="margin-bottom:.6em;margin-top:.5em;">
+      Call to <b>.option()</b> let us set server Crelated TCP options. In this case <b>SO_BACKLOG</b> tells ther server to refuse connections if it already has 5 queued up.
+      </div>
+      <div style="margin-bottom:.6em;margin-top:.5em;">
+      Finally calls to <b>.childOption()</b> let us set client Crelated TCP options. <b>SO_KEEPALIVE</b> tells clients to keep their connections open with keepalive packets.
+      </div>
+      <div style="margin-bottom:.6em;margin-top:.5em;">
+      We then start the server by telling it to bind to a port at the local address and call <b>.sync()</b> to wait for the server to shutdown.
+      </div>
    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">Setting up a pipeline </div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.6em;">
+Back to <b>MySocketInitializer</b> to see where the magic happens.</div>
+   ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+public class MySocketInitializer extends ChannelInitializer<ScoketChannel> {
+  
+  @Override
+  public void initChannel(SocketChannel ch) throws Exception {
+
+    ChannelPipeline pipeline = ch.pipeline();
+
+    pipeline.addLast(LineBasedFrameDecoder.class.getName(),
+                     new LineBasedFrameDecoder(256));
+
+    pipeline.addLast(JsonDecoder.class.getName(),
+                     new JsonDecoder<>(Person.class));
+
+    pipeline.addLast("stdoutHandler",
+      new ChannelInboundMessageHandlerAdapter<Person>() {
+        @Override
+        public void messageReceived(ChannelHandlerContext ctx, Person person) 
+                                              throws Exception {
+          System.out.println(
+            "Your name is " + person.getFirstName() + " " + person.getLastName() + "!"
+          );
+        }
+      }
+    );
+
+  }
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:.8em;"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.6em;">
+The <b>initChannel()</b> method of this class is called by Netty whenever it receives a new connection. A SocketChannel is simply the channel abstraction over a TCP/IP socket. 
+</div>
+<div style="margin-bottom:.3em;">
+Each SocketChannel has a pipeline associated with it. You can think of think of the pipeline as an ordered list of handlers with each feeding its output as the input to the next one. There are caveats to this but we can ignore them for now.
+</div>
+<div style="margin-bottom:.3em;margin-top:1em;">
+In the example pipeline above we have in order the following: 
+</div>
+<ul style="margin-left: 2.8em;list-style-type: decimal;">
+  <li>A <b>LineBaseFrameDecoder</b>, this delimits messages by detecting newlines bytes (i.e. \n or \r\n</li>
+  <li>A <b>StringDecoder</b>, this decodes bytes into UTF-8 String or any other encoding of your choice</li>
+  <li>A <b>JsonDecoder</b>, this decodes String using <b>Gson</b> into objects of type <b>Person</b> or any other type of your choice</li>
+  <li>An anonymous class that simply prints the name of our decoded <b>Person</b> to standare output</li>
+</ul>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.6em;">
+JsonDecoder is not a part of Netty, its implementation is as follows:</div>
+   ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+public class JsonDecoder<T> extends MessageToMessageDecoder<String, T> {
+
+  private static final Gson GSON = new GsonBuilder().create();
+  private final Class<T> clazz;
+
+  public JsonDecoder(Class<T> clazz, Class<?>... acceptedMsgTypes) {
+    super(acceptedMsgTypes);
+    this.clazz = checkNotNull(clazz);
+  }
+
+  @Override
+  public T decode(ChannelHandlerContext ctx, String msg) throws Exception {
+    return GSON.fromJson(msg, clazz);
+  }
+
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.6em;">
+That's everything we need for our example Netty server to do stuff.</div>
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">Setting it in action </div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.6em;">
+First we start up the server. How you do this will depend on the way your project is structured:</div>
+   ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+INFO [.....] nettytest.SocketServer: Started on port 9000]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.6em;">
+We can then use telnet to open a socket to our server:</div>
+   ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+# jameie at eduD692.kent.ac.uk in ~ [.....]
+$ telnet localhost 9000
+Trying ::1...
+Connected to localhost.
+Escape character is '^]'.
+{ "firstName": "Jameie", "lastName": "Perkins" }
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.6em;">
+And then in standard out we'll see:</div>
+   ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+Your name is Jamie Perkins!
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">Warpping up</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.6em;">
+There is a huge amount of detail I've glossed over for the sake of making this a very easy introduction and to get you off the ground quickly. The Netty user guid goes into more depth and is a good place to start when learing more. If you want to read about NIO in general the Oracle docs are also helpful.</div>
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:4em;">
+    <c:title><![CDATA[<div style="color:cadetblue;font-size:3.2em;">Netty RestfulAPI</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    
+
+    <c:sourceContent type="" title="MainServer.java" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+public final class MainServer {
+  
+  static final boolean _SSLEnabled = System.getProperty("ssl") != null;
+  static final int _PORT = Integer.parseInt(System.getProperty("port", _SSLEnabled ? "8443" : "6789"));
+
+  public static void main (String[] args) throws Exception {
+
+    final SslContext sslContext = null;
+
+    if (_SSLEnabled) {
+      SelfSingledCertificate ssc = new SelfSingledCertificate();
+      sslContext = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey()).build();
+    } else sslContext = null;
+
+    // configure the NIO server
+    EventLoopGroup bossGroup = new NioEventLoopGroup();
+    EventLoopGroup workerGroup = new NioEventLoopGroup();
+
+    try {
+
+      ServerBootstrap b = new ServerBootstrap();
+
+      b.option(ChannelOption.SO_BACKLOG, 1024);
+      b.group(bossGroup, workerGroup)
+       .channel(NioServerSocketChannel.class)
+       .handler(new LoggingHandler(LogLevel.INFO))
+       .childHandler(new MySocketInitializer(sslContext));
+
+      Channel ch = b.bind(_PORT).sync().channel();
+      ch.closeFuture().sync();
+
+      System.out.println("Open your web browser and navigate to " + 
+                          (_SSLEnabled ? "https://" : "http://") + "127.0.0.1:" + _PORT + "/");
+
+    } finally {
+      bossGroup.shutdownGracefully();
+      workerGroup.shutdownGracefully();
+    }
+
+  }
+
+}
+]]>
+    </c:sourceContent>
+    
+
+    <c:sourceContent type="" title="MySocketInitializer.java" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+public final class MySocketInitializer extends ChannelInitializer<SocketChannel> {
+  
+  private final SslContext sslContext;
+  
+  public MySocketInitializer (SslContext sslContext) {
+    this.sslContext = sslContext;
+  }
+
+  @Override
+  public void initChannel(SocketChannel ch) {
+
+    ChannelPipeline p = ch.pipeline();
+
+    if (sslContext != null) p.addLast(sslContext.newHandler(ch.alloc()));
+
+    p.addLast(new HttpServerCodec());   // HTTP 服务解码器
+    p.addLast(new HttpObjectAggregator(2048));  // HTTP 消息的合并处理
+    p.addLast(new HealthServerHandler());   // 服务器逻辑处理
+
+  }
+
+}
+]]>
     </c:sourceContent>
 
     <c:comment>
