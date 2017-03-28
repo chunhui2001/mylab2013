@@ -108,9 +108,7 @@ $ java -cp target/MyNetty-jar-with-dependencies.jar com.mynetty.app.App
             <artifactId>maven-assembly-plugin</artifactId>
             <configuration>
                 <archive>
-                    <manifest>
-                        <mainClass>fully.qualified.MainClass</mainClass>
-                    </manifest>
+                    <manifest><mainClass>fully.qualified.MainClass</mainClass></manifest>
                 </archive>
                 <descriptorRefs>
                     <descriptorRef>jar-with-dependencies</descriptorRef>
@@ -123,9 +121,7 @@ $ java -cp target/MyNetty-jar-with-dependencies.jar com.mynetty.app.App
             <version>2.6</version>
             <configuration>
                 <archive>
-                    <manifest>
-                        <addClasspath>true</addClasspath>
-                    </manifest>
+                    <manifest><addClasspath>true</addClasspath></manifest>
                 </archive>
             </configuration>
         </plugin>
@@ -513,11 +509,11 @@ public final class MainServer {
        .handler(new LoggingHandler(LogLevel.INFO))
        .childHandler(new MySocketInitializer(sslContext));
 
-      Channel ch = b.bind(_PORT).sync().channel();
-      ch.closeFuture().sync();
-
       System.out.println("Open your web browser and navigate to " + 
                           (_SSLEnabled ? "https://" : "http://") + "127.0.0.1:" + _PORT + "/");
+
+      b.localAddress(9000).bind().sync().channel().closeFuture().sync();
+      
 
     } finally {
       bossGroup.shutdownGracefully();
