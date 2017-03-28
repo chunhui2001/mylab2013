@@ -26,8 +26,112 @@ $ mvn archetype:generate -DgroupId=com.mycompany.app \
                          -DarchetypeArtifactId=maven-archetype-quickstart \
                          -DinteractiveMode=false
 $ cd my-app
-$ mvn clean package
-$ java -cp target/my-app-1.0-SNAPSHOT.jar com.mycompany.app.App
+$ mvn clean assembly:assemblypp
+$ java -cp target/MyNetty-jar-with-dependencies.jar com.mynetty.app.App
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Update pom.xml</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.mynetty.app</groupId>
+  <artifactId>my-netty</artifactId>
+  <packaging>jar</packaging>
+  <version>1.0-SNAPSHOT</version>
+  <name>my-netty</name>
+  <url>http://maven.apache.org</url>
+    <properties>
+    <java-version>1.8</java-version>
+    </properties>
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>3.8.1</version>
+      <scope>test</scope>
+    </dependency>
+      <!-- https://mvnrepository.com/artifact/io.netty/netty-all -->
+      <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-all</artifactId>
+          <version>4.1.9.Final</version>
+      </dependency>
+      <!-- https://mvnrepository.com/artifact/commons-logging/commons-logging -->
+      <dependency>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
+          <version>1.1.1</version>
+      </dependency>
+      <!-- https://mvnrepository.com/artifact/log4j/log4j -->
+      <dependency>
+          <groupId>log4j</groupId>
+          <artifactId>log4j</artifactId>
+          <version>1.2.17</version>
+      </dependency>
+      <dependency>
+          <groupId>com.google.code.gson</groupId>
+          <artifactId>gson</artifactId>
+          <version>2.7</version>
+      </dependency>
+  </dependencies>
+  <build>
+    <finalName>MyNetty</finalName>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.3</version>
+            <configuration>
+                <source>${java-version}</source>
+                <target>${java-version}</target>
+            </configuration>
+        </plugin>
+        <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <configuration>
+                <archive>
+                    <manifest>
+                        <mainClass>fully.qualified.MainClass</mainClass>
+                    </manifest>
+                </archive>
+                <descriptorRefs>
+                    <descriptorRef>jar-with-dependencies</descriptorRef>
+                </descriptorRefs>
+            </configuration>
+        </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-war-plugin</artifactId>
+            <version>2.6</version>
+            <configuration>
+                <archive>
+                    <manifest>
+                        <addClasspath>true</addClasspath>
+                    </manifest>
+                </archive>
+            </configuration>
+        </plugin>
+    </plugins>
+    </build>
+</project>
     ]]>
     </c:sourceContent>
 
@@ -478,44 +582,44 @@ public class HealthServerHandler extends ChannelInboundHandlerAdapter {
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) {
 
-    if (!msg instanceof FullHttpRequest) return;
+    if (!(msg instanceof FullHttpRequest)) return;
 
     FullHttpRequest req = (FullHttpRequest) msg;
 
-    JSONObject responseJson = new JSONObject();
-    JSONObject requestJson = null;
+    JsonObject responseJson = new JsonObject();
+    JsonObject requestJson = null;
 
     try {
-      requestJson = new JSONObject(parseJsonRequest(req))
+        requestJson = new com.google.gson.Gson().fromJson(parseJsonRequest(req), JsonObject.class);
     } catch(Exception e) {
-      ResponseJson (ctx, req, new String("error json"));
+        ResponseJson (ctx, req, new String("error json"));
     }
 
     String uri = req.uri();
 
     if (req.method() != HttpMethod.POST) {
-      responseJson.put("error", "404 - Not Found");
-      ResponseJson(ctx, req, responseJson.toString());
-      return;
+        responseJson.addProperty("error", "404 - Not Found");
+        ResponseJson(ctx, req, responseJson.toString());
+        return;
     }
 
     if (req.uri().equals("/bmi")) {
-      // 计算体重质量指数
-      double height = 0.01 * requestJson.getDouble("height");
-      double weight = requestJson.getDouble("weight");
-      responseJson.put("bmi", ((int)((weight / (height * height)) * 100)) / 100.0;);
-      ResponseJson(ctx, req, responseJson.toString());
-      return;
+        // 计算体重质量指数
+        double height = 0.01 * requestJson.get("height").getAsDouble();
+        double weight = requestJson.get("weight").getAsDouble();
+        responseJson.addProperty("bmi", ((int) ((weight / (height * height)) * 100)) / 100.0);
+        ResponseJson(ctx, req, responseJson.toString());
+        return;
     }
 
     if (req.uri().equals("/bmr")) {
-      // 计算基础代谢率
-      responseJson.put("bmr", "TODO");
-      ResponseJson(ctx, req, responseJson.toString());
-      return;
+        // 计算基础代谢率
+        responseJson.addProperty("bmr", "TODO");
+        ResponseJson(ctx, req, responseJson.toString());
+        return;
     }
 
-    responseJson.put("error", "404 - Not Found");
+    responseJson.addProperty("error", "404 - Not Found");
     ResponseJson(ctx, req, responseJson.toString());
     return;
 
@@ -524,22 +628,22 @@ public class HealthServerHandler extends ChannelInboundHandlerAdapter {
   private void ResponseJson(ChannelHandlerContext ctx, FullHttpRequest req, String jsonStr) {
 
     FullHttpResponse response = new DefaultFullHttpResponse(
-                    HTTP_1_1, OK, Unpooled.wrappedBuffer(jsonStr.getBytes()));
+            HttpVersion.HTTP_1_1, HttpResponseStatus.OK, Unpooled.wrappedBuffer(jsonStr.getBytes()));
 
     response.headers().set(_CONTENT_TYPE, "text/json");
     response.headers().setInt(_CONTENT_LENGTH, response.content().readableBytes());
 
-    if (HttpUril.isKeepAlive(req)) {
-      response.headers().set(_CONNECTION, _KEEP_ALIVE);
-      ctx.write(response);  
-      return;    
+    if (HttpUtil.isKeepAlive(req)) {
+        response.headers().set(_CONNECTION, _KEEP_ALIVE);
+        ctx.write(response);
+        return;
     }
 
     ctx.write(response).addListener(ChannelFutureListener.CLOSE);
 
   }
 
-  private String parseJsonRequest(FullHttpRequest req) {
+  private String parseJsonRequest(FullHttpRequest request) {
     return request.content().toString(CharsetUtil.UTF_8);
   }
 
