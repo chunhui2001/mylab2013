@@ -456,6 +456,96 @@ public final class MySocketInitializer extends ChannelInitializer<SocketChannel>
 }
 ]]>
     </c:sourceContent>
+    
+
+    <c:sourceContent type="" title="HealthServerHandler.java" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:gray;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+public class HealthServerHandler extends ChannelInboundHandlerAdapter {
+  
+  private static final AsciiString _CONTENT_TYPE = new AsciiString("Content-Type");
+  private static final AsciiString _CONTENT_LENGTH = new AsciiString("Content-Length");
+  private static final AsciiString _CONNECTION = new AsciiString("Connection");
+  private static final AsciiString _KEEP_ALIVE = new AsciiString("Keep-Alive");
+
+  @Override
+  public void channelReadComplete(ChannelHandlerContext ctx) {
+    ctx.flush();
+  }
+
+  @Override
+  public void channelRead(ChannelHandlerContext ctx, Object msg) {
+
+    if (!msg instanceof FullHttpRequest) return;
+
+    FullHttpRequest req = (FullHttpRequest) msg;
+
+    JSONObject responseJson = new JSONObject();
+    JSONObject requestJson = null;
+
+    try {
+      requestJson = new JSONObject(parseJsonRequest(req))
+    } catch(Exception e) {
+      ResponseJson (ctx, req, new String("error json"));
+    }
+
+    String uri = req.uri();
+
+    if (req.method() != HttpMethod.POST) {
+      responseJson.put("error", "404 - Not Found");
+      ResponseJson(ctx, req, responseJson.toString());
+      return;
+    }
+
+    if (req.uri().equals("/bmi")) {
+      // 计算体重质量指数
+      double height = 0.01 * requestJson.getDouble("height");
+      double weight = requestJson.getDouble("weight");
+      responseJson.put("bmi", ((int)((weight / (height * height)) * 100)) / 100.0;);
+      ResponseJson(ctx, req, responseJson.toString());
+      return;
+    }
+
+    if (req.uri().equals("/bmr")) {
+      // 计算基础代谢率
+      responseJson.put("bmr", "TODO");
+      ResponseJson(ctx, req, responseJson.toString());
+      return;
+    }
+
+    responseJson.put("error", "404 - Not Found");
+    ResponseJson(ctx, req, responseJson.toString());
+    return;
+
+  }
+
+  private void ResponseJson(ChannelHandlerContext ctx, FullHttpRequest req, String jsonStr) {
+
+    FullHttpResponse response = new DefaultFullHttpResponse(
+                    HTTP_1_1, OK, Unpooled.wrappedBuffer(jsonStr.getBytes()));
+
+    response.headers().set(_CONTENT_TYPE, "text/json");
+    response.headers().setInt(_CONTENT_LENGTH, response.content().readableBytes());
+
+    if (HttpUril.isKeepAlive(req)) {
+      response.headers().set(_CONNECTION, _KEEP_ALIVE);
+      ctx.write(response);  
+      return;    
+    }
+
+    ctx.write(response).addListener(ChannelFutureListener.CLOSE);
+
+  }
+
+  private String parseJsonRequest(FullHttpRequest req) {
+    return request.content().toString(CharsetUtil.UTF_8);
+  }
+
+}
+]]>
+    </c:sourceContent>
 
     <c:comment>
       <c:comment1>
