@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+
+]]>
+  </c:abstract>
+
+
+
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+ 
+    <c:sourceContent type="" title="Install Cassandra" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+
+
+    ]]>
+    </c:sourceContent>
+ 
+    <c:sourceContent type="" title="Create Keyspace" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+
+
+    ]]>
+    </c:sourceContent>
+ 
+    <c:sourceContent type="" title="Create Table" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+
+
+    ]]>
+    </c:sourceContent>
+
+ 
+    <c:sourceContent type="" title="Generate Project" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+
+$ mvn archetype:generate -DgroupId=com.cassandralab \
+                         -DartifactId=cassandralab \
+                         -DarchetypeArtifactId=maven-archetype-quickstart \
+                         -DinteractiveMode=false
+$ cd cassandralab
+$ mvn clean assembly:assembly
+$ java -cp target/cassandralab-jar-with-dependencies.jar com.cassandralab.App
+
+    ]]>
+    </c:sourceContent>
+ 
+    <c:sourceContent type="" title="Update pom.xml" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.cassandralab</groupId>
+  <artifactId>cassandralab</artifactId>
+  <packaging>jar</packaging>
+  <version>1.0-SNAPSHOT</version>
+  <name>cassandralab</name>
+  <url>http://maven.apache.org</url>
+
+<properties>
+    <java-version>1.8</java-version>
+    </properties>
+
+
+  <dependencies>
+    
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>3.8.1</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+          <version>1.7.5</version>
+      </dependency>
+      <dependency>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-log4j12</artifactId>
+          <version>1.7.5</version>
+      </dependency>
+
+      <!-- https://mvnrepository.com/artifact/com.datastax.cassandra/cassandra-driver-core -->
+      <dependency>
+          <groupId>com.datastax.cassandra</groupId>
+          <artifactId>cassandra-driver-core</artifactId>
+          <version>3.2.0</version>
+      </dependency>
+
+
+  </dependencies>
+
+<build>
+    <finalName>cassandralab</finalName>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.3</version>
+            <configuration>
+                <source>${java-version}</source>
+                <target>${java-version}</target>
+            </configuration>
+        </plugin>
+        <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <configuration>
+                <archive>
+                    <manifest><mainClass>fully.qualified.MainClass</mainClass></manifest>
+                </archive>
+                <descriptorRefs>
+                    <descriptorRef>jar-with-dependencies</descriptorRef>
+                </descriptorRefs>
+            </configuration>
+        </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-war-plugin</artifactId>
+            <version>2.6</version>
+            <configuration>
+                <archive>
+                    <manifest><addClasspath>true</addClasspath></manifest>
+                </archive>
+            </configuration>
+        </plugin>
+    </plugins>
+
+
+    <resources>
+        <resource>
+            <directory>src/main/resources</directory>
+            <!--<targetPath>${project.build.directory}</targetPath>-->
+            <includes>
+                <include>log4j.properties</include>
+            </includes>
+        </resource>
+    </resources>
+
+
+</build>
+
+</project>
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+  <c:entry style="font-size:1.8em;color:#0134A0;font-weight:bold;font-style:oblique;">
+    <c:title>CassandraConnector.java</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+ 
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+package com.cassandralab;
+
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Session;
+
+/**
+ * Created by keesh on 4/18/17.
+ */
+public class CassandraConnector {
+
+    private static Cluster cluster;
+    private static Session session;
+
+    public static Cluster connect(String node) {
+        return Cluster.builder().addContactPoint(node).build();
+    }
+
+    public static void main(String[] args) {
+
+        cluster = connect("127.0.0.1");
+        session = cluster.connect();
+
+        session.execute("create keyspace awaken_store with replication = "
+                        + "{ 'class': 'SimpleStrategy', 'replication_factor': 1 };");
+
+        session.execute("use awaken_store");
+
+        session.close();
+        cluster.close();
+
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+ 
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+</c:component>
