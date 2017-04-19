@@ -303,6 +303,22 @@ $ java -cp target/cassandralab-jar-with-dependencies.jar com.cassandralab.App
 
     ]]>
     </c:sourceContent>
+    
+    <c:sourceContent type="" title="log4j.properties" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.8em;font-family:monospace;">
+      <![CDATA[
+# Root logger option
+log4j.rootLogger=INFO, stdout
+
+# Direct log messages to stdout
+log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+log4j.appender.stdout.Target=System.out
+log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+log4j.appender.stdout.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n
+    ]]>
+    </c:sourceContent>
  
     <c:sourceContent type="" title="Update pom.xml" id="sourceContent1"
                      style="margin-top:1em;"
@@ -353,6 +369,19 @@ $ java -cp target/cassandralab-jar-with-dependencies.jar com.cassandralab.App
       </dependency>
 
 
+      <dependency>
+          <groupId>mysql</groupId>
+          <artifactId>mysql-connector-java</artifactId>
+          <version>5.1.30</version>
+      </dependency>
+
+      <dependency>
+          <groupId>com.google.code.gson</groupId>
+          <artifactId>gson</artifactId>
+          <version>2.7</version>
+      </dependency>
+      
+      
   </dependencies>
 
 <build>
@@ -440,61 +469,207 @@ package com.cassandralab;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 
-/**
- * Created by keesh on 4/18/17.
- */
 public class CassandraConnector {
 
-    private static Cluster cluster;
-    private static Session session;
+    public static String getInsertStatement(String tableName, Set<String> fields) {
+
+        String fieldStr = "";
+        String fieldValue = "";
+
+        for (String field : fields) {
+            fieldStr += field + ", ";
+            fieldValue += "?, ";
+        }
+
+        return ("insert into " + tableName + " (" + fieldStr + ") "
+                + "values (" + fieldValue + "); ").replace(", )", ")");
+
+    }
+
+    private Cluster cluster;
+    private Session session;
+
+    public CassandraConnector(String host, String keySpace) {
+        cluster = connect(host);
+        session = cluster.connect(keySpace);
+    }
 
     public static Cluster connect(String node) {
         return Cluster.builder().addContactPoint(node).build();
     }
 
-    public static void main(String[] args) {
+    public void executeUpdate(String cql, Processer processer, Object[] parameterValues)
+            throws SQLException {
 
-        cluster = connect("127.0.0.1");
-        session = cluster.connect();
+        Object result = null;
 
-        session.execute("create keyspace awaken_store with replication = "
-                        + "{ 'class': 'SimpleStrategy', 'replication_factor': 1 };");
+        if (parameterValues != null) {
 
-        session.execute("use awaken_store");
+            PreparedStatement statement = session.prepare(cql);
+            BoundStatement boundStatement = new BoundStatement(statement);
+
+
+            if (parameterValues.length == 1) {
+                boundStatement = boundStatement.bind(parameterValues[0]);
+            }
+            if (parameterValues.length == 2) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1]);
+            }
+            if (parameterValues.length == 3) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2]);
+            }
+            if (parameterValues.length == 4) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3]);
+            }
+            if (parameterValues.length == 5) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4]);
+            }
+            if (parameterValues.length == 6) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5]);
+            }
+            if (parameterValues.length == 7) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6]);
+            }
+            if (parameterValues.length == 8) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]);
+            }
+            if (parameterValues.length == 9) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]
+                        ,parameterValues[8]);
+            }
+            if (parameterValues.length == 10) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]
+                        ,parameterValues[8],parameterValues[9]);
+            }
+            if (parameterValues.length == 11) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]
+                        ,parameterValues[8],parameterValues[9],parameterValues[10]);
+            }
+            if (parameterValues.length == 12) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]
+                        ,parameterValues[8],parameterValues[9],parameterValues[10],parameterValues[11]);
+            }
+            if (parameterValues.length == 13) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]
+                        ,parameterValues[8],parameterValues[9],parameterValues[10],parameterValues[11],parameterValues[12]);
+            }
+            if (parameterValues.length == 14) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]
+                        ,parameterValues[8],parameterValues[9],parameterValues[10],parameterValues[11],parameterValues[12],parameterValues[13]);
+            }
+            if (parameterValues.length == 15) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]
+                        ,parameterValues[8],parameterValues[9],parameterValues[10],parameterValues[11],parameterValues[12],parameterValues[13],parameterValues[14]);
+            }
+            if (parameterValues.length == 16) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]
+                        ,parameterValues[8],parameterValues[9],parameterValues[10],parameterValues[11],parameterValues[12],parameterValues[13],parameterValues[14],parameterValues[15]);
+            }
+            if (parameterValues.length == 17) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]
+                        ,parameterValues[8],parameterValues[9],parameterValues[10],parameterValues[11],parameterValues[12],parameterValues[13],parameterValues[14],parameterValues[15]
+                        ,parameterValues[16]);
+            }
+            if (parameterValues.length == 18) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]
+                        ,parameterValues[8],parameterValues[9],parameterValues[10],parameterValues[11],parameterValues[12],parameterValues[13],parameterValues[14],parameterValues[15]
+                        ,parameterValues[16],parameterValues[17]);
+            }
+            if (parameterValues.length == 19) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]
+                        ,parameterValues[8],parameterValues[9],parameterValues[10],parameterValues[11],parameterValues[12],parameterValues[13],parameterValues[14],parameterValues[15]
+                        ,parameterValues[16],parameterValues[17],parameterValues[18]);
+            }
+            if (parameterValues.length == 20) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]
+                        ,parameterValues[8],parameterValues[9],parameterValues[10],parameterValues[11],parameterValues[12],parameterValues[13],parameterValues[14],parameterValues[15]
+                        ,parameterValues[16],parameterValues[17],parameterValues[18],parameterValues[19]);
+            }
+            if (parameterValues.length == 21) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]
+                        ,parameterValues[8],parameterValues[9],parameterValues[10],parameterValues[11],parameterValues[12],parameterValues[13],parameterValues[14],parameterValues[15]
+                        ,parameterValues[16],parameterValues[17],parameterValues[18],parameterValues[19],parameterValues[20]);
+            }
+            if (parameterValues.length == 22) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]
+                        ,parameterValues[8],parameterValues[9],parameterValues[10],parameterValues[11],parameterValues[12],parameterValues[13],parameterValues[14],parameterValues[15]
+                        ,parameterValues[16],parameterValues[17],parameterValues[18],parameterValues[19],parameterValues[20],parameterValues[21]);
+            }
+            if (parameterValues.length == 23) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]
+                        ,parameterValues[8],parameterValues[9],parameterValues[10],parameterValues[11],parameterValues[12],parameterValues[13],parameterValues[14],parameterValues[15]
+                        ,parameterValues[16],parameterValues[17],parameterValues[18],parameterValues[19],parameterValues[20],parameterValues[21],parameterValues[22]);
+            }
+            if (parameterValues.length == 24) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]
+                        ,parameterValues[8],parameterValues[9],parameterValues[10],parameterValues[11],parameterValues[12],parameterValues[13],parameterValues[14],parameterValues[15]
+                        ,parameterValues[16],parameterValues[17],parameterValues[18],parameterValues[19],parameterValues[20],parameterValues[21],parameterValues[22],parameterValues[23]);
+            }
+            if (parameterValues.length == 25) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]
+                        ,parameterValues[8],parameterValues[9],parameterValues[10],parameterValues[11],parameterValues[12],parameterValues[13],parameterValues[14],parameterValues[15]
+                        ,parameterValues[16],parameterValues[17],parameterValues[18],parameterValues[19],parameterValues[20],parameterValues[21],parameterValues[22],parameterValues[23]
+                        ,parameterValues[24]);
+            }
+            if (parameterValues.length == 26) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]
+                        ,parameterValues[8],parameterValues[9],parameterValues[10],parameterValues[11],parameterValues[12],parameterValues[13],parameterValues[14],parameterValues[15]
+                        ,parameterValues[16],parameterValues[17],parameterValues[18],parameterValues[19],parameterValues[20],parameterValues[21],parameterValues[22],parameterValues[23]
+                        ,parameterValues[24],parameterValues[25]);
+            }
+            if (parameterValues.length == 27) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]
+                        ,parameterValues[8],parameterValues[9],parameterValues[10],parameterValues[11],parameterValues[12],parameterValues[13],parameterValues[14],parameterValues[15]
+                        ,parameterValues[16],parameterValues[17],parameterValues[18],parameterValues[19],parameterValues[20],parameterValues[21],parameterValues[22],parameterValues[23]
+                        ,parameterValues[24],parameterValues[25],parameterValues[26]);
+            }
+            if (parameterValues.length == 28) {
+                boundStatement = boundStatement.bind(parameterValues[0],parameterValues[1],parameterValues[2],parameterValues[3],parameterValues[4],parameterValues[5],parameterValues[6],parameterValues[7]
+                        ,parameterValues[8],parameterValues[9],parameterValues[10],parameterValues[11],parameterValues[12],parameterValues[13],parameterValues[14],parameterValues[15]
+                        ,parameterValues[16],parameterValues[17],parameterValues[18],parameterValues[19],parameterValues[20],parameterValues[21],parameterValues[22],parameterValues[23]
+                        ,parameterValues[24],parameterValues[25],parameterValues[26],parameterValues[27]);
+            }
+
+            result = session.execute(boundStatement);
+
+        } else {
+            result = session.execute(cql);
+        }
+
+
 
         session.close();
         cluster.close();
 
     }
-    
-    
-    public static void main(String[] args) {
-
-        String host = "127.0.0.1";
-        String keySpace = "xaokon_store";
-
-        cluster = connect(host);
-        session = cluster.connect(keySpace);
-
-        PreparedStatement statement = session.prepare(
-                "INSERT INTO cardproduct " +
-                        "(card_type_id,created_time,card_name,card_type,last_update_time,project_id,project_name,status,total_count) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);");
-
-        BoundStatement boundStatement = new BoundStatement(statement);
-
-        session.execute(
-                boundStatement.bind(
-                        UUID.randomUUID(), "2017-01-05 20:24:22.050", "世界上最宽阔的是海洋"
-                        , "eleton", "2017-01-05 20:24:22.050", "1", "比海洋更宽阔的是天空", "ACTIVE", Double.parseDouble(6777 + "")));
 
 
-        session.close();
-        cluster.close();
+    public void main(String[] args) throws SQLException {
+
+        CassandraConnector cassandraConnector = new CassandraConnector("127.0.0.1", "xaokon_store");
+
+        Map<String, Object> orderData = new LinkedHashMap<>();
+
+
+        String cqlStemt = getInsertStatement("cardproduct", orderData.keySet());
+
+        System.out.println(cqlStemt + " cqlStemt");
+
+//        String cqlStemt = "INSERT INTO cardproduct " +
+//                        "(card_type_id,created_time,card_name,card_type,last_update_time,project_id,project_name,status,total_count) " +
+//                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
+
+        cassandraConnector.executeUpdate(cqlStemt, new Processer() {
+            @Override
+            public Map<String, Object> mapper(ResultSet data) throws SQLException {
+                return null;
+            }
+        }, orderData.values().toArray());
 
     }
 
 }
+
 
     ]]>
     </c:sourceContent>
