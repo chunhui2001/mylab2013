@@ -572,4 +572,911 @@ public class App {
     </c:comment>
   </c:entry>
 
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">CountDownLatch</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package demo8;
+
+import java.util.concurrent.CountDownLatch;
+
+public class Processor implements Runnable {
+  
+    private CountDownLatch latch;
+
+    public Processor(CountDownLatch latch) {
+        this.latch = latch;
+    }
+
+    public void run() {
+
+        System.out.println("Started... ");
+
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        latch.countDown();
+    }
+}
+
+public class App {
+  
+    public static void main(String[] args) {
+
+        CountDownLatch latch = new CountDownLatch(3);
+
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+
+        for (int i=0; i<3; i++) {
+            executor.submit(new Processor(latch));
+        }
+
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("Completed.");
+    }
+}
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Producer and Consumer Pattern</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package demo9;
+
+import java.util.concurrent.ArrayBlockQueue;
+import java.util.concurrent.BlockingQueue;
+
+public class App {
+  
+    private static BlockingQueue<Integer> queue = new ArrayBlockingQueue<Integer>(10);
+
+    private static  void producer() throws InterruptedException {
+
+        Random random = new Random();
+
+        while (true) {
+
+            queue.put(random.nextInt(100));
+        }
+    }
+
+    private static void consumer() throws InterruptedException {
+
+        Random random = new Random();
+
+        while (true) {
+
+            Thread.sleep(100);
+
+            if (random.nextInt(10) == 0) {
+                Integer value = queue.take();
+                System.out.println("Taken value: " + value + "; Queue size is: " + queue.size());
+            }
+        }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+
+        Thread t1 = new Thread(new Runnable() {
+
+            public void run() {
+                try {
+                    producer();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        Thread t2 = new Thread(new Runnable() {
+
+            public void run() {
+                try {
+                    consumer();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        t1.start();
+        t2.start();
+
+        t1.join();
+        t2.join();
+
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Wait and Notify</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package demo10;
+
+public class Processor {
+  
+    public void produce() throws InterruptedException {
+
+        synchronized (this) {
+            System.out.println("Producer thread running ... ");
+
+            // 当一个线程执行到 wait() 方法时，他就进入到一个和该对象相关的等待池 (Waiting Pool) 中，
+            // 同时失去了对象的机锁—暂时的，wait 后还要返还对象锁。
+            // 当前线程必须拥有当前对象的锁，如果当前线程不是此锁的拥有者，
+            // 会抛出 IllegalMonitorStateException 异常,
+            // 所以wait() 必须在 synchronized block 中调用。 
+            wait();
+
+            System.out.println("Resumed.");
+        }
+    }
+
+    public void consume() throws InterruptedException {
+
+        Scanner scanner = new Scanner(System.in);
+        Thread.sleep(2000);
+
+        synchronized (this) {
+            System.out.println("Waiting for return key.");
+            scanner.nextLine();
+            System.out.println("Return key pressed.");
+
+            // notifyAll(), 唤醒在当前对象等待池中等待的所有线程
+            // notify()/notifyAll()也必须拥有相同对象锁，否则也会抛出 IllegalMonitorStateException 异常。 
+            notify();   // 唤醒在当前对象等待池中等待的第一个线程
+
+            Thread.sleep(5000);
+        }
+    }
+
+}
+
+
+public class App {
+  
+    public static void main(String[] args) throws InterruptedException {
+
+        final Processor processor = new Processor();
+
+        Thread t1 = new Thread (new Runnable() {
+
+            public void run() {
+
+                try {
+                    processor.produce();
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        Thread t2 = new Thread (new Runnable() {
+
+            public void run() {
+
+                try {
+                    procude.consume();
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        t1.start();
+        t2.start();
+
+        t1.join();
+        t2.join();
+
+    }
+}
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">A Worked Example Using Low-Level Synchronization</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package demo11;
+
+public class Processor {
+
+    private LinkedList<Integer> list = new LinkedList<Integer>();
+    private final int LIMIT = 10;
+    private Object lock = new Object();
+  
+    public void produce () throws InterruptedException {
+
+        int value = 0;
+        while (true) {
+            synchronized (lock) {
+                if (list.size() == LIMIT) lock.wait();
+                list.add(value++);
+                lock.notify();
+            }
+        }
+    }
+
+    public void consume () throws InterruptedException {
+
+        while (true) {
+
+            synchronized (lock) {
+
+                if (list.size() == 0) lock.wait();
+
+                System.out.println("List size is : " + list.size());
+                int value = list.removeFirst();
+                System.out.println("; value is : " + value);
+                lock.notify();
+            }     
+
+            Thread.sleep((new Random()).nextInt(1000));       
+        }
+    }
+}
+
+
+public class App {
+  
+    public static void main(String[] args) throws InterruptedException {
+
+        final Processor processor = new Processor();
+
+        Thread t1 = new Thread (new Runnable() {
+
+            public void run() {
+
+                try {
+                    processor.produce();
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        Thread t2 = new Thread (new Runnable() {
+
+            public void run() {
+
+                try {
+                    procude.consume();
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        t1.start();
+        t2.start();
+
+        t1.join();
+        t2.join();
+
+    }
+}
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Re-entrant Locks</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Runner" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package demo12;
+
+public class Runner {
+  
+    private int count = 0;
+    private Lock lock = new ReentrantLock();
+    privat Condition lockCond = lock.newCondition();
+
+    private void increment() {
+
+        for (int i=0; i<10000; i++) {
+            count++;
+        }
+    }
+
+    public void firstThread () throws InterruptedException {
+
+        lock.lock();
+
+        System.out.println("Waiting ....");
+        lockCond.await();
+        System.out.println("Woken up.");
+
+        try {
+            increment();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void secondThread() throws InterruptedException {
+
+        Thread.sleep(2000);
+        lockCond.lock();
+
+        System.out.println("Press the return key.");
+        (new Scanner(System.in)).nextLine();
+        System.out.println("Got return key.");
+
+        lockCond.signal();
+
+        try {
+            increment();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void finished () {
+
+        System.out.println("Count is : " + count);
+    }
+
+}
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">DeadLock</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Account" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package demo13;
+
+public class Account {
+
+    private int balance = 10000;
+  
+    public void deposit(int amount) {
+        balance += amount;        
+    }
+
+    public void withdraw(int amount) {
+        balance -= amount;
+    }
+
+    public int getBalance() {
+        return balance;
+    }
+
+    public static void transfer(Account a1, Account a2, int amount) {
+        a1.withdraw(amount);
+        a2.deposit(amount);
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Runner" id="sourceContent1"
+      style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package demo13;
+
+public class Runner {
+
+    private Account acc1 = new Account();
+    private Account acc2 = new Account();
+
+    private Lock acc1Lock = new ReentrantLock();
+    private Lock acc2Lock = new ReentrantLock();
+
+    privat void acquireLocks (Lock lock1, Lock lock2) throws InterruptedException {
+
+        while (true) {
+
+            // Acquire locks
+            boolean gotLock1 = false;
+            boolean gotLock2 = false;
+
+            try {
+                gotLock1 = lock1.tryLock();
+                gotLock2 = lock2.tryLock();
+            } finally {
+
+                if (gotLock1 && gotLock2) return;
+                if (gotLock1) lock1.unlock();
+                if (gotLock2) lock2.unlock();
+            }
+
+            // Locks not acquired
+            Thread.sleep(1);
+
+        }
+    }
+  
+    public void firstThread() thorws InterruptedException {
+
+          Random random = new Random();
+
+          for (int i=0; i<10000; i++) {
+
+              // acc1Lock.lock();
+              // acc2Lock.lock();
+
+              acquireLocks(acc1Lock, acc2Lock);
+
+              try {
+                  Account.transfer(acc1, acc2, random.nextIndex(100));
+              } finally {
+                  acc1Lock.unlock();
+                  acc2Lock.unlock();
+              }
+          }
+        
+    }
+
+    public void secondThread() throws InterruptedException {
+
+          Random random = new Random();
+
+          for (int i=0; i<10000; i++) {
+
+              // acc1Lock.lock();
+              // acc2Lock.lock();
+
+              // DeadLock !!!
+              // acc2Lock.lock();
+              // acc1Lock.lock();
+
+              acquireLocks(acc1Lock, acc2Lock);
+
+              try {
+                  Account.transfer(acc2, acc1, random.nextIndex(100));
+              } finally {
+                  acc1Lock.unlock();
+                  acc2Lock.unlock();
+              }
+          }
+
+    }
+
+    public void finished() {
+        System.out.println("Account 1 balance: " + acc1.getBalance());
+        System.out.println("Account 2 balance: " + acc2.getBalance());
+        System.out.println("Total Balance: " + (acc1.getBalance() + acc2.getBalance()));
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Semaphores</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        <div>Semaphore 当前在多线程环境下被扩放使用，操作系统的信号量是个很重要的概念，在进程控制方面都有应用。<br />
+        Java 并发库 的 Semaphore 可以很轻松完成信号量控制，Semaphore 可以控制某个资源可被同时访问的个数，通过 acquire() 获取一个许可，如果没有就等待，而 release() 释放一个许可。比如在Windows下可以设置共享文件的最大客户端访问个数。 </div>
+<div style="margin-top:.5em;">
+Semaphore 实现的功能就类似厕所有5个坑，假如有10个人要上厕所，那么同时只能有多少个人去上厕所呢？同时只能有5个人能够占用，当5个人中 的任何一个人让开后，其中等待的另外5个人中又有一个人可以占用了。另外等待的5个人中可以是随机获得优先机会，也可以是按照先来后到的顺序获得机会，这取决于构造 Semaphore 对象时传入的参数选项。单个信号量的 Semaphore 对象可以实现互斥锁的功能，并且可以是由一个线程获得了“锁”，再由另一个线程释放“锁”，这可应用于死锁恢复的一些场合。</div>]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package demo14;
+
+import java.util.concurrent.Semaphore;
+
+public class Connection {
+  
+    private Semaphore sem = new Semaphore(10, true);    // **
+
+    private static Connection instance = new Connection();
+
+    private int connections = 0;
+
+    private Connection() {
+
+
+    }
+
+    public static Connection getInstance() {
+        return instance;
+    }
+
+    public void connect() {
+
+        try {
+            sem.acquire();
+        }  catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            doConnect();
+        } finally {
+            sem.release();
+        }
+
+    }
+
+    private void doConnect() {        
+
+        synchronized (this) {
+            connections++;
+            System.out.println("Current connections: " + connections);
+        }
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        synchronized (this) {
+            connections--;
+        }
+
+    }
+
+}
+
+public class App {
+  
+    public static void main (String[] args) {
+
+        /*
+          Semaphore sem = new Semaphore(1);
+
+          sem.acquire();
+          sem.release();
+
+          System.out.println("Available permits: " + sem.availablePermits());
+        */        
+
+        ExecutorService executor = Executors.newCachedThreadPool();
+
+        for (int i=0; i<200; i++) {
+
+            executor.submit(new Runnable() {
+                public void run() {
+                    Connection.getInstance().connect();
+                }
+            });
+        }
+
+        executor.shutdown();
+        executor.awaitTermination(1, TimeUnit.DAYS);
+
+    }
+}
+
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Callable and Future</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package demo15;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import java.util.concurrent.Future;
+import java.util.concurrent.Callable;
+
+public class App {
+  
+    public static void main(String[] args) {
+
+        ExecutorService executor = Executors.newCachedThreadPool();
+
+        /*executor.submit(new Runnable() {
+
+            public void run () {
+
+                Random random = new Random();
+                int duratiom = random.nextInt(4000);
+                System.out.println("Starting ...");
+
+                try {
+                    Thread.sleep(duration);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                System.out.println("Finished.");
+            }
+        });*/
+
+
+        Future<Integer> future = executor.submit(new Callable<Integer>() {
+
+            public Integer call () throws Exception {
+
+                Random random = new Random();
+                int duratiom = random.nextInt(4000);
+
+                if (duration > 2000) {
+                    throw new IOException("Sleeping for too long ...");
+                }
+
+                System.out.println("Starting ...");
+
+                try {
+                    Thread.sleep(duration);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                System.out.println("Finished.");
+
+                return duration;
+
+            } 
+        });
+
+        executor.shutdown();
+        executor.awaitTermination(1, TimeUnit.DAYS);
+
+        // future.isDone();
+
+        try {
+            System.out.println("Result is: " + future.get());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            IOException ex = (IOException) e.getCause();
+            System.out.println(ex.getMessage); 
+        }
+
+    }
+}
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Interrupting Threads</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package demo16;
+
+public class App {
+  
+  public static void main(String[] args) {
+
+      System.out.println("Starting ...");
+
+      Thread t = new Thread(new Runnable() {
+          @Override
+          public void run() {
+
+              Random random = new Random();
+                  
+              for (int i=0; i<1E8; i++) {
+
+                  if (Thread.currentThread().isInterrupted()) {
+                      System.out.println("We've been interrupted!");
+                      break;
+                  }
+
+                  Math.sin(ran.nextDouble());
+              }
+          }
+      });
+
+      t.start();
+
+      Thread.sleep(500);
+
+      t.interrupt();
+
+      try {
+          t.join();
+      } catch (InterruptedException e) {
+          e.printStackTrace();
+      }
+
+      System.out.println("Finished .");
+
+  }
+
+}
+
+
+public class App2 {
+  
+  public static void main(String[] args) {
+
+      System.out.println("Starting ...");
+
+      ExecutorService executor = Executors.newCacheThreadPool();
+
+      Future<?> future = executor.submit(new Callable<Void>() {
+          @Override
+          public Void call() throws Exception {
+
+              Random random = new Random();
+                  
+              for (int i=0; i<1E8; i++) {
+
+                  if (Thread.currentThread().isInterrupted()) {
+                      System.out.println("We've been interrupted!");
+                      break;
+                  }
+
+                  Math.sin(ran.nextDouble());
+              }
+
+              return null;
+
+          }
+      });
+
+      executor.shutdown();
+
+      Thread.sleep(500);
+
+      future.cancel(true);
+      // executor.shutdownNow(); interrupt all sub threads
+
+      executor.awaitTermination(1, TimeUnit.DAYS);
+
+      System.out.println("Finished.");
+
+  }
+
+}
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
 </c:component>
+
+
