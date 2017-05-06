@@ -1,0 +1,1503 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract style="font-size:1em;line-height:1.6em;">
+    <![CDATA[
+    <div>
+Refactoring makes code understandable and easy to extend
+</div><div style="margin-top:.3em;">
+Refactoring makes it quicker to create complicated systems</div>
+]]>
+  </c:abstract>
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Abstract Class</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Customer" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo1;
+
+
+public abstract class Customer {
+    
+    private String custRating;
+
+    static final int PREMIER = 2;
+    static final int VALUED = 1;
+    static final int DEADBEAT = 0;
+
+    public String getCustRating() {
+        return this.custRating;
+    }
+
+    public void setCustRating(String rating) {
+        this.custRating = rating;
+    }
+
+}
+
+
+public class Premier extends Customer {
+    
+    public Premier() {
+        setCustRating("Premier Customer");
+    }
+}
+
+
+public class Valued extends Customer {
+    
+    public Valued() {
+        setCustRating("Valued Customer");
+    }
+}
+
+
+public class Deadbeat extends Customer {
+    
+    public Deadbeat() {
+        setCustRating("Deadbeat Customer");
+    }
+}
+
+
+
+public class CustomerFactory {
+  
+    public Customer getCustomer(int custType) {
+
+        switch (custType) {
+            case 2 :
+                return new Premier();
+            case 1 :
+                return new Valued();
+            case 0 :
+                return new Deadbeat();
+            default :
+                throw new IllegalArgumentException("Invalid Customer Type.");
+        }
+
+    }
+
+    public Customer getCustomer(String custName) {
+
+        try {
+
+          return (Customer) Class.forName(custName).newInstance();
+
+        } catch (Exception e) {
+
+        }
+
+    }
+
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Athlete" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo2;
+
+public class Athlete {
+
+    private String athleteName = "";
+
+    public String getAthleteName() {
+        return this.athleteName;
+    }
+
+    public void setAthleteName(String athleteName) {
+        this.athleteName = athleteName;
+    }
+
+    public static Athlete getInstance() {
+        return null;
+    }
+    
+}
+
+public class GoldWinner extends Athlete {
+    
+    private static GoldWinner  goldAthlete = null;
+
+    private GoldWinner(String athleteName) {
+        setAthleteName(athleteName);
+    }
+
+    public static GoldWinner getInstance(String athleteName) {
+
+        if (goldAthlete == null) {
+            goldAthlete = new GoldWinner(athleteName);
+        }
+
+        return goldAthlete;
+
+    } 
+
+}
+
+public class SilverWinner extends Athlete {
+    
+    private static SilverWinner  silverAthlete = null;
+
+    private SilverWinner(String athleteName) {
+        setAthleteName(athleteName);
+    }
+
+    public static SilverWinner getInstance(String athleteName) {
+
+        if (silverAthlete == null) {
+            silverAthlete = new SilverWinner(athleteName);
+        }
+
+        return silverAthlete;
+
+    } 
+
+}
+
+public class BronzeWinner extends Athlete {
+    
+    private static BronzeWinner  bronzeAthlete = null;
+
+    private BronzeWinner(String athleteName) {
+        setAthleteName(athleteName);
+    }
+
+    public static BronzeWinner getInstance(String athleteName) {
+
+        if (silverAthlete == null) {
+            bronzeAthlete = new BronzeWinner(athleteName);
+        }
+
+        return bronzeAthlete;
+
+    } 
+
+}
+
+
+public class MedalFactory {
+    
+    public Athlete getMedal(String medalType, String athleteName) {
+
+        try {
+
+            Class[] athleteNameParameter = new Class[] { String.class };
+
+            Method getInstanceMethod = 
+                      Class.forName(medalType).getMethod("getInstance", athleteNameParameter);
+
+            return (Athlete) 
+                      getInstanceMethod.invoke(null, new Object[] { new String(athleteName) } );
+
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid Athlete Name!");
+        }
+
+    }
+}
+
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Replacing Conditions with Strategy Pattern</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="CalculateSalary" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo3;
+
+
+public class CalculateSalary {
+    
+    public static void main(String[] args) {
+
+    }
+
+}
+
+public class Employees {
+    
+    private boolean bonus = false;
+    private double salary = 0.0;
+    private double bonusAmount = 0.0;
+
+    public Employees (boolean bonus, double salary) {
+        super();
+        this.bonus = bonus;
+        this.salary = salary;
+    }
+
+    public Employees() {
+
+    }
+
+    public double getSalary() {
+
+        if (this.bonus) {
+            return this.salary + (this.salary * .15);
+        }
+
+    }
+
+    public void setSalary (double salary) {
+        this.salary = salary;
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="ReplaceConditionalWithStrategy" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo3;
+
+
+public class ReplaceConditionalWithStrategy {
+      
+    public static void main(String[] args) {
+
+    }
+
+}
+
+public interface Pay {
+    double getPay(double salary);
+}
+
+public GetsBonus implements Pay {
+    public double getPay(double salary) {
+        return salary + (salary * .15);
+    }
+}
+
+public NoBonus implements Pay {
+    public double getPay(double salary) {
+        return salary;
+    }
+}
+
+
+public Bonus20Per implements Pay {
+    public double getPay(double salary) {
+        return salary + (salary * .20);
+    }
+}
+
+
+public class Employee {
+
+    protected double salary = 0.0l
+    public Pay payType = new NoBonus();
+
+    public Employee(double salary) {
+        this.salary = salary;
+    }
+
+    public Employee(double salary, Pay payType) {
+        this.salary = salary;
+        this.payType = payType;
+    }
+
+    public void setBonusOption(Pay newPayType) {
+        this.payType = newPayType;
+    }
+
+    public double getPay() {
+        return this.payType.getPay(this.salary);
+    }
+    
+}
+
+public class Saleman extends Employee {
+    
+    public Saleman(double salary) {
+        super(salary);
+    }
+
+    public Saleman(double salary, Pay payType) {
+        super(salary);
+        setBonusOption(payType);
+    }
+}
+
+public class Secretary extends Employee {
+
+    public Secretary(double salary) {
+        super(salary);
+    }
+
+    public Secretary(double salary, Pay payType) {
+        super(salary);
+        setBonusOption(payType);
+    }
+}
+
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  
+  
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Eliminate Duplicate Code with The Template Method</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Hamburger" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo4;
+
+public class Hamburger {
+    
+    private boolean customerWantsCondiments = true;
+
+    public Hamburger(boolean wantsCondiments) {
+        this.customerWantsCondiments = wantsCondiments;
+    }
+
+    public void makeSandwich() {
+
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  
+  
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Replace Implied Primitive Trees with the Composite Pattern</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<img src="/images/tree-structure.jpg" style="width:100%;" />
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="ProductComponent" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo6;
+
+public abstract class ProductComponent {
+    void add(ProductComponent newProductComponent) { }
+    void remove(ProductComponent productComponent) { }
+    ProductComponent getProductComponent(int componentIndex) { return null; }
+    String getProductGroupName() { return null; }
+    abstract void displayProductInfo();
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="ProductGroup" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo6;
+
+public class ProductGroup extends ProductComponent {
+
+    ArrayList<ProductComponent> productComponentList = new ArrayList<>();
+
+    private String productGroupName = null;
+
+    public ProductGroup(String productGroupName) {
+        this.productGroupName = productGroupName;
+    }
+
+    public void add(ProductComponent newProductComponent) {
+        this.productComponentList.add(newProductComponent);
+    }
+
+    public ProductComponent getProductComponent(int componentIndex) { 
+        return this.productComponentList.get(componentIndex); 
+    }
+
+    public void remove(ProductComponent productComponent) { 
+        this.productComponentList.remove(productComponent);
+    }
+
+    public String getProductGroupName() { 
+        return this.productGroupName; 
+    }
+
+    @Override
+    public void displayProductInfo() {
+
+        System.out.println(this.getProductGroupName());
+        System.out.println("-------------------------------");
+
+        Iterator<ProductComponent> productIterator = this.productComponentList.iterator();
+
+        while (productIterator.hasNext()) {
+
+            ProductComponent product = (ProductComponent) productIterator.next();
+
+            product.displayProductInfo();
+        }
+
+        System.out.println("");
+
+    }
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Product" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo6;
+
+public class Product extends ProductComponent {
+
+    private String productName;
+    private double productPrice;
+
+    public Product(String productName, double productPrice) {
+        super();
+        this.productName = productName;
+        this.productPrice = productPrice;
+    }
+    
+    public String getProductName() {
+        return this.productName;
+    }
+
+    public void setProductName(String productName) {
+        this.productName = productName;
+    }
+
+    public double getProductPrice() {
+        return this.productPrice;
+    }
+
+    public void setProductPrice(double productPrice) {
+        this.productPrice = productPrice;
+    }
+
+    @Override
+    public void displayProductInfo() {
+        System.out.println(this.productName + " $" + this.productPrice());        
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Main App" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo6;
+
+public class App {
+
+    public static void main(String[] args) {
+
+        ProductComponent produce = new ProductComponent("Product");
+        ProductComponent cereal = new ProductComponent("Cereal");
+
+        ProductComponent allProduct = new ProductComponent("All Products \n");
+
+        allProduct.add(produce);
+        allProduct.add(cereal);
+
+        produce.add(new Product("Tomato", 1.99));
+        produce.add(new Product("Orange", .99));
+        produce.add(new Product("Potato", .35));
+
+        cereal.add(new Product("Special K", 3.68));
+        cereal.add(new Product("Cheerios", 3.69));
+        cereal.add(new Product("Raisin Bran", 4.99));
+
+
+        allProduct.displayProductInfo();
+
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  
+  
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Revisiting the Builder Design Pattern</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Sandwich" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo7;
+
+public class Sandwich {
+
+    private String bread;
+    private String vegetables;
+    private String meat;
+    private String cheese;
+    private String condiments;
+
+    public String getBread() {
+        return this.bread;
+    }
+
+    public void setBread(String bread) {
+        return this.bread = bread;
+    }
+
+    public String getVegetables() {
+        return this.vegetables;
+    }
+
+    public void setVegetables(String vegetables) {
+        return this.vegetables = vegetables;
+    }
+
+    public String getMeat() {
+        return this.meat;
+    }
+
+    public void setMeat(String meat) {
+        return this.meat = meat;
+    }
+
+    public String getCheese() {
+        return this.cheese;
+    }
+
+    public void setCheese(String cheese) {
+        return this.cheese = cheese;
+    }
+
+    public String getCondiments() {
+        return this.condiments;
+    }
+
+    public void setCondiments(String condiments) {
+        return this.condiments = condiments;
+    }
+
+    public String toString() {
+        return this.getBread() + " " + 
+               this.getVegetables() + " " + 
+               this.getMeat() + " " + 
+               this.getCheese() + " " + 
+               this.getCondiments();
+    }
+    
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="SandwichBuilder" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo7;
+
+public abstract class SandwichBuilder {
+
+    private Sandwich sandwich;
+
+    public Sandwich getSandwich() {
+        return this.sandwith;
+    }
+
+    public void makeSandwich() {
+        sandwich = new Sandwich();
+    }
+
+    public abstract void buildBread();
+    public abstract void buildVegetables();
+    public abstract void buildMeat);
+    public abstract void buildCheese();
+    public abstract void buildCondiments();
+
+}
+
+public class BLTBuilding extends SandwichBuilder {
+
+    @Override
+    public void buildBread() {
+        sandwich.setBread("White Bread");
+    }
+
+    @Override
+    public void buildVegetables() {
+        sandwich.setVegetables("Lettuce Tomato");
+    }
+    
+    @Override
+    public void buildMeat) {
+        sandwich.setMeat("Bacon");
+    }
+    
+    @Override
+    public void buildCheese() {
+        sandwich.setCheese("");
+    }
+    
+    @Override
+    public void buildCondiments() {
+        sandwich.setCondiments("Mayonnaise");
+    }
+    
+}
+
+public class SandwichArtist {
+  
+    private SandwichBuilder sandwichBuilder;
+
+    public void setSandwichBuilding (SandwichBuilder sandwichBuilder) {
+        this.sandwichBuilder = sandwichBuilder;
+    }
+
+    public Sandwich getSandwich () {
+        return this.sandwichBuilder.getSandwich();
+    }
+
+    public void takeSandwithOrder() {
+        sandwichBuilder.makeSandwich();
+    }
+
+    public void takeSandwichOrder() {
+
+        sandwichBuilder.buildBread();
+        sandwichBuilder.buildVegetables();
+        sandwichBuilder.buildMeat();
+        sandwichBuilder.buildCheese();
+        sandwichBuilder.buildCondiments();
+
+    }
+
+}
+
+
+public class App {
+  
+    public static void main(String[] args) {
+
+        SandwichArtist paul = new SandwichArtist();
+
+        paul.setSandwichBuilding(new BLTBuilder());
+
+        paul.takeSandwichOrder();
+
+        Sandwich bltSandwich = paul.getSandwich();
+
+        System.out.println(bltSandwich.toString());
+
+    }
+}
+
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  
+  
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Eliminate Large Accumulation Methods by Extracting Methods and Using a Collecting Parameter</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo8;
+
+
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  
+  
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Replace Conditionals with Command Pattern</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        <img src="/images/command-pattern.jpg" style="width:100%;" />
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Customer" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo9;
+
+public class Customer {
+
+    public static void main(String[] args) {
+
+        Customer customer = new Customer(62, true, 12);
+        customer.returnFinalBill();
+
+    }
+
+    public Customer (int age, boolean man, double bill) {
+        super();
+        this.age = age;
+        this.man = man;
+        this.bill = bill;
+    }
+
+    public void returnFinalBill() {
+
+        double percentageOff = 0.0;
+
+        if (age > 60) percentageOff += .05;
+        if (!man) percentageOff += .05;
+
+        System.out.println("Bill Amount: " + (bill - bill * percentageOff));
+
+    }
+  
+    private int age;
+    private boolean man;
+    private double bill;
+
+    public int getAge() {
+        return this.age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+
+    public boolean getMan() {
+        return this.man;
+    }
+
+    public void setMan(boolean man) {
+        this.man = man;
+    }
+
+    public double getBill() {
+        return this.bill;
+    }
+
+    public void setBill(double bill) {
+        this.bill = bill;
+    }
+
+}
+
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="BillPayer" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo9;
+
+public interface BillPayer {
+
+    public void calculateBill (double amountDue);
+
+}
+
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="Command" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo9;
+
+public interface Command {
+
+    public void executeCalculationBill (double amountDue);
+
+}
+
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="WomanOver60" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo9;
+
+public class WomanOver60 implements BillPayer {
+
+    @Override
+    public void calculateBill (double amountDue) {
+        System.out.println("Bill Amount for Woman Over 60: $" + (amountDue - amountDue * .10));
+    }
+
+}
+
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="ManOver60" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo9;
+
+public class ManOver60 implements BillPayer {
+
+    @Override
+    public void calculateBill (double amountDue) {
+        System.out.println("Bill Amount for Man Over 60: $" + (amountDue - amountDue * .5));
+    }
+
+}
+
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="ManUnder60" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo9;
+
+public class ManUnder60 implements BillPayer {
+
+    @Override
+    public void calculateBill (double amountDue) {
+        System.out.println("Bill Amount for Man Under 60: $" + (amountDue));
+    }
+
+}
+
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="Waiter" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo9;
+
+public class Waiter implements Command {
+
+    private BillPayer billPayer;
+
+    public Waiter (BillPayer billPayer) {
+      this.billPayer = billPayer;
+    }
+
+    @Override
+    public void executeCalculationBill (double amountDue) {
+        billPayer.calculateBill(amountDue );
+    }
+
+}
+
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="CashRegister" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo9;
+
+public class CashRegister {
+
+    public CashRegister (Command theCommand) {
+        this.theCommand = theCommand;
+    }
+
+    public void returnFinalBill (double amountDue) {
+        this.theCommand.executeCalculationBill(amountDue);
+    }
+
+    private Command theCommand;
+    
+}
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="CustomerTypePicker" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo9;
+
+public class CustomerTypePicker {
+
+    public static BillPayer getWomanOver60 () {
+        return new WomanOver60();
+    }
+    
+    public static BillPayer getManOver60 () {
+        return new ManOver60();
+    }
+    
+    public static BillPayer getManUnder60 () {
+        return new ManUnder60();
+    }
+    
+}
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="CustomerGroup" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo9;
+
+public class CustomerGroup {
+
+    private ArrayList<BillPayer> customers;
+
+    public CustomerGroup() {
+        customers = new ArrayList<>();
+    }
+
+    public void add(BillPayer billPayer) {
+        customers.add(billPayer);
+    }
+
+    public BillPayer get(int customerIndex) {
+        return customers.get(customerIndex);
+    }
+    
+}
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="App" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo9;
+
+public class App {
+
+    public static void man(String[] args) {
+
+        BillPayer sallyMay = CustomerTypePicker.getWomanOver60();
+        Waiter theWaiter = new Waiter(sallyMay);
+
+        CashRegister calculateBill = new CashRegister(theWaiter);
+        calculateBill.returnFinalBill(12.00);
+
+
+        CustomerGroup custGroup = new CustomerGroup();
+        custGroup.add(CustomerTypePicker.getWomanOver60());
+        custGroup.get(0).calculateBill(11.5);
+
+    }
+    
+}
+
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  
+  
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">How and When to Use Adapter Pattern</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Enemy" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo10;
+
+public interface Enemy {
+
+    public void moveShip();
+    public void makeShipAttack();
+
+}
+
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Galax" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo10;
+
+public class Galax implements Enemy {
+
+    private int attackPower = 5;
+    private int spaceMovedPerTurn = 2;
+
+    @Override
+    public void moveShip() {
+        System.out.println("Galax moves '" + spaceMovedPerTurn + "' spaces");
+    }
+
+    @Override
+    public void makeShipAttack() {
+        System.out.println("Galax does '" + attackPower + "' damage");
+    }
+
+}
+
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="GalaxPrime" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo10;
+
+public class GalaxPrime {
+
+    protected String name = "Galaxian Prime";
+    private int attackPower = 15;
+    protected int spaceMovedPerTurn = 4;
+
+    public void turnOnForceField() {
+        System.out.println( name + " turns on force field.");
+    }
+
+    public void warpToSpace() {
+        System.out.println(name + " warps " + spaceMovedPerTurn + " spaces");        
+    }
+
+    public void chargePhasers() {
+        System.out.println(name + " charges phasers");
+    }
+
+    public void firePhasers() {
+        System.out.println(name + " fires phasers for " + attackPower);
+    }
+
+}
+
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="EnemyAdapter" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo10;
+
+public class EnemyAdapter implements Enemy {
+
+    private GalaxPrime galaxPrime;
+
+    public EnemyAdapter(GalaxPrime galaxPrime) {
+        super();
+        this.galaxPrime = galaxPrime;
+    }
+
+    @Override
+    public void moveShip() {
+        galaxPrime.turnOnForceField();
+        galaxPrime.warpToSpace();
+    }
+
+    @Override
+    public void makeShipAttack() {
+        galaxPrime.chargePhasers();
+        galaxPrime.firePhasers();
+    }
+
+}
+
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="App" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo10;
+
+public class App {
+
+    public static void main(String[] args) {
+
+        Enemy galax = new Galax();
+        Enemy galaxPrime = new EnemyAdapter(new GalaxPrime());
+
+        galax.moveShip();
+        galax.makeShipAttack();
+
+        System.out.println("");
+
+        galaxPrime.moveShip();
+        galaxPrime.makeShipAttack();
+
+    }
+
+}
+
+
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  
+  
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Replace Primitives with a Class / Improve Type Safety</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="ATMCardState" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo15;
+
+public class ATMCardState {
+
+    private final String state;
+
+    private ATMCardState(String state) {
+        this.state = state;
+    }
+
+    public String toString() {
+        return state;
+    }
+
+    public final static ATMCardState CARD_ENTERED = new ATMCardState("CARD ENTERED");
+    public final static ATMCardState VALID_CARD = new ATMCardState("VALID CARD");
+    public final static ATMCardState VALID_PIN = new ATMCardState("VALID PIN");
+    public final static ATMCardState VALID_CASH_REQUEST = new ATMCardState("VALID CASH REQUEST");
+    public final static ATMCardState DENIED = new ATMCardState("DENIED");
+
+    public final static int CARD_NUMBER = 34234534512;
+    public final static int PIN_NUMBER = 1234;
+    public final static double CARD_BALANCE = 1000.00;
+
+}
+
+
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">How to Move Embellishments using the Decorator Pattern</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="HairCut" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo16;
+
+public interface HairCut {
+
+    public String getDescription();
+    public double getCost();
+
+}
+
+    ]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="" title="HairCutDecorator" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo16;
+
+public abstract class HairCutDecorator implements HaitCut {
+
+    protected HairCut hairCut;
+
+    HairCutDecorator(HairCut hairCut) {
+        this.hairCut = hairCut;
+    }
+
+    public String getDescription() {
+        return hairCut.getDescription();
+    }
+
+    public double getCost() {
+        return hairCut.getCost();
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="" title="RegularHairCut" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo16;
+
+public abstract class RegularHairCut implements HaitCut {
+
+    public String getDescription() {
+        return "Trim the Hair";
+    }
+
+    public double getCost() {
+        return 10.00;
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="" title="Perm" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo16;
+
+public class Perm extends HaitCutDecorator {
+
+    Perm(HairCut hairCut) {
+        super(hairCut);
+    }
+
+    public String getDescription() {
+        return this.hairCut.getDescription();
+    }
+
+    public double getCost() {
+        return this.hairCut.getCost();
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="" title="App" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo16;
+
+public class App {
+
+    public static void main(String[] args) {
+
+        HairCut permAndCut = new Perm(new RegularHairCut());
+
+        System.out.println("SERVICES");
+        System.out.println(permAndCut.getDescription());
+        System.out.println("Price $" + permAndCut.getCost());
+
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Adding Functionality with the Visitor Pattern</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        <img src="/images/visitor-pattern.jpg" style="width:100%" />
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo17;
+
+public interface HairCut {
+
+   
+
+}
+
+    ]]>
+    </c:sourceContent>
+
+
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+</c:component>
+
+
