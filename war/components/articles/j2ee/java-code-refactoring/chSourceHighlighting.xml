@@ -1472,20 +1472,262 @@ public class App {
         <img src="/images/visitor-pattern.jpg" style="width:100%" />
         ]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="" title="" id="sourceContent1"
+    <c:sourceContent type="" title="Visitable" id="sourceContent1"
                      titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
       <![CDATA[
 package com.codeing.demo17;
 
-public interface HairCut {
+public interface Visitable {
 
-   
+   public double accept(Visitor visitor);
 
 }
 
     ]]>
     </c:sourceContent>
+    <c:sourceContent type="" title="Visitor" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo17;
+
+public interface Visitor {
+
+   public double visit(SalesTrainee trainee);
+   public double visit(Salesman salesman);
+   public double visit(Boss boss);
+
+}
+
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="SalesTrainee" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo17;
+
+public class SalesTrainee implements Visitable {
+
+   private int sickDays;
+   private int failedTests;
+   private double salary;
+
+   public SalesTrainee(int sickDays, int failedTests, double salary) {
+      this.sickDays = sickDays;
+      this.failedTests = failedTests;
+      this.salary = salary;
+   }
+
+   public int getSickDays() {
+      return this.sickDays;
+   }
+
+   public void setSickDays(int sickDays) {
+      this.sickDays = sickDays;
+   }
+
+   public int getFailedTests() {
+      return this.failedTests;
+   }
+
+   public void setFailedTests(int failedTests) {
+      this.failedTests = failedTests;
+   }
+
+   public double getSalary() {
+      return this.salary;
+   }
+
+   public void setSalary(double salary) {
+      this.salary = salary;
+   }
+
+   public double accept(Visitor visitor) {
+      return visitor.visit(this);
+   }
+
+}
+
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="Salesman" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo17;
+
+public class Salesman implements Visitable {
+
+   private double totalSalesAmount;
+   private int newCustomers;
+
+   public Salesman(double totalSalesAmount, int newCustomer) {
+      this.totalSalesAmount = totalSalesAmount;
+      this.newCustomer = newCustomer;
+   }
+
+   public double getTotalSalesAmount() {
+      return this.totalSalesAmount;
+   }
+
+   public void setTotalSalesAmount (double totalSalesAmount) {
+      this.totalSalesAmount = totalSalesAmount;
+   }
+
+   public int getNewCustomers() {
+      return this.newCustomers;
+   }
+
+   public void setNewCustomers(int newCustomers) {
+      this.newCustomers = newCustomers;
+   }
+
+   public double accept(Visitor visitor) {
+      return visitor.visit(this);
+   }
+
+}
+
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="Boss" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo17;
+
+public class Boss implements Visitable {
+
+   private double totalSalesAmount;
+   private int newCustomers;
+   private double officeExpenses
+
+   public Salesman(double totalSalesAmount, int newCustomer, double officeExpenses) {
+      this.totalSalesAmount = totalSalesAmount;
+      this.newCustomer = newCustomer;
+      this.officeExpenses = officeExpenses;
+   }
+
+   public double getTotalSalesAmount() {
+      return this.totalSalesAmount;
+   }
+
+   public void setTotalSalesAmount (double totalSalesAmount) {
+      this.totalSalesAmount = totalSalesAmount;
+   }
+
+   public int getNewCustomers() {
+      return this.newCustomers;
+   }
+
+   public void setNewCustomers(int newCustomers) {
+      this.newCustomers = newCustomers;
+   }
+
+   public double getOfficeExpenses() {
+      return this.officeExpenses;
+   }
+
+   public void setOfficeExpenses(double officeExpenses) {
+      this.officeExpenses = officeExpenses;
+   }
+
+   public double accept(Visitor visitor) {
+      return visitor.visit(this);
+   }
+
+}
+
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="YearlyBonusVisitor" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo17;
+
+public class YearlyBonusVisitor implements Visitor {
+
+   public double visit(SalesTrainee trainee) {
+
+      System.out.println("Trainees Yearly Bonus");
+
+      double yearlyBonusPercentage = 
+              (trainee.getSickDays() < 10 && trainee.getFailedTests() < 2) ? 
+              .10 : .02;
+
+      return trainee.getSalary() * yearlyBonusPercentage;
+
+   }
+
+   public double visit(Salesman salesman) {
+
+      System.out.println("Salesman Yearly Bonus");
+      
+      double yearlyBonusPercentage = 
+              (salesman.getTotalAmount() > 100000 && salesman.getNewCustomers > 50) ? 
+              .12 : .04;
+
+      return salesman.getTotalAmount() * yearlyBonusPercentage;
+
+   }
+
+   public double visit(Boss boss) {
+
+      System.out.println("Boss Yearly Bonus");
+      
+      double yearlyBonusPercentage = 
+              (boss.getOfficeExpenses() < 50000 && boss.getNewCustomers > 1000) ? 
+              .15 : .04;
+
+      return boss.getTotalAmount() * yearlyBonusPercentage;
+
+   }
+
+}
+
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="App" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo17;
+
+public class App {
+
+   public static void main(String[] args) {
+
+      YearlyBonusVisitor yearlyBonusVisitorCalculator = new YearlyBonusVisitor();
+
+      SalesTrainee bradTrainee = new SalesTrainee(5, 1, 20000);
+      Salesman tomSaleman = new Salesman(150000, 6);
+      Boss rossBoss = new Boss(1000000, 1200, 40000);
+
+      System.out.println(bradTrainee.accept(yearlyBonusVisitorCalculator));
+      System.out.println(tomSaleman.accept(yearlyBonusVisitorCalculator));
+      System.out.println(rossBoss.accept(yearlyBonusVisitorCalculator));
+
+   }
+
+}
+
+    ]]>
+    </c:sourceContent>
+
 
 
 
