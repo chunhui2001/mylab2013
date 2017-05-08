@@ -1740,6 +1740,349 @@ public class App {
     </c:comment>
   </c:entry>
 
+  
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Review of Abstract Factory Pattern</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+       <img src="/images/factory-pattern.jpg" style="width:100%" />
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Monster" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo18;
+
+public abstract class Monster {
+
+    public String getName() {
+        return this.name;    
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+    
+    private String name;
+
+    private MonsterAttackPower attackPower;
+    private MonsterAttackRange attackRange;
+
+    abstract void makeMonster();
+
+    public void checkIfVictimIsInRange() {
+        System.out.println(getName() + " checks if victim is " + attackRange)
+    }
+
+    public void attackTheVictim () {
+        System.out.println(getName() + " attacks the victim for " + attackPower);
+    }
+
+    public String toString() {
+        String infoOnMonster = getName() + " attacks anything " + attackRange + " for " + attackPower;
+        return infoOnMonster;
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="MonsterAttackPower" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo18;
+
+public interface MonsterAttackPower {
+
+    public String toString();
+
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="BasicAttack" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo18;
+
+public class BasicAttack implements MonsterAttackPower {
+
+    public String toString() {
+        return "10 in damage";
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="MediumAttack" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo18;
+
+public class MediumAttack implements MonsterAttackPower {
+
+    public String toString() {
+        return "20 in damage";
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="MonsterAttackRange" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo18;
+
+public interface MonsterAttackRange {
+
+    public String toString();
+
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="BasicAttack" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo18;
+
+public class BasicRange implements MonsterAttackRange {
+
+    public String toString() {
+        return "5 away";
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="MediumAttack" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo18;
+
+public class MediumRange implements MonsterAttackRange {
+
+    public String toString() {
+        return "10 away";
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="MonsterFactory" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo18;
+
+public interface MonsterFactory {
+
+    public MonsterAttackPower assignAttackPower();
+    public MonsterAttackRange assignAttackRange();
+
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="ZombieFactory" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo18;
+
+public class ZombieFactory implements MonsterFactory {
+
+    public MonsterAttackPower assignAttackPower() {
+        return new BasicAttack();
+    }
+
+    public MonsterAttackRange assignAttackRange() {
+        return new BasicRange();
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="VampireFactory" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo18;
+
+public class VampireFactory implements MonsterFactory {
+
+    public MonsterAttackPower assignAttackPower() {
+        return new MediumAttack();
+    }
+
+    public MonsterAttackRange assignAttackRange() {
+        return new MediumRange();
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Zombie" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo18;
+
+public class Zombie implements Monster {
+
+    public MonsterFactory monsterFactory;
+
+    public Zombie(MonsterFactory monsterFactory) {
+        this.monsterFactory = monsterFactory;
+    }
+
+    public void makeMonster() {
+        System.out.println("Making a Zombie");
+        attackPower = monsterFactory.assignAttackPower();
+        attackRange = monsterFactory.assignAttackRange();
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Vampire" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo18;
+
+public class Vampire implements Monster {
+
+    public MonsterFactory monsterFactory;
+
+    public Vampire(MonsterFactory monsterFactory) {
+        this.monsterFactory = monsterFactory;
+    }
+
+    public void makeMonster() {
+        System.out.println("Making a Vampire");
+        attackPower = monsterFactory.assignAttackPower();
+        attackRange = monsterFactory.assignAttackRange();
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="MonsterBuilder" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo18;
+
+public abstract class MonsterBuilder {
+
+    protected abstract Monster makeMonster (String typeOfMonster);
+
+    public Monster orderAMonster (String typeOfMonster) {
+        Monster theMonster = makeMonster();
+        theMonster.makeMonster();
+        theMonster.checkIfVictimIsInRange();
+        theMonster.attackTheVictim();
+        return theMonster;
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="OrderABuilder" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo18;
+
+public class OrderABuilder extends MonsterBuilder {
+
+    protected Monster makeMonster(String typeOfMonster) {
+
+        Monster theMonster = null;
+
+        if (typeOfMonster.equals("Zombie")) {
+            MonsterFactory monsterFactory = new ZombieFactory();
+            theMonster = new Zombie(monsterFactory);
+            theMonster.setName("Zombie Bob");
+        } else if (typeOfMonster.equals("Vampire")) {
+            MonsterFactory monsterFactory = new VampireFactory();
+            theMonster = new Vampire(monsterFactory);
+            theMonster.setName("Vampire Paul");
+        }
+
+        return theMonster;
+
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="App" id="sourceContent1"
+                     style="margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.codeing.demo18;
+
+public class App {
+
+    public static void main(String[] args) {
+
+        MonsterBuilder monsterBuilder = new OrderAMonster();
+
+        Monster zombie = monsterBuilder.orderAMonster("Zombie");
+        System.out.println(zombie + "\n");
+
+        Monster vampire = monsterBuilder.orderAMonster("Vampire");
+        System.out.println(Vampire + "\n");
+
+    }
+
+}
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 </c:component>
 
 
