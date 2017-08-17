@@ -31,7 +31,7 @@ $ sudo npm install -g @angular/cli@latest
 # create a new app with angluar-cli
 $ ng new a4app
 
-# update package.json angular version to ^4.3.0
+# update package.json angular version to ^4.3.1
 $ ..
 
 $ cd a4app && npm install --registry https://registry.cnpmjs.org
@@ -185,7 +185,7 @@ export class AppComponent implements OnInit {
     </c:sourceContent>
 
 
-    <c:sourceContent type="" title="Implements an Intecepor (GitHubAuthIntercepor)" id="sourceContent1" 
+    <c:sourceContent type="" title="Implements an Intecepor (HttpIntercepor)" id="sourceContent1" 
                      style="background-color:white;margin-top:1em;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
@@ -195,7 +195,7 @@ import { HttpEvent, HttpRequest, HttpHandler, HttpInterceptor } from '@angular/c
 import { Observable } from 'rxjs/observable';
 
 @Injectable()
-export class GitHubAuthIntercepor implements HttpInterceptor {
+export class HttpIntercepor implements HttpInterceptor {
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
 
@@ -216,7 +216,7 @@ export class GitHubAuthIntercepor implements HttpInterceptor {
 
 
 
-    <c:sourceContent type="" title="import new Inteceport: GitHubAuthIntercepor" id="sourceContent1" 
+    <c:sourceContent type="" title="import new Inteceport: HttpIntercepor" id="sourceContent1" 
                      style="background-color:white;margin-top:1em;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
@@ -229,8 +229,8 @@ import { HttpClientModule, HTTP_INTERCEPTORS }
 
 import { AppComponent } from './app.component';
 
-import { GitHubAuthIntercepor } 
-      from './githubauth.interceptor';   // import GitHubAuthIntercepor ***
+import { HttpIntercepor } 
+      from './http.interceptor';   // import HttpIntercepor ***
 
 @NgModule({
   declarations: [
@@ -240,10 +240,10 @@ import { GitHubAuthIntercepor }
     BrowserModule,
     HttpClientModule
   ],
-  providers: [      // update providers to import GitHubAuthIntercepor ***
+  providers: [      // update providers to import HttpIntercepor ***
     {
       provide: HTTP_INTERCEPTORS,
-      useClass: GitHubAuthIntercepor,
+      useClass: HttpIntercepor,
       multi: true
     }
   ],
@@ -258,11 +258,634 @@ export class AppModule { }
 
 
 
+
+
+
+    <c:sourceContent type="" title="src/app/routers/router.animations.ts" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+import { trigger, state, animate, style, transition } from '@angular/core';
+
+// Angular2 -- Animating Router transitions
+
+export function moveIn() {
+  return trigger('moveIn', [
+    state('void', style({ position: 'fixed', with: '100%' })),
+    state('*', style({position: 'fixed', with: '100%'})),
+    transition(':enter', [
+      style({ opacity: '0', transform: 'translateX(100px)' } ),
+      animate( '.6s ease-in-out', style({opacity: '1', transform: 'translateX(0)'}))
+    ]),
+    transition(':leave', [
+      style({ opacity: '1', transform: 'translateX(0)' } ),
+      animate( '.3s ease-in-out', style({opacity: '0', transform: 'translateX(-200px)'}))
+    ])
+  ]);
+}
+
+export function moveInLeft() {
+  return trigger('moveInLeft', [
+    transition(':enter', [
+      style({ opacity: '0', transform: 'translateY(-100px)' } ),
+      animate( '.6s .2s ease-in-out', style({opacity: '1', transform: 'translateY(0)'}))
+    ])
+  ]);
+}
+
+export function fallIn() {
+  return trigger('fallIn', [
+    transition(':enter', [
+      style({ opacity: '0', transform: 'translateY(40px)' } ),
+      animate( '.4s .2s ease-in-out', style({opacity: '1', transform: 'translateY(0)'}))
+    ]),
+    transition(':leave', [
+      style({ opacity: '1', transform: 'translateX(0)' } ),
+      animate( '.3s ease-in-out', style({opacity: '0', transform: 'translateX(-200px)'}))
+    ])
+  ]);
+}
+
+
+
+  ]]>
+    </c:sourceContent>
+
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
       </c:comment1>
     </c:comment>
   </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Google Material ICON and Foundation-flex and Web-Animations</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Foundation-flex Template" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<!doctype html>
+<html lang="en">
+  <head>
+    <base href="/">
+    <meta charset="utf-8">
+    <title>A4login</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+    <!-- Font Icons: https://material.io/icons/-->
+    <link rel="stylesheet" 
+      ref="//fonts.googleapis.com/icon?family=Material+Icons">
+
+    <!-- Foundation Flex: https://cdnjs.com/libraries/foundation/6.3.0 -->
+    <link media="all" type="text/css" rel="stylesheet" 
+      href="//cdnjs.cloudflare.com/ajax/libs/foundation/6.3.0/css/foundation-flex.min.css">
+
+  </head>
+  <body>
+    <app-root>Loading...</app-root>
+
+    <!-- web-animations: https://cdnjs.com/libraries/web-animations/2.2.2 -->
+    <script type="text/javascript" 
+      src="//cdnjs.cloudflare.com/ajax/libs/web-animations/2.2.2/web-animations.min.js"></script>
+  </body>
+</html>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Resize Buttons" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+.button {
+  cursor: pointer;
+}
+
+.button:hover, button:focus {
+  outline:0 !important;
+  -webkit-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.35);
+  -moz-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.35);
+  box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.35);
+}
+
+.button:active {
+  /*background-color: #3e8e41;*/
+  /*box-shadow: 0 5px #666;*/
+  transform: translateY(1px);
+  /*color:red !important;*/
+}
+
+/*a:link {color:#FF0000;}    !* unvisited link, same as regular 'a' *!*/
+/*a:hover {color:#FF00FF;}   !* mouse over link *!*/
+/*a:focus {color:#0000FF;}   !* link has focus *!*/
+/*a:active {color:#0000FF;}  !* selected link *!*/
+/*a:visited {color:#00FF00;} !* visited link *!*/
+
+
+  ]]>
+    </c:sourceContent>
+
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Angular 4 Login App</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      $ ng g c signup <br />
+      $ ng g c login <br />
+      $ ng g c email <br />
+      $ ng g c members <br />
+      ]]></c:desc1>
+    </c:desc>
+<c:sourceContent type="" title="src/app/routers/app.router.ts" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+import { Routes, RouterModule } from '@angular/router';
+import { ModuleWithProviders } from '@angular/core';
+
+// components
+import { LoginComponent } from '../components/login/login.component';
+import { EmailComponent } from '../components/email/email.component';
+import { SignupComponent } from '../components/signup/signup.component';
+import { MembersComponent } from '../components/members/members.component';
+
+// services
+import { AuthGurad } from '../services/auth.guard.service';
+
+export const router: Routes = [
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
+  { path: 'login', component: LoginComponent },
+  { path: 'signup', component: SignupComponent },
+  { path: 'login-email', component: EmailComponent },
+  { path: 'members', component: MembersComponent }
+]
+
+export const routers: ModuleWithProviders = RouterModule.forRoot(router);
+
+
+  ]]>
+    </c:sourceContent>
+<c:sourceContent type="" title="import Routers in app.module.ts" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+...
+import { routers } from './routers/app.router';
+
+@NgModule({
+  declarations: [
+    ...
+  ],
+  imports: [
+    ...
+    routers
+  ],
+  ...
+})
+export class AppModule { }
+
+
+
+  ]]>
+    </c:sourceContent>
+
+<c:sourceContent type="" title="App Component -- src/app/app.component.html" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<router-outlet></router-outlet>
+
+  ]]>
+    </c:sourceContent>
+
+<c:sourceContent type="" title="App Component -- src/app/app.component.ts" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
+})
+export class AppComponent {
+  title = 'app works!';
+}
+
+  ]]>
+    </c:sourceContent>
+
+<c:sourceContent type="" title="Signup Component -- src/app/components/signup/signup.component.html" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div class="form-container signup-component">
+
+  <a routerLink="/login" id="goback">Go back</a>
+
+  <h5>用户注册</h5>
+
+  <span class="error" *ngIf="error" [@fallIn]="state">{{ error }}</span>
+
+  <form #formData="ngForm" (onSubmit)="onSubmit(formData)">
+
+    <div class="input-group">
+      <span class="input-group-label" style="padding: 0 .425rem;color:dimgray;">
+        <i class="material-icons">&#xE8D3;</i>
+      </span>
+      <input class="input-group-field" type="text" 
+        placeholder="Email address" (ngModel)="email" name="email" required>
+    </div>
+
+
+    <div class="input-group">
+      <span class="input-group-label" style="padding: 0 .425rem;color:dimgray;">
+        <i class="material-icons">&#xE897;</i>
+      </span>
+      <input class="input-group-field" type="password" 
+        placeholder="Password" (ngModel)="Password" name="Password" required>
+    </div>
+
+
+    <div class="input-group">
+      <span class="input-group-label" style="padding: 0 .425rem;color:dimgray;">
+        <i class="material-icons">&#xE0CD;</i>
+      </span>
+      <input class="input-group-field" type="text" 
+        placeholder="Phone" (ngModel)="phone" name="phone" required>
+    </div>
+
+    <div class="input-group">
+      <span class="input-group-label" style="padding: 0 .425rem;color:dimgray;">
+        <i class="material-icons">&#xE88A;</i>
+      </span>
+      <input class="input-group-field" type="text" 
+        placeholder="Address" (ngModel)="address" name="address" required>
+    </div>
+
+
+    <button type="submit" [disabled]="!formData.valid" 
+      class="basic-btn button" style="margin-top: 1rem;">Create my account</button>
+
+  </form>
+
+</div>
+
+  ]]>
+    </c:sourceContent>
+<c:sourceContent type="" title="Signup Component -- src/app/components/signup/signup.component.ts" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+
+import {fallIn, moveIn} from '../../routers/router.animations';
+
+@Component({
+  selector: 'app-signup',
+  templateUrl: './signup.component.html',
+  styleUrls: ['./signup.component.css'],
+  animations: [ moveIn(), fallIn() ],
+  host: { '[@moveIn]': '' }
+})
+export class SignupComponent implements OnInit {
+
+  state: String = '';
+  error: any;
+
+  constructor( private router: Router ) { }
+
+  onSubmit(formData) {
+
+    if (!formData.valid) {
+      return;
+    }
+
+    console.log('sign up component submit clicked');
+
+  }
+
+  ngOnInit() {
+
+  }
+
+}
+
+
+  ]]>
+    </c:sourceContent>
+<c:sourceContent type="" title="Login Component -- src/app/components/login/login.component.ts" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+
+import { moveIn } from '../../routers/router.animations';
+
+
+
+@Component({
+  selector: 'app-login',
+  templateUrl: './login.component.html',
+  styleUrls: ['./login.component.css'],
+  animations: [ moveIn() ],
+  host: { '[@moveIn]': '' }
+})
+
+export class LoginComponent implements OnInit {
+
+  error: any;
+
+  constructor( private router: Router ) { }
+
+  loginWithGoogle() {
+    console.log('loginWithGoogle clicked');
+  }
+
+  loginWithFacebook() {
+    console.log('loginWithFacebook clicked');
+  }
+
+  loginWithTwitter() {
+    console.log('loginWithTwitter clicked');
+  }
+
+  loginWithEmail() {
+    this.router.navigateByUrl('/login-email');
+  }
+
+  ngOnInit() {
+  }
+
+}
+
+  ]]>
+    </c:sourceContent>
+<c:sourceContent type="" title="Login Component -- src/app/components/login/login.component.html" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div class="form-container login-component">
+
+  <h5>用户登录</h5>
+
+  <span class="error" *ngIf="error">{{ error }}</span>
+
+  <button (click)="loginWithFacebook()" id="fb" class="button btn-big">Login With Facebook</button>
+  <button (click)="loginWithGoogle()" id="google" class="button btn-big">Login With Google</button>
+  <button (click)="loginWithEmail()" id="email" class="button btn-big">Login With Email</button>
+
+
+  <p style="margin-top: .5rem;">
+    Not a member yet?
+    <a routerLink="/signup" routerLinkActive="active" class="alc">
+      <strong>Create one here</strong>
+    </a>
+  </p>
+</div>
+
+
+  ]]>
+    </c:sourceContent>
+
+
+
+<c:sourceContent type="" title="Email Component -- src/app/components/email/email.component.html" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div class="form-container email-component">
+  <a routerLink="/login" id="goback">Go back</a>
+
+  <h5>用户登录</h5>
+
+  <span class="error" *ngIf="error" [@fallIn]="state">{{ error }}</span>
+
+  <form #formData="ngForm">
+
+    <div class="input-group">
+      <span class="input-group-label" style="padding: 0 .425rem;color:dimgray;">
+        <i class="material-icons">&#xE8D3;</i>
+      </span>
+      <input class="input-group-field" type="text" placeholder="Email address" (ngModel)="email" name="email" required>
+    </div>
+
+
+    <div class="input-group">
+      <span class="input-group-label" style="padding: 0 .425rem;color:dimgray;">
+        <i class="material-icons">&#xE897;</i>
+      </span>
+      <input class="input-group-field" type="password" placeholder="Password" (ngModel)="Password" name="Password" required>
+    </div>
+
+
+    <button type="submit" (click)="onSubmit(formData)" [disabled]="!formData.valid" class="basic-btn button">Log in</button>
+
+    <a routerLink="/signup"  class="alc">Don's have an account</a>
+
+  </form>
+
+</div>
+
+  ]]>
+    </c:sourceContent>
+
+<c:sourceContent type="" title="Email Component -- src/app/components/email/email.component.ts" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+
+import { moveIn, fallIn } from '../../routers/router.animations';
+
+@Component({
+  selector: 'app-email',
+  templateUrl: './email.component.html',
+  styleUrls: ['./email.component.css'],
+  animations: [ moveIn(), fallIn() ],
+  host: { '[@moveIn]': '' }
+})
+export class EmailComponent implements OnInit {
+
+  state: String = '';
+  error: any;
+
+  constructor( private router: Router ) {
+
+  }
+
+  onSubmit(formData) {
+
+    if (!formData.valid) {
+      return;
+    }
+
+    if (formData.controls.email._value !== 'chunhui2001@gmail.com') {
+      this.error = 'Invalid email formatter';
+      return;
+    }
+
+    this.router.navigateByUrl('/members');
+
+  }
+
+  ngOnInit() {
+  }
+
+}
+
+  ]]>
+    </c:sourceContent>
+
+
+
+<c:sourceContent type="" title="AuthGurad -- src/app/services/auth.guard.service.ts" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+import { CanActivate, Router } from '@angular/router';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs/Rx';
+
+import 'rxjs/add/operator/take';
+import 'rxjs/add/operator/do';
+import 'rxjs/add/operator/map';
+
+@Injectable()
+export class AuthGurad implements  CanActivate {
+
+  constructor(private router: Router) {
+
+  }
+
+  canActivate(): Observable<boolean> {
+
+    return Observable.from( [false] ).take(1).map(state => !!state).do(authenticated => {
+
+      if (!authenticated) {
+        this.router.navigate(['/login']);
+      }
+    });
+  }
+
+}
+
+  ]]>
+    </c:sourceContent>
+
+
+    
+<c:sourceContent type="" title="import AuthGurad in app.module.ts" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+...
+
+import { AuthGurad } from './services/auth.guard.service';
+
+@NgModule({
+  declarations: [
+    ...
+  ],
+  imports: [
+    ...
+  ],
+  providers: [ AuthGurad ],
+  ...
+})
+export class AppModule { }
+
+
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>...</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title=".." id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+..
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title=".." id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+..
+  ]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
 
 </c:component>
