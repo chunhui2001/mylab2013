@@ -384,7 +384,12 @@ $ sudo apt-get install libapache2-mod-php5.5
   <br />
   <br />
   
-   <h1><b style="font-weight:bold;">监控 mysql 查询日志 (Version 5.1.6 and above:)</b></h1> 
+
+
+
+
+
+   <h1><b style="font-weight:bold;">监控 mysql 查询日志 (Version 5.1.6+)</b></h1> 
   <b style="font-weight:bold;">Enter the MySQL shell and run the following command:</b>  <br /> 
   <p style="background-color:#dadada;padding:.5em; margin:.5em 0;">
   &gt; use mysql;<br />
@@ -396,7 +401,44 @@ $ sudo apt-get install libapache2-mod-php5.5
   $ sudo chmod 777 /tmp/mysql-query.log <br /><br />
   
   $ tail -f /tmp/mysql-query.log</p><br /><br /><br />
-  
+
+
+
+
+
+
+
+
+
+
+
+   <h1><b style="font-weight:bold;">启用 mysql 二进制日志 (Version 5.7+)</b></h1> 
+  <b style="font-weight:bold;">update /etc/mysql/mysql.conf.d/mysqld.cnf  </b>  <br />  <br /> 
+[mysqld]<br /> 
+log-bin=mysql-bin.log<br /> 
+#log-bin-index=mysql-bin-log.index<br /> 
+#max_binlog_size=100M<br /> 
+binlog_format=mixed <br /> 
+server-id        = 1<br />
+
+<br />
+$ service mysql restart<br />
+<br />
+# login to mysql<br />
+> show variables like '%log_bin%';<br />
+<br />
+# export binary log<br />
+$ mysqlbinlog --base64-output=DECODE-ROWS /var/lib/mysql/mysql-bin.000003 > ~/binlog.txt
+
+
+
+
+
+
+
+
+
+  <br /><br /><br /><br />
   <h1><b>彻底解决mysql中文乱码的办法 (mysql 5.5+)</b></h1> 
   vim /etc/mysql/my.cnf  <br /> <br />
   [client] <br />
