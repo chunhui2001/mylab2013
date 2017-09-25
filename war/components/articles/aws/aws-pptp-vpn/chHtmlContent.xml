@@ -171,9 +171,9 @@
          修改 /etc/pptpd.conf 文件, 在最先面添加以下 2 行
          <br />
          <br />
-          <b>localip 192.168.117.1 </b>
+          <b>localip 192.168.117.1 <i style="color:green;font-style: normal;">[localip 192.168.0.1]</i></b>
          <br />
-         <b>remoteip 192.168.117.2-20,192.168.117.244</b>
+         <b>remoteip 192.168.117.2-20,192.168.117.244 <i style="color:green;font-style: normal;">[remoteip 192.168.0.234-250]</i></b>
          <br />
          <br />
           修改DNS服务器, 编辑:<br />
@@ -181,9 +181,9 @@
          <br />
          <br />
          添加如下内容：<br />
-          ms-dns 8.8.8.8 
-         <br />
          ms-dns 8.8.4.4
+         <br />
+          ms-dns 8.8.8.8 
          <br />
          <br />
          
@@ -221,15 +221,21 @@
           <br />
           <b>
           sudo iptables -t nat -A POSTROUTING -s 192.168.117.0/24 -o eth0 -j MASQUERADE</b>
+          <br />
+          <b style="color:green;">
+          [sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE]</b>
          <br />
          <br />
           如果需要每次 reboot 后都自动生效可以考虑下面步骤<br />
           首先用vi 编辑下面文件<br />
           <br />
           sudo vi /etc/init.d/rc.local<br />
+          <b style="color:green;">[sudo vi /etc/rc.local]</b><br />
           <br />
           加入下面命令<br />
           <b>iptables -t nat -A POSTROUTING -s 192.168.117.0/24 -o eth0 -j MASQUERADE</b>
+          <br />
+          <b style="color:green;">[iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE]</b>
          <br />
          <br />
          ubuntu12.04 已经有防火墙了叫 ufw，默认是 disable，如果你把 ufw 开启了，那么需要如下设置来允许 pptp 转发数据包
