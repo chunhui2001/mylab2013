@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract style="font-size:1em;line-height:1.6em;">
+    <![CDATA[
+Vert.x is a fairly new project that has already reached 1.0 status and has a growing community. According to their website Vert.x is: Effortless asynchronous application development for the modern web and enterprise. If your familiar with Node.js then you will most likely feel right at home with Vert.x. Vert.x also allows you to use a favorite language like Java, Ruby, Groovy, or JavaScript with support for Scala and Python coming in the future. Today I’ll go over a very simple demo on how to try out Vert.x using Java.
+
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Generator simple Java project with maven</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+$ mvn archetype:generate -DgroupId=com.shenmao.vertx \
+                         -DartifactId=shenmao-vertx \
+                         -DarchetypeArtifactId=maven-archetype-quickstart \
+                         -DinteractiveMode=false -DarchetypeCatalog=local
+
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="Update pom.xml to use maven-shade-plugin" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+
+
+<dependencies>
+  .......
+
+  <dependency>
+    <groupId>io.vertx</groupId>
+    <artifactId>vertx-core</artifactId>
+    <version>3.1.0</version>
+  </dependency>
+
+</dependencies>
+
+<properties>
+  <log4j.version>2.8.2</log4j.version>
+  <java.version>1.8</java.version>
+  <project.encode>UTF-8</project.encode>
+</properties>
+
+<build>
+  <finalName>shenmao-vertx</finalName>
+
+  <resources>
+    <resource>
+      <directory>src/main/resources</directory>
+      <includes>
+        <include>**/*</include>
+      </includes>
+    </resource>
+    <resource>
+      <directory>src/main/java</directory>
+      <includes>
+        <include>**/*.xml</include>
+      </includes>
+    </resource>
+  </resources>
+
+  <plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-compiler-plugin</artifactId>
+      <version>3.5.1</version>
+      <configuration>
+        <source>${java.version}</source>
+        <target>${java.version}</target>
+        <encoding>${project.encode}</encoding>
+      </configuration>
+    </plugin>
+
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-shade-plugin</artifactId>
+      <version>3.0.0</version>
+      <executions>
+        <execution>
+          <phase>package</phase>
+          <goals>
+            <goal>shade</goal>
+          </goals>
+          <configuration>
+            <transformers>
+              <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                <mainClass>com.shenmao.vertx.App</mainClass>
+              </transformer>
+            </transformers>
+          </configuration>
+        </execution>
+      </executions>
+    </plugin>
+
+  </plugins>
+</build>
+
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="Update App.java" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+
+package com.shenmao.vertx;
+
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Handler;
+import io.vertx.core.http.HttpServerRequest;
+
+public class App  extends AbstractVerticle {
+ 
+  public void start() {
+    vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
+      public void handle(HttpServerRequest request) {
+        //if (req.path.equals("/")) req.response.sendFile("ws.html"); // Serve the html
+        request.response().end("Hello 张春晖");
+      }
+    }).listen(8080);
+  }
+
+}
+
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Install Vert.x And Run server</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+$ cd /usr/local/ && \
+   sudo wget https://bintray.com/artifact/download/vertx/downloads/vert.x-3.5.0-full.tar.gz && \
+   sudo tar -zxf vert.x-* && sudo rm -rf *tar.* && \
+   echo "PATH=$PATH:/usr/local/vertx/bin" >> ~/.bashrc && source ~/.bashrc
+
+# confirm install
+$ vertx version
+
+# run server
+$ vertx run -cp target/classes/ com.shenmao.vertx.App
+    ]]>
+    </c:sourceContent>
+
+
+    <!--c:sourceContent type="" title="Run Vert.x Server" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+$ vertx run -cp target/classes/ com.shenmao.vertx.App
+    ]]>
+    </c:sourceContent-->
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+</c:component>
