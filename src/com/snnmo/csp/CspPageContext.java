@@ -36,12 +36,21 @@ public class CspPageContext {
 	
 	public CspPageContext(HttpServletRequest request,HttpServletResponse response) 
 			throws Exception{
+		
 		this.request = request;
 		this.response = response;
 		
 		root = request.getSession().getServletContext().getRealPath("/");
+		
 		url = request.getRequestURI();
+		if (url.equals("") || url.equals("/")) url = "/index" + pageExtends;
+		
 		filePath = root + sitePagesPath + url.replaceAll(pageExtends, ".xml");
+		
+		System.out.println("Snnmo Request URL: " + url);
+		System.out.println("Snnmo Root: " + root);
+		System.out.println("Snnmo FilePath: " + filePath);
+		System.out.println("");
 		
 		if(isPageExists()) {
 			pageDocument = getPageDocument();
@@ -111,7 +120,6 @@ public class CspPageContext {
 		InputStream xsltStream = new ByteArrayInputStream(xsltDocument.asXML().getBytes("UTF8"));  
 		Transformer transformer = factory.newTransformer(new StreamSource(xsltStream)); 
 		
-		
 		CountryCode cc = CspHelper.getCountryCode(this.request.getLocale().getCountry());
 		transformer.setParameter("language", cc.getNumeric());
 		transformer.setParameter("country", cc.getName());
@@ -120,10 +128,10 @@ public class CspPageContext {
 		transformer.setParameter("APP_ROOT", this.root);
 		transformer.setParameter("PAGE_URI", this.request.getRequestURI());
 		
-		
 		 
 		Enumeration enumeration = this.request.getParameterNames();
 		String parameterName = "";
+		
         while (enumeration.hasMoreElements()) {
             parameterName = (String) enumeration.nextElement();
     		transformer.setParameter(parameterName, this.request.getParameterValues(parameterName)[0]);
@@ -146,6 +154,7 @@ public class CspPageContext {
 		StreamResult result = new StreamResult( writer );  
 
 		DocumentSource source = new DocumentSource(doc);  
+		
 		try{
 		    transformer.transform(source, result);  
 		}catch(Exception e){
@@ -154,7 +163,7 @@ public class CspPageContext {
 		}
 	   
 		str = writer.toString();
-		//str = "hhhh";
+
 		return str;			
 	}
 	
