@@ -183,4 +183,255 @@ $ vertx run -cp target/classes/ com.shenmao.vertx.App
     </c:comment>
   </c:entry>
 
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Vert.x Guide for Java Developer</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Init Vert.x Project" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+# recommend
+$ curl https://raw.githubusercontent.com/chunhui2001/vertx-maven-starter/v0.1.1.vertx-starter-normal/vertx-create-maven-project.sh \
+       -o vertx-create-maven-project.sh; bash vertx-create-maven-project.sh
+
+# OR
+$ git clone -b v0.1.1.vertx-starter-normal git@github.com:chunhui2001/vertx-maven-starter.git PROJECT_NAME
+
+# OR
+$ mvn archetype:generate \
+      -DgroupId=com.shenmao.vertx.starter \
+      -DartifactId=vertx-starter \
+      -DarchetypeArtifactId=maven-archetype-quickstart \
+      -DinteractiveMode=false \
+      -DarchetypeCatalog=local && \
+      cd vertx-starter && \
+  mvn io.fabric8:vertx-maven-plugin:setup \
+      -DprojectGroupId=com.shenmao.vertx.starter \
+      -DprojectArtifactId=shenmao-vertx-starter \
+      -Dverticle=com.shenmao.vertx.starter.MainVerticle
+
+
+    ]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="" title="Update MainVerticle.java" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package shenmao.vertx.starter;
+
+import io.vertx.core.AbstractVerticle;
+
+public class MainVerticle extends AbstractVerticle {
+
+  @Override
+  public void start() {
+    vertx.createHttpServer()
+        .requestHandler(req -> req.response().end("Hello Vert.x!"))
+        .listen(8081);
+  }
+
+}
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="Update pom.xml" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.shenmao.vertx.starter</groupId>
+  <artifactId>shenmao-vertx-starter</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <vertx.version>3.4.0</vertx.version>
+    <!-- MUST BE "vertx.verticle" -->
+    <vertx.verticle>shenmao.vertx.starter.MainVerticle</vertx.verticle>
+    <fabric8-vertx-maven-plugin.version>1.0.13</fabric8-vertx-maven-plugin.version>
+  </properties>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.vertx</groupId>
+        <artifactId>vertx-dependencies</artifactId>
+        <version>${vertx.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-unit</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.5.1</version>
+          <configuration>
+            <source>${maven.compiler.source}</source>
+            <target>${maven.compiler.source}</target>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>2.4.3</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <manifestEntries>
+                    <Main-Class>io.vertx.core.Launcher</Main-Class>
+                    <Main-Verticle>${vertx.verticle}</Main-Verticle>
+                  </manifestEntries>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/services/io.vertx.core.spi.VerticleFactory</resource>
+                </transformer>
+              </transformers>
+              <artifactSet>
+              </artifactSet>
+              <outputFile>${project.build.directory}/${project.artifactId}-${project.version}-fat.jar</outputFile>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.5.0</version>
+        <configuration>
+          <mainClass>io.vertx.core.Launcher</mainClass>
+          <arguments>
+            <argument>run</argument>
+            <argument>${vertx.verticle}</argument>
+          </arguments>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>io.fabric8</groupId>
+        <artifactId>vertx-maven-plugin</artifactId>
+        <version>${fabric8-vertx-maven-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>vmp</id>
+            <goals>
+              <goal>initialize</goal>
+              <goal>package</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <redeploy>true</redeploy>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="Update redeploy.sh" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+#!/usr/bin/env bash
+
+export LAUNCHER="io.vertx.core.Launcher"
+export VERTICLE="shenmao.vertx.starter.MainVerticle"
+export CMD="mvn compile"
+export VERTX_CMD="run"
+
+mvn compile dependency:copy-dependencies
+java \
+  -cp  $(echo target/dependency/*.jar | tr ' ' ':'):"target/classes" \
+  $LAUNCHER $VERTX_CMD $VERTICLE \
+  --redeploy="src/main/**/*" --on-redeploy="$CMD" \
+  --launcher-class=$LAUNCHER \
+  $@
+
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="Run Vert.x Server and test it working" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+
+# run
+$ mvn test exec:java
+
+# OR (auto reload when code changed)
+$ mvn compile vertx:run 
+
+# OR
+$ ./redeploy.sh
+
+# OR
+$ vertx run -cp target/classes com.shenmao.vertx.starter.MainVerticle
+
+# test 
+$ curl http://localhost:8080
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
 </c:component>
