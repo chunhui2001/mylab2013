@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract style="font-size:1em;line-height:1.6em;">
+    <![CDATA[
+NodeMCU是一个开源的物联网平台， 它使用Lua脚本语言编程。该平台基于eLua开源项目,底层使用ESP8266 sdk 0.9.5版本。该平台使用了很多开源项目, 例如 lua-cjson, spiffs. NodeMCU包含了可以运行在 esp8266 Wi-Fi SoC芯片之上的固件,以及基于ESP-12模组的硬件。
+<br /><br />
+<div>
+### OSX 搭建 ESP8266 开发环境<br />
+<a href="http://www.jianshu.com/p/1470beddca34" target="_blank">
+    http://www.jianshu.com/p/1470beddca34</a><br /><br />
+
+### Mac OS下安装串口调试工具 minicom<br />
+<a href="http://blog.csdn.net/u010285246/article/details/72354038" target="_blank">
+  http://blog.csdn.net/u010285246/article/details/72354038</a><br /><br />
+
+###  Mac OS X 安装pip , ipython<br />
+<a href="http://blog.csdn.net/jobschen/article/details/49559023" target="_blank">
+  http://blog.csdn.net/jobschen/article/details/49559023</a><br /><br />
+
+### ESP8266 Development Kit on Mac Os Yosemite<br />
+<a href="http://blog.csdn.net/manfeel/article/details/43918417" target="_blank">
+  http://blog.csdn.net/manfeel/article/details/43918417</a><br /><br />
+</div>
+
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Mac OS USB 转串口驱动安装</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[1. 由于开发 NodeMCU 时，刷固件、写 Lua 脚本都必须通过串口进行，所以得首先安装串口驱动程序，NodeMCU 板载的是一个 CP2102 芯片.]]></c:desc1>
+      <c:desc1> <![CDATA[2. 可以去官网下载驱动程序：http://www.silabs.com/products/mcu/Pages/USBtoUARTBridgeVCPDrivers.aspx#mac]]></c:desc1>
+      <c:desc1> <![CDATA[3. 对于  CentOS/Ubuntu 系统已经自带了大多数 USB 转串口驱动程序，所以直接插上就可以识别你的 NodeMCU 了]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+# 下载后解压安装 pkg 文件即可, 验证是否安装成功, 将 NodeMCU 插入 mac 电脑的 usb 接口后执行如下命令: 
+$ ll /dev/tty.*
+> crw-rw-rw-  1 root  wheel   20,   0 11 26 13:54 /dev/tty.Bluetooth-Incoming-Port
+> crw-rw-rw-  1 root  wheel   20,   2 11 26 14:03 /dev/tty.SLAB_USBtoUART    << 看到此行说明驱动安装成功
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="向 USB 设备烧录固件镜像" id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+## 下载固件烧录工具
+$ git clone https://github.com/themadinventor/esptool.git
+
+## 安装 pip
+$ sudo easy_install pip 
+
+## 用固件烧录工具擦出芯片
+$ sudo esptool.py --port /dev/ttyUSB0 erase_flash
+
+## 下载固件
+$ wget https://github.com/nodemcu/nodemcu-firmware/releases/download/0.9.6-dev_20150704/nodemcu_integer_0.9.6-dev_20150704.bin
+
+### 烧录镜像
+sudo ./esptool.py --port /dev/ttyUSB0 write_flash -fm dio -fs 4MB -ff 40m 0x00000 \
+     ./nodemcu_integer_0.9.6-dev_20150704.bin
+OR
+sudo ./esptool.py --port /dev/ttyUSB0 write_flash -fm dio -fs 4MB -ff 40m 0x00000 \
+     ./nodemcu_float_0.9.6-dev_20150704.bin
+
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="安装并配置 minicom " id="sourceContent1"
+                     style="margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+## 配置 minicom
+$ sudo minicom -s
+
+## 运行 minicom
+$ sudo minicom -b 9600 -D /dev/ttyUSB0
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+
+  
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">运行 ESPlorer  并上传 init.lua</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="init.lua" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+
+print('Setting up WIFI ...')
+
+wifi.setmode(wifi.STATION)
+wifi.sta.config("CMCC-5aAi","774vu567")
+wifi.sta.connect()
+
+print(wifi.sta.getip())
+
+while 1 do 
+  gpio.write(0, gpio.HIGH)
+  tmr.delay(100000)
+  gpio.write(0, gpio.LOW)
+  tmr.delay(100000)
+end
+
+    ]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  
+
+</c:component>
