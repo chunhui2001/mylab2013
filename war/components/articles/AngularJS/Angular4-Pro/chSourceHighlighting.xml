@@ -1468,27 +1468,243 @@ export class AppComponent {
 
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title>...</c:title>
+    <c:title>Load modal component dynamically in Angular</c:title>
     <c:desc>
-      <c:desc1> <![CDATA[
-      
-      ]]></c:desc1>
+      <c:desc1>  <c:desc1> <![CDATA[
+      <a style="font-size:1.2em;" href="https://medium.com/@aravindfz/load-modal-component-dynamically-in-angular-5fda8e1dc3e7">
+      https://medium.com/@aravindfz/load-modal-component-dynamically-in-angular-5fda8e1dc3e7</a>
+      ]]></c:desc1></c:desc1>
     </c:desc>
-    <c:sourceContent type="" title=".." id="sourceContent1" 
+    <c:sourceContent type="html" title="" id="sourceContent1" 
                      style="background-color:white;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
                      <![CDATA[
-..
+Step 1: Create a directive that serves as a place holder for dynamic component.
   ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title=".." id="sourceContent1" 
+    <c:sourceContent type="" title="" id="sourceContent1" 
                      style="background-color:white;margin-top:1em;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
                      <![CDATA[
 
-..
+@Directive({
+ selector: ‘[modal-holder]’,
+})
+export class DynamicDirective {
+ constructor(public viewContainerRef: ViewContainerRef) { }
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Step 2 : Create your modal component, which has to be dynamically injected. In my case, I’m using a simple bootstrap modal which can be seen from here.
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+Step 3 : Make the modal component as a entry component so that its instance is available when the parent component is loaded. This can be at the module level or the component level.
+  ]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+entryComponents:[ CommonModalComponent]
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+Step 4 : Inject ComponentFactoryResolver, ViewContainerRef into the parent component’s constructor.
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Step 5 : Create a place holder and decorate it with the directive created in first step.
+ ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<ng-template modal-holder></ng-template>
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Step 6 :  Call the below method to load the component.
+ ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+loadComponent() {
+ let viewContainerRef = this.dynamicDirective.viewContainerRef;
+ viewContainerRef.clear();
+ let componentFactory = this.componentFactoryResolver.resolveComponentFactory(CommonModalComponent);
+ let componentRef =viewContainerRef.createComponent(componentFactory);
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Angular CLI: multiple apps in the same project</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<a href="https://yakovfain.com/2017/04/06/angular-cli-multiple-apps-in-the-same-project/" target="_blank">https://yakovfain.com/2017/04/06/angular-cli-multiple-apps-in-the-same-project/</a>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>You may need to have an Angular project that has multiple apps so you can run the build of a particular app, say depending on the customer you’re preparing the build for. In my case, I wanted to create a project with multiple apps that I use in my Angular workshops. Having a single project with multiple apps allows you to run a time-consuming npm or yarn install once and just modify the name of the app you want to run.</div>
+
+<div style="margin-top:1em;">
+For example, you may have multiple versions of the main bootstrap file that load different root modules. The file .angular-cli.json has the apps section with the property main, and to run a particular app, I’d instruct the students to modify .angular-cli.json to point at a particular app, e.g. "main": "main1.ts". To run another app, I’d instruct them to change this line to "main": "main2.ts".</div>
+
+<div style="margin-top:1em;">
+But then I figured out that you can configure multiple apps in the same .angular-cli.json and run the build for a particular app by name. The apps property is an array, and you just need to configure each app there. For example, the following fragment shows how I configured two applications – <b>app1</b> and <b>app2<b/> in the same <b>.angular-cli.json</b>:</div>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+"apps": [
+    { "name":"app1",
+      "root": "src",
+      "outDir": "dist",
+      "assets": [
+        "assets",
+        "favicon.ico"
+      ],
+      "index": "index.html",
+      "main": "main-resolver.ts",
+      "polyfills": "polyfills.ts",
+      "test": "test.ts",
+      "tsconfig": "tsconfig.app.json",
+      "testTsconfig": "tsconfig.spec.json",
+      "prefix": "app",
+      "styles": [
+        "styles.css",
+       "../node_modules/@angular/material/core/theming/prebuilt/indigo-pink.css"
+      ],
+      "scripts": [],
+      "environmentSource": "environments/environment.ts",
+      "environments": {
+        "dev": "environments/environment.ts",
+        "prod": "environments/environment.prod.ts"
+      }
+    },
+    { "name":"app2",
+      "root": "src",
+      "outDir": "dist2",
+      "assets": [
+        "assets",
+        "favicon.ico"
+      ],
+      "index": "index.html",
+      "main": "main-luxury.ts",
+      "polyfills": "polyfills.ts",
+      "test": "test.ts",
+      "tsconfig": "tsconfig.app.json",
+      "testTsconfig": "tsconfig.spec.json",
+      "prefix": "app",
+      "styles": [
+        "styles.css",
+      "scripts": [],
+      "environmentSource": "environments/environment.ts",
+      "environments": {
+        "dev": "environments/environment.ts",
+        "prod": "environments/environment.prod.ts"
+      }
+    }
+  ],
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>Now to bootstrap the app main-resolver.ts I run the following command:</div>
+
+<div style="margin-top:.5em;">
+<b>ng serve --app app1</b></div>
+
+<div style="margin-top:.5em;">
+To bootstrap the main-luxury.ts, I run this:</div>
+
+<div style="margin-top:.5em;">
+<b>ng serve --app app2</b></div>
+
+<div style="margin-top:.5em;">
+You can also refer to each app by its index in the apps array:</div>
+
+<div style="margin-top:.5em;">
+<b>ng serve --app 0 </b><br />
+or<br />
+<b>ng serve --app 1</b></div>
+
+<div style="margin-top:.5em;">
+The option –app is available for the ng build command as well. The following screenshot shows my project after I built the app1 into dist and app 2 into dist2.</div>
+
+<div style="margin-top:1em;">
+<img style="max-width:100%" 
+  src="/images/angular4/cli.png" />
+</div>
+
+<div style="margin-top:1.5em;">
+This is a pretty useful Angular CLI feature and I wanted to share my findings with you.</div>
+
+<div style="margin-top:1em;">
+The angular team is working on the HTMLElement component that will allow you to create Angular widgets that you’ll be able to embed into any HTML app. This should allow you to <b>have multiple apps within the same HTML page as well</b>. This feature should be available in one of the <b>Angular 5 releases</b>.</div>
   ]]>
     </c:sourceContent>
 

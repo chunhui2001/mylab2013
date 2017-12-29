@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+    <div>
+   If you are parforming a <b>prefix-based</b>, <b>local-direct</b>, you may want to know that the Router will automatically append the non-local URL segments to the redirectTo action, making prefix-based mappings dead simple in Angular 4.4.4. 
+ </div>
+ <div style="margin-top:.5em;">
+When I was learning about route configuration in Angular 4, I automatically assumed that a route parameter, like ":id" or ":type", would only match against a single URL path segment (ie, the portion of a URL between two "/" delimiters). As is turns out, however, a route parameter is capable of matching any non-empty portion of the URL. This gives us the ability to redirect based on a URL-prefix, capturing and forwarding the entire URL-suffix using a single route parameter.</div>
+]]>
+  </c:abstract>
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Installation Angular-Cli</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Runing Angular4 Application" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# install node env
+$ install nodejs v6.0+
+$ install npm v5.3.0+
+$ sudo npm install -g node-gyp
+$ sudo npm install -g @angular/cli@latest
+
+# create a new app with angluar-cli
+$ ng new a4app
+
+# update package.json angular version to ^4.3.1
+$ ..
+
+$ cd a4app && npm install --registry https://registry.cnpmjs.org
+$ ng serve
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Update tsline.json" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+{
+  "rulesDirectory": [
+    "node_modules/codelyzer"
+  ],
+  "rules": {
+    ...
+    "semicolon": [
+      true,
+      "always",
+      "ignore-interfaces"   // add ***
+    ],
+    ...
+    "use-host-property-decorator": false,   // update to false ***
+    ...
+    "no-trailing-whitespace": false,   // add ***
+    "no-access-missing-member": false  // add ***
+  }
+}
+
+  ]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Design Angular 4 Router </c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      <div>Do demonstrate the path-capturing capabilities of a route parameter, I've created a simple Angular demo in which we match any route that begins with the "/a" prefix and redirect the user to the "/b" prefix, keeping the rest of the URL in tact. So, for example, if you were to navigate to:</div>
+<div style="margin-top:.5em;color:green;">
+<b>/a/</b>foo/bar/baz
+</div>
+
+<div style="margin-top:.5em;">
+... you would be redirected to:</div>
+
+<div style="margin-top:.5em;color:green;">
+<b>/b/</b>foo/bar/baz</div>
+
+<div style="margin-top:.5em;">
+Notice that the "..../foo/bar/baz" portion of the URL is maintained while redirecting from "/a" to "/b".
+</div>
+
+
+<div style="margin-top:.5em;">
+Let's take a look at the route configuration that makes this possible:</div>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="update src/app/app.module.ts" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+// Import the core angular services.
+import { BrowserModule } from "@angular/platform-browser";
+import { NgModule } from "@angular/core";
+import { RouterModule } from "@angular/router";
+import { Routes } from "@angular/router";
+ 
+// Import the application components and services.
+import { AppComponent } from "./app.component";
+import { BComponent } from "./b.component";
+ 
+var routes: Routes = [
+  // We're going to be redirecting any route that begins with "/a" to a route that
+  // begins with "/b", keeping the rest of the route in tact. We can do with this
+  // route segments which can actually match more than one slash-delimited token. In
+  // this case, we're using ":restOfPath" to match the entire remainder of of the
+  // route - everything that follows the "/a/" prefix.
+  {
+    path: "a/:restOfPath",
+    redirectTo: "b/:restOfPath"
+  },
+  // Since the ":restOfPath" path parameter has to match a non-zero-length value, we
+  // have to include an additional redirect for the naked "/a" route (if we want to
+  // handle those as well).
+  {
+    path: "a",
+    redirectTo: "b"
+  },
+  {
+    path: "b",
+    children: [
+      // We're going to render all "/b"-prefix routes in the same component.
+      {
+        path: "**",
+        component: BComponent
+      }
+    ]
+  }
+];
+ 
+@NgModule({
+  bootstrap: [
+    AppComponent
+  ],
+  imports: [
+    BrowserModule,
+    RouterModule.forRoot(
+    routes,
+      {
+        // Tell the router to use the HashLocationStrategy.
+        useHash: true
+      }
+    )
+  ],
+  declarations: [
+    AppComponent,
+    BComponent
+  ],
+  providers: [
+  // CAUTION: We don't need to specify the LocationStrategy because we are setting
+  // the "useHash" property in the Router module above.
+  // --
+  // {
+  // provide: LocationStrategy,
+  // useClass: HashLocationStrategy
+  // }
+  ]
+})
+
+export class AppModule {
+  // ...
+}
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>Notice that we are defining an "/a" path with a single route parameter:</div>
+
+<div style="margin-top:.5em;">
+path: a/<b>:restOfPath</b></div>
+
+<div style="margin-top:.5em;">
+In this case, the :restOfPath parameter will match the entire URL suffix following the "a/" pattern. This may contain one URL segment; or, it may contain many URL segments. This route parameter can then be used to append the entire URL suffix to the redirect route:</div>
+
+<div style="margin-top:.5em;">
+redirectTo: b/:<b>restOfPath</b></div>
+
+<div style="margin-top:.5em;">
+Since a route parameter can only match a non-empty value (as far as I know), we need to include a second redirect to handle the case in which the "/a" path is matched without any suffix at all. This way, we can redirect from a naked "/a" request to a naked "/b" resolution.</div>
+
+<div style="margin-top:.5em;">
+To play around with this route parameter redirection, I've created an app component that provides a variety of "/a"-prefixed links:
+</div>
+
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="AppComponent" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+// Import the core angular services.
+import { Component } from "@angular/core";
+ 
+// ----------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------- //
+ 
+@Component({
+  selector: "my-app",
+  styleUrls: [ "./app.component.css" ],
+  template: `
+    <p>
+    Try going to one of these <code>/a</code> prefix routes
+    (which do not have materialized views):
+    </p>
+     
+    <ul>
+    <li><a routerLink="/a">/a</a></li>
+    <li><a routerLink="/a/items">/a/items</a></li>
+    <li><a routerLink="/a/items/4">/a/items/4</a></li>
+    <li><a routerLink="/a/items/4/detail">/a/items/4/detail</a></li>
+    <li><a routerLink="/a/items/4/detail" fragment="anchor">/a/items/4/detail#anchor</a></li>
+    <li><a routerLink="/a/items/4/detail" [queryParams]="{ q: '1' }">/a/items/4/detail?q=1</a></li>
+    </ul>
+     
+    <router-outlet></router-outlet>
+  `
+})
+export class AppComponent {
+// ...
+}
+
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>As you can see, I'm testing out several ways in which to construct an HREF value, including paths, query-string parameters, and anchors. All of these will be matched by our route configuration and redirected from the "/a" URL tree to the "/b" URL tree, which is rendered by the BComponent:
+</div>
+
+  ]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="" title="BComponent" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+// Import the core angular services.
+import { Component } from "@angular/core";
+import { Event as NavigationEvent } from "@angular/router";
+import { Router } from "@angular/router";
+ 
+// ----------------------------------------------------------------------------------- //
+// ----------------------------------------------------------------------------------- //
+ 
+@Component({
+  styleUrls: [ "./b.component.css" ],
+  template: `
+    <h3>
+    B-Prefix Component
+    </h3>
+     
+    <p>
+    You have navigated to <code>{{ url }}</code>
+    </p>
+  `
+})
+export class BComponent {
+ 
+  public url: string;
+   
+  // I initialize the B-view component.
+  constructor( router: Router ) {
+   
+    // As the user navigates through the "/a"-prefix routes, they will all be
+    // redirected to the "/b"-prefix routes that are rendered by this component. As
+    // that happens, this component will persist since we never navigate away from
+    // it. As such, we have to listen for navigation events to know when to update
+    // the view.
+    // --
+    // NOTE: We could have also listened to the ActivatedRoute.
+    router.events.subscribe( ( event: NavigationEvent ) : void => {
+     
+      this.url = router.url;
+     
+    });
+   
+  }
+ 
+}
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+                     <div style="margin-top:.5em;">
+Here's we're just listening for navigation events and then echoing the current URL in the BComponent view. And, when we run this Angular application and click on one of the "/a" prefix links, we get the following output:
+<div>
+  <div style="margin-top:.5em;">
+    <img src="/images/angular4/route-parameter-can-match-multiple-url-segments-angular4.png" style="max-width:100%;" /></div>
+  ]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+                     <div style="margin-top:.5em;">
+As you can see, when we click on any of the URLs that start with the "/a" prefix, we are redirected to the "/b" prefix; and, the rest of the URL is passed along in the redirect, thanks to the :restOfPath route parameter.
+  ]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+                     <div style="margin-top:.5em;">
+When you start out by extracting entity IDs from URLs using route parameters like ":id" or ":userID", it's easy to believe that route parameters can only match a single segment in the URL path. But, in Angular, a route parameter can match multiple URL path segments. This allows us to capture entire URL suffixes and even forward those suffix values as part of Router redirect operations. ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+</c:component>
