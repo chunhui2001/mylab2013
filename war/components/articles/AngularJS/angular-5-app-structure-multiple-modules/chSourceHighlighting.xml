@@ -1,0 +1,488 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+    <div>
+   <div>Since I couldn’t find any resources on Angular 5 app structure with multiple modules, I decided that whilst rebuilding an AngularJS app, I would implement a multiple-module architecture and document it. Below is the approach I took, with some justifications for the decisions I took. In the near future I plan to write more posts which get in to the more granular details of each area of the application and the motivations behind each decision.</div>
+                <div>
+<a href="https://github.com/chunhui2001/angular5-starter-multi-module" target="_blank">
+An Angular 5 multi-module starter template is available on GitHub here.
+</a>
+                </div>
+]]>
+  </c:abstract>
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Overview</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      <div style="font-size:1.2em;">From a high-level perspective, this is what the folder structure looks like:</div>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+app/
+├── app.component.html
+├── app.component.scss
+├── app.component.spec.ts
+├── app.component.ts
+├── app.module.spec.ts
+├── app.module.ts
+├── app-routing.module.ts
+├── core/
+│   ├── core-routing.module.ts
+│   ├── core.module.spec.ts
+│   ├── core.module.ts
+│   ├── login/
+│   ├── services/
+│   └── header/
+├── admin/
+│   ├── admin-routing.module.ts
+│   ├── admin.module.spec.ts
+│   ├── admin.module.ts
+│   ├── admin.component.module.ts
+│   ├── admin.component.spec.ts
+│   ├── admin.component.html
+│   ├── admin.component.scss
+│   ├── manage-users/
+│   └── services/
+├── form/
+│   ├── form-routing.module.ts
+│   ├── form.module.spec.ts
+│   ├── form.module.ts
+│   ├── form.component.module.ts
+│   ├── form.component.spec.ts
+│   ├── form.component.html
+│   ├── form.component.scss
+│   ├── summary/
+│   └── services/
+└── shared/
+    ├── shared.module.spec.ts
+    ├── shared.module.ts
+    ├── components/
+    ├── models/
+    ├── components/
+    ├── directives/
+    └── services/
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>The <b>AppModule</b> which occupies the root of the folder is purposely kept as bare as possible. It’s role is simply to bootstrap the Angular application, and provide the root-level <b>router-outlet</b>. This approach also leaves open the possibility of running multiple, independent Angular applications through the same base URL. It also introduces the idea of building a router-driven Angular application.</div>
+
+<div style="margin-top:.5em;">Everything runs through the <b>CoreModule</b> which is placed in its own directory within the <b>app</b> directory. Coming from AngularJS, it feels weird not to create a sibling directory for the <b>CoreModule</b>, but this is done to keep in line with the Angular CLI conventions. Each sub-directory within the <b>app</b> folder shown above should be a module.</div>
+
+<div style="margin-top:.5em;">I did experiment with following AngularJS conventions and put modules outside of the <b>app</b> directory, and this works fine. It kept the root <b>app</b> directory clean but raised concerns of automatic updates through the Angular CLI in the future. I found that Angular documentation, and the Angular CLI by default, created new modules within the <b>app</b> directory – so this is the convention I followed.</div>
+
+<div style="margin-top:.5em;">The declaration for <b>CoreModule</b> in <b>app/core/core.module.ts</b> must import all other sub-modules of the application excluding the <b>SharedModule</b> (unless it is actually needed – explained later). The purpose of <b>CoreModule</b> is to hold the root components, services and features of the application such as a universal login screen, global navbar/header, global footer, authentication and authentication guards. Where lazy-loaded is needed, the other modules can easily be lazy-loaded in using the following code in the <b>core-routing.module.ts</b> file:</div>
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+{
+    path: 'admin',
+    canActivate: [AuthGuardService],
+    loadChildren: '../admin/admin.module#AdminModule'
+},
+{
+    path: 'form',
+    loadChildren: '../form/form.module#FormModule'
+},
+{
+    path: 'login',
+    component: LoginComponent
+},
+{
+    path: '**',
+    component: NotFoundComponent
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>To help simplify the concept, <b>CoreModule</b> in this approach takes on the role of the root <b>AppModule</b> but is not the module which gets bootstrapped by Angular at run-time.</div>
+
+<div style="margin-top:.5em;">The <b>CoreModule</b> can also manage other core features for your app such as the Error 404 page through the <b>NotFoundComponent</b> shown above.</div>
+
+<div style="margin-top:.5em;">The above routing definitions illustrate that the <b>CoreModule</b> handles the routing of the application. In theory we should be able to import a new <b>Core2Module</b> in to <b>AppModule</b> which may represent a version two of the application, and the implementation of this app would have no impact on the app running via <b>CoreModule</b>.</div>
+
+<div style="margin-top:.5em;">The <b>FormModule</b> is publicly accessible, and the <b>AdminModule</b> is protected by an Authentication Guard as illustrated in the routes shown above. The beauty of this model is that you can easily take out the <b>AdminModule</b> or <b>FormModule</b> without breaking any other part of your app.</div>
+
+<div style="margin-top:.5em;">For example, if you were to remove the <b>AdminModule</b> you only need to delete the <b>app/admin</b> directory and remove the admin route declared above. Then, any users navigating to the Admin section of the site will be shown the Not Found page via the <b>NotFoundComponent</b>.</div>
+
+<div style="margin-top:.5em;">Since the application is driven by the <b>Router</b>, each module has a root component which contains the <b>router-outlet</b>. This is key to enabling decoupled modules (essential for clean Unit Testing), and navigation to be powered by Components and the <b>Router</b> rather than <b>ngIf</b> s.</div>
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Routing</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>Since the navigation and the rendering of components is heavily driven by the <b>Router</b> in this model. The root <b>AppComponent</b> contains no routes. When the application bootstraps, the <b>CoreRoutingModule</b> (declared in <b>app/core/core-routing.module.ts</b>) kicks in and loads the Core components.</div>
+
+<div style="margin-top:.5em;">If the user navigates to <b>/form</b> the <b>CoreModule</b> lazy-loads the <b>FormModule</b> module along with its components and uses the routes declared in <b>FormRoutingModule</b> to navigate and display content within the <b>/form</b> URL. All this works by exporting the <b>FormRoutingModule</b> from the <b>FormModule</b> declaration, and then importing <b>FormModule</b> in to <b>CoreModule</b>.</div>
+
+<div style="margin-top:.5em;">If the user navigates to <b>/admin</b> (which is a protected area of the application), the <b>AuthGuardService</b> from the <b>CoreModule</b> checks the conditions of <b>canActivate</b> and only lazy-loads the <b>AdminModule</b> if the user is authenticated. Similar to the <b>FormModule</b>, the <b>AdminModule</b> has its own routing configuration declared in <b>AdminRoutingModule</b> and this controls the content displayed within the <b>/admin</b> URL path.</div>
+
+<div style="margin-top:.5em;">Each submodule declares its own routes like so (<b>AdminRoutingModule</b> taken as an example):</div>
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+const routes: Routes = [
+    {
+        path: '',
+        component: AdminComponent,
+        children: [
+            { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+            { path: 'dashboard', component: AdminDashboardComponent },
+            { path: 'manage-users', component: ManageUsersComponent }
+        ]
+    }
+];
+@NgModule({
+    imports: [RouterModule.forChild(routes)],
+    exports: [RouterModule]
+})
+export class AdminRoutingModule { }
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>The root path of the <b>AdminRoutingModule</b> is declared blank as this will match to the <b>/admin</b> route declared in <b>CoreRoutingModule</b>. It loads the <b>AdminComponent</b> which is simply a html template file containing a <b>router-outlet</b>. This file can also contain an Admin Navbar and other static content if you wish.</div>
+
+<div style="margin-top:.5em;">The important bit here is that the <b>RouterModule</b> from the Angular library is imported as <b>forChild</b> for all modules except <b>CoreModule</b>. The <b>CoreModule</b> imports it’s routes as <b>forRoot</b>.</div>
+
+<div style="margin-top:.5em;">You then also want to export the <b>RouterModule</b> after initialising it with your routes so that when the <b>AdminRoutingModule</b> is imported in to the <b>AdminModule</b>, and the <b>AdminModule</b> is imported in to the <b>CoreModule</b>, the <b>CoreModule</b> will have access to the routes declared in the sub-modules and they can compliment the routes declared for the Core of your application.</div>
+
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Sharing components, services, directives and more</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>If you’ve paid attention so far, you’ll already know the answer to this. The <b>SharedModule</b> is where any shared components, pipes/filters and services will go. The <b>SharedModule</b> can be imported in to any other module that requires its components, pipes and/or services. Just be sure to <b>export</b> anything you want to share with other modules. A reminder that <b>services</b> do not need to be exported – they just need to be declared under <b>providers</b> in the module declaration.</div>
+
+<div style="margin-top:.5em;">The <b>SharedModule</b> doesn’t have a root component or any routing declarations because it only contains components that other modules will import to use. There are no views or logic in the <b>SharedModule</b>.</div>
+
+<div style="margin-top:.5em;">Be aware, though… Non of the services in the <b>SharedModule</b> will be persistent. So do not use it to store data that needs to be access across various modules, but each instance of the <b>service</b> imported from the <b>SharedModule</b> will be different! How do we solve this? Keep reading…</div>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Persistent services and app-wide singletons</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>If you are using a <b>service</b> to store data while your Angular app is running you’ll need to use a service which is instantiated and not discarded throughout the duration of the application runtime.</div>
+
+<div style="margin-top:.5em;">A service in the <b>AdminModule</b> is only available until the user navigates out of the <b>/admin</b> path. Any other module (say <b>FormModule</b> that imports that service, will have a fresh version of that service as if it was instantiated with <b>new MyService()</b>.</div>
+
+<div style="margin-top:.5em;">We get around this by putting services that need to be persistent in the <b>CoreModule</b> because our entire app runs through the <b>CoreModule</b>. From the minute the app is launched, to when the page is closed <b>CoreModule</b> is being used to run the application.</div>
+
+<div style="margin-top:.5em;">That means any services declared within <b>app/core/services</b> and then added to the list of <b>providers</b> in <b>app/core/core.module.ts</b> will be accessible to all other modules and contain persistent data.</div>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Universal Navbar/Header and Footer</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>One of the biggest challenges with this model was trying to figure out how to handle displaying a dynamic header/navbar depending on which component/page was active, and changing the navbar links displayed to the user based on whether they were authenticated (logged-in) or not.</div>
+
+<div style="margin-top:.5em;">The solution is actually very obvious… Once its pointed out!</div>
+
+<div style="margin-top:.5em;">We start by creating a component called Header in the CoreModule (app/core/header). This module is then declared and exported from CoreModule as seen below:</div>
+ ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+@NgModule({
+    imports: [
+        ...
+    ],
+    declarations: [HeaderComponent],
+    exports: [
+        ...
+        HeaderComponent
+    ],
+    providers: [
+        ...
+    ]
+})
+
+export class CoreModule { }
+
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>Then, when <b>CoreModule</b> is imported in to the root <b>AppModule</b>, the <b>HeaderComponent</b> is available as a directive because of the export above.</div>
+
+<div style="margin-top:.5em;">This means that in <b>app/app.component.html</b> we now have a <b>router-outlet</b> and <b>app-header</b> element.</div>
+
+<div style="margin-top:.5em;">If you reload your app you will see that the header now appears at the top of every page of your application. Next, you need to make the content dynamic…</div>
+
+<div style="margin-top:.5em;">The contents of the <b>app/core/header</b> folder can be as follows:</div>
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+header/
+├── header.component.html
+├── header.component.scss
+├── header.component.spec.ts
+├── header.component.ts
+└── navigation-links.ts
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>Inside the <b>navigation-links.ts</b> file we can export a static Array of objects that represent all navigation menu items. This can easily be replaced by a service which retrieves objects for all the pages – but since I didn’t have one available, and the navigation links for this project weren’t too complicated I decided to hard-code them.</div>
+
+<div style="margin-top:.5em;">Here is a simplified version of the contents of <b>navigation-links.ts</b>:</div>
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+export const navigationLinks = [
+    {
+        name: 'Dashboard',
+        routerLink: '/dashboard',
+        roles: ['Admin', 'RegUser'],
+        order: 0,
+        overrideFunction: function() { console.log("override function clicked"); }
+    }
+]
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>Then, within the <b>header.component.ts</b> we can use the power of the Angular <b>Router</b> to subscribe to URL changes to determine where in the application the user is and filter which navigation links are displayed.</div>
+
+<div style="margin-top:.5em;">Alternatively, if you are storing user token data somewhere, you can query this to determine the user’s role and show only navigation links that match with the user’s role.</div>
+
+<div style="margin-top:.5em;">You’ll need to store the active navigation links as a class property, and within your nabber template you’ll be able to loop through them all to display them. To keep things clean in the HTML, I would suggest you create a class variable called <b>activeLinks: Array</b> and set its values from the <b>navigationLinks</b> constant above every time the URL changes. You can subscribe to URL changes within the <b>ngOnInit()</b> function using the following code:</div>
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+this.router.events
+.subscribe(
+    event => {
+        if (event instanceof NavigationEnd) {
+            this.setUserRoleFromUrl(event.urlAfterRedirects);
+            this.setNavLinksFromUserRole(this.userRole);
+        }
+    }
+);
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+The same concept can be applied for a footer.
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Loading spinner</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+One of my biggest gripes with Angular 5 is the lack of a native loading-bar/spinner. I opted for <a href="https://github.com/mpalourdio/ng-http-loader" target="_blank">ng-http-loader by Michel Palourdio</a>, imported it into <b>CoreModule</b> and placed the loader alongside the <b>router-outlet</b> in <b>app/app.component.html</b>. The plugin shows a loading spinner any time a <b>HTTP</b> call is made within the application. It takes away localised spinners which result in cleaner code lower-down, and by using interceptors it uses one global spinner component to handle loading.
+ ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+</c:component>
