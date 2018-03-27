@@ -97,7 +97,7 @@
                   <xsl:with-param name="isExpand" select="@expand" />
                 </xsl:call-template>
               </xsl:if>-->
-              <xsl:value-of select="current()/@title"/>
+              <xsl:value-of disable-output-escaping="yes"  select="current()/@title"/>
             </h6>
           </xsl:if>
 
