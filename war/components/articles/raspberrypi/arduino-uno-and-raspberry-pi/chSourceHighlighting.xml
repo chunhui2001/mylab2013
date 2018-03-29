@@ -425,6 +425,58 @@ $ sudo pip install spidev
   </c:entry>
 
 
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>点亮一个LED</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+  <table style="font-size:.85em;">
+    <caption style="text-align:left;font-weight:bold;padding: .2em .35em;">
+      物料清单
+    </caption>
+    <thead>
+      <tr>
+        <th style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;color:gray;">名称</th>
+        <th style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;color:gray;">电压</th>
+        <th style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;color:gray;">输入电流</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;">一个标准LED</td>
+        <td style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;">3.2&sim;3.4</td>
+        <td style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;">20mA</td>
+      </tr>
+    </tbody>
+  </table>
+      ]]></c:desc1>
+    </c:desc>
+   <!--  <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>
+  <img src="/images/raspberry/WechatIMG33.jpg" style="width:330px;" />
+</div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top:1.2em;line-height:1.625em;">
+  <li>电流从 Arduino 或 RaspberryPi 的GPIO的输出引脚流出 &rarr; 然后从电阻R1正极流入 &rarr; 然后从负极流出 &rarr; 然后在流入晶体管 Q1 的基极(输入回路)。</li>
+  <li style="margin-top:.5em;"><b>流经晶体管(该电路Q1晶体管的型号可以使用MPSA14)基极的微小电流允许一个比该电流大得多的电流流入晶体管右边的两个电极，即集电极(上端)和发射极(下端)。</b>这也就是流经GPIO引脚的几毫安的微小电流为什么可以控制一个电路所需的上百毫安的大电流。</li>
+  <li style="margin-top:.5em;">可以把晶体管看作是一个可以由小电流来控制电路开或关的电子开关。</li>
+</ul>
+  ]]>
+    </c:sourceContent> -->
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
     <c:title>控制一个电机</c:title>
     <c:desc>
@@ -1465,6 +1517,14 @@ $ sudo pip install spidev
   <li style="margin-top:.5em;">
     树莓派的板上引脚 <b>GPIO02</b>、<b>GPIO03</b> 对应I<sup >2</sup>C的<b>SDA</b>和<b>SCL</b>。
   </li>
+  <li style="margin-top:.5em;">
+    <div>当提及传感器连接时，I<sup >2</sup>C协议是使用最广泛的通信协议：</div>
+    <div style="font-size:.85em;color:gray;">1). 硅谷实验室的Si1141是目前用在手机上的<b>临近</b>和<b>亮度传感器</b>，用于自动亮度和临近特性，可以购买这种传感器并将其轻松的连接到树莓派上。</div>
+    <div style="font-size:.85em;color:gray;">2). Sensirion公司生产的SHT20也具有I<sup >2</sup>C协议，它可以用来测量温度和湿度数据。</div>
+    <div style="font-size:.85em;color:gray;">3). 步进电机控制可以用基于I<sup >2</sup>C的控制器(和树莓派连接)完成。</div>
+    <div style="font-size:.85em;color:gray;">4). 可以将以上所有传感器连接到一个I<sup >2</sup>C接口上，然后用树莓派获取数据。</div>
+    <div style="font-size:.85em;color:gray;">5). 令人遗憾的是我们<b>不能在树莓派上使用太多的GPIO引脚</b>，因此带有I<sup >2</sup>C接口的树莓派只适用于引脚数量较少的设备，这也是串行通信有用的原因。</div>
+  </li>
 </ul>
   ]]>
     </c:sourceContent>
@@ -1477,6 +1537,72 @@ $ sudo pip install spidev
 
 
 
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>使用树莓派时的注意事项和技巧</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+      ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<ul style="margin-left: 2.3em;list-style-type: decimal;line-height:1.625em;margin-top:.325em;">
+  <li>不要将任何输出电压超过3.3V的设备直接连接到树莓派的GPIO引脚上。</li>
+  <li style="margin-top:.5em;">在将设备连接到树莓派之前，详细了解设备的额定功率。</li>
+  <li style="margin-top:.5em;">不要通过将条线与GPIO引脚相连来接通树莓派的5V供电线。</li>
+  <li style="margin-top:.5em;">当使用低功耗LED时，最好在LED的正极连线上串联一个电阻(阻值最好在270&sim;330&Omega;之间)。</li>
+  <li style="margin-top:.5em;">不要尝试将高功耗元件连接到树莓派上，LED可以，电动机就不行。</li>
+  <li style="margin-top:.5em;">如果要连接直流电动机，那么还要额外将一个电动机驱动电路连接到树莓派上。</li>
+  
+</ul>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>理解GPIO端口</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+      ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<ul style="margin-left: 2.3em;list-style-type: disc;line-height:1.625em;margin-top:.325em;">
+  <li>GPIO引脚属于处理器的可配置引脚，仔细观察树莓派电脑板，其实GPIO的功能都是通过处理器的引脚输出接头实现的，通过这种方式就可以在运行时改变和读取GPIO的状态了。</li>
+  <li style="margin-top:.5em;">在编写程序时，树莓派的GPIO有两种模式：<b>板上模式</b>和<b>BCM模式</b>。BCM模式标注的是处理上的引脚编号，而板上模式标注的是PCB板上的引脚编号。</li>
+  <li style="margin-top:.5em;">如果你需要低功耗传感器或一些通过引脚供电的外围设备，可以通过树莓派的<b>1号(3.3V)</b>和<b>2号(5V)</b>进行供电。</li>
+  <li style="margin-top:.5em;">在使用3.3V和5V引脚时绝对不能将这两个供电引脚直接相连，也不能将5V供电线直接连接到任意GPIO引脚上。</li>
+  <li style="margin-top:.5em;">你可能处于项目的目的想用<b>5V逻辑高电平</b>，但是树莓派只能在3.3V下工作，而不能在5V下工作。所以请选择可以在3.3V电平下工作的外围设备。</li>
+  <li style="margin-top:.5em;">对于5V(或更高)下工作的外围设备，你需要在中间接入某种保护电路(例如二极管电路)，然后就可以将其连接到GPIO线路上。</li>
+  <li style="margin-top:.5em;">对于<b>3号</b>和<b>5号</b>的I<sup >2</sup>C通信引脚，树莓派电脑板上已经为这俩引脚内置了上拉电阻(1.8k&Omega;)以将电平上拉至3.3V, 因此不必担心连接传感器时的电平上拉。当不把这两个引脚用于I<sup >2</sup>C通信时，则可以将它们用于GPIO，内置的上拉电阻可以帮助我们轻松的连接开关。</li>
+  
+</ul>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 
 
 </c:component>
