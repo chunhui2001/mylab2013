@@ -14,7 +14,17 @@
     </div>
     <div style="margin-top:.625em;">
       <b>电压(V):</b> <br />
-      <span style="color: fuchsia;">Raspberry Pi 的 工作电压时 <b>3.3V</b>, 而 Arduino 的工作电压是 <b>5V</b>. 如果将 5V 连接到 Raspberry Pi 的 GPIO 引脚可能会损坏 GPIO 引脚甚至损坏整个 Raspberry Pi.</span>
+      <span style="color: fuchsia;">Raspberry Pi 的工作电压是 <b>3.3V</b>, 而 Arduino 的工作电压是 <b>5V</b>. 如果将 5V 连接到 Raspberry Pi 的 GPIO 引脚可能会损坏 GPIO 引脚甚至损坏整个 Raspberry Pi.</span>
+    </div>
+    <div style="margin-top:.625em;">
+      <b>电流(I):</b> <br />
+      <span style="color: fuchsia;">Raspberry Pi 的GPIO引脚只能用于提供大约 <b>16mA</b> 的电流. Arduino 引脚的额定值为 <b>40mA</b>，即向引脚发送一个高电平时会产生40mA的电流。你可以直接连接一个东西(例如一个明亮的LED)到Arduino，但是不能将其直接连接到RaspberryPi上。</span>
+    </div>
+    <div style="margin-top:.325em;">
+      <span style="color: green;font-size: .85em;">1). 原始RaspberryPi只有 <b>14</b> 个GPIO引脚, 同时他有 <b>3V</b> 的电压调节器可以为GPIO引脚提供 <b>50mA</b> 的可用电流。这就是说如果每个引脚都使用的话，那么每个引脚都有 <b>3mA</b> 的电流。但是Pi芯片上使用的Broadcom系统对每个引脚上的电流限制为最大 <b>16mA</b>。在不损坏Pi的前提下，当所有引脚都使用时总计电流不得超过 <b>40mA</b>。</span>
+    </div>
+    <div style="margin-top:.325em;">
+      <span style="color: green;font-size: .85em;">2). 新一代 RaspberryPi(A+、B+、Pi2) 拥有 <b>24</b> 个GPIO引脚, 同时他有 <b>3V</b> 的电压调节器可以为GPIO引脚提供 <b>1A</b> 的可用电流。但是Pi芯片上使用的Broadcom系统对每个引脚上的电流限制为最大 <b>16mA</b>。在不损坏Pi的前提下，当所有引脚都使用时总计电流不得超过 <b>100mA</b>。</span>
     </div>
 ]]>
   </c:abstract>
@@ -416,6 +426,44 @@ $ sudo pip install spidev
 
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>控制一个电机</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>
+  <img src="/images/raspberry/WechatIMG33.jpg" style="width:330px;" />
+</div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top:1.2em;line-height:1.625em;">
+  <li>电流从 Arduino 或 RaspberryPi 的GPIO的输出引脚流出 &rarr; 然后从电阻R1正极流入 &rarr; 然后从负极流出 &rarr; 然后在流入晶体管 Q1 的基极(输入回路)。</li>
+  <li style="margin-top:.5em;"><b>流经晶体管(该电路Q1晶体管的型号可以使用MPSA14)基极的微小电流允许一个比该电流大得多的电流流入晶体管右边的两个电极，即集电极(上端)和发射极(下端)。</b>这也就是流经GPIO引脚的几毫安的微小电流为什么可以控制一个电路所需的上百毫安的大电流。</li>
+  <li style="margin-top:.5em;">可以把晶体管看作是一个可以由小电流来控制电路开或关的电子开关。</li>
+  <li style="margin-top:.5em;">电阻R1的作用是确保流经Arduino或RaspberryPi的GPIO引脚的电流在可承受的范围，即控制GPIO引脚电流的大小。RaspberryPi引脚的安全电流是16mA, Arduino引脚的安全电流是40mA。</li>
+  <li style="margin-top:.5em;">当一个项目中的不同部分连接在一起时，那么每个部分的接地点都将汇聚到一处。例如想把一个电机的控制模块接在Arduino或RaspberryPi上，需要把电机控制器的接地点与Arduino或RaspberryPi的接地引脚(GND)连接在一起。</li>
+  <li style="margin-top:.5em;">上图中的1k&Omega;电阻，如果它有2.2V的电压和2.2mA的电流，则它将产生4.8mW的公率。</li>
+  <li style="margin-top:.5em;">上图电路中流经Q1的电流为800mA，整个Q1晶体管的集电极与发射极之间的电压降至大约1.2V。因此该晶体管的功率是: 800mA*1.2=960mW，在这种情况下工作的晶体管将会产生很高的温度，如果超过极限内部的元件将被融化，晶体管也会损坏。</li>
+  <li style="margin-top:.5em;">上图电路中使用的R1 1k&Omega;功率为<b>1/4W</b>。</li>
+  <li style="margin-top:.5em;">由于晶体管接通时基极和发射极每个极导致0.5V的压降，所以当使用一个RaspberryPi时R1两段的压降实际并非3.3V, 可能是2.2V(减去晶体管导致的压降值)。因此RaspberryPi需要提供的电流应为2.2V/1k&Omega;=2.2mA</li>
+
+  <li style="margin-top:.5em;">上图中，将一个二极管连接在电机的终端上是一种很常见的方式。流经电机的电流通常由相反的方向流至二级管允许的方向，该处会出现一个负的峰值电压，此时二极管开始起作用，二极管将会引导并有效地将这个暂时的电流进行短路，使其消失</li>
+</ul>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
     <c:title>基本的电子学术语和若干基础知识</c:title>
     <c:desc>
       <c:desc1> <![CDATA[
@@ -806,16 +854,46 @@ $ sudo pip install spidev
                      titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
                      <![CDATA[
-<ul style="margin-left: 1.5em;list-style-type: disc;">
-  <li>电阻会以发热的形式消耗能量，而电容会在其两个导片之间存储能量。</li>
-  <li style="margin-top:.5em;">电容通常用在滤波器电路中滤除电压以及在放大器电路中生成清晰的语音。</b></li>
-  <li style="margin-top:.5em;">例如电阻值为10&Omega;并且流经该电阻的电流为1A，那么经过该电阻后电压下降10V。</li>
+<div>
+  <img src="/images/raspberry/polarized-capacitors.jpg" style="width:220px;" />
+</div>
+<ul style="margin-left: 1.5em;list-style-type: disc;line-height:1.625em;">
+  <li>电阻会以发热的形式消耗能量，而电容会在其两个导片之间存储能量。可以将电容想象为一个可以暂时储存电能的容器，就像一个临时电池。</li>
+  <li style="margin-top:.5em;">电容通常用在滤波器电路中滤除电压(抑制电气干扰)以及在放大器电路中生成清晰的语音。</b></li>
   <li style="margin-top:.5em;">将电容和传感器一起使用时，电容可以将电压水平维持一段时间，以便能让微处理器有足够的时间读取它的值。</li>
   <li style="margin-top:.5em;">因为传感器的数据变化很大，当微处理器正在读取它的数据值时就需要保持稳定，这样才能避免计算失误。</li>
   <li style="margin-top:.5em;">电容维持电压水平的时间取决于RC时间常数。</li>
+  <li style="margin-top:.5em;">当需要一个脉冲峰值时，可以从电容中获得能量。</li>
+  <li style="margin-top:.5em;">非极化电容(左)、极化电容(右)。低容量电容(非极化)没有正负极之分</li>
 </ul>
   ]]>
     </c:sourceContent>
+    
+    <c:sourceContent type="html" title="二极管" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<ul style="margin-left: 1.5em;list-style-type: disc;line-height:1.625em;">
+  <li>二极管只允许电流单项导通，它是一种单向阀门，电流只能流向其肩头所指的方向。</li>
+  <li style="margin-top:.5em;">二极管的作用是是确保电子元件(例如电机)开或关时产生的电子脉冲不会瞬间使电流逆向流动，因为这些瞬间脉冲可以很容易摧毁晶体管。</b></li>
+  <li style="margin-top:.5em;">将一个二极管连接在电机的终端上是一种很常见的方式。流经电机的电流通常由相反的方向流至二级管允许的方向，该处会出现一个负的峰值电压，此时二极管开始起作用，二极管将会引导并有效地将这个暂时的电流进行短路，使其消失。</li>
+</ul>
+  ]]>
+    </c:sourceContent>
+    
+    <c:sourceContent type="html" title="发光二极管(LEDs)" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<ul style="margin-left: 1.5em;list-style-type: disc;line-height:1.625em;">
+  <li>LED工作时就像一个普通的二极管，只不过当电流经过时会发光。</li>
+  <li style="margin-top:.5em;">LED可供选择的发光颜色和尺寸非常多，它可以被Arduino或RaspberryPi的GPIO引脚直接驱动，由于RaspberryPI的引脚电流最大仅仅能够承受16mA，而流经LED的电流通常大于16mA. 所以必须使用一个电阻和LED串联用于限制其电流。</b></li>
+</ul>
+  ]]>
+    </c:sourceContent>
+
     <c:sourceContent type="html" title="串联和并连" id="sourceContent1" 
                      style="background-color:white;margin-top:1em;"
                      titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
