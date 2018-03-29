@@ -888,8 +888,89 @@ $ sudo pip install spidev
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
                      <![CDATA[
 <ul style="margin-left: 1.5em;list-style-type: disc;line-height:1.625em;">
-  <li>LED工作时就像一个普通的二极管，只不过当电流经过时会发光。</li>
-  <li style="margin-top:.5em;">LED可供选择的发光颜色和尺寸非常多，它可以被Arduino或RaspberryPi的GPIO引脚直接驱动，由于RaspberryPI的引脚电流最大仅仅能够承受16mA，而流经LED的电流通常大于16mA. 所以必须使用一个电阻和LED串联用于限制其电流。</b></li>
+  <li>LED工作时就像一个普通的二极管，只不过当电流经过时会发光。红外线LED(IR)通常用于遥控器、紫外线LED(UV)通常用于验假钞。</li>
+  <li style="margin-top:.5em;">LED可供选择的发光颜色和尺寸非常多，它可以被Arduino或RaspberryPi的GPIO引脚直接驱动，由于RaspberryPI的引脚电流最大仅仅能够承受16mA，而流经LED的电流通常大于16mA. 所以必须使用一个电阻(470&Omega; 或 330&Omega;)和LED串联用于限制其电流。</b></li>
+  <li style="margin-top:.5em;">LED上使用电阻的原因有二：其一，使电流不超过LED自身所需电流的最大值，其二，某个输出引脚或所有输出引脚累计的输出电流不超过其载流能力。</li>
+  <li style="margin-top:.5em;">当一个LED点亮时，在该器件上会有一个或多或少的<b>恒定电压</b>(正向电压,简写为V<sub>f</sub>)。不同颜色的LED有不同的V<sub>f</sub>值。其中：通常红色的LED V<sub>f</sub>值最低、蓝色和白色的LEDV<sub>f</sub>值最高</li>
+  <li>大部分LED在电流为1mA时就鞥发出亮光，但要达到其最佳亮度需要20mA的电流。这个值已经超出树莓派引脚电流的最大值。</li>
+</ul>
+  ]]>
+    </c:sourceContent>
+
+
+    
+    <c:sourceContent type="html" title="Web服务计算电阻阻值" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<ul style="margin-left: 1.5em;list-style-type: disc;line-height:1.625em;">
+  <li>
+    <div>Web服务计算电阻阻值: <a target="_blank" href="http://led.linear1.org/1led.wiz/">http://led.linear1.org/1led.wiz/</a></div>
+    <div>
+      <img src="/images/raspberry/LED-calculator.jpg" width="530px" />
+    </div>
+  </li>
+  <li style="margin-top:.5em;">
+    <div>一组电阻列表参考：</div>
+    <table style="font-size:.85em;">
+      <thead>
+        <tr>
+          <th style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">&nbsp;</th>
+          <th style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">IR</th>
+          <th style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">红色</th>
+          <th style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">橘色/黄色/绿色</th>
+          <th style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">蓝色/白色</th>
+          <th style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">紫色</th>
+          <th style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">UV</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="text-align:right;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">V<sub>f</sub></td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">1.2&sim;1.6V</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">1.6&sim;2V</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">2&sim;2.2V</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">2.5&sim;3.7V</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">2.7&sim;4V</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">3.1&sim;4.4V</td>
+        </tr>
+        <tr>
+          <td style="text-align:right;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">Pi3.3V 3mA</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;"><span style="color:red;">&Chi;</span></td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">680&Omega;</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">470&Omega;</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">270&Omega;</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">220&Omega;</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">68&Omega;</td>
+        </tr>
+        <tr>
+          <td style="text-align:right;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">Pi3.3V 16mA</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">150&Omega;</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">120&Omega;</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">82&Omega;</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">56&Omega;</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">39&Omega;</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">15&Omega;</td>
+        </tr>
+        <tr>
+          <td style="text-align:right;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">Arduino 5V 20mA</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">220&Omega;</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">180&Omega;</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">150&Omega;</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">150&Omega;</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">120&Omega;</td>
+          <td style="text-align:center;padding:0;padding:.1em .65em;border:solid 1px gray;font-size:.85em;">100&Omega;</td>
+        </tr>
+        <tr>
+          <td colspan="7" style="font-weight:unset;text-align:left;padding:0;padding:.1em .65em;border:none;font-size:.85em;">
+            <b>注：</b>上图红色 <span style="color:red;">&Chi;</span> 处意在说明<b>IR型LED</b>在进行遥控时最少需要10mA电流，大多数被设计在100mA或者更高用以获得更好的遥控范围。
+          </td>
+          
+        </tr>
+      </tbody>
+    </table>
+  </li>
 </ul>
   ]]>
     </c:sourceContent>
@@ -1176,12 +1257,117 @@ $ sudo pip install spidev
       ]]>
         </c:sourceContent>
 
+
+
+    <c:sourceContent type="html" title="集成电路" id="sourceContent1" 
+                         style="background-color:white;margin-top:1em;"
+                         titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                         bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                         <![CDATA[
+
+  <ul style="margin-left: 1.5em;list-style-type: disc;line-height:1.6em;">
+    <li>
+      集成电路及芯片是由许多晶体管制作在一片硅片上然后封装在一个管壳内制作而成的。
+    </li>
+  </ul>
+      ]]>
+        </c:sourceContent>
+
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
       </c:comment1>
     </c:comment>
   </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>连接的输入和输出</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+      ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="数字输出" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<ul style="margin-left: 1.5em;list-style-type: disc;line-height:1.625em;margin-top:.325em;">
+  <li>数字输出是用来控制设备筒短的。</li>
+  <li style="margin-top:.5em;">当使用RaspberryPi时，数字输出不是高电平(3.3V)就是低电平(0V)。</li>
+  <li style="margin-top:.5em;">当使用Arduino时，数字输出不是高电平(5V)就是低电平(0V)。</li>
+  <li style="margin-top:.5em;">Arduino输出的引脚电流是40mA,而RaspberryPi输出的引脚电流是16mA。</li>
+</ul>
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="数字输入" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<ul style="margin-left: 1.5em;list-style-type: disc;line-height:1.625em;margin-top:.325em;">
+  <li>数字输入通常与开关或其他器件的数字输出端相连。</li>
+  <li style="margin-top:.5em;">数字输入都有一个临界值电压，通常是高压和低压范围内的中间值。因此在Arduino上这个临界值可能约为2.5V左右，在RaspberryPi上这个值应该在1.65V左右。</li>
+  <li style="margin-top:.5em;">当在Arduino或RaspberryPi上运行的程序读取一个数字时，如果它高于临界值，则认为这个值为高输入，否则为低输入。</li>
+  <li style="margin-top:.5em;">同数字输出一样，数字输入也没有折中的测量值，它们不是高就是低。</li>
+</ul>
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="模拟输入" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<ul style="margin-left: 1.5em;list-style-type: disc;line-height:1.625em;margin-top:.325em;">
+  <li>模拟输入允许在模拟引脚上测量的电压介于高电压与低电压之间。</li>
+  <li style="margin-top:.5em;">RaspberryPi上没有模拟输入。Arduino有6个模拟输入引脚，标记为A0&sim;A5。</li>
+  <li style="margin-top:.5em;">在Arduino上，0V&sim;5V的电压分别对应数字0-1023。因此0V即为数字0, 5V对应1023，中间值(2.5V)规定为511</li>
+</ul>
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="模拟输出" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<ul style="margin-left: 1.5em;list-style-type: disc;line-height:1.625em;margin-top:.325em;">
+  <li>模拟输出使用了一种叫做<b>脉冲宽度调制(PWM)</b>的技术去控制平均功率达到正常的数字输出水平。</li>
+  <li style="margin-top:.5em;">PWM可以用于控制电机的速度以及LED的亮度。</li>
+</ul>
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="串行通信" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<ul style="margin-left: 1.5em;list-style-type: disc;line-height:1.625em;margin-top:.325em;">
+  <li><b>数字输入</b>、<b>数字输出</b>、<b>模拟输入</b>、<b>模拟输出</b>所描述的接口技术是一种最基本且最底层的技术。</li>
+  <li style="margin-top:.5em;">当你想用Arduino或RaspberryPi对一些设备进行控制时，可以采用串行通信接口的方式，即每次从一个设备的数字输出端口发送一个二进制数据位到另一个设备的数字输入端中。串行通信需要通信双方遵循一致的数据格式。</li>
+  <li style="margin-top:.5em;">串行接口有很多标准，它们都实现非常类似的功能但方式略有不同。这包括所谓的<b>简单串口</b>、<b>TTL串口</b>、<b>I<sup>2</sup>C</b>、<b>串行外设接口(SPI)<b>。</li>
+</ul>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
 
 
 
