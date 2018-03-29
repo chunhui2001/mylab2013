@@ -1421,8 +1421,22 @@ $ sudo pip install spidev
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
                      <![CDATA[
 <ul style="margin-left: 1.5em;list-style-type: disc;line-height:1.625em;margin-top:.325em;">
-  <li>1</li>
-  <li style="margin-top:.5em;">2</li>
+  <li>串行外围设备接口 (Serial Peripheral Interface, SPI)是一种全双工短距离单主设备通信协议。与UART不同的是它是一种异步通信协议。</li>
+  <li style="margin-top:.5em;">
+    <div>SPI简单的连接方式之一是单主从连接，如下图：</div>
+    <div><img src="/images/raspberry/WechatIMG34.jpg" width="450px;" /></div>
+    <div style="margin-top:.3em;">1). 总计四条数据线，分别是：<b>时钟(SCLK)</b>、<b>主入从出(MISO)</b>、<b>主出从入(MOSI)</b>、<b>片选(CS)</b> </div>
+    <div style="margin-top:.3em;">2). 总是由主设备初始化数据帧和时钟，时钟频率可由主设备根据从设备性能进行调节，时钟频率的变化范围为1&sim;40MHz或更高 </div>
+    <div style="margin-top:.3em;">3). 一些设备由低电平输入激活，这意味着只要主设备在CS引脚上向从设备发送逻辑0信号，就可以启动该设备，然后从设备就能接收主设备发送来的时钟和数据。 </div>
+    <div style="margin-top:.3em;">4). 可以将多个从设备连接到主设备上，为此我们需要从主设备上引出其它片选线来连接多个从设备。 </div>
+    <div style="margin-top:.3em;">5). 当从设备增加时，将会发现SPI通信协议的缺点之一。从设备不会向主设备发送应答信号，所以主设备在发送数据时并不清楚从设备是否收到了数据。 </div>
+  </li>
+  <li style="margin-top:.5em;">
+    在树莓派上可以很容易地用Python或C语言编写SPI通信代码。
+  </li>
+  <li style="margin-top:.5em;">
+    树莓派的板上引脚 <b>GPIO10</b>、<b>GPIO09</b>、<b>GPIO11</b>、<b>GPIO08</b>、<b>GPIO07</b> 对应SPI的 <b>MOSI</b>、<b>MISO</b>、<b>SCLK</b>、<b>CS0</b>、<b>CS1</b>。
+  </li>
 </ul>
   ]]>
     </c:sourceContent>
@@ -1434,8 +1448,23 @@ $ sudo pip install spidev
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
                      <![CDATA[
 <ul style="margin-left: 1.5em;list-style-type: disc;line-height:1.625em;margin-top:.325em;">
-  <li>1</li>
-  <li style="margin-top:.5em;">2</li>
+  <li>I<sup >2</sup>C(Inter-Integrated Circuit) 是一种用两条线连接工作的半双工协议。半双工是通信的一种类型，即只要发送端在发送数据，接收端只能监听而不能发送数据，相反也是如此。</li>
+  <li style="margin-top:.5em;">多播通信协议只需要两条线即可，这两条线分别称为数据线(SDA)和时钟线(SCL)。</li>
+  <li style="margin-top:.5em;">I<sup >2</sup>C通信协议是Philips公司的发明专利，当集成电路制造上想在其芯片上使用该协议时需要获得许可，树莓派周边的很多集成电路和外围设备都集成了I<sup >2</sup>C通信协议。</li>
+  <li style="margin-top:.5em;">I<sup >2</sup>C的连线(SDA和SCL)总是要通过电阻上拉至输入电压，I<sup >2</sup>C总线工作于三种速度： 高速(3.4MBps)、快速(400KBps)、慢速(100KBPs)。</li>
+  <li style="margin-top:.5em;">据说I<sup >2</sup>C通信最多能在45英寸的距离内进行，但是最好在10英寸距离内使用I<sup >2</sup>C协议进行通信。</li>
+  <li style="margin-top:.5em;">每个I<sup >2</sup>C设备都有7&sim;10位地址，当将从设备连接到主设备上时，从设备制造商会向你提供要用到的地址，主设备可以应用地址位向特定的从设备发送数据。每个从设备都会收到数据，但是某个从设备只能使用专门针对其发送的数据。</li>
+  <li style="margin-top:.5em;">主设备可以用地址位<b>读取传感器预定义数据寄存器中的可用数据<b>并自行处理所读数据。</li>
+  <li style="margin-top:.5em;">
+    <div>I<sup >2</sup>C总线的一般配置如下图所示：</div>
+    <div><img src="/images/raspberry/WechatIMG35.jpg" width="330px" /></div>
+  </li>
+  <li style="margin-top:.5em;">
+    市面上有一些带有I<sup >2</sup>C接口的16*2字符点阵LCD显示器模块, 你可以用树莓派为它们编写程序。通常，这种LCD需要8/4位并行数据线以及重启、读/写和启动引脚。
+  </li>
+  <li style="margin-top:.5em;">
+    树莓派的板上引脚 <b>GPIO02</b>、<b>GPIO03</b> 对应I<sup >2</sup>C的<b>SDA</b>和<b>SCL</b>。
+  </li>
 </ul>
   ]]>
     </c:sourceContent>
