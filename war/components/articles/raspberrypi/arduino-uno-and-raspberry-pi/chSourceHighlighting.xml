@@ -659,6 +659,57 @@ void main() {
   ]]>
     </c:sourceContent>
 
+
+    <c:sourceContent type="html" title="用 'PWM(脉冲宽度调制)模拟输出' 控制直流电机的速度" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<img src="/images/raspberry/pmw.jpg" width="230px" />
+<ul style="margin-left: 1.825em;list-style-type: disc;line-height:1.625em;margin-top:.325em;">
+  <li>当我们想控制电机的转速时，通过调整电机两端的电压是行不通的。因为当电机获取足够的电压前，它会纹丝不动。</li>
+  <li>有一种叫做<b>脉冲宽度调制(PWM)</b>的技术通过<b>对设备的供电量进行控制</b>以达到明暗或转速的调节。这种技术使用使用一个数字输出，产生一系列高或者低脉冲。通过控制处在高电平的时间，你可以将电能全部转化给电机或LED。</li>
+  <li>Arduino和RaspberryPi的输出引脚都支持PWM功能。在Arduino上<b>D3</b>、<b>D5</b>、<b>D6</b>、<b>D9</b>、<b>D10</b>、<b>D11</b>具有PWM功能，Ardunio Uno上大部分引脚每秒钟的频率为<b>492Hz</b>，<b>引脚5</b>和<b>引脚6</b>的频率为<b>980Hz</b>。</li>
+  
+</ul>
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Python PWM 控制" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+import RPi.GPIO as GPIO
+from time import sleep
+
+_control_pin=18        # 定义输出引脚
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(_control_pin, GPIO.OUT)
+
+_motor_pwm=GPIO.PWM(_control_pin, 500)    # 将引脚设置为PWM输出, 将PWM的频率(每秒脉冲数)设置为500Hz
+_motor_pwm.start(0)                       # 直到 start 被调用时，PWM的输出才会实际启动。 参数是PWM占空比: 当参数是0时, 电机停止转动
+
+try:
+  
+  while True:
+    duty = input('Enter Duty Cycle(0 to 100):')
+    if (duty <0 or duty >100):
+      print('Invalid number, 0>= INPUT NUMBER <= 100')
+    else:
+      _motor_pwm.ChangeDutyCycle(duty)    # 根据用户输入改变占空比的值，即改变电机转速, 值越大电机转速越快
+      sleep (1)
+
+finally:
+  print("GPIO cleaning up")
+  GPIO.cleanup()
+
+
+  ]]>
+    </c:sourceContent>
+
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
@@ -1243,6 +1294,107 @@ void main() {
   <img src="/images/raspberry/20150421195043715-4.jpg" width="350px;" />
 </div>
 
+  ]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="html" title="使用继电器实现隔离电噪声、大电流电机和小功率RaspberryPi或Arduino" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div style="margin-top:.5em;"><b>优点: </b></div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top:.35em;">
+  <li>易于操作，仅需要很少的元件。</li>
+  <li style="margin-top:.5em;">可以很好的实现<b>电噪声</b>、<b>大电流电机</b>、<b>小功率RaspberryPi</b>或<b>Arduino</b>间的<b>隔离</b>作用。</b></li>
+  <li style="margin-top:.5em;">大电流处理能力(使用正确的继电器)。</li>
+  <li style="margin-top:.5em;">有现成的继电器模块供RaspberryPi或Arduino使用。</li>
+</ul>
+<div style="margin-top:1em;"><b>缺点: </b></div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top:.35em;">
+  <li>继电器是一种比较大的组件。仅可以控制打开或关闭，无法控制转速或亮度。</li>
+  <li style="margin-top:.5em;">机械设备，开关操作寿命一般在<b>1千万次左右</b>。</b></li>
+  <li style="margin-top:.5em;">继电器可以实现开关的功能，但是不能作为一个开关使用。</b></li>
+</ul>
+<div style="margin-top:1em;"><b>原理: </b></div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top:.35em;">
+  <li>当<b>50mA</b>左右的电流通过它的线圈时，它就称为一个电磁铁，从而将两个开关接触到一起。</li>
+  <li style="margin-top:.5em;">通过继电器导通的可以是<b>高电压</b>和<b>大电流</b>，通常切换电流可以高达上万安培(A)。</b></li>
+  <li style="margin-top:.5em;">继电器线圈的电流很大，所以不能在RaspberryPi或Arduino上直接驱动。在这种情况下可以使用一个小型晶体管把继电器线圈电压升至5V。</b></li>
+</ul>
+
+
+<div style="margin-top:1em;"><b>电路图: </b></div>
+<div style="list-style-type: disc;margin-top:.35em;">
+  <img src="/images/raspberry/dianlu-04.jpg" width="280px" />
+</div>
+<div style="list-style-type: disc;margin-top:.35em;font-size:.9em;">
+  1). 因为继电器在启动时仅需要50mA的电流，所以搭配一个2N3904型晶体管用于提升继电器电压至5V。
+</div>
+<div style="list-style-type: disc;margin-top:.35em;font-size:.9em;">
+  2). 因为继电器的线圈在打开或关闭时会产生一个电压脉冲，所以这个电路中串联了一个1N4001型二级管，防止电流逆向流动损害RaspberryPi或Arduino。
+</div>
+
+
+
+
+  ]]>
+    </c:sourceContent>
+
+
+
+
+    <c:sourceContent type="html" title="使用继电器模块控制直流电机的启动或关闭" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+  <table style="font-size:.85em;">
+    <caption style="text-align:left;font-weight:bold;padding: .2em .35em;">
+      物料清单
+    </caption>
+    <thead>
+      <tr>
+        <th style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;color:gray;">名称</th>
+        <th style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;color:gray;">规格</th>
+        <th style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;color:gray;">电流</th>
+        <th style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;color:gray;">备注</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;">小的6V直流电机</td>
+        <td style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;">6V</td>
+        <td style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;"></td>
+        <td style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;">Adafruit:711</td>
+      </tr>
+      <tr>
+        <td style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;">继电器模块</td>
+        <td style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;"></td>
+        <td style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;"></td>
+        <td style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;">eBay</td>
+      </tr>
+      <tr>
+        <td style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;">6V(4xAA)电源盒</td>
+        <td style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;"></td>
+        <td style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;"></td>
+        <td style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;">Adafruit: 830</td>
+      </tr>
+      <tr>
+        <td style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;">适合继电器模块的导线</td>
+        <td style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;"></td>
+        <td style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;"></td>
+        <td style="padding:0; text-align:center;border:solid 1px gray;padding:.2em .35em;"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top:.5em;">
+    <h5 style="font-weight:bold;font-size:.85em;padding-left:.3em;">电路图</h5>
+    <img src="/images/raspberry/dianlu-05.jpg" width="330px" />
+  </div>
   ]]>
     </c:sourceContent>
 
@@ -1872,37 +2024,6 @@ finally:
   print("GPIO cleaning up")
   GPIO.cleanup()
 
-
-  ]]>
-    </c:sourceContent>
-    <c:sourceContent type="html" title="用 'PWM(脉冲宽度调制)模拟输出' 控制LED亮度" id="sourceContent1" 
-                     style="background-color:white;margin-top:1em;"
-                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;line-height:1.3;font-family:monospace;">
-                     <![CDATA[
-<img src="/images/raspberry/pmw.jpg" width="230px" />
-<ul style="margin-left: 1.825em;list-style-type: disc;line-height:1.625em;margin-top:.325em;">
-  <li>当我们想LED的亮度时，通过调整LED两端的电压是行不通的。因为当LED获取足够的电压前，它不会发出任何亮光。</li>
-  <li>有一种叫做<b>脉冲宽度调制(PWM)</b>的技术通过<b>对设备的供电量进行控制</b>以达到明暗或转速的调节。这种技术使用使用一个数字输出，产生一系列高或者低脉冲。通过控制处在高电平的时间，你可以将电能全部转化给电机或LED。</li>
-  <li>Arduino和RaspberryPi的输出引脚都支持PWM功能。在Arduino上<b>D3</b>、<b>D5</b>、<b>D6</b>、<b>D9</b>、<b>D10</b>、<b>D11</b>具有PWM功能，Ardunio Uno上大部分引脚每秒钟的频率为<b>492Hz</b>，<b>引脚5</b>和<b>引脚6</b>的频率为<b>980Hz</b>。</li>
-  
-</ul>
-
-  ]]>
-    </c:sourceContent>
-    <c:sourceContent type="" title="Python PWM 控制" id="sourceContent1" 
-                     style="background-color:white;margin-top:1em;"
-                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;line-height:1.3;font-family:monospace;">
-                     <![CDATA[
-
-_pwmRed = GPIO.PWM(18, 500);
-_pwmOrange = GPIO.PWM(23, 500);
-_pwmGreen = GPIO.PWM(24, 500);
-
-_pwmRed.start(100);
-_pwmOrange.start(100);
-_pwmGreen.start(100);
 
   ]]>
     </c:sourceContent>
