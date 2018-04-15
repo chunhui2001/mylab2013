@@ -2306,11 +2306,28 @@ finally:
                      titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.3;font-family:monospace;">
                      <![CDATA[
+# Plug in the GPS device and view serial PORT
+$ lsusb
+$ ll /dev/tty*
+
+# Confirm if serial is working properly
+$ sudo cat /dev/ttyUSB0
+$ sudo cat /dev/gps0
+
+# install gps utils
 $ sudo apt-get update
 $ sudo apt-get -y install gpsd gpsd-clients python-gps
 
-### ufw allow 2947
-### ufw allow 2947/tcp
+$ sudo systemctl restart gpsd
+$ sudo systemctl enable gpsd
+$ sudo systemctl start gpsd
+
+# confirm the gpsd port is listen
+$ sudo netstat -naptu | grep LISTEN
+
+# open gpsd port
+$ ufw allow 2947
+$ ufw allow 2947/tcp
 
 # check gpsd configuration
 $ grep -v "#" /etc/default/gpsd | grep -v "^$"
@@ -2334,31 +2351,29 @@ USBAUTO="true"
 DEVICES="/dev/ttyUSB0"
 
 # Other options you want to pass to gpsd
-GPSD_OPTIONS="-F /var/run/gpsd.socket"
+GPSD_OPTIONS="-F /var/run/gpsd.sock"
 
-$ sudo systemctl restart gpsd
-$ sudo systemctl enable gpsd.sock
-$ sudo systemctl start gpsd.sock
-
-# Confirm if serial is working properly
-$ sudo cat /dev/ttyUSB0
-$ sudo cat /dev/gps0
 
 $ sudo dmesg | grep tty
 
+#  run gpsd in foreground mode
+$ sudo service gpsd stop
+$ sudo gpsd -N -D 2 -F /var/run/gpsd.sock /dev/ttyUSB0
 
 # get gps information
 $ gpspipe -r
 $ sudo cgps -s
 
-
-#  run gpsd in foreground mode
-$ sudo service gpsd stop
-$ sudo gpsd -N -D 2 -F /var/run/gpsd.socket /dev/ttyUSB0
-
-
 ## parse gps data
 # https://bigdanzblog.wordpress.com/2015/01/18/connecting-u-blox-neo-6m-gps-to-raspberry-pi/
+
+# Using gpspipe, you can capture the next locational data packet transmitted by the GPS:
+$ sudo apt-get install -y jq
+$ gpspipe -w -n 30 | grep -m 1 lat | jq '.''
+$ gpspipe -w -n 30 | grep -m 1 lat | jq '. | {lat, lon}'
+$ gpspipe -w -n 30 | grep -m 1 lat | jq '.lat,.lon'
+
+# http://www.google.cn/maps/@39.880815,116.661465
 
   ]]>
     </c:sourceContent>
