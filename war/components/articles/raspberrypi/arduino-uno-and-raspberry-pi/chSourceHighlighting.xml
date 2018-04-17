@@ -2430,6 +2430,210 @@ $ gpspipe -w -n 30 | grep -m 1 lat | jq '.lat,.lon'
 
 
 
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>树莓派驱动GPS模块</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+ 
+  <div style="margin-top:.5em;">
+    <img src="/images/raspberry/081728293151375.jpg" width="330px" />
+  </div>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="树莓派配置修改" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# 树莓派的串口默认是用于SSH调试的，如果需要使用串口连接其他设备需要进行两步修改：
+$ sudo vi /etc/inittab
+
+# 注释掉文件中的这一行，以关闭串口登录
+> T0:23:respawn:/sbin/getty -L ttyAMA0 115200 vt100
+
+# 修改 /boot/cmdline.txt
+$ sudo vi /boot/cmdline.txt
+
+# 删除引号中的部分，包含引号
+dwc_otg.lpm_enable=0 "console=ttyAMA0,115200 kgdboc=ttyAMA0,115200" \
+  console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline rootwait
+
+# 修改后如下:
+dwc_otg.lpm_enable=0 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline rootwait
+
+$ sudo reboot
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="串口连接" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>
+  根据GPS模块的文档和树莓派的针脚定义一共需要连接4根线：VCC 5V、GND 接地、TXD和RXD。模块上的TXD连接树莓派的RXD，模块的RXD连接树莓派的TXD！
+</div>
+
+<div style="margin-top:.5em;">
+<img src="/images/raspberry/082008090659506.png" width="530px" />
+</div>
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="通过 minicom 获取串口数据" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo apt-get install minicom
+$ sudo minicom -b 9600 -o -D /dev/ttyAMA0     # -b 设定的是波特率，是模块参数而定；-o 是不初始化Modem且不锁定文件；-D 设定的是接口
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>
+<img src="/images/raspberry/082016074569921.png" width="530px" />
+</div>
+<div style="margin-top:.5em;">
+上图数据是一种叫 <b>NMEA-0183</b> 的协议，包括 <b>GSA/当前卫星信息</b>、<b>GSV/可见卫星信息</b>、<b>GGAGPS/定位信息</b>、<b>RMC/推荐定位信息</b> 和 <b>VTG/地面速度信息</b> 等内容。
+</div>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="编程获取串口数据" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# 通过 minicom 测试后，说明串口和GPS模块工作正常，我们就应该用编程的方式来获取串口数据了，以Python为例，要获取串口的数据需要安装Python serial模块
+$ sudo apt-get install python-serial
+
+import serial
+
+ser = serial.Serial("/dev/ttyAMA0", 9600)
+
+# 通过ser的read()方法只能获取一个字符，但read()方法有一个接收字符长度的重载，首先通过ser.inWaiting()方法获取总长度，再通过ser.read()读取
+ser.read(ser.inWaiting())
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="NMEA-0183 一些数据的计算方式" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+<div>
+关于NMEA-0183协议返回内容的计算方式，一个是<b>时间</b>，另一个是<b>经纬度</b>。
+</div>
+
+<div style="margin-top:.5em;">
+  <h5 style="font-weight:bold;">GGA和RMC返回的格式：</h5>
+  <div style="margin-top:.5em;font-size:.8em;">
+<p><b>$GPGGA</b>, <span style="color: red;font-weight: bold;">&lt;1&gt;</span>,
+<span style="color: red;font-weight: bold;">&lt;2&gt;</span>,
+<span style="color: red;font-weight: bold;">&lt;3&gt;</span>,
+<span style="color: red;font-weight: bold;">&lt;4&gt;</span>,
+<span style="color: red;font-weight: bold;">&lt;5&gt;</span>,
+<span style="color: red;font-weight: bold;">&lt;6&gt;</span>,
+<span style="color: red;font-weight: bold;">&lt;7&gt;</span>,
+<span style="color: red;font-weight: bold;">&lt;8&gt;</span>,
+<span style="color: red;font-weight: bold;">&lt;9&gt;</span>,
+<span style="color: red;font-weight: bold;">M</span>,
+<span style="color: red;font-weight: bold;">&lt;10&gt;</span>,
+<span style="color: red;font-weight: bold;">M</span>,
+<span style="color: red;font-weight: bold;">&lt;11&gt;</span>,
+<span style="color: red;font-weight: bold;">&lt;12&gt;*hh
+<span style="color: red;font-weight: bold;">&lt;CR&gt;</span>
+<span style="color: red;font-weight: bold;">&lt;LF&gt;</span>
+</p>
+
+
+<p><b>$GPRMC</b>, <span style="color: red;font-weight: bold;">&lt;1&gt;</span>,
+<span style="color: red;font-weight: bold;">&lt;2&gt;</span>,
+<span style="color: red;font-weight: bold;">&lt;3&gt;</span>,
+<span style="color: red;font-weight: bold;">&lt;4&gt;</span>,
+<span style="color: red;font-weight: bold;">&lt;5&gt;</span>,
+<span style="color: red;font-weight: bold;">&lt;6&gt;</span>,
+<span style="color: red;font-weight: bold;">&lt;7&gt;</span>,
+<span style="color: red;font-weight: bold;">&lt;8&gt;</span>,
+<span style="color: red;font-weight: bold;">&lt;9&gt;</span>,
+<span style="color: red;font-weight: bold;">&lt;10&gt;</span>,
+<span style="color: red;font-weight: bold;">&lt;11&gt;</span>,
+<span style="color: red;font-weight: bold;">&lt;12&gt;*hh
+<span style="color: red;font-weight: bold;">&lt;CR&gt;</span>
+<span style="color: red;font-weight: bold;">&lt;LF&gt;</span>
+</p>
+
+<p style="font-weight:bold;font-size:.8em;">$GPRMC,
+  <span style="color: red;font-weight: bold;">125315.00</span>,
+  <span style="color: red;font-weight: bold;">A</span>,
+  <span style="color: red;font-weight: bold;">3853.70120</span>,
+  <span style="color: red;font-weight: bold;">N</span>,
+  <span style="color: red;font-weight: bold;">12133.61898</span>,
+  <span style="color: red;font-weight: bold;">E</span>,
+  <span style="color: red;font-weight: bold;">1.710</span>,
+  <span style="color: red;font-weight: bold;"></span>,
+  <span style="color: red;font-weight: bold;">081114</span>,
+  <span style="color: red;font-weight: bold;"></span>,
+  <span style="color: red;font-weight: bold;"></span>,A*7E</p>
+
+</div>
+
+<div style="margin-top:.5em;">
+  <h5 style="font-weight:bold;">1. GGA和RMC的时间</h5>
+
+  <p style="margin-top:.5em;color:green;font-size:.8em;">GGA和RMC都会返回时间，他们的第一个参数<1>就是UTC时间，即协调世界时，格式为hhmmss，要换算成北京时间只需要加上8小时即可；RMC的<9>为UTC日期，格式为ddmmyy（日月年）。</p>
+
+
+  <p style="margin-top:.5em;color:darkgoldenrod;font-weight:bold;font-size:.8em;">
+  <1>对应的是 125315.00 也就是UTC时间 12:53:15，换算成北京时间就是 20:53:15；参数<9>为 081114，根据 dd/mm/yy 来算就是14年11月08日~</p>
+</div>
+
+
+
+<div style="margin-top:.5em;">
+  <h5 style="font-weight:bold;">2. GGA和RMC的经纬度</h5>
+
+  <p style="margin-top:.5em;color:green;font-size:.8em;">GGA和RMC都会返回经纬度；GGA的<2>~<5>和RMC的<3>~<6>含义及格式相同，：</p>
+
+  <p style="margin-top:.5em;font-weight:bold;font-size:.8em;">
+    
+
+    <span style="color: red;font-weight: bold;"><3></span> <span style="color: gray;">3853.70120  纬度（ddmm.mmmm）</span><br />
+    <span style="color: red;font-weight: bold;"><4></span> <span style="color: gray;">N 纬度半球（N 北半球、S 南半球）</span><br />
+    <span style="color: red;font-weight: bold;"><5></span> <span style="color: gray;">12133.61898 经度（dddmm.mmmm）</span><br />
+    <span style="color: red;font-weight: bold;"><6></span> <span style="color: gray;">E 经度半球（E 东经、W 西经）</span>
+</p>
+
+<p style="margin-top:.5em;color:darkgoldenrod;font-weight:bold;font-size:.8em;">
+  
+  纬度和经度都是“度分”格式，dd代表度，m代表分<br />
+  纬度信息：3853.70120，就是38度和53.70120分。<br />
+  分换算成度只需要除以60，也就是 53.70120 / 60 = 0.89502，那么3853.70120的含义就是38.89502°<br />
+  算好经纬度之后可以用 ditu.google.cn 输入 纬度N 经度E 来看看你所在位置哈。
+
+</p>
+</div>
+
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
     <c:title>AI-Thinker A6 (安信可 A6) GSM on Arduino</c:title>
@@ -2579,10 +2783,7 @@ void loop() {
     <li style="color:gray;">Click on "System Preferences &gt; Network"</li>
     <li style="color:gray;">Click on the '+' on the bottom left and then on the "Select the interfact and enter a name for the new Service"</li>
     <li style="color:gray;">Click on 'Interface' you should be seeing the 'USB-Serial Controller D' there.</li>
-    <li style="color:gray;">After created the new Serial Port, it will say 'Not Configurated'.</li>
-    <li style="color:gray;">Selected the new Serial Port, and then clicked Advance button, you can change the default settings:</li>
-    <li style="color:gray;">Vender: Null Modem</li>
-    <li style="color:gray;">Model: 9600 bps</li>
+    <li style="color:gray;list-style: none;margin-top:.5em;"><img src="/images/raspberry/22.png" width="300px" /></li>
   </ul>
 
   
@@ -2592,6 +2793,16 @@ void loop() {
     <li style="color:gray;">Selected the new Serial Port, and then clicked Advance button, you can change the default settings:</li>
     <li style="color:gray;">Vender: Null Modem</li>
     <li style="color:gray;">Model: 9600 bps</li>
+
+    <li style="color:gray;list-style: none;margin-top:.5em;overflow:hidden;">
+
+      <img src="/images/raspberry/lion-network-serial-not-configured.png" width="300px" style="float:left;" />
+      <img src="/images/raspberry/lion-network-serial-advanced.png" width="335px" style="float:left;margin-left:1em;" />
+    </li>
+
+
+    
+
   </ul>
 
   <ul style="margin-top:.5em;font-size:.625em;list-style: disc;margin-left: 1.5em;">
@@ -2680,7 +2891,10 @@ $ minicom
 $ minicom -s
 > Select Serial port setup > A and set correct device, i.e. /dev/ttyS0
 > Baudrateshould be 115200 in minicom.
-> Press Enter, then select Save setup asdfl. You should now see "Initializing Modem" or be able to run Minicom
+> Press Enter, then select Save setup. You should now see "Initializing Modem" or be able to run Minicom
+
+## running minicom
+$ sudo minicom -b 9600 -D /dev/ttyUSB0
 
 # Test modem: From Welcome screen, type "ATI" to get status:
 -> ATI
