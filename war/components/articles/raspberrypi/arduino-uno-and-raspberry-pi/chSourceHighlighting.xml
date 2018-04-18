@@ -247,12 +247,15 @@
                      <![CDATA[
 1. format sd card to fat 32
    > mac -> 磁盘工具 -> 抹掉 -> MS-DOC(FAT)
+     OR
+   > diskutil list 
+   > sudo diskutil eraseDisk FAT32 RaspberryPi MBRFormat /dev/disk2
 
 2. Download NOOBS: NOOBS-v2-4-5.zip
    > https://www.raspberrypi.org/downloads/
 
 3. 解压 NOOBS-v2-4-5.zip, 将解压后的文件夹内容复制到SD卡跟路径下, 确保不是一个文件夹下
-   1). unzip NOOBS-v2-4-5.zip ./ && rsync -azP ./NOOBS/ /sdcard-path-here/
+   1). mkdir NOOBS && unzip NOOBS-v2-4-5.zip ./ && rsync -azP ./NOOBS/ /sdcard-path-here/
    2). Enable SSH, by default the ssh has been disabled on Raspbian:
      $ sudo touch /sdcard-path-here/ssh   (The file can contain anything or be empty)
    3). Setup Wi-Fi configuration: 
@@ -388,6 +391,9 @@
       $ sudo apt-get update && sudo apt-get upgrade
       $ sudo apt-get clean
 
+13. 启用 SERIAL、I2C、SPI:
+    Moved the options from Advanced to Interfaces on Pi 3.
+
 
   ]]>
     </c:sourceContent>
@@ -420,6 +426,18 @@ $ sudo pip install spidev
   ]]>
     </c:sourceContent>
 
+    <c:sourceContent type="html" title="启用登录对话框" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>
+  <img src="/images/raspberry/config/raspbian-jessie-auto-login.png" />
+</div>
+  ]]>
+    </c:sourceContent>
+
+
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
@@ -428,6 +446,119 @@ $ sudo pip install spidev
   </c:entry>
 
 
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>How do I make serial work on the Raspberry Pi3</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+      ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>
+  <b>Step 1</b> - Install Raspbian Jessie onto a SD card and boot the Pi when connected to a network Login via terminal or desktop and shell Configure the system with:
+</div>
+<pre style="font-size:.8em;padding: 0;margin:0;    border: solid 1px gray;padding: .3em .8em;background-color: beige;margin-top: .5em;">
+$ sudo raspi-config
+</pre>
+<div style="margin-top:.5em;color:gray;">
+  Expand filesystem and enable <b style="color:red;">Serial</b> on <b style="color:red;">Interfaces</b> page, exit and reboot.
+</div>
+
+
+<div style="margin-top:1em;">
+  <b>Step 2</b> - this won't necessary if you have jessie new release Update the system with:
+</div>
+<pre style="font-size:.8em;padding: 0;margin:0;    border: solid 1px gray;padding: .3em .8em;background-color: beige;margin-top: .5em;">
+$ sudo apt-get update
+$ sudo apt-get upgrade
+</pre>
+
+
+<div style="margin-top:1em;">
+  <b>Step 3</b> - Device Tree settings as below: <br />
+  Add device tree to /boot/config.txt to disable the Raspberry Pi 3 bluetooth.
+</div>
+<pre style="font-size:.8em;padding: 0;margin:0;    border: solid 1px gray;padding: .3em .8em;background-color: beige;margin-top: .5em;">
+$ sudo nano /boot/config.txt
+</pre>
+<div style="margin-top:.5em;color:gray;">
+  Add at the end of the file <br />
+  *if you want to change the blutooth to miniuart port(bad)
+</div>
+<pre style="font-size:.8em;padding: 0;margin:0;    border: solid 1px gray;padding: .3em .8em;background-color: beige;margin-top: .5em;">
+dtoverlay=pi3-miniuart-bt
+</pre>
+<div style="margin-top:.5em;color:gray;">
+  *if you want to disable the blutooth(good)
+</div>
+<pre style="font-size:.8em;padding: 0;margin:0;    border: solid 1px gray;padding: .3em .8em;background-color: beige;margin-top: .5em;">
+dtoverlay=pi3-disable-bt
+</pre>
+<div style="margin-top:.5em;color:gray;">
+  Exit the editor saving your changes.
+</div>
+
+<div style="margin-top:1em;">
+  <b>Step 4</b> -  reboot the pi:
+</div>
+<pre style="font-size:.8em;padding: 0;margin:0;    border: solid 1px gray;padding: .3em .8em;background-color: beige;margin-top: .5em;">
+$ sudo reboot
+</pre>
+
+<div style="margin-top:1em;">
+  <b>Step 5</b> <br />
+  a) to disable the Serial Console edit the file using
+</div>
+<pre style="font-size:.8em;padding: 0;margin:0;    border: solid 1px gray;padding: .3em .8em;background-color: beige;margin-top: .5em;">
+$ sudo nano /boot/cmdline.txt
+</pre>
+<div style="margin-top:.5em;color:gray;">
+  remove the word phase <b>"console=serial0,115200"</b> or <b>"console=ttyAMA0,115200"</b> <br />
+  Exit and save your changes
+</div>
+<div style="margin-top:1em;">
+  b) to Enable the Serial Console edit the file using
+</div>
+<pre style="font-size:.8em;padding: 0;margin:0;    border: solid 1px gray;padding: .3em .8em;background-color: beige;margin-top: .5em;">
+$ sudo nano /boot/cmdline.txt
+</pre>
+<div style="margin-top:.5em;color:gray;">
+  Change the file to the following:
+</div>
+<pre style="font-size:.8em;padding: 0;margin:0;    border: solid 1px gray;padding: .3em .8em;background-color: beige;margin-top: .5em;">
+dwc_otg.lpm_enable=0 console=tty1 console=serial0(or ttyAMA0),115200 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait
+</pre>
+<div style="margin-top:.5em;color:gray;">
+  Exit and save your changes
+</div>
+
+
+<div style="margin-top:1em;">
+  <b>Step 6</b> reboot the pi
+</div>
+<pre style="font-size:.8em;padding: 0;margin:0;    border: solid 1px gray;padding: .3em .8em;background-color: beige;margin-top: .5em;">
+$ sudo reboot
+</pre>
+
+<div style="margin-top:1.5em;color:gray;">
+  -----------------that's all-------------------------------
+</div>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
