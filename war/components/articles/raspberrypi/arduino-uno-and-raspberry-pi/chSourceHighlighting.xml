@@ -449,7 +449,10 @@ $ sudo pip install spidev
 
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title>How do I make serial work on the Raspberry Pi3</c:title>
+    <c:title><![CDATA[
+        <a href="#How-do-I-make-serial-work-on-the-Raspberry-Pi3" 
+          name="How-do-I-make-serial-work-on-the-Raspberry-Pi3">
+          How do I make serial work on the Raspberry Pi3</a>]]></c:title>
     <c:desc>
       <c:desc1> <![CDATA[
 
@@ -2571,42 +2574,36 @@ $ gpspipe -w -n 30 | grep -m 1 lat | jq '.lat,.lon'
   </div>
       ]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="" title="树莓派配置修改" id="sourceContent1" 
+    <c:sourceContent type="html" title="树莓派配置修改" id="sourceContent1" 
                      style="background-color:white;margin-top:1em;"
                      titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.3;font-family:monospace;">
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
                      <![CDATA[
-# 树莓派的串口默认是用于SSH调试的，如果需要使用串口连接其他设备需要进行两步修改：
-$ sudo vi /etc/inittab
+<div>
+  树莓派的串口默认是用于SSH调试的，如果需要使用串口连接其他设备需要进行两步修改：
+</div>
 
-# 注释掉文件中的这一行，以关闭串口登录
-> T0:23:respawn:/sbin/getty -L ttyAMA0 115200 vt100
-
-# 修改 /boot/cmdline.txt
-$ sudo vi /boot/cmdline.txt
-
-# 删除引号中的部分，包含引号
-dwc_otg.lpm_enable=0 "console=ttyAMA0,115200 kgdboc=ttyAMA0,115200" \
-  console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline rootwait
-
-# 修改后如下:
-dwc_otg.lpm_enable=0 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline rootwait
-
-$ sudo reboot
+<div style="margin-top:.625em;">
+  <b>请参考: </b><a href="#How-do-I-make-serial-work-on-the-Raspberry-Pi3" 
+    title="How-do-I-make-serial-work-on-the-Raspberry-Pi3">
+    How do I make serial work on the Raspberry Pi3</a>
+</div>
 
   ]]>
     </c:sourceContent>
     <c:sourceContent type="html" title="串口连接" id="sourceContent1" 
                      style="background-color:white;margin-top:1em;"
                      titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.5;font-family:monospace;">
                      <![CDATA[
 <div>
-  根据GPS模块的文档和树莓派的针脚定义一共需要连接4根线：VCC 5V、GND 接地、TXD和RXD。模块上的TXD连接树莓派的RXD，模块的RXD连接树莓派的TXD！
+  根据GPS模块的文档和树莓派的针脚定义一共需要连接4根线：VCC 5V、GND 接地、TXD和RXD。<br />
+  <b>模块上的TXD连接树莓派的RXD，模块的RXD连接树莓派的TXD！</b>
 </div>
 
-<div style="margin-top:.5em;">
-<img src="/images/raspberry/082008090659506.png" width="530px" />
+<div style="margin-top:.5em;overflow:hidden;">
+<img src="/images/raspberry/082008090659506.jpg" width="160px" style="float:left;" />
+<img src="/images/raspberry/usb-to-ttl-gps.jpg" width="330px" style="float:left;margin-left:1em;" />
 </div>
 
   ]]>
@@ -2617,7 +2614,7 @@ $ sudo reboot
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
                      <![CDATA[
 $ sudo apt-get install minicom
-$ sudo minicom -b 9600 -o -D /dev/ttyAMA0     # -b 设定的是波特率，是模块参数而定；-o 是不初始化Modem且不锁定文件；-D 设定的是接口
+$ sudo minicom -b 9600 -o -D /dev/ttyUSB0    # -b 设定的是波特率，是模块参数而定；-o 是不初始化Modem且不锁定文件；-D 设定的是接口
 
   ]]>
     </c:sourceContent>

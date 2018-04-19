@@ -57,7 +57,7 @@
   <xsl:template name="buildContent">
     <xsl:param name="entry" />
     <xsl:if test="normalize-space($entry/c:title) != ''">
-      <h3>
+      <h3 class="entry-title">
         <xsl:attribute name="style">
           <xsl:value-of select="concat('word-break:break-word;margin-top:2em;',$entry/@style)"/>
         </xsl:attribute>
