@@ -2602,8 +2602,8 @@ $ gpspipe -w -n 30 | grep -m 1 lat | jq '.lat,.lon'
 </div>
 
 <div style="margin-top:.5em;overflow:hidden;">
-<img src="/images/raspberry/082008090659506.jpg" width="160px" style="float:left;" />
-<img src="/images/raspberry/usb-to-ttl-gps.jpg" width="330px" style="float:left;margin-left:1em;" />
+<img src="/images/raspberry/082008090659506.jpg" width="162px" style="float:left;border: solid 1px gray;" />
+<img src="/images/raspberry/usb-to-ttl-gps.jpg" width="330px" style="float:left;margin-left:1em;border: solid 1px gray;" />
 </div>
 
   ]]>
@@ -2614,7 +2614,7 @@ $ gpspipe -w -n 30 | grep -m 1 lat | jq '.lat,.lon'
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
                      <![CDATA[
 $ sudo apt-get install minicom
-$ sudo minicom -b 9600 -o -D /dev/ttyUSB0    # -b 设定的是波特率，是模块参数而定；-o 是不初始化Modem且不锁定文件；-D 设定的是接口
+$ sudo minicom -b 9600 -o -D /dev/ttyUSB0 (or /dev/ttyAMA0)   # -b 设定的是波特率，是模块参数而定；-o 是不初始化Modem且不锁定文件；-D 设定的是接口
 
   ]]>
     </c:sourceContent>
@@ -2631,7 +2631,7 @@ $ sudo minicom -b 9600 -o -D /dev/ttyUSB0    # -b 设定的是波特率，是模
 </div>
   ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="编程获取串口数据" id="sourceContent1" 
+    <c:sourceContent type="" title="编程获取串口数据 Version 1" id="sourceContent1" 
                      style="background-color:white;margin-top:1em;"
                      titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
@@ -2645,6 +2645,32 @@ ser = serial.Serial("/dev/ttyAMA0", 9600)
 
 # 通过ser的read()方法只能获取一个字符，但read()方法有一个接收字符长度的重载，首先通过ser.inWaiting()方法获取总长度，再通过ser.read()读取
 ser.read(ser.inWaiting())
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="编程获取串口数据 Version 2" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+from gps import *
+from time import sleep
+
+gps_session = gps()
+gps_session.stream(WATCH_ENABLE | WATCH_NEWSTYLE)
+
+while True:
+  gps_report = gps_session.next()
+
+  if gps_report.keys()[0] == 'epx' or gps_report.keys()[0] == 'exv':
+    lat = float(gps_report['lat'])    # 经度
+    lon = float(gps_report['lon'])    # 维度
+    time = gps_report['time']         # UTC 时间
+    print ('lat=%f\tlon=%f\ttime=%s' % (lat, lon, time))
+  else:
+    print (gps_report.keys()[0])
+
+  sleep(0.5)
 
   ]]>
     </c:sourceContent>
