@@ -3003,15 +3003,44 @@ void loop() {
   </c:entry>
 
 
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>SIM800 for Serial(Tx,Rx) connected </c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div>
+    <a target="_blank" href="/blog/articles/raspberrypi/Calls-and-SMS-with-Sim900-Python-and-Raspberry-Pi.shtml">
+      Calls and SMS with Sim900, Python and Raspberry Pi</a>
+</div>
+<div style="margin-top:.5em;">
+  <img src="/images/raspberry/sim800/sim-800-serial-flag.jpg" style="width:100%;" />
+</div>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="INSTALL" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
 
 
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title>SIM800</c:title>
+    <c:title>SIM800 for USB-to-TTL </c:title>
     <c:desc>
       <c:desc1> <![CDATA[
   <div>
-    <img src="/images/raspberry/sim800/sim-800-flag.jpg" style="width:100%;" />
+    <img src="/images/raspberry/sim800/sim-800-usb-flag.jpg" style="width:100%;" />
   </div>
       ]]></c:desc1>
     </c:desc>
@@ -3126,6 +3155,51 @@ $ ping www.baidu.com                  # testing ping work
 $ elinks https://www.baidu.com        # 运行命令行浏览器
 
 $ sudo poff fona                      # Close FONA GPRS connection
+
+  ]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="" title="Python GSM" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# -*- coding: utf-8 -*-
+
+import serial
+import time
+import os
+
+ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=0)    # 9600 is the default Baudrate for SIM900A modem
+
+while True:
+
+  ser.flush()
+  time.sleep(1);
+  ser.write('AT+CMGL="ALL"\r')    # read all of sms GSM modem
+  time.sleep(1)                   # wait for 1 seconds
+
+  r = ser.read(1000)              # read 1000 bytes of data from the serial port, reading the sms
+  print (r)
+
+  if 'our command' in r:
+    print 'our command'
+    ser.write('AT+CMGDA="DEL ALL"\r')   # AT command to delete all using GSM Modem
+    time.sleep(2)
+    t = ser.read(1000)
+    print t
+    time.sleep(3)
+
+  else:
+    print 'oter messages'
+    ser.write('AT+CMGDA="DEL ALL"\r')   # 
+    time.sleep(2)
+    t = ser.read(1000)
+    print t
+
+  ser.close()     # close the serial port 
 
   ]]>
     </c:sourceContent>
