@@ -427,6 +427,46 @@ $ sudo pip install spidev
   ]]>
     </c:sourceContent>
 
+
+
+    <c:sourceContent type="" title="树莓派系统的常用的命令" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# 显示树莓派最近发生的事情
+$ dmesg
+
+# 打印日志
+$ cat  /var/log/syslog
+
+# synaptic 包管理器
+$ sudo  apt-get  -y  install  synaptic
+
+# 显示启动信息
+$ cat  /var/log/dmesg
+
+# 查看内核版本
+$ cat  /proc/version
+
+# 查看内核、操作系统和CPU信息
+$ uname -a 
+
+# 加载模块
+$ ismod
+
+# 显示usb设备信息
+$ lsusb -tv 
+
+# 显示PCI设备信息
+$ lspci  -tv
+
+# 重新启动网络服务
+$ sudo /etc/init.d/networking restart
+
+  ]]>
+    </c:sourceContent>
+
     <c:sourceContent type="html" title="启用登录对话框" id="sourceContent1" 
                      style="background-color:white;margin-top:1em;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
@@ -457,6 +497,89 @@ $ sudo pip install spidev
     <c:desc>
       <c:desc1> <![CDATA[
 
+<div style="color:green;line-height:1.625em;">
+  <div>
+  树莓派的每个版本CPU外设基本相同，但内核不同，外设里面一共包含两种串口，一个称之为: <b>硬件串口(/dev/ttyAMA0)</b>，一个称之为: <b>mini串口(/dev/ttyS0)</b>。
+  </div>
+
+  <div style="margin-top:.5em;">
+  硬件串口由硬件实现，有单独的波特率时钟源，性能高、可靠。mini串口性能低，功能也简单，并且没有波特率专用的时钟源而是由CPU内核时钟提供。因此mini串口有个致命的弱点是：波特率受到内核时钟的影响。内核若在智能调整功耗降低主频时，相应的这个mini串口的波特率便受到牵连了，虽然你可以固定内核的时钟频率，但这显然不符合低碳、节能的口号。
+  </div>
+
+  <div style="margin-top:.5em;">
+  在所有的树莓派板卡中都通过排针将一个串口引出来了，目前除了树莓派3代以外 ，引出的串口默认是CPU的那个硬件串口。<b>而在树莓派3代中，由于板载蓝牙模块，因此这个硬件串口被默认分配给与蓝牙模块通信了</b>，而把那个mini串口默认分配给了排针引出的GPIO Tx Rx.
+  </div>
+
+  <div style="margin-top:.5em;">
+  为了在树莓派3中通过GPIO使用高性能的硬件串口，我们必须<b>将分配给蓝牙使用的硬件串口与分配给IO排针的mini串口进行对换</b> (即将树莓派3的蓝牙切换到mini串口(ttyS0)，并且恢复硬件串口(ttyAMA0)到GPIO 14&15脚中)，这必然会使得蓝牙模块的功能受到影响，但还好，蓝牙并不是必须的。
+  </div>
+
+  <div style="margin-top:.5em;color:gray;">
+      首先在树莓派命令终端中通过命令查看树莓派3当前的串口映射关系: <br />
+      <span style="color:brown">$ ls -l /dev/*</span>
+  </div>
+
+  <div style="margin-top:.1em;">
+      <img src="/images/raspberry/pi3/20170129151839.png" style="width:380px;" />
+  </div>
+
+
+  <div style="margin-top:.5em;color:gray;">
+      编辑 /boot/config.txt 文件: <br />
+      <span style="color:brown">$ vi /boot/config.txt</span>
+  </div>
+
+  <div style="margin-top:.5em;color:gray;">
+      在该文件中增加一行代码: <br />
+      <span style="color:brown">dtoverlay=pi3-miniuart-bt</span>
+      <span style="color:gray;">&nbsp;&nbsp;&nbsp;&nbsp;# 将分配给蓝牙使用的硬件串口与分配给IO排针的mini串口进行对换 (坏主意)</span> <br />
+      <span style="color:brown">dtoverlay=pi3-disable-bt</span>
+      <span style="color:gray;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# 直接禁用蓝牙 (好主意)</span>
+  </div>
+
+  <div style="margin-top:.5em;color:gray;">
+      修改后保存并重启树莓派，然后重新查看映射关系: <br />
+      <span style="color:brown">$ ls -l /dev/*</span>
+  </div>
+
+  <div style="margin-top:.1em;">
+      <img src="/images/raspberry/pi3/20170129154121.png" style="width:380px;" />
+  </div>
+
+  <div style="margin-top:.1em;">
+      对比修改前的关系，可以看出serial0和serial1 与 ttyAMA0和ttyS0的映射关系对换完成了，也就是ttyAMA0映射到了引出的GPIO Tx Rx上。
+  </div>
+
+  <h3 style="color:brown;margin-top:1em;padding:0;">禁用串口的控制台功能</h3>
+  <div>
+      前面的步骤已经交换了硬件串口与mini串口的映射关系，但现在想使用树莓派外接串口模块进行通信还不行，因为树莓派IO引出的串口默认是用来做控制台使用的，它的初衷是为了在没有网络接口时，通过串口对树莓派进行相关的配置。因此需要禁用这个默认功能，使得串口为我们自由使用。
+  </div>
+
+
+  <div style="margin-top:.5em;color:gray;">
+      在树莓派命令窗口中分别通过如下两个命令停止和禁用串口的控制台功能:(由于我们前面已经交换了串口的映射关系，因此这里注意是ttyAMA0。) <br />
+      <span style="color:brown">$ sudo systemctl stop serial-getty@ttyAMA0.service <br />
+      $ sudo systemctl disable serial-getty@ttyAMA0.service</span>
+  </div>
+
+
+  <div style="margin-top:.5em;color:gray;">
+      编辑 cmdline.txt文件: <br />
+      <span style="color:brown">$ sudo vi /boot/cmdline.txt</span>
+  </div>
+  <div style="margin-top:.5em;color:gray;">
+      删除 "console=serial0,115200" or "console=ttyAMA0,115200" : <br />
+      <span style="color:brown">
+        dwc_otg.lpm_enable=0 <del><b>console=serial0,115200</b></del> console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait</span>
+  </div>
+
+
+  <div style="margin-top:.1em;">
+      保存修改后重启树莓派 done.
+  </div>
+
+
+</div>
       ]]></c:desc1>
     </c:desc>
 
@@ -2905,6 +3028,89 @@ while True:
 
 
 
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>CH340 Linux 驱动使用教程 </c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+<div>
+在官方Linux内核版本中自Kernel2.6以后就默认包含了对<b>CH340/CH341</b>芯片的驱动支持了，但比较遗憾的是该自带驱动版本较老（由开源社区开发者提交）已不能满足使用需求了，因此我们需要用芯片官网提供的新驱动进行替换链接。
+</div>
+
+<div style="margin-top:.5em;">
+  CH340/CH341的USB转串口LINUX驱动程序，随系统进行编译安装，支持各类处理器架构，支持32/64位系统。支持<b>USB转3线和9线串口</b>等，用于随产品发行到最终用户。
+</div>
+
+<div style="margin-top:.5em;">
+1. 首先去官网下载最新的驱动: 
+<a target="_blank" href="http://www.wch.cn/download/CH341SER_LINUX_ZIP.html">http://www.wch.cn/download/CH341SER_LINUX_ZIP.html</a>
+</div>
+
+<div style="margin-top:.5em;">
+2. 驱动下载之后，将其拷贝到Linux系统中，在使用之前首先需要将老驱动删除掉，这样才能防止即使安装了新驱动老驱动仍然生效。系统的默认驱动目录为：/lib/modules/$(uname -r)/kernel/drivers，老驱动的完整路径名：/lib/modules/$(uname -r)/kernel/drivers/usb/serial/ch341.ko，我们进入到该目录下，然后将其删除掉，如下所示：
+</div>
+
+
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Compile Linux kernel module. (Like: apt-get install linux-headers-$(uname -r))" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo apt-get install raspberrypi-kernel-headers
+
+$ cd /usr/src
+$ git clone --depth 1 https://github.com/raspberrypi/linux.git
+$ ln -s linux linux-$(uname -r)
+$ ln -s /usr/src/linux /lib/modules/$(uname -r)/build
+$ cd linux
+$ wget https://raw.githubusercontent.com/raspberrypi/firmware/master/extra/Module.symvers
+$ make menuconfig
+$ make prepare
+$ make modules_prepare
+OR
+$ cd /usr/src
+$ git clone --depth 1 https://github.com/raspberrypi/linux.git
+$ ln -s linux linux-3.1.9+
+$ cd linux
+$ zcat /proc/config.gz > .config
+$ ln -s /usr/src/linux /lib/modules/3.1.9+/build
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Compile CH341SER_LINUX" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo mv /lib/modules/$(uname -r)/kernel/drivers/usb/serial/ch341.ko \
+     /lib/modules/$(uname -r)/kernel/drivers/usb/serial/ch341.ko.old
+
+$ unzip CH341SER_LINUX.zip && cd CH341SER_LINUX
+$ make && make load 
+
+# 在 make load后插入 CH340 硬件，输入命令：dmesg 查看系统日志信息
+$ dmesg
+> ch34x converter now attached to ttyUSB0
+
+# 确认正确识别串口
+$ lsusb
+$ ls /dev/ttyUSB0
+
+# 开机之后系统自动加载驱动，把生成的 ch34x.ko 文件拷贝到原先老驱动的目录下，然后执行 depmod 命令:
+$ cp ch341.ko /lib/modules/$(uname -r)/kernel/drivers/usb/serial
+$ depmod    # 执行 depmod 命令更新驱动依赖关系文件 modules.dep
+
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 
 
 
@@ -3002,6 +3208,13 @@ void loop() {
       </c:comment1>
     </c:comment>
   </c:entry>
+
+
+
+
+
+
+
 
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
