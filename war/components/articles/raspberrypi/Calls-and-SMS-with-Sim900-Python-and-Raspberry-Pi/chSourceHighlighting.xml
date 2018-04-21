@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+    <div>
+    Conoceis el proyecto PiPhone de David Hunt?. PiPhone es un teléfono móvil creado con una Raspberry Pi y un módulo GSM. Aunque se encuentre a años luz de un Iphone o un Samsung Galaxy, este teléfono ‘do it yourself’ es capaz de enviar y recibir mensajes cortos (SMS) y de realizar y recibir llamadas mediante comandos ‘AT’ y todo ello con una interfaz táctil gracias a una pantalla TFT/LCD (touchscreen) del fabricante Adafruit.
+    </div>
+    <div style="margin-top:.5em;">
+    En este tutorial aprenderemos a enviar llamadas y SMS con un módulo EfCom Pro v1.0, Python y Raspberry Pi, para empezar vamos a ver el módulo Efcom Pro con más detalle.
+    </div>
+]]>
+  </c:abstract>
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Características del módulo EfCom Pro</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;    color: gray;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Este módulo ultracompacto está basado en el chipset Sim900, un emisor-receptor GSM/GPRS quatribanda (850/ 900/ 1800/ 1900 MHz) con soporte para comandos ‘AT’ (GSM 07.07 ,07.05 y SIMCOM AT) gracias a un controlador UART .
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;    color: gray;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Mide 5’5cm (largo) x 6cm (ancho) x 5’5cm (alto con antena montada) y ya viene perforado para poder poner 4 tornillos y fijarlo. Dispone de una entrada y una salida de audio para las llamadas en formato Jack 3’5 donde podemos conectar cualquier auricular con micrófono de los que se usan para jugar (gamer) o para hablar por Skype.
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;    color: gray;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+La tarjeta SIM va montada en un zócalo negro de plástico, podéis usar cualquier tarjeta de tamaño normal o una microSIM con adaptador pero cuidado, algunos adaptadores son un poco más gruesos de lo normal y al cerrar la tapa del zócalo podéis romperla ya que es de plástico endeble.
+
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;    color: gray;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+El módulo GSM EfCom Pro tiene 2 botones soldados a la placa (power y reset), el primero activa y desactiva el modo standby de la placa y el segundo la resetea reiniciando así todo el proceso de registro en la red móvil. También lleva soldado un conector para montar la antena SMA incluida en el paquete, disponer de un conector de antena estándar nos ahorrará todo el trabajo de soldadura en caso de necesitar una antena más potente para nuestro proyecto.
+
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Preparación de la Raspberry Pi</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;    color: gray;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Nuestra Raspbery Pi se comunicará con el módulo GSM a través del puerto série <b>/dev/ttyAMA0</b> pero este puerto viene bloqueado por defecto ya que viene configurado como una consola de entrada y salida así que tendremos que liberarlo, 
+para ello abriremos el archivo <b>/boot/cmdline.txt</b> con derechos de administrador y cambiamos:
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;    color: gray;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+dwc_otg.lpm_enable=0 console=ttyAMA0,115200 kgdboc=ttyAMA0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline rootwait
+to 
+dwc_otg.lpm_enable=0 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline rootwait 
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;    color: gray;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+El paso siguiente es abrir el archivo <b>/etc/inittab</b>, también con derechos de administrador, y en la última línea poner un ‘#’ para desactivarla hay que cambiar:
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;    color: gray;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+T0:23:respawn:/sbin/getty -L ttyAMA0 115200 vt100
+to 
+#T0:23:respawn:/sbin/getty -L ttyAMA0 115200 vt100
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;    color: gray;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Para que estos cambios tengan efecto debemos reiniciar la Raspberry, podemos hacerlo desde el icono del escritorio o tecleando en la terminal el comando:
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;    color: gray;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+sudo reboot
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;    color: gray;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+Una vez hecho esto ya tendremos el puerto série preparado para usarse.
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Esquema y cableado</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;    color: gray;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+<div>
+  Este módulo dispone de 6 pins I/O, enumerados como VCC, GND, Tx, Rx, PWR y RST. Se alimenta de 3 a 5V y puede ir conectado directamente a la Raspberry Pi sin necesidad de una fuente de alimentación externa siempre y cuando alimentemos la Raspberry con un transformador de 2A mínimo. Los pines <b>Tx</b> y <b>Rx</b> van conectados a los de la Raspberry pero cruzados y los pines ‘<b>PWR</b>’ y ‘<b>RST</b>’ pueden ir conectados a cualquier pin <b>GPIO</b> y sirven para lo mismo que los botones que vienen soldados pero para llamar a su función a través de software.
+</div>
+
+<div>
+ <img src="/images/raspberry/efcom_esquema.jpg" />
+</div>
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+</c:component>
