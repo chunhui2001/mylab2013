@@ -12,7 +12,437 @@
   </c:abstract>
 
 
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
 
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+<div style="text-align:center;">
+  <img src="/images/raspberry/sim800/sim-800x-pro.jpg" style="width:100%;margin:auto;" />
+</div>
+
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:.625em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>SIM800 for Serial(Tx,Rx) connected </c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+<div style="margin-top:.5em;overflow:hidden;">
+  <img src="/images/raspberry/sim800/XmYvbGkCrrQ-2.gif" style="float:left;" />
+  <img src="/images/raspberry/sim800/sim-800l.jpg" style="float:left;width:238px;margin-left:.5em;" />
+</div>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="INSTALL" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>SIM800 RS232-to-USB </c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+  <div>
+    <img src="/images/raspberry/sim800/sim800-rs232.jpg" style="width:400px;" />
+  </div>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>SIM800 for USB-to-TTL </c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+  <div>
+    <img src="/images/raspberry/sim800/sim-800-usb-flag-2.jpg" style="width:100%;" />
+  </div>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="INSTALL" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo apt-get install -y ppp screen elinks
+$ screen /dev/ttyUSB0 115200
+-> AT
+-- OK
+
+-> AT+CSQ
+-- OK
+
+-> AT+COPS?
+-- +COPS: 0.0,"T-Mobile USA"
+-- OK
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="Using AT-Command" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+# Type: AT to confirm it working:
+-> AT
+-- OK
+
+# Type: AT+CPIN? to get SIM PIN status:
+-> AT+CPIN?
+-- +CPIN: READY
+
+# Type: ATD18500xxxxxx to make a call
+-> ATD18500xxxxxx;
+-- OK
+
+# 挂断电话
+-> ATH
+-- OK
+
+# 列出短信
+-> AT+CMGL="ALL"
+-- OK
+
+# 删除短信
+-> AT+CMGD=index[,flag] 
+
+# Sending SMS
+-> AT+CMGF=1
+-- OK
+-> AT+CMGS="18500xxxxxx"
+-- Writing message here
+
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="GPRS(2G) Configuration" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ cd /etc/ppp/peers/fona
+
+# Example PPPD configuration for FONA GPRS connection on Debian/Ubuntu.
+
+# MUST CHANGE: Change the -T parameter value **** to your network's APN value.
+# For example if your APN is 'internet' (without quotes), the line would look like:
+connect "/usr/sbin/chat -v -f /etc/chatscripts/gprs -T internet"        # <<<<<<<*********>>>>>>>       
+# connect "/usr/sbin/chat -v -f /etc/chatscripts/gprs -T ****"          # <<<<<<<*********>>>>>>>
+
+# MUST CHANGE: Uncomment the appropriate serial device for your platform below.
+# For Raspberry Pi use /dev/ttyAMA0 by uncommenting the line below:
+/dev/ttyAMA0 or /dev/ttyUSB0                                            # <<<<<<<*********>>>>>>>
+# For BeagleBone Black use /dev/ttyO4 by uncommenting the line below:
+#/dev/ttyO4
+
+# Speed of the serial line.
+115200
+
+# Assumes that your IP address is allocated dynamically by the ISP.
+noipdefault
+
+# Try to get the name server addresses from the ISP.
+usepeerdns
+
+# Use this connection as the default route to the internet.
+defaultroute
+
+# Makes PPPD "dial again" when the connection is lost.
+persist
+
+# Do not ask the remote to authenticate.
+noauth
+
+# No hardware flow control on the serial link with FONA
+nocrtscts
+
+# No modem control lines with FONA.
+local
+
+
+
+$ sudo pon fona                       # open FONA GPRS connection
+
+$ car /var/log/syslog | grep pppd     # view log to confirm pppd started and the IP ADDRESS all assigned
+$ car /var/log/syslog | grep chat     # view log to confirm chat log
+
+$ ifconfig                            # confirm inet, RX TX 
+$ ping www.baidu.com                  # testing ping work
+
+$ elinks https://www.baidu.com        # 运行命令行浏览器
+
+$ sudo poff fona                      # Close FONA GPRS connection
+
+  ]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="" title="Python GSM" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# -*- coding: utf-8 -*-
+
+import serial
+import time
+import os
+
+ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=0)    # 9600 is the default Baudrate for SIM900A modem
+
+while True:
+
+  ser.flush()
+  time.sleep(1);
+  ser.write('AT+CMGL="ALL"\r')    # read all of sms GSM modem
+  time.sleep(1)                   # wait for 1 seconds
+
+  r = ser.read(1000)              # read 1000 bytes of data from the serial port, reading the sms
+  print (r)
+
+  if 'our command' in r:
+    print 'our command'
+    ser.write('AT+CMGDA="DEL ALL"\r')   # AT command to delete all using GSM Modem
+    time.sleep(2)
+    t = ser.read(1000)
+    print t
+    time.sleep(3)
+
+  else:
+    print 'oter messages'
+    ser.write('AT+CMGDA="DEL ALL"\r')   # 
+    time.sleep(2)
+    t = ser.read(1000)
+    print t
+
+  ser.close()     # close the serial port 
+
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Testing SMS-Modem using minicom</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+
+
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# Use the built in logs to identify the different serial ports on your system.
+$ dmesg | grep tty
+> serial8250: ttyS0 at I/O 0x3f8 (irq = 4) is a 16550A serial8250: ttyS1 at I/O 0x2f8 (irq = 3) is a 16550A 00:06: ttyS0 at I/O 0x3f8 (irq = 4) is a 16550A 00:07: ttyS1 at I/O 0x2f8 (irq = 3) is a 16550A
+
+# Start Minicom
+$ minicom
+> You should see "Initializing Modem" followed by "Welcome to Minicom".
+> If you get something like:
+  minicom: WARNING: configuration file not found, using defaults Device /dev/modem access failed: No such file or directory.
+
+# run
+$ minicom -s
+> Select Serial port setup > A and set correct device, i.e. /dev/ttyS0
+> Baudrateshould be 115200 in minicom.
+> Press Enter, then select Save setup. You should now see "Initializing Modem" or be able to run Minicom
+
+## running minicom
+$ sudo minicom -b 9600 -D /dev/ttyUSB0
+
+# Test modem: From Welcome screen, type "ATI" to get status:
+-> ATI
+-- SIEMENS MC35i REVISION 01.03
+
+# Type: AT+CREG? to get network status:
+-> AT+CREG?
+-- +CREG: 0,1         # +CREG: <mode>,<stat>[,<Lac>,<Ci>[,<AcT>]] 
+
+where 
+<stat>
+0 - not registered, ME is not currently searching a new operator to register to 
+1 - registered, home network 
+2 - not registered, but ME is currently searching a new operator to register to 
+3 - registration denied 
+4 -unknown 
+5 - registered, roaming 
+
+where: 
+<Lac> - Local Area Code for the currently registered on cell 
+<Ci> - Cell Id for the currently registered on cell 
+<AcT>: access technology of the registered network: 
+0 GSM 
+2 UTRAN 
+
+Note: <Lac>, and <Ci> and <AcT> are reported only if <mode>=2 and the 
+mobile is registered on some network cell.
+
+
+# Type: AT to confirm it working:
+-> AT
+-- OK
+
+# Type: AT+CPIN? to get SIM PIN status:
+-> AT+CPIN?
+-- +CPIN: READY
+
++CPIN: <code>
+where:
+<code> - PIN/PUK/PUK2 request status code
+READY - ME is not pending for any password
+SIM PIN - ME is waiting SIM PIN to be given
+SIM PUK - ME is waiting SIM PUK to be given
+PH-SIM PIN - ME is waiting phone-to-SIM card password to be given
+PH-FSIM PIN - ME is waiting phone-to-very first SIM card password to be given
+PH-FSIM PUK - ME is waiting phone-to-very first SIM card unblocking password to be given
+SIM PIN2 - ME iswaiting SIM PIN2 to be given; this <code> is returned only when the last executed command resulted in PIN2 authentication failure (i.e. +CME ERROR: 17)
+
+SIM PUK2 - ME is waitingSIM PUK2 to be given; this <code> is returned only when the last executed command resulted in PUK2 authentication failure (i.e. +CME ERROR: 18)
+PH-NET PIN - ME is waiting network personalization password to be given
+PH-NET PUK - ME is waiting network personalization unblocking password to be given
+PH-NETSUB PIN - ME is waiting network subset personalization password to be given
+PH-NETSUB PUK - ME is waiting network subset personalization unblocking password to be given
+PH-SP PIN - ME is waiting service provider personalization password to be given
+PH-SP PUK - ME is waiting service provider personalization unblocking password to be given
+PH-CORP PIN - ME is waiting corporate personalization password to be given
+PH-CORP PUK -ME iswaiting corporate personalization unblocking password to be given
+
+
+
+# Type: AT+CSQ to get signal strength:
+-> AT+CSQ
+-- +CSQ: 17,99
+
++CSQ: <rssi>,<ber>
+where 
+<rssi> - received signal strength indication 
+0 - (-113) dBm or less 
+1 - (-111) dBm 
+2..30 - (-109)dBm..(-53)dBm / 2 dBm per step 
+31 - (-51)dBm or greater 
+99 - not known or not detectable 
+<ber> - bit error rate (in percent) 
+0 - less than 0.2% 
+1 - 0.2% to 0.4% 
+2 - 0.4% to 0.8% 
+3 - 0.8% to 1.6% 
+4 - 1.6% to 3.2% 
+5 - 3.2% to 6.4% 
+6 - 6.4% to 12.8% 
+7 - more than 12.8% 
+99 - not known or not detectable
+
+
+# Exit Minicom:
+> CTRL-A then Z then X, you should see "Resetting modem"
+
+
+# Sending SMS
+-> AT+CMGF=1
+-- OK
+-> AT+CMGS="+4670xxxxxx"
+-- Write message here. <ctrl+z>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Raspberry Pi - Using a GPRS Modem for Network</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+
+
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.8em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+https://www.youtube.com/watch?v=T2NBpfgfPaI
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
@@ -20,6 +450,9 @@
     <c:desc>
       <c:desc1> <![CDATA[
       
+<div style="margin-top:.5em;">
+  <img src="/images/raspberry/sim800/sim-800-serial-flag.jpg" style="width:100%;" />
+</div>
       ]]></c:desc1>
     </c:desc>
     <c:sourceContent type="html" title="" id="sourceContent1" 
@@ -184,5 +617,306 @@ Una vez hecho esto ya tendremos el puerto série preparado para usarse.
     </c:comment>
   </c:entry>
 
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Prueba de conexión</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      Una vez que hemos modificados los archivos de la Raspberry Pi mencionados anteriormente y conectado el módulo GSM tal como indica el esquema vamos a instalar Minicom un programa que hará de terminal y desde donde enviaremos comandos al módulo GSM. Para instalar Minicom tecleamos en la consola:
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;    color: gray;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+$ sudo apt-get install minicom
+
+# Una vez instalado Minicom vamos a realizar una prueba de conexión, tecleamos en consola:
+$ minicom -D /dev/ttyAMA0 -b 115200
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;    color: gray;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+<div>
+  <img src="/images/raspberry/sim800/com_1.png" />
+</div>
+
+<div style="margin-top:.5em;">
+  Una vez conectados escribimos ‘AT’ y pulsamos ENTER, si recibimos ‘OK’ el módulo esta bien conectado y todo esta funcionando perfectamente.
+</div>
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Ejemplos de código Python</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+      ]]></c:desc1>
+    </c:desc>
+
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;    color: gray;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+'''
+Enviar SMS mediante comandos AT
+'''
+
+#!/usr/bin/env python
+
+import serial
+import time
+ 
+class TextMessage:
+    def __init__(self, recipient="", message=""):
+        self.recipient = recipient
+        self.content = message
+ 
+    def setRecipient(self, number):
+        self.recipient = number
+ 
+    def setContent(self, message):
+        self.content = message
+ 
+    def connectPhone(self):
+        self.ser = serial.Serial('/dev/ttyAMA0', 115200, timeout=5)
+        time.sleep(1)
+ 
+    def sendMessage(self):
+        self.ser.write('ATZr')
+        time.sleep(1)
+        self.ser.write('AT+CMGF=1r')
+        time.sleep(1)
+        self.ser.write('''AT+CMGS="''' + self.recipient + '''"r''')
+        time.sleep(1)
+        self.ser.write(self.content + "r")
+        time.sleep(1)
+        self.ser.write(chr(26))
+        time.sleep(1)
+ 
+    def disconnectPhone(self):
+        self.ser.close()
+
+
+#Cambiar 666777888 por el número de teléfono del destinatario
+sms = TextMessage("666777888","Si leer esto es que he podido enviar un SMS desde Raspberry Pi!")
+sms.connectPhone()
+sms.sendMessage()
+sms.disconnectPhone()
+
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;    color: gray;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+'''
+Recibir SMS mediante comandos AT
+'''
+
+import serial
+
+SerialPort = serial.Serial("/dev/ttyAMA0",115200)
+list = SerialPort.write("AT+CMGL=ALL")
+msg = []
+for item in list:
+#print item
+if item.startswith("+CMGL:") == False:
+if item!="OK":
+msg.append(item)
+print msg
+
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;    color: gray;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+'''
+Enviar y recibir llamadas mediante comandos AT
+'''
+
+import serial
+import time
+
+class ATcommands:
+    def setDialledNumber(self, number):
+        self.dialledNumber = number
+ 
+    def connectPhone(self):
+        self.ser = serial.Serial('/dev/ttyAMA0', 115200, timeout=5)
+        time.sleep(1)
+ 
+    def disconnectPhone(self):
+        self.ser.close()
+
+class VoiceCall:
+    def __init__(self, dialledNumber='000000'):
+        self.dialledNumber = dialledNumber
+ 
+    def dialNumber(self):
+        self.ser = serial.Serial('/dev/ttyAMA0', 115200, timeout=5)
+        self.ser.write('ATZr')
+                ## ATZ : Restore profile ##
+        time.sleep(1)
+        self.ser.write('ATD ' + self.dialledNumber + ';r')
+                ## ATD : Dial command ##
+                ## semicolon : voice call ##
+        time.sleep(1)
+        time.sleep(1)
+        self.ser.write(chr(26))
+        time.sleep(1)
+        time.sleep(1)
+        time.sleep(1)
+ 
+    def endCall(self):
+        self.ser = serial.Serial('/dev/ttyAMA0', 115200, timeout=5)
+        self.ser.write('ATZr')
+        time.sleep(1)
+        self.ser.write('AT+CHUPr')
+        time.sleep(1)
+        self.ser.write(chr(26))
+        time.sleep(1)
+
+  ]]>
+    </c:sourceContent>
+
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>AT HTTP GET requests</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+      ]]></c:desc1>
+    </c:desc>
+
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;    color: gray;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+$ sudo minicom -b 9600 -o -D /dev/ttyAMA0
+
+AT+SAPBR=3,1,"APN","CMNET"
+AT+SAPBR=1,1
+AT+SAPBR=2,1
+
+AT+HTTPINIT
+AT+HTTPPARA="CID",1
+AT+HTTPPARA="URL","http://www.baidu.com/"
+AT+HTTPACTION=0
+AT+HTTPREAD
+
+AT+HTTPTERM
+
+AT+SAPBR=0,1
+  ]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="" title="Python GSM HTTP GET" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;    color: gray;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+import serial
+import time 
+
+phone = serial.Serial('/dev/ttyAMA0', 9600, timeout=1)
+
+def sim800_response():
+  while True:
+    response = phone.readline()
+    print response
+
+    if 'OK' in response:
+      break
+
+def web():
+
+  phone.write('AT+SAPBR=3,1,"APN","CMNET"\r')
+  sim800_response()
+
+  phone.write('AT+SAPBR=1,1\r')
+  sim800_response()
+
+  phone.write('AT+SAPBR=2,1\r')
+  sim800_response()
+
+  phone.write('AT+HTTPINIT\r')
+  sim800_response()
+
+  phone.write('AT+HTTPPARA="CID",1\r')
+  sim800_response()
+
+  phone.write('AT+HTTPPARA="URL","http://www.baidu.com/"\r')
+  sim800_response()
+
+  phone.write('AT+HTTPACTION=0\r')
+  sim800_response()
+  time.sleep(3)
+
+  phone.write('AT+HTTPREAD\r')
+  sim800_response()
+
+  phone.write('AT+HTTPTERM\r')
+  sim800_response()
+
+  phone.write('AT+SAPBR=0,1\r')
+  sim800_response()
+
+
+web()
+
+
+  ]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 
 </c:component>
