@@ -26,6 +26,21 @@ $ sudo npm install -g npx
 $ sudo npm install -g create-react-app
 $ npx create-react-app rock-reack
 $ cd rock-reack && npm start 
+
+# yarn run eject
+# 1). install port: https://yarnpkg.com/lang/zh-hans/docs/install/#mac-stable
+# 2). install yarn: sudo port install yarn
+# 3). eject project: yarn run eject
+
+# added babel plugins
+"babel": {
+  "plugins": [
+    "transform-decorators-legacy"
+  ],
+  "presets": [
+    "react-app"
+  ]
+},
   ]]>
     </c:sourceContent>
     <c:sourceContent type="" title="SignupComponent.js" id="sourceContent1" 
@@ -241,5 +256,203 @@ tent>
       </c:comment1>
     </c:comment>
   </c:entry>
+
+
+
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>React with redux</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        <div style="overflow:hidden;">
+          <img src="/images/react/react-redux-flow.jpg" style="width:400px;float:left;border:solid 1px gray;" />
+          <img src="/images/react/react-compare.jpg" style="width:418px;float:left;border:solid 1px gray;margin-left:1em;" />
+
+        </div>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Init Redux Porject" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# init project
+$ create-react-app rock-reactdux
+$ cd rock-reactdux && yarn init 
+$ yarn add redux react-redux
+$ yarn start 
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>React with redux-observable</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        https://redux-observable.js.org
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# init project
+$ create-react-app rock-reactdux
+$ cd rock-reactdux && yarn init 
+$ yarn add rxjs redux-observable redux react-redux
+
+$ rm -rf src/App.css src/App.test.js src/index.css
+
+$ mkdir src/{components,actions,reducers,stores,epics}
+
+$ touch src/actions/index.js
+$ touch src/epics/index.js
+$ touch src/reducers/pingpong.js
+$ touch src/stores/store.js
+
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="src/actions/index.js" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+export const ping = () => ({type: 'PING'});
+
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="src/epics/index.js" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+export const pingEpic = 
+    action$ => 
+        action$.ofType('PING')
+        .delay(1000)                // asynchronously wait 1000ms then continue 
+        .mapTo({type: 'PONG'});
+
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="src/reducers/pingpong.js" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+export default (state = {isPinging: false}, action) => {
+    switch (action.type) {
+        case 'PING':
+            return {isPinging: true};
+        case 'PONG':
+            return {isPinging: false};
+        default:
+            return state;
+    }
+};
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="src/stores/store.js" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+import { createStore, applyMiddleware } from 'redux';
+import { createEpicMiddleware } from 'redux-observable';
+
+import { pingEpic } from '../epics';
+import pingReducer from '../reducers/pingpong';
+
+const epicMiddleware = createEpicMiddleware(pingEpic);
+
+export default createStore(
+    pingReducer, applyMiddleware(epicMiddleware)
+);
+
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="src/components/App.js" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+import React, { Component } from 'react';
+import logo from '../logo.svg';
+import { connect } from 'react-redux';
+
+import { ping } from '../actions'
+
+let App = (isPinging, ping) => (
+  <div>
+    <h1>is pinging: {isPinging.toString()}</h1>
+    <button onClick={ping}>Start PING</button>
+  </div>
+);
+
+App = connect (
+  ({isPinging}) => {{ isPinging }}, { ping }
+)(App);
+
+
+export default App;
+
+
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="src/index.js" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+import { React } from 'react';
+import { Provider } from 'react-redux';
+import ReactDOM from 'react-dom';
+import 'rxjs';
+
+import App from './components/App';
+import store from './stores/store';
+
+ReactDOM.render(
+    <Provider store={store}>
+        <App />
+    </Provider>,
+    document.getElementById('root')
+);
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
 
 </c:component>
