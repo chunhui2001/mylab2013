@@ -1,0 +1,46 @@
+
+## 安装Docker Compose
+# curl -L https://github.com/docker/compose/releases/download/1.8.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+# chmod +x /usr/local/bin/docker-compose
+# docker-compose --version
+# docker-compose up -d
+
+version: '2'
+networks:
+  nets:
+    external: false
+    # aliases: net1
+
+services:
+  tomcat:
+    container_name: mylab2013
+    image: chunhui2001/ubuntu_1610_dev:tomcat8  
+    ports:
+      - 9000:8080
+    volumes:
+      - /Users/keesh/workspace/mylab2013/war/:/usr/local/tomcat/webapps/ROOT:ro
+    restart: always
+    networks:
+      - nets
+  nginx:
+    container_name: react_lab
+    image: chunhui2001/ubuntu_1610_dev:nginx_1.9.15
+    ports:
+      - 9001:80
+    volumes:
+      - /Users/keesh/Desktop/react_lab:/usr/local/nginx/html:ro
+    restart: always
+    networks:
+      - nets
+  mysql:                
+    container_name: mysql_dev                                                                                                                                                                   
+    image: chunhui2001/debian_8_dev:mysql_5.7
+    environment:
+      - MYSQL_ROOT_PASSWORD=Cc
+    ports: 
+      - 3307:3306
+ #   volumes:
+ #     - /Users/keesh/Desktop/react_lab:/usr/local/nginx/html:ro
+    restart: always
+    networks:
+      - nets
