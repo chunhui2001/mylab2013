@@ -1,0 +1,716 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<p style="margin-bottom:.5em;line-height:1.625;">在越来越组件化开发的今天，我们通过 JSX 已经将 js 和 html/xml 很好的柔和在了一起，那么 css 呢？</p>
+<p style="margin-bottom:.5em;line-height:1.625;">虽然在 vue 这样的框架里我们能在 .vue 文件里将 css、js、html 写在一起，但实际上它们的联系很弱，特别是 js 和 css，它们完全无法沟通。</p>
+<p style="margin-bottom:.5em;line-height:1.625;">而 styled-components 很好的解决了这个问题. 通过它，我们能让整个 css 架构跟着组件走，而不再仅仅是貌合神离的被放置在一个文件中。可以这么说，styled-components 让一个组件变得更加得完整，更加得像一个组件！</p>
+<p style="margin-bottom:.5em;font-weight:bold;color:blue;line-height:1.625;">styled-components 简单的理解就是给 React-Component 附加一个随机的全局唯一 className, 避免 CSS 污染</p>
+]]>
+  </c:abstract>
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>固定的 css 样式 -- 避免 CSS 污染</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      <p style="margin-bottom:.5em;line-height:1.625em">
+      styled-compnents: 正如其名，就是有样式的 react-component，是对 react 组件的再封装，它不仅可以在 &lt;Component/&gt; 上添加固定的 css 样式，还可以通过组件的属性让 css 和一个组件紧密的联系起来。
+      </p>
+      <p style="margin-bottom:.5em;line-height:1.625em">
+      除此之外它支持几乎所有 sass/less 等 css 预处理器具有的功能，<b>嵌套、&、变量、插值</b>，甚至更加强大！
+      </p>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="styled(Xxx)``" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+      
+// 把一个 React-Component 包装成 Styled-Component
+import React,{Component}from 'react';
+import styled from 'styled-components';
+
+class Xxx extends React.Component{
+  render(){
+    return (
+      <div className={this.props.className}>
+        container
+        <h2>title</h2>
+        <div>body</div>
+      </div>
+    )
+  }
+}
+
+const StyledComponent = styled(Xxx)`
+  &{
+    color:red;
+    h2{
+      color:blue;
+    }
+    div{
+      font-size:${props=>props.fontSize};
+      color:pink;
+    }
+  }
+`;
+
+export default StyledComponent;
+
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="styled(Xxx)``" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+<p style="margin-bottom:.5em;line-height:1.625em">
+styled() 是 style-components 中最重要的方法，它能将一个 React 组件包装成一个具有样式的 &lt;StyleComponent/&gt;，并且它还会向原本的 React 组件中传递一个 className 属性，这个属性的值是<b>一串hash值（防止命名冲突）</b>，我们需要将它放置到它应该被放置的元素身上。</p>
+<p style="margin-bottom:.5em;line-height:1.625em">
+通过 styled()，我们已经将一个React组件包装成了一个 Styled 组件并导出，接下来我们去渲染这个导出的组件
+</p>
+
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+import React from 'react';
+import ReactDOM from 'react-dom';
+import StyledComponent from './test.js';
+
+ReactDOM.render(
+  <StyledComponent fontSize='30px'/>
+  ,window.root
+)
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+可以发现，在使用上，一个 StyledComponent 和 ReactComponent 完全木有区别，emmm，应该说还是有一点的，我们能过给一个组件传递属性来控制该组件的 css 样式，So，StyledComponent 其实是 ReactComponent 的超集。
+
+  ]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>styled方法：将 React 组件包装成 Styled 组件</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title=" " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+      <p style="margin-bottom:.5em;line-height:1.625em"><b>StyledCompoent 格式是这样的</b>:<br /> 
+      <span style="color:blue;">const StyledCompoent = styled()``</span></p>
+
+      <p style="margin-bottom:.5em;line-height:1.625em"><b>styled(Xxx)``</b>:<br /> 接收两次传参（这其实是es6中的标签函数的写法，这里不再展开），并最终返回一个包装后的React组件，即具有样式的React组件。</p>
+      <p style="margin-bottom:.5em;line-height:1.625em"><b>()的三种情况</b>: </p>
+      <p style="margin-bottom:.5em;line-height:1.625em">
+        <ul style="padding-left: 2em;list-style-type: decimal;">
+          <li>
+            <b>接收一个 tagName，比如div</b>: <span style="color:blue;">const StyledCompoent = styled('div')``</span>
+          </li>
+          <li>
+            <b>tagName 一种快捷写法</b>: <span style="color:blue;">const StyledCompoent = styled.div``</span>
+            <br />相当于<pre style="color:blue;">let ReactComponent = (props,context)=>&lt;div className={props.className}&gt;&lt;/div&gt; 
+const StyledCompoent = styled(ReactComponent)``
+`</pre>
+          </li>
+          <li>
+            <b>接收一个StyledComponent</b>: <pre style="color:blue;">const StyledCompoent2 = styled(StyledCompoent1)`
+    color:'orange'
+`</pre>
+          </li>
+        </ul>
+      </p>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Style-Component 添加样式, 支持：嵌套、前缀自动补全、各类选择器、媒体查询..." id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+      const StyledCompoent = styled.div`
+  /* all declarations will be prefixed */
+  //所有css样式会自动添加兼容性前缀
+  padding: 2em 1em;
+  background: papayawhip;
+
+  /* pseudo selectors work as well */
+  //支持伪类选择器
+  &:hover {
+    background: palevioletred;
+  }
+
+  /* media queries are no problem */
+  //支持媒体查询
+  @media (max-width: 600px) {
+    background: tomato;
+
+    /* nested rules work as expected */
+    //支持嵌套
+    &:hover {
+      background: yellow;
+    }
+  }
+
+  > p {
+    /* descendant-selectors work as well, but are more of an escape hatch */
+    //支持后代选择器
+    text-decoration: underline;
+  }
+
+  /* Contextual selectors work as well */
+  //支持环境选择器
+  html.test & {
+    display: none;
+  }
+`;
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="${ } -- interpolations 插值表达式" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+     let color1 = 'orange';
+
+const StyledCompoent = styled.div`
+    color:${color1} // 支持接收 js 变量作为 css 属性值
+    ,fontSize:${props=>props.fontSize}; // 其中的 ${} 被称之为 interpolations
+`
+
+//--- --- --- 
+
+// somewhere
+...
+<StyledComponent fontSize='30px'/>
+...
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+需要注意的是${}中可以放一个js变量，也可以放一个函数，如果是函数，它会接受一个props属性(即React组件初始化时包装而成的props对象)作为参数。
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="${ } 接收一个css对象" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+ ...
+${{
+    position:'absolute'
+    ,left:'100px'
+    ,top:'100px'
+}}
+...
+
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="mixin" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+styled-components中也允许我们使用像sass中@mixin一样的东东
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+import React,{Component}from 'react';
+import styled,{css} from 'styled-components';
+
+class Xxx extends React.Component{
+  render(){
+    return (
+      <div className={this.props.className}>
+        container
+        <h2 className='title'>title</h2>
+        <div className='content'>body</div>
+      </div>
+    )
+  }
+}
+
+let mixin = css`
+  &{
+    color:red;
+    ${{
+      position:'absolute'
+      ,left:'100px'
+      ,top:'100px'
+    }}
+    .title{
+      color:blue;
+    }
+    .content{
+      font-size:${props=>props.someCondition.fontSize};
+      color:pink;
+    }
+  }
+`
+
+const StyledComponent = styled(Xxx)`
+  ${props=>props.someCondition?mixin:null}
+`;
+
+export default StyledComponent;
+
+
+ReactDOM.render(
+  <StyledComponent someCondition={{fontSize:'30px'}}/>
+  ,window.root
+)
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+其中我们用到了styled-components中的另外一个方法css，这个方法其实就是创建一个mixin，使我们可以在任何&lt;StyledComponent&gt;中复用这份样式。
+
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>StyledComponent 相关特性</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="extend 继承" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+     我们能通过styled(StyledCompoent1)一个StyleComponent来创建一个继承自StyledCompoent1的StyledComponent2组件。
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+     let StyledCompoent2 = styled(StyledCompoent1)`
+    color:xxx
+    ...
+`
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+但这样继承内部其实是一个工厂模式，StyledComponent2其实是一个全新的class。
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+如果我们想要做到真正的继承，需要使用style-components提供的extend方法，它是StyleComponent下的一个属性方法。
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+let StyledCompoent2 =StyledCompoent1.extend`
+    color:xxx
+    ...
+`
+  ]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="html" title="withComponent" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+     withComponent 同样是 StyleComponent 下的一个属性方法，它能帮助我们将原本的 Styled 组件中的标签给替换成另外一种标签
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+//会将原本的<button>替换成<a>
+const Link = Button.withComponent('a');
+  ]]>
+    </c:sourceContent>
+
+
+
+
+    <c:sourceContent type="html" title="component-selector" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+                     <![CDATA[
+   <p style="margin-bottom:1em;"> 
+    styled-components 允许我们在 tagged template literal 中使用一个 StyledComponent 变量作为 css 选择器，我们将它称之为 component-selector。
+    </p><p> 
+    <img src="/images/react/666.jpg" />
+    </p>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+let ReactComponent = (props,context)=>{
+    <div className={props.className}>
+      <h2>hello</h2>
+    </div>
+}
+
+let StyledComponent1 = styled(ReactComponent)``
+let StyledComponent2 = styled.div`
+    ${StyledComponent1} {   // 此处的 ${StyledComponent1} 就是一个 component-selector
+        background:orange;
+        h2{
+          color:red;
+        }
+        &:after{
+          content:'';
+          display:block;
+          width:10px;
+          height:10px;
+          border:1px solid black;
+        }
+    }
+`
+
+...
+ReactDOM.render(
+  <StyledComponent2>
+    <StyledComponent1/>
+  </StyledComponent2>
+  ,window.root
+)
+
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="innerRef" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+                     <![CDATA[
+在 styled-components中，我们要想获取到一个 StyledComponent 的真实入口 DOM，需要使用 innerRef 而不是 ref (作用和用法都是一样的)。
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+const Input = styled.input`
+  padding: 0.5em;
+  margin: 0.5em;
+  color: palevioletred;
+  background: papayawhip;
+  border: none;
+  border-radius: 3px;
+  ${{color:'red'}}
+`;
+
+export default class Form extends React.Component {
+  render() {
+    return (
+      <Input
+        placeholder="Hover here..."
+        innerRef={x => { this.input = x }}
+        onMouseEnter={() => this.input.focus()}
+      />
+    );
+  }
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+上面使用的是 styled.input 这种快捷创建 styledComponent 的方式，
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+                     <![CDATA[
+如果我们改成使用 styled(原生React组件) 的方式，那么像上面那样我们是无法获取到 dom 的，获取的是 styled() 括号中传入的原生React组件对象
+  ]]>
+    </c:sourceContent>
+    
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+class _B extends React.Component{
+  render(){
+    return <div></div>
+  }
+}
+
+const B = styled(_B)``;
+
+export default class A extends React.Component{
+  componentDidMount(){
+    console.log('this.dom', this.dom);
+  }
+  render(){
+    return <B innerRef={x => this.dom = x}></B>;
+  }
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+                     <![CDATA[
+上面的 this.dom 获取到的不是 dom，而是 styled 包裹的组件对象]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+                     <![CDATA[
+解决办法是在 _B 内再使用原生的 ref 挂载一次，把 dom 挂载在 _B 上，这样我们就可以通过往下再深一层访问的方式拿到 dom。
+]]>
+    </c:sourceContent>
+    
+
+    <c:sourceContent type="html" title="isStyledComponent" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+                     <![CDATA[
+有些时候我们需要判断一个组件是不是 StyledComponent，我们才好运用只有 StyledComponent 才具有的特性，比如 component-selector
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+import React from 'react';
+import styled, { isStyledComponent } from 'styled-components';
+import MaybeStyledComponent from './somewhere-else';
+
+let TargetedComponent =
+  isStyledComponent(MaybeStyledComponent)
+    ? MaybeStyledComponent
+    : styled(MaybeStyledComponent)``;
+
+const ParentComponent = styled.div`
+  color: cornflowerblue;
+
+  ${TargetedComponent} {
+    color: tomato;
+  }
+`
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="attr方法：给Styled组件添加默认属性" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+                     <![CDATA[
+attr 方法接收一个对象，它允许我们为一个 StyledComponent 添加默认属性和默认样式值, 此方法也是私认为是 styled-components 中最为重要的方法之一。
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+const Input = styled.input.attrs({
+  // 定义一些静态属性
+  type: 'password',
+
+  // 给css属性动态赋予初始值
+  margin: props => props.size || '1em',
+  padding: props => props.size || '1em'
+})`
+  color: palevioletred;
+  font-size: 1em;
+  border: 2px solid palevioletred;
+  border-radius: 3px;
+
+  /* here we use the dynamically computed props */
+  margin: ${props => props.margin};
+  padding: ${props => props.padding};
+`;
+
+export default class xxx extends React.Component{
+  render(){
+    return (
+      <div>
+        <Input placholder='A small text input' size='1em'/>
+        <br/>
+        <Input placholder='A bigger text input' size='2em'/>
+      </div>
+    )
+  }
+}
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="injectGlobal方法：插入全局样式" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+                     <![CDATA[
+import { injectGlobal } from 'styled-components';
+
+injectGlobal`
+  @font-face {
+    font-family: 'Operator Mono';
+    src: url('../fonts/Operator-Mono.ttf');
+  }
+
+  body {
+    margin: 0;
+  }
+`;
+
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+                     <![CDATA[
+官方推荐你最好只在font-face和body方面使用它。
+
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="keyframes方法：使用帧动画" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+                     <![CDATA[
+import styled, { keyframes } from 'styled-components';
+
+const fadeIn = keyframes`
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+`;
+
+const FadeInButton = styled.button`
+  animation: 1s ${fadeIn} ease-out;
+`;
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="参考" id="sourceContent1" 
+                     style="background-color:white;margin-top:2em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.8em;line-height:1.625;font-family:monospace;">
+                     <![CDATA[
+www.styled-components.com
+  ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+</c:component>
