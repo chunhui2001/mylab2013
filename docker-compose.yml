@@ -5,7 +5,16 @@
 # docker-compose --version
 # docker-compose up -d
 
-version: '2'
+# docker stats
+# [CONTAINER]：以短格式显示容器的 ID。
+# [CPU %]：CPU 的使用情况。
+# [MEM USAGE / LIMIT]：当前使用的内存和最大可以使用的内存。
+# [MEM %]：以百分比的形式显示内存使用情况。
+# [NET I/O]：网络 I/O 数据。
+# [BLOCK I/O]：磁盘 I/O 数据。 
+# [PIDS]：PID 号。
+
+version: '2.4'
 networks:
   nets:
     external: false
@@ -15,52 +24,56 @@ services:
   tomcat:
     container_name: mylab2013
     image: chunhui2001/ubuntu_1610_dev:tomcat8  
+    mem_limit: 300m
     ports:
       - 9000:8080
     volumes:
-      - /Users/keesh/workspace/mylab2013/war/:/usr/local/tomcat/webapps/ROOT:ro
+      - /Users/keesh/workspace_cloudbox/mylab2013/war/:/usr/local/tomcat/webapps/ROOT:ro
     restart: always
     networks:
       - nets
-  tomcat2:
-    container_name: autopilot_dashboard
-    image: chunhui2001/ubuntu_1610_dev:tomcat8  
-    ports:
-      - 9002:8080
-    # volumes:
-    #  - /Users/keesh/workspace_gofun_autopoilt/gofun-ms-autopilot-parent/gofun-ms-autopilot-dashboard/target/autopilot_dashboard:/usr/local/tomcat/webapps/ROOT:ro
-    restart: always
-    networks:
-      - nets
-  nginx:
-    container_name: react_lab
-    image: chunhui2001/ubuntu_1610_dev:nginx_1.9.15
-    ports:
-      - 80:80
-    volumes:
-      - /Users/keesh/workspace/react_lab:/usr/local/nginx/html:ro
-    restart: always
-    networks:
-      - nets
-  verdaccio:
-    container_name: verdaccio_npm
-    image: ubuntu_1610_dev:nodejs6_verdaccio
-    ports:
-      - 4873:4873
-    volumes:
-      - /Users/keesh/Desktop/verdaccio_storage:/root/nodejs/app/verdaccio/storage
-    restart: always
-    networks:
-      - nets
-  mysql:                
-    container_name: mysql_dev
-    image: chunhui2001/debian_8_dev:mysql_5.7
-    environment:
-      - MYSQL_ROOT_PASSWORD=Cc
-    ports: 
-      - 3307:3306
- #   volumes:
- #     - /Users/keesh/Desktop/react_lab:/usr/local/nginx/html:ro
-    restart: always
-    networks:
-      - nets
+  # tomcat2:
+  #   container_name: autopilot_dashboard
+  #   image: chunhui2001/ubuntu_1610_dev:tomcat8  
+  #   mem_limit: 300m
+  #   ports:
+  #     - 9002:8080
+  #   # volumes:
+  #   #  - /Users/keesh/workspace_gofun_autopoilt/gofun-ms-autopilot-parent/gofun-ms-autopilot-dashboard/target/autopilot_dashboard:/usr/local/tomcat/webapps/ROOT:ro
+  #   restart: always
+  #   networks:
+  #     - nets
+  # nginx:
+  #   container_name: react_lab
+  #   image: chunhui2001/ubuntu_1610_dev:nginx_1.9.15
+  #   mem_limit: 300m
+  #   ports:
+  #     - 80:80
+  #   volumes:
+  #     - /Users/keesh/workspace/react_lab:/usr/local/nginx/html:ro
+  #   restart: always
+  #   networks:
+  #     - nets
+  # verdaccio:
+  #   container_name: verdaccio_npm
+  #   image: ubuntu_1610_dev:nodejs6_verdaccio
+  #   mem_limit: 300m
+  #   ports:
+  #     - 4873:4873
+  #   volumes:
+  #     - /Users/keesh/Desktop/verdaccio_storage:/root/nodejs/app/verdaccio/storage
+  #   restart: always
+  #   networks:
+  #     - nets
+ #  mysql:                
+ #    container_name: mysql_dev
+ #    image: chunhui2001/debian_8_dev:mysql_5.7
+ #    environment:
+ #      - MYSQL_ROOT_PASSWORD=Cc
+ #    ports: 
+ #      - 3307:3306
+ # #   volumes:
+ # #     - /Users/keesh/Desktop/react_lab:/usr/local/nginx/html:ro
+ #    restart: always
+ #    networks:
+ #      - nets
