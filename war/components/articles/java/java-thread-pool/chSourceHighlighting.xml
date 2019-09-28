@@ -1,0 +1,508 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+https://www.iteye.com/blog/gaozzsoft-2404733
+]]>
+  </c:abstract>
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>ThreadPoolExecutor</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        <div style="line-height: 1.625em;">
+      线程资源必须通过线程池提供，不允许在应用中自行显示的创建线程，这样一方面是线程的创建更加规范，可以合理控制开辟线程的数量；另一方面线程的细节管理交给线程池处理，优化了资源的开销。而线程池不允许使用Executors去创建，而要通过ThreadPoolExecutor方式，这一方面是由于jdk中Executor框架虽然提供了如newFixedThreadPool()、newSingleThreadExecutor()、newCachedThreadPool()等创建线程池的方法，但都有其局限性，不够灵活；另外由于前面几种方法内部也是通过ThreadPoolExecutor方式实现，使用ThreadPoolExecutor有助于大家明确线程池的运行规则，创建符合自己的业务场景需要的线程池，避免资源耗尽的风险。</div>
+        <div style="line-height: 1.625em;margin-top:.5em;">
+ThreadPoolExecutor 类实现了 ExecutorService 接口和 Executor 接口，可以设置线程池 corePoolSize，最大线程池大小，AliveTime，拒绝策略等。</div>
+      ]]></c:desc1>
+    </c:desc>
+
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<img src="/images/thread/thread-pool.png" />
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="创建方式" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+private final static ExecutorService executor = 
+              new ThreadPoolExecutor(1, 2, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+  ]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="" title="ThreadPoolExecutor 构造函数" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+public ThreadPoolExecutor (
+        int corePoolSize,       // 线程池维护线程的最少数量
+        int maximumPoolSize,    // 线程池维护线程的最大数量
+        long keepAliveTime,     // 线程池维护线程所允许的空闲时间
+        TimeUnit unit,          // 线程池维护线程所允许的空闲时间的单位
+        BlockingQueue<Runnable> workQueue,      // 线程池所使用的缓冲队列
+        ThreadFactory threadFactory,
+        RejectedExecutionHandler handler        // 线程池对拒绝任务的处理策略
+      ) {
+
+  if (corePoolSize < 0 ||
+      maximumPoolSize <= 0 ||
+      maximumPoolSize < corePoolSize ||
+      keepAliveTime < 0)
+      throw new IllegalArgumentException();
+
+  if (workQueue == null || threadFactory == null || handler == null)
+      throw new NullPointerException();
+
+  this.acc = System.getSecurityManager() == null ?
+          null :
+          AccessController.getContext();
+
+  this.corePoolSize = corePoolSize;
+  this.maximumPoolSize = maximumPoolSize;
+  this.workQueue = workQueue;
+  this.keepAliveTime = unit.toNanos(keepAliveTime);
+  this.threadFactory = threadFactory;
+  this.handler = handler;
+
+  /**
+   * corePoolSize: 指定了线程池中的线程数量，它的数量决定了添加的任务是开辟新的线程去执行，还是放到workQueue任务队列中去；
+   * maximumPoolSize: 指定了线程池中的最大线程数量，这个参数会根据你使用的workQueue任务队列的类型，决定线程池会开辟的最大线程数量；
+   * keepAliveTime: 当线程池中空闲线程数量超过 corePoolSize 时，多余的线程会在多长时间内被销毁；
+   * unit: keepAliveTime的单位
+   * workQueue: 任务队列，被添加到线程池中，但尚未被执行的任务；它一般分为直接提交队列、有界任务队列、无界任务队列、优先任务队列几种；
+   * threadFactory: 线程工厂，用于创建线程，一般用默认即可；
+   * handler: 拒绝策略；当任务太多来不及处理时，如何拒绝任务；
+   */
+
+   /***** 当一个任务通过execute(Runnable)方法欲添加到线程池时： *****/
+   /**
+    * 如果此时线程池中的数量小于 corePoolSize，即使线程池中的线程都处于空闲状态，也要创建新的线程来处理被添加的任务。
+    * 如果此时线程池中的数量等于 corePoolSize，但是缓冲队列 workQueue 未满，那么任务被放入缓冲队列。
+    * 如果此时线程池中的数量大于 corePoolSize，缓冲队列 workQueue 满，并且线程池中的数量小于 maximumPoolSize，建新的线程来处理被添加的任务。
+    * 如果此时线程池中的数量大于 corePoolSize，缓冲队列 workQueue 满，并且线程池中的数量等于 maximumPoolSize，那么通过 handler 策略来处理此任务。
+    * 也就是：处理任务的优先级为：
+    * 核心线程 corePoolSize、任务队列 workQueue、最大线程 maximumPoolSize，如果三者都满了，使用 handler 处理被拒绝的任务。 
+    * 当线程池中的线程数量大于 corePoolSize时，如果某线程空闲时间超过 keepAliveTime，线程将被终止。这样，线程池可以动态的调整池中的线程数。
+    */
+
+}
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>workQueue 任务队列</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        <div style="font-size:1.1em;">
+  它一般分为直接提交队列、有界任务队列、无界任务队列、优先任务队列；
+        </div>
+      ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="直接提交队列 -- SynchronousQueue" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>设置为 SynchronousQueue 队列，SynchronousQueue 是一个特殊的 BlockingQueue，它没有容量，每执行一个插入操作就会阻塞，需要再执行一个删除操作才会被唤醒，反之每一个删除操作也都要等待对应的插入操作。</div>
+
+        <div style="font-size:1em;margin-top:.625em">
+  使用 SynchronousQueue 队列，提交的任务不会被保存，总是会马上提交执行。如果用于执行任务的线程数量小于 maximumPoolSize，则尝试创建新的进程，如果达到 maximumPoolSize 设置的最大值，则根据你设置的 handler 执行拒绝策略。因此这种方式你提交的任务不会被缓存起来，而是会被马上执行，在这种情况下，你需要对你程序的并发量有个准确的评估，才能设置合适的 maximumPoolSize 数量，否则很容易就会执行拒绝策略；
+        </div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+pool = new ThreadPoolExecutor(
+    1, 2, 1000, TimeUnit.MILLISECONDS, 
+    new SynchronousQueue<Runnable>(),
+    Executors.defaultThreadFactory(),
+    new ThreadPoolExecutor.AbortPolicy()
+);
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="有界的任务队列 -- ArrayBlockingQueue" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>使用 ArrayBlockingQueue 有界任务队列，若有新的任务需要执行时，线程池会创建新的线程，直到创建的线程数量达到 corePoolSize 时，则会将新的任务加入到等待队列中。若等待队列已满，即超过 ArrayBlockingQueue 初始化的容量，则继续创建线程，直到线程数量达到 maximumPoolSize 设置的最大线程数量，若大于 maximumPoolSize，则执行拒绝策略。在这种情况下，线程数量的上限与有界任务队列的状态有直接关系，如果有界队列初始容量较大或者没有达到超负荷的状态，线程数将一直维持在 corePoolSize 以下，反之当任务队列已满时，则会以 maximumPoolSize 为最大线程数上限。</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+pool = new ThreadPoolExecutor(
+    1, 2, 1000, TimeUnit.MILLISECONDS, 
+    new ArrayBlockingQueue<Runnable>(10),
+    Executors.defaultThreadFactory(),
+    new ThreadPoolExecutor.AbortPolicy()
+  );
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="无界的任务队列 -- LinkedBlockingQueue" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>使用无界任务队列，线程池的任务队列可以无限制的添加新的任务，而线程池创建的最大线程数量就是你 corePoolSize 设置的数量，也就是说在这种情况下 maximumPoolSize 这个参数是无效的，哪怕你的任务队列中缓存了很多未执行的任务，当线程池的线程数达到 corePoolSize 后，就不会再增加了；若后续有新的任务加入，则直接进入队列等待，当使用这种任务队列模式时，一定要注意你任务提交与处理之间的协调与控制，不然会出现队列中的任务由于无法及时处理导致一直增长，直到最后资源耗尽的问题。</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+pool = new ThreadPoolExecutor(
+    1, 2, 1000, TimeUnit.MILLISECONDS, 
+    new LinkedBlockingQueue<Runnable>(),
+    Executors.defaultThreadFactory(),
+    new ThreadPoolExecutor.AbortPolicy()
+  );
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="优先任务队列 -- PriorityBlockingQueue" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>PriorityBlockingQueue 它其实是一个特殊的无界队列，它其中无论添加了多少个任务，线程池创建的线程数也不会超过corePoolSize的数量，只不过其他队列一般是按照先进先出的规则处理任务，而 PriorityBlockingQueue 队列可以自定义规则根据任务的优先级顺序先后执行。</div>
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
+
+
+]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>ThreadPoolExecutor 里面四种拒绝策略</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+       <div style="font-size:1.1em;color:green;">
+        核心线程 corePoolSize、任务队列 workQueue、最大线程 maximumPoolSize，如果三者都满了，使用 handler 处理被拒绝的任务。 </div>
+
+        <div style="font-size:1em;margin-top:1em;">
+  一般我们创建线程池时，为防止资源被耗尽，任务队列都会选择创建有界任务队列，但种模式下如果出现任务队列已满且线程池创建的线程数达到你设置的最大线程数时，这时就需要你指定ThreadPoolExecutor的RejectedExecutionHandler参数即合理的拒绝策略，来处理线程池"超载"的情况。ThreadPoolExecutor自带的拒绝策略如下：
+<br /><br />
+  &nbsp;&nbsp;&nbsp;&nbsp;1、AbortPolicy策略：该策略会直接抛出异常，阻止系统正常工作；<br />
+  &nbsp;&nbsp;&nbsp;&nbsp;2、CallerRunsPolicy策略：如果线程池的线程数量达到上限，该策略会把任务队列中的任务放在调用者线程当中运行； <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;3、DiscardOledestPolicy策略：该策略会丢弃任务队列中最老的一个任务，也就是当前任务队列中最先被添加进去的，马上要被执行的那个任务，并尝试再次提交；<br />
+  &nbsp;&nbsp;&nbsp;&nbsp;4、DiscardPolicy策略：该策略会默默丢弃无法处理的任务，不予任何处理。当然使用此策略，业务场景中需允许任务的丢失；<br />
+<br />
+  以上内置的策略均实现了 RejectedExecutionHandler 接口，当然你也可以自己扩展 RejectedExecutionHandler 接口，定义自己的拒绝策略.
+        </div>
+      ]]></c:desc1>
+    </c:desc>
+
+
+
+    <c:sourceContent type="" title="ThreadPoolExecutor.AbortPolicy()" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+private static class Worker implements Runnable {
+    public void run() {
+        System.out.println(Thread.currentThread().getName() + " is running");
+    }
+}
+
+public static void main(String[] args) {
+
+    // 拒绝策略1：将抛出 RejectedExecutionException.
+    RejectedExecutionHandler handler = new ThreadPoolExecutor.AbortPolicy();
+
+    int corePoolSize = 5;
+    int maxPoolSize = 10;
+    long keepAliveTime = 5;
+
+    BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(10);
+
+    ThreadPoolExecutor executor = 
+        new ThreadPoolExecutor( corePoolSize, maxPoolSize, keepAliveTime, TimeUnit.SECONDS, queue, handler);
+
+    for(int i=0; i<100; i++) {
+      executor.execute(new Worker());
+    }
+
+    executor.shutdown();
+
+}
+
+// 处理源码如下
+public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
+    throw new RejectedExecutionException();
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="ThreadPoolExecutor.CallerRunsPolicy" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+private static class Worker implements Runnable {
+    public void run() {
+        System.out.println(Thread.currentThread().getName() + " is running");
+    }
+}
+
+public static void main(String[] args) {
+
+    // 拒绝策略2：
+    // 用于被拒绝任务的处理程序，它直接在 execute 方法的调用线程中运行被拒绝的任务；如果执行程序已关闭，则会丢弃该任务。如下：
+    RejectedExecutionHandler handler = new ThreadPoolExecutor.CallerRunsPolicy();
+
+    int corePoolSize = 5;
+    int maxPoolSize = 10;
+    long keepAliveTime = 5;
+
+    BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(10);
+
+    ThreadPoolExecutor executor = 
+        new ThreadPoolExecutor( corePoolSize, maxPoolSize, keepAliveTime, TimeUnit.SECONDS, queue, handler);
+
+    for(int i=0; i<100; i++) {
+      executor.execute(new Worker());
+    }
+
+    executor.shutdown();
+
+}
+
+// 处理源码如下
+public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
+    if (!e.isShutdown()) {
+        r.run();
+    }
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="ThreadPoolExecutor.DiscardOldestPolicy()" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+private static class Worker implements Runnable {
+    public void run() {
+        System.out.println(Thread.currentThread().getName() + " is running");
+    }
+}
+
+public static void main(String[] args) {
+
+    // 拒绝策略3：
+    // 用于被拒绝任务的处理程序，丢弃任务队列中最旧任务
+    RejectedExecutionHandler handler =  new ThreadPoolExecutor.DiscardOldestPolicy();
+
+    int corePoolSize = 5;
+    int maxPoolSize = 10;
+    long keepAliveTime = 5;
+
+    BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(10);
+
+    ThreadPoolExecutor executor = 
+        new ThreadPoolExecutor( corePoolSize, maxPoolSize, keepAliveTime, TimeUnit.SECONDS, queue, handler);
+
+    for(int i=0; i<100; i++) {
+      executor.execute(new Worker());
+    }
+
+    executor.shutdown();
+
+}
+
+// 处理源码如下
+public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
+  if (!e.isShutdown()) {
+    e.getQueue().poll();
+    e.execute(r);
+  }
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="ThreadPoolExecutor.DiscardPolicy" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+private static class Worker implements Runnable {
+    public void run() {
+        System.out.println(Thread.currentThread().getName() + " is running");
+    }
+}
+
+public static void main(String[] args) {
+
+    // 拒绝策略4：
+    // 用于被拒绝任务的处理程序，丢弃当前将要加入队列的任务本身。
+    RejectedExecutionHandler handler =  new ThreadPoolExecutor.DiscardPolicy();
+
+    int corePoolSize = 5;
+    int maxPoolSize = 10;
+    long keepAliveTime = 5;
+
+    BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(10);
+
+    ThreadPoolExecutor executor = 
+        new ThreadPoolExecutor( corePoolSize, maxPoolSize, keepAliveTime, TimeUnit.SECONDS, queue, handler);
+
+    for(int i=0; i<100; i++) {
+      executor.execute(new Worker());
+    }
+
+    executor.shutdown();
+
+}
+
+// 源码如下，实际就是对线程不执行操作
+public static class DiscardPolicy implements RejectedExecutionHandler {
+
+  public DiscardPolicy() { 
+
+  }
+
+  public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
+
+  }
+
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="自定义拒绝策略" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+private static class Worker implements Runnable {
+    public void run() {
+        System.out.println(Thread.currentThread().getName() + " is running");
+    }
+}
+
+public static void main(String[] args) {
+
+    // 拒绝策略5：
+    // 用于被拒绝任务的处理程序，自定义拒绝策略。
+
+    int corePoolSize = 5;
+    int maxPoolSize = 10;
+    long keepAliveTime = 5;
+
+    BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(10);
+
+    ThreadPoolExecutor executor = 
+        new ThreadPoolExecutor( corePoolSize, maxPoolSize, keepAliveTime, TimeUnit.SECONDS, queue,
+                Executors.defaultThreadFactory(), new RejectedExecutionHandler() {
+            public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
+                System.out.println(r.toString()+"执行了拒绝策略");
+            }
+        });
+
+    for(int i=0; i<100; i++) {
+      executor.execute(new Worker());
+    }
+
+    executor.shutdown();
+
+}
+
+
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>线程池线程数量</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        <div style="font-size:1.1em;">
+  线程池线程数量的设置没有一个明确的指标，根据实际情况，只要不是设置的偏大和偏小都问题不大，结合下面这个公式即可
+        </div>
+      ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+// 
+/**
+ * Nthreads=CPU数量
+ * Ucpu=目标CPU的使用率，0<=Ucpu<=1
+ * W/C=任务等待时间与任务计算时间的比率
+ */
+Nthreads = Ncpu*Ucpu*(1+W/C)
+
+]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
+以上就是对ThreadPoolExecutor类从构造函数、拒绝策略、自定义线程创建等方面介绍了其详细的使用方法，<br />
+从而我们可以根据自己的需要，灵活配置和使用线程池创建线程，其中如有不足与不正确的地方还望指出与海涵。]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+</c:component>
