@@ -30,7 +30,7 @@
   <html lang="{$language}">
   	<head>
 	  	<title>
-	  		<xsl:value-of select="//c:page/c:title[position() = 1]" />
+	  		<xsl:value-of disable-output-escaping="yes" select="//c:page/c:title[position() = 1]" />
 	  	</title>
       <link rel="icon" href="/images/favicon2.ico" type="image/x-icon" />
         <link rel="shortcut icon" href="/images/favicon2.ico" type="image/x-icon" />

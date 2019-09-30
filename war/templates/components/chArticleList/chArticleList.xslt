@@ -31,7 +31,7 @@
           <div style="float:left;">
             <h4 style="font-size:1.2em;margin-bottom:.4em;">
               <a target="{c:articleLink/@target}" href="{c:articleLink}">
-                <xsl:value-of select="c:title"/>
+                <xsl:value-of disable-output-escaping="yes" select="c:title"/>
               </a>
             </h4>
             <span style="color:gray;">
