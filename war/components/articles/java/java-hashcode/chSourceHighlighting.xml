@@ -271,13 +271,83 @@ int ELFhash(char*key) {
         </div>
     </li>
     <li style="margin-bottom: .3em;">
-    <b>折叠法：</b><br />将关键字分割成位数相同的几部分，最后一部分位数可以不同，然后取这几部分的叠加和（去除进位）作为散列地址。数位叠加可以有移位叠加和间界叠加两种方法。移位叠加是将分割后的每一部分的最低位对齐，然后相加；间界叠加是从一端向另一端沿分割界来回折叠，然后对齐相加。
+      <div>
+        <b>分段叠加法：</b><br />将关键字分割成位数相同的几部分，最后一部分可以较短。 然后将这几部分相加, 舍弃最高进位后的结果就是该关键字的哈希地址(即:散列地址)。具体方法有<b>折叠法</b>与<b>移位法</b>。移位法是将分割后的每部分低位对齐相加，折叠法是从一端向另一端沿分割界来回折叠(奇数段为正序，偶数段为倒序)，然后将各段相加。例如：key=12360324711202065,哈希表长度为1000，则应把关键字分成3位一段，在此舍去最低的两位65，分别进行移位叠加和折叠叠加，求得哈希地址为105和907，
+        <br />如图8.24所示。
+      </div>
+      <pre style="color:red;">
+
+     1  2  3                   1  2   3
+     6  0  3                   3  0   6
+     2  4  7                   2  4   7
+     1  1  2                   2  1   1
++)   0  2  0                +) 0  2   0
+ ———————————               ————————————
+  1  1  0  5                   9  0   7
+
+   a）移位叠加                (b) 折叠叠加
+
+            <b>[由叠加法求哈希地址]</b>
+      </pre>
     </li>
     <li style="margin-bottom: .3em;">
-     <b>随机数法：</b><br />选择一随机函数，取关键字的随机值作为散列地址，通常用于关键字长度不同的场合。
+     <div><b>除留余数法：</b><br />取关键字被某个不大于散列表表长m的数p除后所得的余数为散列地址。即 H(key) = key MOD p,p<=m。不仅可以对关键字直接取模，也可在折叠、平方取中等运算之后取模。对p的选择很重要，一般取素数或m，若p选的不好，容易产生同义词
+     </div>
+     <pre style="color:blue;">
+
+假设哈希表长为m，p为小于等于m的最大素数，则哈希函数为:
+<b style="color:red;font-size:2em;">h（k）=k %  p</b> 其中%为模p取余运算。
+
+例如，已知待散列元素为（18，75，60，43，54，90，46），表长m=10，p=7，则有:
+   h(18)=18 % 7=4    h(75)=75 % 7=5   h(60)=60 % 7=4   
+   h(43)=43 % 7=1    h(54)=54 % 7=5   h(90)=90 % 7=6   
+   h(46)=46 % 7=4
+
+此时冲突较多。为减少冲突，可取较大的m值和p值，如m=p=13，结果如下：
+   h(18)=18 % 13=5    h(75)=75 % 13=10   h(60)=60 % 13=8
+   h(43)=43 % 13=4    h(54)=54 % 13=2   h(90)=90 % 13=12
+   h(46)=46 % 13=7
+     </pre>
+     <p>此时分布情况如下所示(相对均匀):</p>
+     <table>
+      <tbody>
+
+        <tr>
+          <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">&nbsp;</td>
+          <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">&nbsp;</td>
+          <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">54</td>
+          <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">&nbsp;</td>
+          <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">43</td>
+          <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">18</td>
+          <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">&nbsp;</td>
+          <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">46</td>
+          <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">60</td>
+          <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">&nbsp;</td>
+          <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">75</td>
+          <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">&nbsp;</td>
+          <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">90</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 8px;text-align:center;color:gray;;border:solid 1px goldenrod;">0</td>
+          <td style="padding: 5px 8px;text-align:center;color:gray;;border:solid 1px goldenrod;">1</td>
+          <td style="padding: 5px 8px;text-align:center;color:gray;;border:solid 1px goldenrod;">2</td>
+          <td style="padding: 5px 8px;text-align:center;color:gray;;border:solid 1px goldenrod;">3</td>
+          <td style="padding: 5px 8px;text-align:center;color:gray;;border:solid 1px goldenrod;">4</td>
+          <td style="padding: 5px 8px;text-align:center;color:gray;;border:solid 1px goldenrod;">5</td>
+          <td style="padding: 5px 8px;text-align:center;color:gray;;border:solid 1px goldenrod;">6</td>
+          <td style="padding: 5px 8px;text-align:center;color:gray;;border:solid 1px goldenrod;">7</td>
+          <td style="padding: 5px 8px;text-align:center;color:gray;;border:solid 1px goldenrod;">8</td>
+          <td style="padding: 5px 8px;text-align:center;color:gray;;border:solid 1px goldenrod;">9</td>
+          <td style="padding: 5px 8px;text-align:center;color:gray;;border:solid 1px goldenrod;">10</td>
+          <td style="padding: 5px 8px;text-align:center;color:gray;;border:solid 1px goldenrod;">11</td>
+          <td style="padding: 5px 8px;text-align:center;color:gray;;border:solid 1px goldenrod;">12</td>
+        </tr>
+      </tbody>
+     </table>
     </li>
-    <li style="margin-bottom: .3em;">
-     <b>除留余数法：</b><br />取关键字被某个不大于散列表表长m的数p除后所得的余数为散列地址。即 H(key) = key MOD p,p<=m。不仅可以对关键字直接取模，也可在折叠、平方取中等运算之后取模。对p的选择很重要，一般取素数或m，若p选的不好，容易产生同义词
+
+    <li style="">
+     <b>伪随机数法：</b><br />选择一随机函数，取关键字的随机值作为散列地址，即 h(key)=random(key)。通常用于关键字长度不同的场合。
     </li>
 </ul>
 
@@ -288,7 +358,7 @@ int ELFhash(char*key) {
 
 
     <c:sourceContent type="html" title="处理冲突" id="sourceContent1" 
-                     style="background-color:white;"
+                     style="background-color:white;margin-top:1em;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
                      <![CDATA[
@@ -797,7 +867,15 @@ public class HashMap<K,V> extends AbstractMap<K,V> implements Map<K,V>, Cloneabl
     final float loadFactor;
  
     /**
-     *
+     *  modCount 是这个 list 被结构性修改的次数。
+     *  结构性修改是指：改变list的size大小，或者，以其他方式改变他导致正在进行迭代时出现错误的结果。
+     *  这个字段用于迭代器和列表迭代器的实现类中，由迭代器和列表迭代器方法返回。
+     *  如果这个值被意外改变，这个迭代器将会抛出 ConcurrentModificationException的异常来响应：next,remove,previous,set,add 这些操作。
+     *  在迭代过程中，他提供了fail-fast行为而不是不确定行为来处理并发修改。
+     *  子类使用这个字段是可选的，如果子类希望提供fail-fast迭代器，它仅仅需要在add(int, E),remove(int)方法
+     * （或者它重写的其他任何会结构性修改这个列表的方法）中添加这个字段。
+     *  调用一次add(int,E)或者remove(int)方法时必须且仅仅给这个字段加1，否则迭代器会抛出伪装的ConcurrentModificationExceptions错误。
+     *  如果一个实现类不希望提供fail-fast迭代器，则可以忽略这个字段。
      */
     transient int modCount;
  
@@ -885,8 +963,9 @@ HashSet 扩展了 HashMap, 所以底层还是用到 map 存储，存储实现同
     <c:desc>
       <c:desc1> <![CDATA[
 <div style="line-height: 1.625em;">
-fail-fast 机制，即快速失败机制，是 java 集合(Collection) 中的一种错误检测机制。当在迭代集合的过程中该集合在结构上发生改变的时候，就有可能会发生 fail-fast，即抛出 ConcurrentModificationException 异常。fail-fast 机制并不保证在不同步的修改下一定会抛出异常，它只是尽最大努力去抛出，所以这种机制一般仅用于检测 bug。
+在线程不安全的集合中，如使用迭代器的过程中，发现集合被修改，会抛出 ConcurrentModificationExceptions 错误，这就是 fail-fast 机制，是 java 集合(Collection) 中的一种错误检测机制。对集合进行结构性修改时，modCount都会增加，在初始化迭代器时，modCount 的值会赋给 expectedModCount，在迭代的过程中，只要 modCount 改变了，int expectedModCount = modCount 等式就不成立了，迭代器检测到这一点，就会抛出错误：currentModificationExceptions。fail-fast 机制并不保证在不同步的修改下一定会抛出异常，它只是尽最大努力去抛出，所以这种机制一般仅用于检测 bug。
 </div>
+
 <div style="line-height: 1.625em;margin-top:.5em;">
 在我们常见的 java 集合中就可能出现 fail-fast 机制,比如 ArrayList，HashMap。在多线程和单线程环境下都有可能出现快速失败。
 </div>
@@ -1805,7 +1884,7 @@ static <K,V> TreeNode<K,V> rotateRight(TreeNode<K,V> root,
 
 
     <c:sourceContent type="" title="二分查找法" id="sourceContent1" 
-                     style="background-color:white;"
+                     style="background-color:white;margin-top:1em;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
                      <![CDATA[
@@ -1858,6 +1937,7 @@ public void compute(int search,int total){
     }
 
   }
+
 }
 ]]>
     </c:sourceContent>
