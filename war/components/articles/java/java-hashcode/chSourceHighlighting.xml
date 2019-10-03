@@ -337,78 +337,145 @@ int ELFhash(char*key) {
     <c:title><![CDATA[java 集合 HashMap、HashTable、HashSet]]></c:title>
     <c:desc>
       <c:desc1> <![CDATA[
-<div style="line-height: 1.625em;">
-HashMap 基于 hashing 原理，通过 put() 和 get() 方法储存和获取对象。
-</div>
-<div style="line-height: 1.625em;margin-top:.5em;">
-put() 方法: 它调用键对象的 hashCode() 方法来计算 hashcode 值，系统根据 hashcode 值决定该元素在 bucket 位置。如果两个对象 key 的 hashcode 返回值相同，那他们的存储位置相同，如果这两个 Entry 的 key 通过 equals 比较返回 true，新添加 Entry 的 value 将覆盖集合中原有 Entry 的 value，但 key 不会覆盖；如果这两个 Entry 的 key 通过 equals 比较返回 false，新添加的 Entry 将与集合中原有 Entry 形成 Entry 链，而且新添加 Entry 位于 Entry 链的头部。put() 源码如下: 
-</div>
-      ]]></c:desc1>
+<img width="650px" src="/images/java/hashmap-structrue.png" />
+]]></c:desc1>
     </c:desc>
 
-    <c:sourceContent type="" title="put() 源码" id="sourceContent1" 
+
+    <c:sourceContent type="html" title="HashMap 存储结构" id="sourceContent1" 
                      style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<ul style="margin-left: 2em;list-style-type: decimal;margin-top: .3em;">
+    <li style="margin-bottom:.3em;">hashmap 底层是以数组方式进行存储。将 key-value 对作为数组中的一个元素进行存储。</li>
+    <li style="margin-bottom:.3em;">key-value 都是 Map.Entry 中的属性。其中将 key 的值进行 hash 之后进行存储，即每一个 key 都是计算 hash 值，然后再存储。每一个 Hash 值对应一个数组下标，数组下标是根据 hash 值和数组长度计算得来。</li>
+    <li style="margin-bottom:.3em;">由于不能的 key 有可能 hash 值相同，即该位置的数组中的元素出现两个，对于这种情况，hashmap 采用链表形式进行存储。</li>
+</ul>
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="HashMap 底层为什么一定用数组" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<ul style="margin-left: 2em;list-style-type: decimal;margin-top: .3em;">
+    <li style="margin-bottom:.3em;"><b>数组效率高: </b> 在HashMap中，定位桶的位置是利用元素的key的哈希值对数组长度取模得到。此时，我们已得到桶的位置。显然数组的查找效率比LinkedList大。</li>
+    <li style="margin-bottom:.3em;"><b>可自定义扩容机制: </b>采用基本数组结构，扩容机制可以自己定义，HashMap 中数组扩容刚好是2的次幂，在做取模运算的效率高。
+    <br /><b style="color:red;">注1: HashMap 在扩容时，新数组的容量将是原来的2倍</b>
+    <br /><b style="color:red;">注2: ArrayList 底层也是数组，但是扩容机制是1.5倍扩容</b>
+  </li>
+</ul>
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="HashMap 执行流程" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.5em;font-family:monospace;">
+                     <![CDATA[
+
+<ul style="margin-left: 2em;list-style-type: decimal;margin-top: .3em;">
+    <li style="margin-bottom:.3em;">判断当前 table 有没有初始化,没有就调用 resize() 方法初始化.(resize 方法既是扩容也是初始化)</li>
+    <li style="margin-bottom:.3em;">判断算出的位置i处有没有值,没有值,创建一个新的node,插入i位置.</li>
+    <li style="margin-bottom:.3em;">当前i位置有值,判断头结点的 hash 和 key 是否和传入的 key 和 hash 相等,相等则记录这个e.</li>
+    <li style="margin-bottom:.3em;">与头节点的 key 和 hash 不同,判断节点是否是树节点,如果是,调用树节点的插入方法 putTreeVal() 方法.(占时不了解红黑树的底层方法实现逻辑,待续).</li>
+    <li style="margin-bottom:.3em;">不是树结构,那证明是链表结构,遍历链表结构,并记录链表长度 binCount. 主要做了两步,(1)在链表里找到和传入的 key 和 hash 相等的基点,并记录,(2) 没有找到,创建一个节点,插入链表的尾部,并判断链表长度有没有大于等于8,如果是就调 treeifyBin 方法决定是否需要树化.</li>
+    <li style="margin-bottom:.3em;">判断前面记录的e节点是否为空,不为空证明找到了相同的基点,那就替换 value, 返回 oldValue.</li>
+    <li style="margin-bottom:.3em;">整个插入流程已经结束,接下来要判断是否需要扩容,如果(++size > threshold)满足,那么就调用扩容方法</li>
+</ul>
+]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="HashMap put() 源码" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.5em;font-family:monospace;">
+                     <![CDATA[
+<div>put() 方法: 它调用键对象的 hashCode() 方法来计算 hashcode 值，系统根据 hashcode 值决定该元素在 <b>bucket/桶</b> 位置。如果两个对象 key 的 hashcode 返回值相同，那他们的存储位置相同，如果这两个 Entry 的 key 通过 equals 比较返回 true，新添加 Entry 的 value 将覆盖集合中原有 Entry 的 value，但 key 不会覆盖；如果这两个 Entry 的 key 通过 equals 比较返回 false，新添加的 Entry 将与集合中原有 Entry 形成 Entry 链，而且新添加 Entry 位于 Entry 链的头部。
+</div>
+
+
+<div>
+put() 源码如下: </div>
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.3em;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
                      <![CDATA[
-public V put(K paramK, V paramV) {
-
-    // 如果key为空，调用putForNullKey方法
-    if (paramK == null)
-        return putForNullKey(paramV);
-
-    // 根据key的keyCode计算Hash值
-    int i = hash(paramK.hashCode());
-
-    // 搜索指定hash值的对应在table中的索引
-    int j = indexFor(i, this.table.length);
-
-    // 链地址法
-    // 如果j索引处的Entry不为空，通过循环遍历localEntry元素的下一个元素
-    for (Entry localEntry = this.table[j]; localEntry != null; localEntry = localEntry.next) {
-        Object localObject1;
-    
-        // 找到指定key与放入key相等(hash值相同，通过equals比较返回true)
-        if ((localEntry.hash == i)
-                && ((((localObject1 = localEntry.key) == paramK) || (paramK
-                        .equals(localObject1))))) {
-            Object localObject2 = localEntry.value;
-            localEntry.value = paramV;
-            localEntry.recordAccess(this);
-            return localObject2;
-        }
-    }
-
-    // 如果j索引Entry为null，此处没有Entry
-    this.modCount += 1;
-    
-    // 将key、value添加到i索引处
-    addEntry(i, paramK, paramV, j);
-    return null;
-
+public V put(K key, V value) {
+    return putVal(hash(key), key, value, false, true);
 }
 
-void addEntry(int paramInt1, K paramK, V paramV, int paramInt2) {
-    //获取指定bucketIndex索引处Entry
-    Entry localEntry = this.table[paramInt2];
-    //将新创建的Entry放入bucketIndex索引处，并让新的Entry指向原来的Entry
-    this.table[paramInt2] = new Entry(paramInt1, paramK, paramV, localEntry);
-    //如果map中的key-value数量超过
-    if (this.size++ >= this.threshold)
-    //table对象的长度扩充到2倍
-        resize(2 * this.table.length);
+/**
+ * put
+ */
+final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
+               boolean evict) {
+    Node<K,V>[] tab;
+    Node<K,V> p;
+    int n, i;
+    if ((tab = table) == null || (n = tab.length) == 0) // table为null,table的length为0,table还没有初始化
+        n = (tab = resize()).length; //调用扩容方法,初始化table
+    if ((p = tab[i = (n - 1) & hash]) == null) //table{[i] 没有值,直接插入
+        tab[i] = newNode(hash, key, value, null);
+    else { // 有值
+        Node<K,V> e; K k;
+        if (p.hash == hash &&
+                ((k = p.key) == key || (key != null && key.equals(k)))) // 找到了相同的key
+            e = p;
+        else if (p instanceof TreeNode) // 判断是否是树结构
+            e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value); // 调用树的插入
+        else {
+            // 遍历链表,并记录节点的长度
+            for (int binCount = 0; ; ++binCount) {
+                if ((e = p.next) == null) { // 找到最后一个节点了
+                    p.next = newNode(hash, key, value, null); //设置当前节点为为p的next
+                    if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st 如果节点长度大于等于了8,就调用treeifyBin方法
+                        treeifyBin(tab, hash);
+                    break;
+                }
+                if (e.hash == hash &&
+                        ((k = e.key) == key || (key != null && key.equals(k)))) // 找到了相同的key
+                    // 此时break,返回的是e.key与传入的key相等的e,以便下面进行替换
+                    break;
+                p = e;
+            }
+        }
+        // e != null 说明前面的遍历找到了相同的key,下面就行替换,返回旧值
+        if (e != null) { // existing mapping for key //
+            V oldValue = e.value;
+            if (!onlyIfAbsent || oldValue == null) // onlyIfAbsent默认是false
+                e.value = value; // 替换value
+            afterNodeAccess(e);
+            return oldValue; // 返回旧的value
+        }
+    }
+    ++modCount;
+    //  当前值大于阈值,进行扩容
+    if (++size > threshold)
+        resize();
+    afterNodeInsertion(evict);
+    return null;
 }
 ]]>
     </c:sourceContent>
 
 
 
-    <c:sourceContent type="html" title="get源码()" id="sourceContent1" 
+    <c:sourceContent type="html" title="HashMap get 源码()" id="sourceContent1" 
                      style="background-color:white;margin-top:1em;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.5em;font-family:monospace;">
                      <![CDATA[
-get()方法: 当 HashMap 的每个 bucket 里存储的 Entry 只是单个 Entry，即没有通过指针产生 Entry 链时，此时 HashMap 具有最好的性能。当程序通过 key 取出对应 value 时，系统先计算出该 key 的 hashCode() 返回值，再根据该 hashCode() 返回值找出该 key 在 table 数组中的索引，然后取出该索引处的 Entry，最后返回该 key 对应的 value 值。get 源码如下:
+<div>get()方法: 当 HashMap 的每个 bucket 里存储的 Entry 只是单个 Entry，即没有通过指针产生 Entry 链时，此时 HashMap 具有最好的性能。当程序通过 key 取出对应 value 时，系统先计算出该 key 的 hashCode() 返回值，再根据该 hashCode() 返回值找出该 key 在 table 数组中的索引，然后取出该索引处的 Entry，最后返回该 key 对应的 value 值。</div>
+
+<div>get 源码如下:</div>
 ]]>
     </c:sourceContent>
     <c:sourceContent type="" title="" id="sourceContent1" 
@@ -419,34 +486,327 @@ get()方法: 当 HashMap 的每个 bucket 里存储的 Entry 只是单个 Entry�
 // 从代码看出，HashMap 的每个 bucket 里只有一个Entry，HashMap 可以根据索引快速取出该 bucket 里的 Entry。
 // 在发生 Hash 冲突的情况下，单个 bucket 里存储的不是一个Entry，
 // 而是一个 Entry 链，系统只能按顺序遍历每个 Entry，直到找到想搜索的 Entry。
-public V get(Object paramObject) {
+public V get(Object key) {
+    Node<K,V> e;
+    return (e = getNode(hash(key), key)) == null ? null : e.value;
+}
 
-    // 如果 key 为空，调用 getForNullKey() 取出对应的 value
-    if (paramObject == null)
-        return getForNullKey();
+/**
+ * 获取值
+ */
+final Node<K,V> getNode(int hash, Object key) {
+    Node<K,V>[] tab;
+    Node<K,V> first, e;
+    int n;
+    K k;
+    if ((tab = table) != null && (n = tab.length) > 0 && // table不是null,table的长度大于0
+            (first = tab[(n - 1) & hash]) != null) { // ,根据可以取得第一个node不为空
+        if (first.hash == hash && // always check first node  对比第一个hash和当前值的hash是否一样
+                ((k = first.key) == key || (key != null && key.equals(k))))
+            return first; // 等于第一个,返回
+        if ((e = first.next) != null) { // 向下遍历,next不等于空
+            if (first instanceof TreeNode) // 判断是否是树结构
+                return ((TreeNode<K,V>)first).getTreeNode(hash, key); // 查找
+            do { // 不是树,就是链表,遍历链表
+                if (e.hash == hash &&
+                        ((k = e.key) == key || (key != null && key.equals(k))))
+                    return e;
+            } while ((e = e.next) != null);
+        }
+    }
+    return null; //  没有找到,返回null
+}
+]]>
+    </c:sourceContent>
 
-    // 根据 key 的 hashCode 值计算 hash 码
-    int i = hash(paramObject.hashCode());
-    
-    // 直接取出 table 数组中指定索引处的值
-    Entry localEntry = this.table[indexFor(i, this.table.length)];
-    
-    while (localEntry != null) {
 
-        Object localObject;
-    
-        // 如果该 Entry 的 key 与被搜索 key 相同
-        if ((localEntry.hash == i)
-                && ((((localObject = localEntry.key) == paramObject) || (paramObject
-                        .equals(localObject)))))
-            return localEntry.value;
-    
-        // 搜索该 Entry 链的下一个
-        localEntry = localEntry.next;
-    
+
+    <c:sourceContent type="html" title="HashMap resize() 源码()" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.5em;font-family:monospace;">
+                     <![CDATA[
+<div>解释为什么在新 table 的位置没有重新计算, 而是根据 (e.hash & oldCap) == 0, 
+  <br /> 等于0就是在原位置, 不等于0时, 就是 newtable[原位置+oldCap]
+  <br /> 如下图:
+</div>
+
+<img width="750px" src="/images/java/hashmap-resize.png" />
+<div style="margin-top:1em;">
+  table 长度我们以 16 为例, hash 值我们以 484 和 30 为例, 我们发现 484&16=0, 30&16=30, 我们发现一个区别就是他们的他们的低5位一个是0、一个是1.
+</div>
+<div style="margin-top:1em;">
+  我们让低5位是0的484, 分别&上 (16-1)和(32-1), 结论是位置没有发生变化, 所以说如果低5位是0, 那么扩容前和扩容后位置不变.
+</div>
+<img width="750px" src="/images/java/hashmap-resize2.jpg" />
+<div style="margin-top:1em;">
+  我们让低5位是1的30,分别&上(16-1)和(32-1),结论是位置发生变化,所以说如果低5位是1,那么新位置就是: 原来位置+oldCap.
+</div>
+<img width="750px" src="/images/java/hashmap-resize3.jpg" />
+<div style="margin-top:1em;">
+  其实我们发现(e.hash & oldCap) == 0 只是为了证明低5位是0还是1,这是为什么了,其实是和(16-1)和(32-1)有着密切的关系,15二进制是1111,31是11111,我们发现不管哪个数&上15或者31都是这个数低4位或者低5位本身,所以e.hash如果低5位0,那其实都是&1111,因为低5位是0&运算下还是0,如果e.hash的低5位是1,那么和0相比就是低5位会变成1,所以需要加上这个多的位置的值oldCap.
+</div>
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+/**
+ * 扩容
+ * @return
+ */
+final Node<K,V>[] resize() {
+    // 旧table
+    Node<K,V>[] oldTab = table;
+    // 旧的table长度
+    int oldCap = (oldTab == null) ? 0 : oldTab.length;
+    // 旧的阈值
+    int oldThr = threshold;
+    int newCap, newThr = 0;
+    //  证明就table,已经被初始化了
+    if (oldCap > 0) {
+        // 如果旧的table大于做大值,阈值就设置为Internet的最大值,返回
+        if (oldCap >= MAXIMUM_CAPACITY) {
+            threshold = Integer.MAX_VALUE;
+            return oldTab;
+        }
+        // 给newCap赋值 newCap = oldCap << 1 (* 2^1) < MAXIMUM_CAPACITY(1 << 30)
+        // oldCap >= 16 证明已经初始化过了,现在是扩容(假如oldCap就是16)
+        // 新阈值 newThr = (oldThr = threshold) = 12 << 1(12 * 2^1)
+        else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&
+                oldCap >= DEFAULT_INITIAL_CAPACITY)
+            newThr = oldThr << 1; // double threshold // 新的阈值
+    }
+    // 这种情况是table还没有初始化
+    // oldThr >0 是因为在有参构造里面会把cap赋值给threshold
+    else if (oldThr > 0) // initial capacity was placed in threshold
+        // 容量就是oldThr
+        newCap = oldThr;
+    // 无参构造,容量和阈值都使用默认
+    else {               // zero initial threshold signifies using defaults
+        newCap = DEFAULT_INITIAL_CAPACITY;
+        newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);
+    }
+    // newThr=0证明使用的是有参构造,容量有值,阈值没有值
+    // 所以初始化阈值
+    if (newThr == 0) {
+        float ft = (float)newCap * loadFactor;
+        newThr = (newCap < MAXIMUM_CAPACITY && ft < (float)MAXIMUM_CAPACITY ?
+                (int)ft : Integer.MAX_VALUE);
     }
 
-    return null;
+    /** 上面属于table参数准备部分,分为初始化或者扩容 */
+
+    // 新的阈值
+    threshold = newThr;
+    // 创建新的table
+    @SuppressWarnings({"rawtypes","unchecked"})
+    Node<K,V>[] newTab = (Node<K,V>[])new Node[newCap];
+    table = newTab;
+    if (oldTab != null) {
+        // 开始遍历旧的table,进行数据迁移
+        for (int j = 0; j < oldCap; ++j) {
+            Node<K,V> e;
+            if ((e = oldTab[j]) != null) {
+                oldTab[j] = null; // 释放内存地址
+                if (e.next == null) // 表示只有一个元素
+                    newTab[e.hash & (newCap - 1)] = e;
+                else if (e instanceof TreeNode) // 如果是树结构,调用树结构的方法
+                    ((TreeNode<K,V>)e).split(this, newTab, j, oldCap);
+                else { // preserve order
+                    // 链表结构的数据 lo 表示位置不变 hi表示位置是原来的位置+oldCap
+                    // 是通过(e.hash & oldCap) == 0 这句话来判断的
+                    Node<K,V> loHead = null, loTail = null;
+                    Node<K,V> hiHead = null, hiTail = null;
+                    Node<K,V> next;
+                    do {
+                        next = e.next;
+                       // 解释在上面的图片
+                        if ((e.hash & oldCap) == 0) {
+                            if (loTail == null) // 第一次循环 tail 为null,所以头和尾都是 e
+                                loHead = e;  // 头部是当前的e
+                            else             // 接下来的循环tail不为null
+                                loTail.next = e; // loTail 是上一次满足if的e
+                                                 // e 是这一次满足if的e
+                                                 // 所以loTail.next = e的目的就是,上一次满足if的e指向下一次满足if的e
+                                                 // 代码就是loTail.next = e
+                            loTail = e;  // 每次循环尾部就是当前节点
+                        }
+                        else {
+                            if (hiTail == null)
+                                hiHead = e;
+                            else
+                                hiTail.next = e;
+                            hiTail = e;
+                        }
+                    } while ((e = next) != null);
+                    // 位置不变还是j
+                    if (loTail != null) {
+                        loTail.next = null; // 尾部节点的next设置为null
+                        newTab[j] = loHead; // 设置头结点指向table[j] (第一次循环时,head=tail,接下来循环给tail追加节点)
+                    }
+                    // 位置变化,是 j+oldCap
+                    if (hiTail != null) {
+                        hiTail.next = null; 
+                        newTab[j + oldCap] = hiHead;
+                    }
+                }
+            }
+        }
+    }
+    return newTab;
+}
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Entry 结构分析" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.5em;font-family:monospace;">
+                     <![CDATA[
+Entry 是 hashMap 中封装 key-value 键值对的，主要包括如下属性
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+static class Entry<K,V> implements Map.Entry<K,V> {
+
+    final K key;      // map 中 key 值，可以为 null。
+    V value;          // map 中的 value 值，可以为 null。
+    Entry<K,V> next;  // 链表引用，防止 key 值不同，hash 值相同。
+    int hash;         // 每个 key 的 hash 值
+
+    // 构造函数
+    Entry(int h, K k, V v, Entry<K,V> n) {
+        value = v;
+        next = n;
+        key = k;
+        hash = h;
+    }
+
+    public final K getKey() {
+        return key;
+    }
+
+    public final V getValue() {
+        return value;
+    }
+    
+    // 同一个 key 时，新值替换旧值，返回旧值
+    public final V setValue(V newValue) {
+        V oldValue = value;
+        value = newValue;
+        return oldValue;
+    }
+    
+    // key 值重写 equals 方法
+    public final boolean equals(Object o) {
+        if (!(o instanceof Map.Entry))
+            return false;
+        Map.Entry e = (Map.Entry)o;
+        Object k1 = getKey();
+        Object k2 = e.getKey();
+        if (k1 == k2 || (k1 != null && k1.equals(k2))) {
+            Object v1 = getValue();
+            Object v2 = e.getValue();
+            if (v1 == v2 || (v1 != null && v1.equals(v2)))
+                return true;
+        }
+        return false;
+    }
+    
+    // 重写 hashCode 值
+    public final int hashCode() {
+        return Objects.hashCode(getKey()) ^ Objects.hashCode(getValue());
+    }
+
+    public final String toString() {
+        return getKey() + "=" + getValue();
+    }
+    
+    // ......
+
+}
+]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="html" title="HashMap 属性分析" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.5em;font-family:monospace;">
+                     <![CDATA[
+HashMap 属性分析
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.5em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+public class HashMap<K,V> extends AbstractMap<K,V> implements Map<K,V>, Cloneable, Serializable
+{
+ 
+    /**
+     * 默认情况下，hashmap 大小为 16.即 1<<4 就是1乘以2的4次幂 =16
+     */
+    static final int DEFAULT_INITIAL_CAPACITY = 1 << 4; // aka 16
+ 
+    /**
+     * hashMap 的最大值
+     */
+    static final int MAXIMUM_CAPACITY = 1 << 30;
+ 
+    /**
+     * 默认加载加载因子，即使用空间达到总空间的 0.75 时，需要扩容。
+     */
+    static final float DEFAULT_LOAD_FACTOR = 0.75f;
+ 
+    /**
+     * 声明 hashmap 一个空数组。
+     */
+    static final Entry<?,?>[] EMPTY_TABLE = {};
+ 
+    /**
+     * 最开始时，hashmap 是一个空数组。
+     */
+    transient Entry<K,V>[] table = (Entry<K,V>[]) EMPTY_TABLE;
+ 
+    /**
+     * map 的元素的个数
+     */
+    transient int size;
+ 
+    /*
+     * hashmap 的实际存储空间大小。这个空间是 "总空间*加载因子" 得出的大小。
+     * 比如默认是16，加载因子是 0.74。则 threshold 就是12。
+     */
+    int threshold;
+ 
+    /**
+     * 加载因子，即使用空间达到总空间的0.75时，需要扩容。
+     */
+    final float loadFactor;
+ 
+    /**
+     *
+     */
+    transient int modCount;
+ 
+    /**
+     *  threshold 这个值的最大值就是 Integer.MAX_VALUE
+     */
+    static final int ALTERNATIVE_HASHING_THRESHOLD_DEFAULT = Integer.MAX_VALUE;
+    
+    // ......
 
 }
 ]]>
@@ -462,7 +822,7 @@ public V get(Object paramObject) {
                      <![CDATA[
 
 <ul style="margin-left: 2em;list-style-type: decimal;margin-top: .3em;">
-    <li style="margin-bottom:.3em;">初始容量和加载因子。默认初始容量是16，加载因子是0.75。容量是哈希表中桶(Entry数组)的数量，初始容量只是哈希表在创建时的容量。加载因子是哈希表在其容量自动增加之前可以达到多满的一种尺度。<b>当哈希表中的条目数超出了加载因子与当前容量的乘积时，通过调用rehash 方法将容量翻倍。</b></li>
+    <li style="margin-bottom:.3em;">初始容量和加载因子。默认初始容量是16，加载因子是0.75。容量是哈希表中桶(Entry数组)的数量，初始容量只是哈希表在创建时的容量。加载因子是哈希表在其容量自动增加之前可以达到多满的一种尺度。<b style="color:blue;">当哈希表中的条目数超出了加载因子与当前容量的乘积时，通过调用rehash 方法将容量翻倍。</b></li>
     <li style="margin-bottom:.3em;">加载因子过高虽然减少了空间开销，但同时也增加了查询成本<b style="color:red;">（加载因子是表示Hsah表中元素的填满的程度.若:加载因子越大,填满的元素越多,好处是,空间利用率高了,但:冲突的机会加大了.反之,加载因子越小,填满的元素越少,好处是:冲突的机会减小了,但:空间浪费多了）</b>。在设置初始容量时应该考虑到映射中所需的条目数及其加载因子，以便最大限度地降低 rehash 操作次数。如果初始容量大于最大条目数除以加载因子(实际上就是最大条目数小于初始容量*加载因子)，则不会发生 rehash 操作。</li>
     <li style="margin-bottom:.3em;">HashMap 存放的元素越来越多，到达临界值 (阀值)threshold 时，就要对 Entry 数组扩容，这是 Java 集合类框架最大的魅力，<b style="color:green;">HashMap 在扩容时，新数组的容量将是原来的2倍，由于容量发生变化，原有的每个元素需要重新计算 bucketIndex，再存放到新数组中去，也就是所谓的 rehash</b>。<b>HashMap 默认初始容量16，加载因子0.75，也就是说<b style="color:blue;">最多能放16*0.75=12个元素，当put第13个时，HashMap 将发生 rehash</b>，rehash 的一系列处理比较影响性能，所以当我们需要向 HashMap 存放较多元素时，最好指定合适的初始容量和加载因子，否则 HashMap 默认只能存12个元素，将会发生多次 rehash 操作。</b></li>
 </ul>
@@ -525,7 +885,7 @@ HashSet 扩展了 HashMap, 所以底层还是用到 map 存储，存储实现同
     <c:desc>
       <c:desc1> <![CDATA[
 <div style="line-height: 1.625em;">
-fail-fast 机制，即快速失败机制，是java集合(Collection) 中的一种错误检测机制。当在迭代集合的过程中该集合在结构上发生改变的时候，就有可能会发生fail-fast，即抛出ConcurrentModificationException异常。fail-fast 机制并不保证在不同步的修改下一定会抛出异常，它只是尽最大努力去抛出，所以这种机制一般仅用于检测 bug。
+fail-fast 机制，即快速失败机制，是 java 集合(Collection) 中的一种错误检测机制。当在迭代集合的过程中该集合在结构上发生改变的时候，就有可能会发生 fail-fast，即抛出 ConcurrentModificationException 异常。fail-fast 机制并不保证在不同步的修改下一定会抛出异常，它只是尽最大努力去抛出，所以这种机制一般仅用于检测 bug。
 </div>
 <div style="line-height: 1.625em;margin-top:.5em;">
 在我们常见的 java 集合中就可能出现 fail-fast 机制,比如 ArrayList，HashMap。在多线程和单线程环境下都有可能出现快速失败。
@@ -791,6 +1151,586 @@ public static void main(String[] args) {
       </c:comment1>
     </c:comment>
   </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[JDK1.8 中的 HashMap 的红黑树]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="为什么要引入红黑数（特殊的平衡二叉树）数据结构" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>由于在 JDK1.7 之前，ＨashMap 的数据结构为：数组 + 链表。数组相当于日常中用到的数据结构 Array. 用来确定 key-value 对所存储的位置。那么为什么又有链表结构？这个要从 HashMap 散列值生成来讲起。这个具体细节可参考相关文档即可。如果按照 Ｈash 值，通过 Hash 函数来确认桶位，会存在一个问题，就是 hash 冲突的问题，也就是相同的 key 可能会产生一样的 hash 值。</div>
+
+<div style="margin-top:.625em;">
+所以引入了链表来存储 hash 值一样的 key-value. 如果按照链表的方式存储，随着节点的增加数据会越来越多，这会导致<b style="color:red;">查询节点的时间复杂度会逐渐增加，平均时间复杂度Ｏ(n)</b>。 为了提高查询效率，故在 JDK１.8 中引入<b style="color:red;">改进了的方法红黑树。此数据结构的平均查询效率为Ｏ(long n)。</b><b style="color:green;">当链表节点长度超过８时，将链表转换为二叉树。</b></div>
+
+
+<img width="550px" src="/images/java/red-black-tree.jpg" />
+
+]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="html" title="红黑树的特性" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+
+        <ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+            <li><b>什么时红黑树:</b> 红黑树（Red Black Tree）是一种自平衡二叉查找树，是在计算机科学中用到的一种数据结构，典型的用途是实现关联数组。红黑树和AVL树类似，都是在进行插入和删除操作时通过特定操作保持二叉查找树的平衡，从而获得较高的查找性能。它虽然是复杂的，但它的最坏情况运行时间也是非常良好的，并且在实践中是高效的: <b style="color:red;">它可以在O(log n)时间内做查找，插入和删除</b>，这里的 n 是树中元素的数目。</li>
+            <li><b>红黑树特点:</b>
+<ul style="margin-left: 2em;list-style-type: upper-roman;color:lightseagreen;margin-top: .3em;">
+<li>性质1: 节点是红色或黑色。</li>
+<li>性质2: 根节点是黑色。</li>
+<li>性质3: 每个叶节点（NIL节点，空节点）是黑色的。</li>
+<li>性质4: 每个红色节点的两个子节点都是黑色。(从每个叶子到根的所有路径上不能有两个连续的红色节点)</li>
+<li>性质5: 从任一节点到其每个叶子的所有路径都包含相同数目的黑色节点。</li>
+</ul>
+</li>
+        </ul>
+
+
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+//数据结构
+static final class TreeNode<K,V> extends LinkedHashMap.Entry<K,V> {
+    TreeNode<K,V> parent;  // red-black tree links
+    TreeNode<K,V> left;
+    TreeNode<K,V> right;
+    TreeNode<K,V> prev;    // needed to unlink next upon deletion
+    boolean red;　//红黑节点标识
+    TreeNode(int hash, K key, V val, Node<K,V> next) {
+    super(hash, key, val, next);
+}
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="HashMap 引入红黑树时做了哪些改造" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+// 当链表节点长度超过８时，将链表转换为二叉树。
+final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
+                   boolean evict) {
+
+    Node<K,V>[] tab; 
+    Node<K,V> p; 
+    int n, i;
+
+    if ((tab = table) == null || (n = tab.length) == 0) {
+        n = (tab = resize()).length;
+    }
+    
+    if ((p = tab[i = (n - 1) & hash]) == null) {
+        tab[i] = newNode(hash, key, value, null);
+    } else {
+        
+        Node<K,V> e; K k;
+
+        if (p.hash == hash && ((k = p.key) == key || (key != null && key.equals(k)))) {
+            e = p;
+        } else if (p instanceof TreeNode) {
+            e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
+        } else {
+
+            for (int binCount = 0; ; ++binCount) {
+        
+                if ((e = p.next) == null) {
+        
+                    // 先将新节点插入到　p.next
+                    p.next = newNode(hash, key, value, null);
+        
+                    //　如果长度链表长度超过８，则转换为二叉树
+                    if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
+
+                        /**
+                         * hash 是需要转化二叉树的 hash 值
+                         */
+                        treeifyBin(tab, hash);
+                    break;
+                }
+
+                // 存在hash和key都一样的情况，则说明已经存在。直接跳出循环
+                if (e.hash == hash && ((k = e.key) == key || (key != null && key.equals(k))))
+                    break;
+                
+                // 继续下一次循环
+                p = e;
+            }
+        }
+
+        if (e != null) { 
+            // existing mapping for key
+            V oldValue = e.value;
+            if (!onlyIfAbsent || oldValue == null)
+                e.value = value;
+            afterNodeAccess(e);
+            return oldValue;
+        }
+
+    }
+
+    ++modCount;
+
+    if (++size > threshold)
+        resize();
+    
+    afterNodeInsertion(evict);
+    
+    return null;
+
+}
+]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="html" title="红黑树的具体实现方式" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>在JDK1.8 HashMap中，转换为红黑树大致分为三个步骤。</div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+    <li>第一阶段：将链表转化为二叉树</li>
+    <li>第二阶段：验证是否满足红黑树的五大特征</li>
+    <li>第三阶段：对二叉树进行左右旋转操作</li>
+</ul>
+
+]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="" title="将链表转化为二叉树" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+final void treeifyBin(Node<K,V>[] tab, int hash) {
+
+    int n, index; Node<K,V> e;
+
+    if (tab == null || (n = tab.length) < MIN_TREEIFY_CAPACITY) {
+        // 重新计算 hash段位，及table的索引位，第一个节点
+        resize();
+    } else if ((e = tab[index = (n - 1) & hash]) != null) {
+
+        /************　双向链表　start ***************/
+        //　hd头节点, tl尾节点
+        TreeNode<K,V> hd = null, tl = null;
+        do {
+            // 循环所有节点
+            TreeNode<K,V> p = replacementTreeNode(e, null);
+            if (tl == null)
+                hd = p;
+            else {
+                p.prev = tl;
+                tl.next = p;
+            }
+            tl = p;
+        } while ((e = e.next) != null);// 循环下一个节点
+        /************　双向链表　end ***************/
+
+
+        // 前面仅仅转换为双向链表，treeify 才是转换红黑树的处理方法入口　
+        // 第一个节点赋值为头节点,也就是根节点
+        if ((tab[index] = hd) != null)
+            // 将二叉树转换为红黑树
+            hd.treeify(tab);
+    }
+
+}
+
+]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="" title="验证是否满足红黑树的五大特征" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+/**
+ * 调用这个方法之前　也就是一个双向链表
+ * 初始进入值为　this 头节点
+ * 将双向链表转换为红黑树
+ * 目标：查询　root　节点
+ * @param tab
+ */
+final void treeify(Node<K,V>[] tab) {
+
+    TreeNode<K,V> root = null;//root节点
+
+    for (TreeNode<K,V> x = this, next; x != null; x = next) {
+
+        next = (TreeNode<K,V>)x.next; //next　下一个节点
+        x.left = x.right = null;//设置左右节点为空
+
+        if (root == null) {//首次循环　root　== null
+            x.parent = null; // 将根节点的父节点设置位空
+            x.red = false; // 将根节点设置为 black
+            root = x; //将x 设置为根节点
+        } else {
+            // 非根节点
+            K k = x.key;//　获取当前循环节点ｋｅy
+            int h = x.hash;// 获取当前节点ｈａｓｈ
+            Class<?> kc = null;
+
+            // 从根节点开始验证
+            for (TreeNode<K,V> p = root;;) {
+                int dir, ph;
+                K pk = p.key;// 每个节点的ｋｅｙ
+                if ((ph = p.hash) > h) //每个节点的ｈａｓh 与　外层循环的ｘ.hash做比较
+                    dir = -1;// <0 ,沿左路径查找　-１
+                else if (ph < h)// >0, 沿右路径查找　１
+                    dir = 1;
+
+                // 如果存在比较对象，则根据比较对象定义的comparable进行比较
+                // 比较之后返回查询节点路径（左或右）
+                else if ((kc == null &&
+                        (kc = comparableClassFor(k)) == null) ||
+                        (dir = compareComparables(kc, k, pk)) == 0)
+                    dir = tieBreakOrder(k, pk);
+
+                // p设置位ｘ的父节点　xp
+                TreeNode<K,V> xp = p;
+
+                //　如果父节点的左节点或右节点为空时，才进行插入操作
+                if ((p = (dir <= 0) ? p.left : p.right) == null) {
+                    // 将px设置为ｘ的父节点
+                    x.parent = xp;
+                    if (dir <= 0)
+                        xp.left = x;
+                    else
+                        xp.right = x;
+                    // 将二叉树转换位红黑树－正式转换红黑树
+                    root = balanceInsertion(root, x);
+                    break;
+                }
+            }
+        }
+    }
+
+    moveRootToFront(tab, root);
+
+}
+]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="" title="对二叉树进行左右旋转操作" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+/**
+ * 转换二叉树为红黑树
+ * @param root　根节点
+ * @param x　执行的节点
+ * @param <K>
+ * @param <V>
+ * @return
+ */
+static <K,V> TreeNode<K,V> balanceInsertion(TreeNode<K,V> root,
+                                            TreeNode<K,V> x) {
+    // 默认ｘ节点为红色节点
+    x.red = true;
+
+    /**
+     * xp: 　 x的父节点
+     * xpp: 　x父节点的父节点
+     * xppl:　x父节点的父节点左子节点
+     * xppr:　x父节点的父节点右子节点
+     */
+    for (TreeNode<K,V> xp, xpp, xppl, xppr;;) {
+
+        // xp = x.parent
+        // 如果x存在父节点，则说明目前只有一个节点,即root.根据
+        // 红黑树的五大特征，根节点只能为黑色节点
+        if ((xp = x.parent) == null) {
+            x.red = false;
+            return x;
+        }
+
+        else if (!xp.red || (xpp = xp.parent) == null) {
+            // xpp = xp.parent
+            // 直接查询的是根节点
+            return root;
+        }
+
+        // xppl = xpp.left
+        // x的父节点时左节点时
+        if (xp == (xppl = xpp.left)) {
+
+            // 验证是否需要旋转
+            // xppr = xpp.right 存在右节点　且　右节点为红色
+            if ((xppr = xpp.right) != null && xppr.red) {
+                xppr.red = false; // xppr　设置位ｂlack
+                xp.red = false; // xp　设置位ｂlack
+                xpp.red = true; // xpp　设置位red
+                x = xpp;// 将x赋值为父节点的父节点
+            } else {
+                if (x == xp.right) {
+
+                    // 左旋转
+                    root = rotateLeft(root, x = xp);
+                    xpp = (xp = x.parent) == null ? null : xp.parent;
+                }
+                if (xp != null) {
+                    xp.red = false;
+                    if (xpp != null) {
+                        xpp.red = true;
+
+                        // 右旋转
+                        root = rotateRight(root, xpp);
+                    }
+                }
+            }
+        } else {
+            // x的父节点右节点时
+            // 验证是否需要旋转
+            if (xppl != null && xppl.red) {
+                xppl.red = false;
+                xp.red = false;
+                xpp.red = true;
+                x = xpp;
+            } else {
+                if (x == xp.left) {
+                    // 右旋转
+                    root = rotateRight(root, x = xp);
+                    xpp = (xp = x.parent) == null ? null : xp.parent;
+                }
+
+                if (xp != null) {
+                    xp.red = false;
+                    if (xpp != null) {
+                        xpp.red = true;
+
+                        // 左旋转
+                        root = rotateLeft(root, xpp);
+                    }
+                }
+            }
+        }
+    }
+}
+]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="" title="左旋转" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+/**
+ * 左旋转
+ * @param root
+ * @param p
+ * @param <K>
+ * @param <V>
+ * @return
+ */
+static <K,V> TreeNode<K,V> rotateLeft(TreeNode<K,V> root,
+                                      TreeNode<K,V> p) {
+    TreeNode<K,V> r, pp, rl;
+    if (p != null && (r = p.right) != null) {
+        if ((rl = p.right = r.left) != null)
+            rl.parent = p;
+        if ((pp = r.parent = p.parent) == null)
+            (root = r).red = false;
+        else if (pp.left == p)
+            pp.left = r;
+        else
+            pp.right = r;
+        r.left = p;
+        p.parent = r;
+    }
+    return root;
+}
+]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="" title="右旋转" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+/**
+ * 右旋转
+ * @param root
+ * @param p
+ * @param <K>
+ * @param <V>
+ * @return
+ */
+static <K,V> TreeNode<K,V> rotateRight(TreeNode<K,V> root,
+
+                                       TreeNode<K,V> p) {
+
+    // l: p的左节点 　pp:p的父节点　lr:左右节点
+    TreeNode<K,V> l, pp, lr;
+
+    // 传入参数
+    // root: 默认调用此方法前指定的root节点
+    // p: root的父节点
+    if (p != null && (l = p.left) != null) {
+
+        if ((lr = p.left = l.right) != null)
+            lr.parent = p;
+
+        // 判断p的父节点是否为空
+        if ((pp = l.parent = p.parent) == null)
+            // 调整root的值
+            (root = l).red = false;
+
+
+        else if (pp.right == p)
+            pp.right = l;
+        else
+            pp.left = l;
+
+        //　将p调整为　root 节点的右节点
+        l.right = p;
+
+        //将l调整为p的parent
+        p.parent = l;
+    }
+
+    return root;
+}
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[Java中的<< 和 >> 和 >>> 详解]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+      ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div style="line-height: 1.625em;font-size:2em;">
+<b style="color:red;"><<</b> 表示左移移，不分正负数，低位补0；　
+</div>
+<pre>
+注：以下数据类型默认为byte-8位 
+
+左移时不管正负，低位补0
+
+正数：<b style="color:green;font-weight:blue;font-size:1.3em;">r = 20 << 2</b>
+　　20的二进制补码: 0001 0100
+　　向左移动两位后: 0101 0000
+　　　　   　结果: r = 80
+
+负数：<b style="color:green;font-weight:blue;font-size:1.3em;">r = -20 << 2</b>
+ -20 的二进制原码: 1001 0100
+ -20 的二进制反码: 1110 1011
+ -20 的二进制补码: 1110 1100
+左移两位后的补码: 1011 0000
+　 　　　　　反码: 1010 1111
+　     　　　原码: 1101 0000
+　　　　　　　结果: r = -80
+</pre>
+
+
+
+<div style="line-height: 1.625em;font-size:2em;margin-top:1em;">
+<b style="color:red;">>></b> 表示右移，如果该数为正，则高位补0，若为负数，则高位补1；
+</div>
+<pre>
+注：以下数据类型默认为byte-8位
+
+正数：<b style="color:green;font-weight:blue;font-size:1.3em;">r = 20 >> 2</b>
+　　   20的二进制补码：0001 0100
+　　   向右移动两位后：0000 0101
+　　　　   　　　结果：r = 5
+
+负数：<b style="color:green;font-weight:blue;font-size:1.3em;">r = -20 >> 2</b>
+　　-20 的二进制原码 ：1001 0100
+　　-20 的二进制反码 ：1110 1011
+　　-20 的二进制补码 ：1110 1100
+　　  右移两位后的补码：1111 1011 
+　　　　　　　　  反码：1111 1010
+　　　　　　　　  原码：1000 0101
+　　　　　　　　  结果：r = -5
+</pre>
+
+
+
+<div style="line-height: 1.625em;font-size:2em;margin-top:1em;">
+<b style="color:red;">>>></b> 表示无符号右移，也叫逻辑右移，
+<br />即若该数为正，则高位补0，而若该数为负数，则右移后高位同样补0
+</div>
+<pre>
+
+正数：　<b style="color:green;font-weight:blue;font-size:1.3em;">r = 20 >>> 2</b>
+　　　　的结果与 r = 20 >> 2 相同；
+
+负数：　<b style="color:green;font-weight:blue;font-size:1.3em;">r = -20 >>> 2</b>
+注：以下数据类型默认为 int 32位
+　　-20源码：10000000 00000000 00000000 00010100
+　　　　反码：11111111 11111111 11111111 11101011
+　　　　补码：11111111 11111111 11111111 11101100
+　　　　右移：00111111 11111111 11111111 11111011
+　　　　结果：r = 1073741819
+</pre>
+
+]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
 
 
 
