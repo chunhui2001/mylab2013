@@ -2,35 +2,79 @@
 <c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
   <c:abstract>
     <![CDATA[
-<div style="margin-bottom:.5em;">
 
-</div>
-<div style="margin-bottom:.5em;">
+<h4>分布式环境的各种问题</h4>
 
-</div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+    <li>并发性问题 当多个节点并发操作共享资源的时候，怎么准确并且高效的协调分布式并发操作</li>
+    <li>时序性问题 很难判断事件的发生先后问题。缺乏一个全局时钟序列的控制。软状态: 允许分布式中出现中间状态，而且中间状态不影响系统的可用性；比如springCloud的熔断；</li>
+    <li>高可用性问题 由于分布式系统，故障经常发生。</li>
+    <li>通信异常问题 一次网络通信的延时大概在0.1--1ms之间。如何解决消息丢失，消息延迟问题</li>
+    <li>数据一致性问题 局部小集群完成了本来需要完整系统才能完成的问题。（脑裂），如何保证数据一致性问题</li>
+    <li>分布式事务问题 原来是数据库对并发访问的请求隔离，能互不干扰对方。</li>
+</ul>
+
 ]]>
   </c:abstract>
 
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title><![CDATA[线性表、数组]]></c:title>
+    <c:title><![CDATA[Base 理论]]></c:title>
     <c:desc>
       <c:desc1> <![CDATA[
        
       ]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="html" title="线性表" id="sourceContent1" 
+    <c:sourceContent type="html" title="" id="sourceContent1" 
                      style="background-color:white;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
                      <![CDATA[
 <div>
-线性表是最基本、最简单、也是最常用的一种数据结构。线性表中数据元素之间的关系是一对一的关系，即除了第一个和最后一个数据元素之外，其它数据元素都是首尾相接的。线性表有两种存储方式：
+  大致可分为：<b>基本可用(Bascially available)、软状态(Soft state)、最终一致性(Eventually consistent)</b>;
 </div>
-<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
-<li>一种是顺序存储结构</li>
-<li>另一种是链式存储结构</li>
+
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;color:blue;">
+    <li><b>基本可用(B)</b>: 在分布式系统中，允许损失部分可用性；比如服务降级，页面降级等；</li>
+    <li><b>软状态(S)</b>: 允许分布式中出现中间状态，而且中间状态不影响系统的可用性；比如springCloud的熔断；</li>
+    <li><b>最终一致性(E)</b>: 经过一段时间数据达成一致；比如项目中一些报表的统计，只在一段时间才会查看的数据；</li>
 </ul>
+
+<div style="margin-top:.625em;">Base 理论是对 CAP 中一致性和可用性权衡的结果。无法做到强一致性（Strong consistency）采用适当的方式来使系统达到最终一致性（Eventual consistency）。</div>
+<div style="margin-top:.625em;">什么是基本可用呢？
+  <br />假设系统，出现了不可预知的故障，但还是能用，相比较正常的系统而言：
+响应时间上的损失：正常情况下的搜索引擎 0.5 秒即返回给用户结果，而基本可用的搜索引擎可以在 1 秒作用返回结果。
+功能上的损失：在一个电商网站上，正常情况下，用户可以顺利完成每一笔订单，但是到了大促期间，为了保护购物系统的稳定性，部分消费者可能会被引导到一个降级页面。</div>
+
+<div style="margin-top:.625em;">什么是软状态呢？<br />
+相对于原子性而言，要求多个节点的数据副本都是一致的，这是一种 “硬状态”。
+软状态指的是：允许系统中的数据存在中间状态，并认为该状态不影响系统的整体可用性，即允许系统在多个不同节点的数据副本存在数据延时。</div>
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[Quorum机制]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+       
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
 ]]>
     </c:sourceContent>
 
