@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+
+<div>Zookeeper 分布式服务框架是 Apache Hadoop 的一个子项目，它主要是用来解决分布式应用中经常遇到的一些数据管理问题，如：统一命名服务、状态同步服务、集群管理、分布式应用配置项的管理等。
+</div>
+
+<div style="margin-top:.625em;font-weight: bold;color:red;">
+<b>ZooKeeper 没有采用 Paxos 协议，采用的是 ZAB(ZooKeeper Atomic Broadcast)</b>
+</div>
+]]>
+  </c:abstract>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+      ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+Zookeeper 分布式服务框架是 Apache Hadoop 的一个子项目，它主要是用来解决分布式应用中经常遇到的一些数据管理问题，如：统一命名服务、状态同步服务、集群管理、分布式应用配置项的管理等。
+</div>
+
+<div style="margin-top:.625em;">
+  简单的说，zookeeper=文件系统+通知机制。
+</div>
+
+<div style="margin-top:.625em;color:green;">
+<h4>Zookeeper 保证 CP</h4>
+</div>
+
+<div style="margin-top:.325em;">
+当向注册中心查询服务列表时，我们可以容忍注册中心返回的是几分钟以前的注册信息，但不能接受服务直接 down 掉不可用。也就是说，服务注册功能对可用性的要求要高于一致性。<b style="color:blue;">但是zk会出现这样一种情况，当 master 节点因为网络故障与其他节点失去联系时，剩余节点会重新进行 leader 选举。问题在于，选举 leader 的时间太长，30 ~ 120s, 且选举期间整个zk集群都是不可用的，这就导致在选举期间注册服务瘫痪。</b><b style="color:darkviolet;">在云部署的环境下，因网络问题使得zk集群失去 master 节点是较大概率会发生的事，虽然服务能够最终恢复，但是漫长的选举时间导致的注册长期不可用是不能容忍的。</b>
+</div>
+
+<div style="margin-top:.625em;color:green;">
+<h4>Eureka 保证 AP</h4>
+</div>
+
+<div style="margin-top:.325em;">
+鉴于 Zookeeper 的缺点, Eureka 在设计时就优先保证可用性。Eureka各个节点都是平等的，几个节点挂掉不会影响正常节点的工作，剩余的节点依然可以提供注册和查询服务。而Eureka的客户端在向某个Eureka注册或时如果发现连接失败，则会自动切换至其它节点，只要有一台Eureka还在，就能保证注册服务可用(保证可用性)，只不过<b style="color:red;">查到的信息可能不是最新的(不保证强一致性)</b>。<br />
+除此之外，Eureka还有一种自我保护机制，如果在15分钟内超过85%的节点都没有正常的心跳，那么Eureka就认为客户端与注册中心出现了网络故障，此时会出现以下几种情况：
+</div>
+
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top:.625em;">
+    <li>Eureka不再从注册列表中移除因为长时间没收到心跳而应该过期的服务</li>
+    <li>Eureka仍然能够接受新服务的注册和查询请求，但是不会被同步到其它节点上(即保证当前节点依然可用)</li>
+    <li>当网络稳定时，当前实例新的注册信息会被同步到其它节点中</li>
+</ul>
+]]>
+    </c:sourceContent>
+
+
+
+
+    <c:sourceContent type="html" title="Zookeeper 维护一个类似文件系统的数据结构" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<img width="350px" src="/images/cpa/zk.png" />
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="有四种类型的 znode" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+    <li><b>PERSISTENT-持久化目录节点</b> 客户端与zookeeper断开连接后，该节点依旧存在</li>
+    <li><b>PERSISTENT_SEQUENTIAL-持久化顺序编号目录节点 </b>客户端与 zookeeper 断开连接后，该节点依旧存在，只是Zookeeper给该节点名称进行顺序编号</li>
+    <li><b>EPHEMERAL-临时目录节点</b> 客户端与zookeeper断开连接后，该节点被删除</li>
+    <li><b>EPHEMERAL_SEQUENTIAL-临时顺序编号目录节点 </b>客户端与zookeeper断开连接后，该节点被删除，只是Zookeeper给该节点名称进行顺序编号</li>
+</ul>
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="分布式锁" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+有了 zookeeper 的一致性文件系统, 锁的问题变得容易, 锁服务可以分为两类: <br />
+▪▪ 1. 一个是保持独占 <br />
+▪▪ 2. 另一个是控制时序。
+</div>
+<div style="margin-top:.325em;">
+对于第一类，我们将 zookeeper 上的一个znode看作是一把锁，通过 createznode 的方式来实现。所有客户端都去创建 /distribute_lock 节点，最终成功创建的那个客户端也即拥有了这把锁。厕所有言：来也冲冲，去也冲冲，用完删除掉自己创建的distribute_lock 节点就释放出锁。
+</div>
+<div style="margin-top:.325em;">
+对于第二类， /distribute_lock 已经预先存在，所有客户端在它下面创建临时顺序编号目录节点，和选 master 一样，编号最小的获得锁，用完删除，依次方便。
+</div>
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="队列管理" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+▪▪ 1. 同步队列，当一个队列的成员都聚齐时，这个队列才可用，否则一直等待所有成员到达。
+</div>
+<div style="margin-top:.325em;">
+▪▪ 2. 队列按照 FIFO 方式进行入队和出队操作。
+</div>
+
+<div style="margin-top:.325em;">
+第一类，在约定目录下创建临时目录节点，监听节点数目是否是我们要求的数目。
+</div>
+
+<div style="margin-top:.325em;">
+第二类，和分布式锁服务中的控制时序场景基本原理一致，入列有编号，出列按编号。
+</div>
+
+]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
+        ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+</c:component>
