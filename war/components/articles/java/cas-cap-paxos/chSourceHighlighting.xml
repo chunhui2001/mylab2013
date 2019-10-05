@@ -19,6 +19,51 @@
 
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[CAP理论]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+       
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+<div>
+  一致性（C，Consistency）、可用性（A， Availability）、分区容忍性（P，Partition Tolerance）
+</div>
+
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;color:green;">
+    <li><b>一致性</b>指的是: 每次读取操作，都能读取到最新的一次写入。</li>
+    <li><b>可用性</b>指的是: 每次请求数据，都能及时的得到响应。但是并不要求，这个数据是最新一次写入。</li>
+    <li><b>分区容忍性</b>指的是: 节点node1 ,和节点node2，本来是一致的，但是由于网络故障，或者某个节点宕机，导致两边的节点，在指定时间内无法同步，数据没有一致，造成分区。所谓分区，就比如写数据，根据hash，分库分表到不同的地方。那两边的数据不一致。</li>
+</ul>
+
+<div style="margin-top:.625em;">
+  <img width="100%" src="/images/cpa/cap.webp" />
+</div>
+
+<ul style="margin-left:2em;list-style-type:decimal;margin-top:1em;color:green;">
+    <li>CA （放弃P）：将所有的数据放在一个节点。满足可用性和一致性；</li>
+    <li>AP （放弃C）：并不是代表放弃一致性，而是使用弱一致性来带表强一致性；<b style="color:red;">Eureka</b></li>
+    <li>CP （放弃A）：一旦系统出现故障，受影响的服务器需要等待一段时间，在恢复期间无法对外部提供帮助；<b style="color:red;">Zookeeper</b></li>
+</ul>
+
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
     <c:title><![CDATA[Base 理论]]></c:title>
     <c:desc>
       <c:desc1> <![CDATA[
@@ -74,6 +119,159 @@
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
                      <![CDATA[
+<div>先看一个极端的情况：<b style="color:red;">WARO机制</b><br />
+WARO(Write All Read one)是一种简单的副本控制协议，当Client请求向某副本写数据时(更新数据)，只有当所有的副本都更新成功之后，这次写操作才算成功，否则视为失败。
+</div>
+<div style="margin-top:.625em;">
+从这里可以看出两点：<br />
+<b>①写操作很脆弱，因为只要有一个副本更新失败，此次写操作就视为失败了。
+<br />②读操作很简单，因为，所有的副本更新成功，才视为更新成功，从而保证所有的副本一致。</b>
+<br />这样，只需要读任何一个副本上的数据即可。假设有N个副本，N-1个都宕机了，剩下的那个副本仍能提供读服务；但是只要有一个副本宕机了，写服务就不会成功。
+<b>WARO牺牲了更新服务的可用性，最大程度地增强了读服务的可用性。</b> <br />
+</div>
+<div style="margin-top:.625em;">
+而<b style="color:red;">Quorum机制</b>就是更新服务和读服务之间进行一个折衷。
+Quorum机制是“抽屉原理”的一个应用。
+<br />
+定义如下：<br />
+假设有N个副本，更新操作wi在W个副本中更新成功之后，才认为此次更新操作wi成功。称成功提交的更新操作对应的数据为:“成功提交的数据”。对于读操作而言，至少需要读R个副本才能读到此次更新的数据。其中，W+R>N ，即W和R有重叠。一般，W+R=N+1
+</div>
+<div style="margin-top:.625em;">
+  假设系统中有5个副本，W=3，R=3: <br />
+  ▪ 初始时数据为 <b>(V1，V1，V1，V1，V1）</b><br />
+  -- 成功提交的版本号为1, 当某次更新操作在3个副本上成功后，就认为此次更新操作成功。<br />
+  ▪ 数据变成 <b>(V2，V2，V2，V1，V1）</b><br />
+  -- 成功提交后，版本号变成2。<br />
+  因此，最多只需要读3个副本，一定能够读到V2(此次更新成功的数据)。而在后台，可对剩余的V1 同步到V2，而不需要让Client知道。
+<b style="color:blue;">Quorum机制就是只要读取N/2+1个节点的数据，就可以读取到最新更改的数据，只要写入N/2+1个副本，就算写成功了。</b>
+</div>
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[二段提交协议（2PC）]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+       
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  RDBMS 经常就这种机制，保证强一致性
+</div>
+<div style="margin-top:1em;">
+  <h4>投票阶段 &mdash; 提交事务请求</h4>
+  <ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+      <li>事物询问: 协调者向所有参与者发送事物内容，询问是否可以执行事物，等待响应。</li>
+      <li>执行事物: 个参与者执行事物，并且在各自的节点上保存事物的 redo 信息和 undo 信息</li>
+      <li>反馈响应: 如果成功执行事物，则反馈给协调者YES响应，如果事物执行失败，则反馈协调者NO 响应。</li>
+  </ul>
+  <p style="margin-top:.625em;">上述阶段类似于投票，失败的事物有一票否决权</p>
+</div>
+
+<div style="margin-top:1em;">
+  <h4>事物提交阶段 &mdash; 执行事务的提交</h4>
+  <ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+      <li>假如投票都通过，那么发起 commit 请求，所有参与者提交事物。并且反馈提交结果，ack信息，释放事物资源。</li>
+      <li>假如有个投票没有过，那么协调者发出 rollback 请求，反馈回滚结果，ack信息。事物事物资源，中断事物。</li>
+  </ul>
+</div>
+
+<div style="margin-top:1em;">
+  <h4>同步阻塞的优缺点</h4>
+  <ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+      <li>实现简单， 方便。</li>
+      <li>缺点： 同步阻塞，单点问题，脑裂，太保守。</li>
+  </ul>
+  <p style="margin-top:.625em;">
+    同步阻塞是最明显的问题，各个参与者的逻辑都处于阻塞状态。假如协调者挂掉了，那么参与者的事物将处于锁定状态，数据不一致。原因是，参与者都通过了第一阶段，但是提交commit请求的时候，只有部分参与者接受到(网络故障)，参与者挂掉的话，必须等待超时来判断是否要中断事物。
+  </p>
+  
+</div>
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[三段提交协议（3PC）]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+       can commit ,precommit ,do commit, 相当于将2PC第一步拆解称了两步进行操作
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+<div>
+  <h4>CanCommit阶段 &mdash; 是否提交</h4>
+  <ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+      <li>事务询问 协调者向参与者发送 CanCommit 请求。询问是否可以执行事务提交操作。然后等待参与者的响应。</li>
+      <li>响应反馈 参与者接到 CanCommit 请求之后。正常情况下，如果其自身认为可以顺利执行事务，则返回Yes响应，并进入预备状态，否则反馈No</li>
+  </ul>
+</div>
+
+
+<div style="margin-top:1em;">
+  <h4>PreCommit阶段 &mdash; 预先提交</h4>
+  <p style="margin-top: .3em;">假如协调者从所有的参与者获得的反馈都是Yes响应，那么就会执行事务的预执行。</p>
+  <ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+      <li>向参与者发送 PreCommit 请求，并进入 Prepared 阶段。</li>
+      <li>参与者执行事务操作，并将 undo 和 redo 信息记录到事务日志中。</li>
+      <li>响应反馈 如果参与者成功的执行了事务操作，则返回ACK响应，同时开始等待最终指令。</li>
+  </ul>
+  <p style="margin-top: .3em;">假如有任何一个参与者向协调者发送了No响应，或者等待超时之后，协调者都没有接到参与者的响应，那么就执行事务的中断。（协调者还在，但是参与者挂了，协调者等待参与者的响应ack信息，等待超时）</p>
+  <ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+      <li>发送中断请求 协调者向所有参与者发送 abort 请求。</li>
+      <li>中断事务 参与者收到来自协调者的 abort 请求之后 (或超时之后，仍未收到协调者的请求)，执行事务的中断。</li>
+  </ul>
+</div>
+
+
+<div style="margin-top:1em;">
+  <h4>doCommit阶段 &mdash; 提交（commit、rollback）</h4>
+  <p style="margin-top: .3em;">该阶段进行真正的事务提交，也可以分为以下两种情况。</p>
+  <p style="margin-top:1em;">▪▪ 执行提交</p>
+  <ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+      <li>发送提交请求 协调接收到参与者发送的ACK响应，那么他将从预提交状态进入到提交状态。并向所有参与者发送doCommit请求。</li>
+      <li>事务提交 参与者接收到doCommit请求之后，执行正式的事务提交。并在完成事务提交之后释放所有事务资源。</li>
+      <li>响应反馈 事务提交完之后，向协调者发送Ack响应。</li>
+      <li>完成事务 协调者接收到所有参与者的ack响应之后，完成事务。</li>
+  </ul>
+  <p style="margin-top:1em;">▪▪ 中断事务</p>
+  <ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+      <li>发送中断请求 协调者向所有参与者发送abort请求</li>
+      <li>事务回滚 参与者接收到abort请求之后，利用其在阶段二记录的undo信息来执行事务的回滚操作，并在完成回滚之后释放所有的事务资源。</li>
+      <li>反馈结果 参与者完成事务回滚之后，向协调者发送ACK消息</li>
+      <li>中断事务 协调者接收到参与者反馈的ACK消息之后，执行事务的中断。</li>
+  </ul>
+</div>
 
 ]]>
     </c:sourceContent>
@@ -87,6 +285,198 @@
 
 
 
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[2PC与3PC的区别]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+       
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+相对于2PC，3PC主要解决的单点故障问题，并减少阻塞，因为一旦参与者无法及时收到来自协调者的信息之后，他会默认执行commit。而不会一直持有事务资源并处于阻塞状态。但是这种机制也会导致数据一致性问题。因为: 由于网络原因，协调者发送的abort响应没有及时被参与者接收到，那么参与者在等待超时之后执行了commit操作。这样就和其他接到abort命令并执行回滚的参与者之间存在数据不一致的情况。
+
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[Paxos算法]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div>
+在 Paxos 算法面前，其他（包括2PC、3PC）都是渣渣，都是残次品。Google Chubby 的作者 Mike Burrows 说过这个世界上只有一种一致性算法，那就是 Paxos，其它的算法都是残次品。
+</div>
+
+<div style="margin-top:.625em;">
+  在一个分布式数据库系统中，如果各节点的初始状态一致，每个节点都执行相同的操作序列，那么他们最后能得到一个一致的状态。
+  Paxos 算法解决的就是保证每个节点执行相同的操作序列。
+</div>
+
+<div style="margin-top:.625em;">
+  Paxos 是能够基于一大堆完全不可靠的网络条件下却能可靠确定地实现共识一致性的算法。也就是说：<b style="color:red;">它允许一组不一定可靠的处理器（服务器）在某些条件得到满足情况下就能达成确定的安全的共识，如果条件不能满足也确保这组处理器（服务器）保持一致。</b>
+</div>
+
+<div style="margin-top:.625em;">
+  具体来说是这样：<b style="color:blue;">分布式系统中由于网络之间通讯可能会中断，虽然概率很低，但是没有100%完美的网络因此，依靠网络通讯的计算机之间要达成共识就比较困难。</b>
+</div>
+
+<div style="margin-top:.625em;">
+  Paxos算法是保证在分布式系统中写操作能够顺利进行，保证系统中大多数状态是一致的，没有机会看到不一致，因此，<b>Paxos算法的特点是一致性>可用性。</b>
+</div>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+<h4>三种角色</h4>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+    <li>proposer: 提交者（议案的提交者）；提交议案，提交批准议案；</li>
+    <li>Acceptor: 接受者（议案的接受者）；接受议案或者驳回议案，返回proposer相关内容</li>
+    <li>Learner: 学习者；如果产生议案，就学习议案；</li>
+</ul>
+
+
+<h4 style="margin-top:1em;">四个设定</h4>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+    <li>设定1：如果Acceptor没有接受议案，那么他必须接受第一个议案</li>
+    <li>设定2：每个议案比必须有一个编号，并且编号只能增长，不能重复。越往后越大。</li>
+    <li>设定3：接受编号大的议案，如果小于之前接受议案编号，那么不接受</li>
+    <li>设定4：议案有2种(提交的议案，批准的议案)</li>
+</ul>
+
+<div style="margin-top:.625em;">
+<img width="550px" src="/images/cpa/paxos.png" />
+</div>
+
+]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="Prepare阶段（决议提交）" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+    <li>Proposer希望议案V。首先发出Prepare请求至大多数Acceptor。Prepare请求内容为序列号K</li>
+    <li>Acceptor收到Prepare请求为编号K后，检查自己手里是否有处理过Prepare请求。</li>
+    <li>如果Acceptor没有接受过任何Prepare请求，那么用OK来回复Proposer，代表Acceptor必须接受收到的第一个议案（设定1）</li>
+    <li>否则，如果Acceptor之前接受过任何Prepare请求（如：MaxN），那么比较议案编号，如果K<MaxN，则用reject或者error回复Proposer</li>
+    <li>如果K>=MaxN，那么检查之前是否有批准的议案，如果没有则用OK来回复Proposer，并记录K</li>
+    <li>如果K>=MaxN，那么检查之前是否有批准的议案，如果有则回复批准的议案编号和议案内容（如：<AcceptN, AcceptV>， AcceptN为批准的议案编号，AcceptV为批准的议案内容）</li>
+</ul>
+]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="Accept阶段（批准阶段）" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+    <li>Proposer收到过半Acceptor发来的回复，回复都是OK，且没有附带任何批准过的议案编号和议案内容。那么Proposer继续提交批准请求，不过此时会连议案编号K和议案内容V一起提交（<K, V>这种数据形式）</li>
+    <li>Proposer收到过半Acceptor发来的回复，回复都是OK，且附带批准过的议案编号和议案内容（<pok，议案编号，议案内容>）。那么Proposer找到所有回复中超过半数的那个（假设为<pok，AcceptNx，AcceptVx>）作为提交批准请求（请求为<K，AcceptVx>）发送给Acceptor。</li>
+    <li>Proposer没有收到过半Acceptor发来的回复，则修改议案编号K为Kx，并将编号重新发送给Acceptors（重复Prepare阶段的过程）</li>
+    <li>Acceptor收到Proposer发来的Accept请求，如果编号K<MaxN则不回应或者reject。</li>
+    <li>Acceptor收到Proposer发来的Accept请求，如果编号K>=MaxN则批准该议案，并设置手里批准的议案为<K，接受议案的编号，接受议案的内容>，回复Proposer。</li>
+    <li>经过一段时间Proposer对比手里收到的Accept回复，如果超过半数，则结束流程（代表议案被批准），同时通知Leaner可以学习议案。</li>
+    <li>经过一段时间Proposer对比手里收到的Accept回复，如果未超过半数，则修改议案编号重新进入Prepare阶段。</li>
+</ul>
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[拜占庭将军]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div>
+拜占庭帝国就是5~15世纪的东罗马帝国，拜占庭即现在土耳其的伊斯坦布尔。我们可以想象，拜占庭军队有许多分支，驻扎在敌人城外，每一分支由各自的将军指挥。将军们智能靠通讯员进行通讯。在观察敌人以后，忠诚的将军们必须制订一个统一的行动计划——进攻或者撤退。然而，这些将军中有叛徒，他们不希望忠诚的将军们能达成一致，因而影响统一行动计划的制订与传播。
+</div>
+
+<div style="margin-top:.625em;">
+问题是：将军们必须有一个协议，使所有忠诚的将军们能够达成一致，而且少数几个叛徒不能使忠诚的将军们作出错误的计划——使有些将军进攻而另一些将军撤退。
+</div>
+
+<div style="margin-top:.625em;">
+如果这11位将军中有间谍呢? 假设有9位忠诚的将军，5位判断进攻，4位判断撤退，还有2个间谍恶意判断撤退，虽然结果是错误的撤退，但这种情况完全是允许的。因为这11位将军依然保持着状态一致性。
+</div>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+<ul style="margin-left: 1.5em;list-style-type: disc;">
+    <li>proposer：参谋1，参谋2</li>
+    <li>acceptor：将军1，将军2，将军3（决策者）</li>
+</ul>
+
+<div style="height:230px;">
+  <div></div>
+<img width="50%" style="float:left;height:100%;" src="/images/cpa/paxos-cap.png" />
+<img width="50%" style="float:left;height:100%;" src="/images/cpa/paxos-cap2.png" />
+<div style="clear:both;float:none;"></div>
+</div>
+
+
+
+<ul style="margin-left: 2em;list-style-type: decimal;margin-top:1em;">
+    <li>参谋1发起提议，派通信兵带信给3个将军，内容为（编号1）；</li>
+    <li>3个将军收到参谋1的提议，由于之前还没有保存任何编号，因此把（编号1）保存下来，避免遗忘；同时让通信兵带信回去，内容为（ok）；</li>
+    <li>参谋1收到至少2个将军的回复，再次派通信兵带信给3个将军，内容为（编号1，进攻时间1）；</li>
+    <li>3个将军收到参谋1的时间，把（编号1，进攻时间1）保存下来，避免遗忘；同时让通信兵带信回去，内容为（Accepted）；</li>
+    <li>参谋1收到至少2个将军的（Accepted）内容，确认进攻时间已经被大家接收；</li>
+    <li>参谋2发起提议，派通信兵带信给3个将军，内容为（编号2）；</li>
+    <li>3个将军收到参谋2的提议，由于（编号2）比（编号1）大，因此把（编号2）保存下来，避免遗忘；又由于之前已经接受参谋1的提议，因此让通信兵带信回去，内容为（编号1，进攻时间1）；</li>
+    <li>参谋2收到至少2个将军的回复，由于回复中带来了已接受的参谋1的提议内容，参谋2因此不再提出新的进攻时间，接受参谋1提出的时间；</li>
+</ul>
+
+
+
+
+
+]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 
 
 
