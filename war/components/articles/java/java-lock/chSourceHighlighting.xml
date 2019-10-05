@@ -8,6 +8,76 @@
   </c:abstract>
 
 
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[寄存器]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<h3>https://baijiahao.baidu.com/s?id=1590302037132894549</h3>
+<div style="line-height: 1.625em;">
+寄存器在汇编语言重占有很重要的的地位，首先必须了解两个知识点：寄存器和内存模型。
+</div>
+<div style="line-height: 1.625em;margin-top:.5em;">
+先来看寄存器。CPU 本身只负责运算，不负责储存数据。数据一般都储存在内存之中，CPU 要用的时候就去内存读写数据。但是，CPU 的运算速度远高于内存的读写速度，为了避免被拖慢，CPU 都自带一级缓存和二级缓存。基本上，CPU 缓存可以看作是读写速度较快的内存。
+</div>
+
+<div style="line-height: 1.625em;margin-top:.5em;">
+但是，CPU 缓存还是不够快，另外数据在缓存里面的地址是不固定的，CPU 每次读写都要寻址也会拖慢速度。因此，除了缓存之外，CPU 还自带了寄存器（register），用来储存最常用的数据。也就是说，那些最频繁读写的数据（比如循环变量），都会放在寄存器里面，CPU 优先读写寄存器，再由寄存器跟内存交换数据。
+</div>
+
+<div style="line-height: 1.625em;margin-top:.5em;">
+寄存器不依靠地址区分数据，而依靠名称。每一个寄存器都有自己的名称，我们告诉 CPU 去具体的哪一个寄存器拿数据，这样的速度是最快的。有人比喻寄存器是 CPU 的零级缓存。
+</div>
+
+<div style="line-height: 1.625em;margin-top:.5em;">
+我们常常看到 32位 CPU、64位 CPU 这样的名称，其实指的就是寄存器的大小。32 位 CPU 的寄存器大小就是4个字节。
+</div>
+      ]]></c:desc1>
+    </c:desc>
+
+
+
+    <c:sourceContent type="html" title="寄存器的种类" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>
+    早期的 x86 CPU 只有8个寄存器，而且每个都有不同的用途。现在的寄存器已经有100多个了，都变成通用寄存器，不特别指定用途了，但是早期寄存器的名字都被保存了下来。
+</div>
+
+
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+    <li>EAX</li>
+    <li>EBX</li>
+    <li>ECX</li>
+    <li>EDX</li>
+    <li>EDI</li>
+    <li>ESI</li>
+    <li>EBP</li>
+    <li>ESP</li>
+</ul>
+
+<div style="margin-top:1em;">
+上面这8个寄存器之中，前面七个都是通用的。ESP 寄存器有特定用途，保存当前 Stack 的地址（详见下一节）。
+</div>
+
+
+]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
+        ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
     <c:title><![CDATA[volatile]]></c:title>
     <c:desc>
@@ -572,7 +642,8 @@ public class Count {
         <div style="line-height: 1.625em;">
 CAS，在 Java 并发应用中通常指 CompareAndSwap 或 CompareAndSet，即比较并交换。
      </div>
-        <div style="line-height: 1.625em;margin-top:.5em;"></div>
+        <div style="line-height: 1.625em;margin-top:.5em;">
+解决多线程并行情况下使用锁造成性能损耗的一种机制，CAS操作包含三个操作数——内存位置（V）、预期原值（A）和新值(B)。如果内存位置的值与预期原值相匹配，那么处理器会自动将该位置值更新为新值。否则，处理器不做任何操作。无论哪种情况，它都会在CAS指令之前返回该位置的值。CAS有效地说明了“我认为位置V应该包含值A；如果包含该值，则将B放到这个位置；否则，不要更改该位置，只告诉我这个位置现在的值即可。</div>
       ]]></c:desc1>
     </c:desc>
 
@@ -707,6 +778,53 @@ CAS，在 Java 并发应用中通常指 CompareAndSwap 或 CompareAndSet，即�
       <c:comment1>
         <![CDATA[
 
+        ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[ConcurrentHashMap 的实现原理及使用]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        ConcurrentHashMap 使用的锁分段技术。首先将数据分成一段一段地存储，然后给每一段数据配一把锁，当一个线程占用锁访问其中一个段数据的时候，其他段的数据也能被其他线程访问。
+      ]]></c:desc1>
+    </c:desc>
+
+
+    <c:sourceContent type="" title="构造方法" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+public ConcurrentHashMap() {
+
+}
+
+public ConcurrentHashMap(int initialCapacity) {
+
+    if (initialCapacity < 0)
+        throw new IllegalArgumentException();
+
+    int cap = ((initialCapacity >= (MAXIMUM_CAPACITY >>> 1)) ?
+               MAXIMUM_CAPACITY :
+               tableSizeFor(initialCapacity + (initialCapacity >>> 1) + 1)); //MAXIMUM_CAPACITY = 1 << 30
+
+    this.sizeCtl = cap;//ConcurrentHashMap在构造函数中只会初始化sizeCtl值，并不会直接初始化table，而是延缓到第一次put操作。 
+}
+
+public ConcurrentHashMap(Map<? extends K, ? extends V> m) {
+    this.sizeCtl = DEFAULT_CAPACITY;//DEFAULT_CAPACITY = 16
+    putAll(m);
+}
+]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
         ]]>
       </c:comment1>
     </c:comment>
