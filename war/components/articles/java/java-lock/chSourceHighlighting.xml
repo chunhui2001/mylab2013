@@ -2,27 +2,319 @@
 <c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
   <c:abstract>
     <![CDATA[
+锁-是为了解决并发操作引起的脏读、数据不一致的问题。<br />
 本文简单介绍: 可重入锁、不可重入锁、安全锁、非安全锁
 ]]>
   </c:abstract>
 
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title><![CDATA[synchronized &mdash; 可重入锁]]></c:title>
+    <c:title><![CDATA[volatile]]></c:title>
     <c:desc>
       <c:desc1> <![CDATA[
-        <div style="line-height: 1.625em;">
-在调用含有锁的函数时，若相邻的调用都在同一个线程中，就不会阻塞，若相邻的调用不再同一个线程中，就会使其中一个线程执行阻塞等待操作。<br />
-如果锁具备可重入性，则称作为可重入锁。像 synchronized 和 ReentrantLock 都是可重入锁，可重入性在我看来实际上表明了锁的分配机制：基于线程的分配，而不是基于方法调用的分配。举个简单的例子，当一个线程执行到某个 synchronized 方法时，比如说 method1，而在 method1 中会调用另外一个 synchronized 方法 method2，此时线程不必重新去申请锁，而是可以直接执行方法 method2。
-     </div>
-        <div style="line-height: 1.625em;margin-top:.5em;"></div>
+<div style="line-height: 1.625em;">
+Java 编程语言允许线程访问共享变量， 为了确保共享变量能被准确和一致地更新，线程应该确保通过排他锁单独获得这个变量。Java 语言提供了 volatile，在某些情况下比锁要更加方便。
+</div>
+<div style="line-height: 1.625em;margin-top:.5em;">
+volatile 在多处理器开发中保证了共享变量的 “可见性”。<b style="color:red;">可见性的意思是当一个线程修改一个共享变量时，另外一个线程能读到这个修改的值。</b>
+</div>
+
+<div style="line-height: 1.625em;margin-top:.5em;">
+如果 volatile 变量修饰符使用恰当的话，它比 synchronized 的使用和执行成本更低，因为它不会引起线程上下文的切换和调度。
+</div>
       ]]></c:desc1>
     </c:desc>
 
 
 
-    <c:sourceContent type="" title="简单示例" id="sourceContent1" 
+    <c:sourceContent type="html" title="" id="sourceContent1" 
                      style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<img src="/images/java/volatile.jpg" />
+]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
+        ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[synchronized &mdash; 可重入锁]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="line-height: 1.625em;">
+    synchronized 通过锁机制实现同步。在 Java 中 synchronized 实现同步的基础是 Java 中的每一个对象都可以作为锁。
+    <br /> 
+    当一个线程试图访问同步代码块时，它首先必须得到锁，退出或抛出异常时必须释放锁。具体表现为以下3种形式: 
+</div>
+
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;color:red;">
+    <li>对于普通同步方法，锁是当前实例对象。</li>
+    <li>对于静态同步方法，锁是当前类的Class对象。</li>
+    <li>对于同步方法块，锁是Synchonized括号里配置的对象。</li>
+</ul>
+
+<div style="line-height: 1.625em;margin-top:.5em;">
+在调用含有锁的函数时，若相邻的调用都在同一个线程中，就不会阻塞，若相邻的调用不再同一个线程中，就会使其中一个线程执行阻塞等待操作。<br />
+如果锁具备可重入性，则称作为可重入锁。像 synchronized 和 ReentrantLock 都是可重入锁，可重入性在我看来实际上表明了锁的分配机制：基于线程的分配，而不是基于方法调用的分配。举个简单的例子，当一个线程执行到某个 synchronized 方法时，比如说 method1，而在 method1 中会调用另外一个 synchronized 方法 method2，此时线程不必重新去申请锁，而是可以直接执行方法 method2。
+</div>
+<div style="line-height: 1.625em;margin-top:.5em;"></div>
+      ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="synchronized 实现原理" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div style="line-height: 1.625em;">
+    synchronized 是基于 Monitor 来实现同步的。Monitor 从两个方面来支持线程之间的同步：
+</div>
+
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;color:blue;">
+    <li>互斥执行</li>
+    <li>协作</li>
+</ul>
+
+
+<ul style="margin-left: 2.2em;list-style-type: decimal;margin-top: .3em;color:green;">
+    <li>Java 使用对象锁 (使用 synchronized 获得对象锁) 保证工作在共享的数据集上的线程互斥执行。</li>
+    <li>使用 notify/notifyAll/wait 方法来协同不同线程之间的工作。</li>
+    <li>Class 和 Object 都关联了一个 Monitor。</li>
+</ul>
+
+
+<div>
+    <div style="display:inline-block;
+            margin-top:.3em;
+            border:solid 1px darkorange;
+            padding:.5em 1em;border-style: dashed;">
+        <img src="/images/java/monitor.jpg" />
+        <h5 style="text-align:center;"><b>Monitor 的工作机理</b></h5>
+    </div>
+</div>
+
+
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top:1em;">
+    <li>线程进入同步方法中。</li>
+    <li>为了继续执行临界区代码，线程必须获取 Monitor 锁。如果获取锁成功，将成为该监视者对象的拥有者。任一时刻内，监视者对象只属于一个活动线程（The Owner）</li>
+    <li>拥有监视者对象的线程可以调用 wait() 进入等待集合（Wait Set），同时释放监视锁，进入等待状态。</li>
+    <li>其他线程调用 notify() / notifyAll() 接口唤醒等待集合中的线程，这些等待的线程需要重新获取监视锁后才能执行 wait() 之后的代码。</li>
+    <li>同步方法执行完毕了，线程退出临界区，并释放监视锁。</li>
+</ul>
+
+
+]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="synchronized 具体实现" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top:1em;">
+    <li>同步代码块采用 monitorenter、monitorexit 指令显式的实现。</li>
+    <li>同步方法则使用 ACC_SYNCHRONIZED 标记符隐式的实现。</li>
+    <li>拥有监视者对象的线程可以调用 wait() 进入等待集合（Wait Set），同时释放监视锁，进入等待状态。</li>
+</ul>
+
+]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+public class SynchronizedTest {
+
+   public synchronized void method1(){
+       System.out.println("Hello World!");
+   }
+
+   public  void method2(){
+       synchronized (this){
+           System.out.println("Hello World!");
+       }
+   }
+}
+
+
+]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+<h3>// javap 编译后的字节码如下：</h3>
+<img width="450px" src="/images/java/javap-compiler.jpg" />
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="monitorenter" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+
+
+<div style="line-height: 1.625em;">
+    每一个对象都有一个 monitor，一个 monitor 只能被一个线程拥有。当一个线程执行到 monitorenter 指令时会尝试获取相应对象的 monitor，获取规则如下：
+</div>
+
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;color:blue;">
+    <li>如果 monitor 的进入数为 0，则该线程可以进入 monitor，并将 monitor 进入数设置为1，该线程即为 monitor 的拥有者。</li>
+    <li>如果当前线程已经拥有该 monitor，只是重新进入，则进入 monitor 的进入数加1，所以 synchronized 关键字实现的锁是可重入的锁。</li>
+    <li>如果 monitor 已被其他线程拥有，则当前线程进入阻塞状态，直到 monitor 的进入数为0，再重新尝试获取 monitor。</li>
+</ul>
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="monitorexit" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div style="line-height: 1.625em;">
+    只有拥有相应对象的 monitor 的线程才能执行 monitorexit 指令。每执行一次该指令 monitor 进入数减1，当进入数为0时当前线程释放 monitor，此时其他阻塞的线程将可以尝试获取该 monitor。
+</div>
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="锁存放的位置" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div style="line-height: 1.625em;color:red;">
+    锁标记存放在 Java 对象头的 <b>Mark Word</b> 中。
+</div>
+
+<table style="margin: .5em 0;line-height: 1.3em;color:green;margin-top:1em;">
+    <caption style="padding:.3em;padding-left:0;text-align:left;font-size: 1.5em;color:blueviolet">Java 对象头长度</caption>
+    <thead>
+        <tr>
+            <th style="padding:.3em .5em;border: solid 1px gray;text-align:left;color:green;">长度</th>
+            <th style="padding:.3em .5em;border: solid 1px gray;text-align:left;color:green;">内容</th>
+            <th style="padding:.3em .5em;border: solid 1px gray;text-align:left;color:green;">说明</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr style="padding: 0;margin: 0;">
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align: left;font-weight: normal;">32/64位</td>
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align: left;"><b style="color:red;">Mark World</b></td>
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align: left;padding-right:1.325em;">存储对象的 hashCode 或锁信息</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;">
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align: left;font-weight: normal;">32/64位</td>
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align: left;">Class Metadata Address</td>
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align: left;padding-right:1.325em;">存储到对象类型数据的指针</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;">
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align: left;font-weight: normal;">32/64位</td>
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align: left;">Array Length</td>
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align: left;padding-right:1.325em;">数组的长度 (如果当前对象是数组)</td>
+        </tr>
+    </tbody>
+</table>
+
+<table style="margin: .5em 0;line-height: 1.3em;color:green;margin-top:1em;">
+    <caption style="padding:.3em;padding-left:0;text-align:left;font-size: 1.5em;color:blueviolet">
+        32位JVM Mark Word 结构
+    </caption>
+    <thead>
+        <tr>
+            <th style="padding:.3em .5em;border: solid 1px gray;text-align:left;color:green;">锁状态</th>
+            <th style="padding:.3em .5em;border: solid 1px gray;text-align:left;color:green;">25bit</th>
+            <th style="padding:.3em .5em;border: solid 1px gray;text-align:left;color:green;">4bit</th>
+            <th style="padding:.3em .5em;border: solid 1px gray;text-align:left;color:green;">1bit 是否是偏向锁</th>
+            <th style="padding:.3em .5em;border: solid 1px gray;text-align:left;color:green;">2bit 锁标志位</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr style="padding: 0;margin: 0;">
+            <td style="border: solid 1px gray;padding:.3em .5em;padding-right:1.325em;text-align: left;font-weight: normal;">无锁状态</td>
+            <td style="border: solid 1px gray;padding:.3em .5em;padding-right:1.325em;text-align: left;">对象的 hashcode</td>
+            <td style="border: solid 1px gray;padding:.3em .5em;padding-right:1.325em;text-align: left;padding-right:1.325em;">对象分代年龄</td>
+            <td style="border: solid 1px gray;padding:.3em .5em;padding-right:1.325em;text-align: left;padding-right:1.325em;">0</td>
+            <td style="border: solid 1px gray;padding:.3em .5em;padding-right:1.325em;text-align: left;padding-right:1.325em;">01</td>
+        </tr>
+    </tbody>
+</table>
+
+<table style="margin: .5em 0;line-height: 1.3em;color:green;margin-top:1em;">
+    <caption style="padding:.3em;padding-left:0;text-align:left;font-size: 1.5em;color:blueviolet">
+        32位JVM Mark Word 状态变化
+    </caption>
+    <thead>
+        <tr>
+            <th border="1" style="border: solid 1px gray;padding:0;text-align:center;color:green;vertical-align:middle;" rowspan="2">锁状态</th>
+            <th style="border: solid 1px gray;padding:.3em .5em;text-align:center;color:green;" colspan="2">25bit</th>
+            <th style="border: solid 1px gray;padding:.3em .5em;text-align:center;color:green;vertical-align:middle;" rowspan="2">4bit</th>
+            <th style="border: solid 1px gray;padding:.3em .5em;text-align:center;color:green;">1bit</th>
+            <th style="border: solid 1px gray;padding:.3em .5em;text-align:center;color:green;">2bit</th>
+        </tr>
+        <tr>
+            <th style="border: solid 1px gray;padding:.3em .5em;text-align:center;color:green;">23bit</th>
+            <th style="border: solid 1px gray;padding:.3em .5em;text-align:center;color:green;">2bit</th>
+            <th style="border: solid 1px gray;padding:.3em .5em;text-align:center;color:green;">是否是偏向锁</th>
+            <th style="border: solid 1px gray;padding:.3em .5em;text-align:center;color:green;">锁标志位</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr style="padding: 0;margin: 0;">
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align:center;font-weight: normal;">轻量级锁</td>
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align:center;font-weight: normal;" colspan="4">指向栈中锁记录的指针</td>
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align:center;font-weight: normal;">00</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;">
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align:center;font-weight: normal;">重量级锁</td>
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align:center;font-weight: normal;" colspan="4">指向互斥量(重量级锁)的指针</td>
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align:center;font-weight: normal;">10</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;">
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align:center;font-weight: normal;">GC标记</td>
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align:center;font-weight: normal;" colspan="4">空</td>
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align:center;font-weight: normal;">11</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;">
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align:center;font-weight: normal;">偏向锁</td>
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align:center;font-weight: normal;">线程id</td>
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align:center;font-weight: normal;">Epoch</td>
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align:center;font-weight: normal;">对象分代年龄</td>
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align:center;font-weight: normal;">1</td>
+            <td style="border: solid 1px gray;padding:.3em .5em;text-align:center;font-weight: normal;">01</td>
+        </tr>
+    </tbody>
+</table>
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="synchronized 简单示例" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
                      <![CDATA[
@@ -48,7 +340,7 @@ class MyClass {
 ]]>
     </c:sourceContent>
 
-    <c:sourceContent type="" title="复杂示例" id="sourceContent1" 
+    <c:sourceContent type="" title="synchronized 复杂示例" id="sourceContent1" 
                      style="background-color:white;margin-top:1em;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">

@@ -2,7 +2,19 @@
 <c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
   <c:abstract>
     <![CDATA[
+<div style="margin-bottom:.5em;">
 文章的内容基于JDK1.7进行分析，之所以选用这个版本，是因为1.8的有些类做了改动，增加了阅读的难度，虽然是1.7，但是对于1.8做了重大改动的内容，文章也会进行说明。
+</div>
+<div style="margin-bottom:.5em;">
+每个 ArrayList 实例都有一个容量，该容量是指用来存储列表元素的数组的大小。它总是至少等于列表的大小。随着向 ArrayList 中不断添加元素，其容量也自动增长。自动增长会带来数据向新数组的重新拷贝，因此，如果可预知数据量的多少，可在构造 ArrayList 时指定其容量。<b>ArrayList 是非线程安全的</b>。并发情况下可以用 vector，CopyOnWriteArrayList（建议使用），或者你就想用 ArrayList，这样也可以的：
+</div>
+<div style="margin-bottom:.5em;color:red;">
+    <b>List list = Collections.synchronizedList(new ArrayList(...));</b>
+</div>
+
+<div>
+    与 LinkedList 相比，ArrayList 适用于频繁查询的场景，而不适用于频繁修改的场景； 与 Vector 相比，ArrayList 的所有操作都是非线程安全的。
+</div>
 ]]>
   </c:abstract>
 
@@ -14,48 +26,515 @@
        
       ]]></c:desc1>
     </c:desc>
-
-
-
     <c:sourceContent type="html" title="线性表" id="sourceContent1" 
                      style="background-color:white;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
                      <![CDATA[
-
+<div>
 线性表是最基本、最简单、也是最常用的一种数据结构。线性表中数据元素之间的关系是一对一的关系，即除了第一个和最后一个数据元素之外，其它数据元素都是首尾相接的。线性表有两种存储方式：
-
-一种是顺序存储结构
-另一种是链式存储结构
-
+</div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+<li>一种是顺序存储结构</li>
+<li>另一种是链式存储结构</li>
+</ul>
 ]]>
     </c:sourceContent>
 
 
-    <c:sourceContent type="html" title="线性表" id="sourceContent1" 
+    <c:sourceContent type="html" title="数组" id="sourceContent1" 
                      style="background-color:white;margin-top:1em;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+数组，是一种典型的顺序存储结构。具有以下特点：
+</div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+<li>是物理存储连续、逻辑存储连续的顺序表。</li>
+<li>利于查询。这种存储方式的优点是查询的时间复杂度为O(1)，通过首地址和偏移量就可以直接访问到某元素。</li>
+<li>不利于修改。插入和删除的时间复杂度最坏能达到O(n)，如果你在第一个位置插入一个元素，你需要把数组的每一个元素向后移动一位，如果你在第一个位置删除一个元素，你需要把数组的每一个元素向前移动一位。</li>
+<li>容量的固定性。就是当你不确定元素的数量时，你开的数组必须保证能够放下元素最大数量，遗憾的是如果实际数量比最大数量少很多时，你开的数组没有用到的内存就只能浪费掉了。</li>
+</ul>
+<div style="margin-top:.325em;">
+    ArrayList 作为 List 的典型实现，完全实现了 List 的全部接口功能，它是基于数组实现的 List 类，它封装了一个 Object[]类型的数组，长度可以动态的增长。如果在创建 ArrayList 时没有指定 Object[]数组的长度，<b style="color:red;">它默认创建一个长度为10的数组</b>，当新添加的元素已经没有位置存放的时候, ArrayList 就会自动进行扩容，<b style="color:red;">扩容的长度为原来长度的1.5倍</b>。它的线程是不安全的。
+</div>
+]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[ArrayList 的数据结构]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+       
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="继承关系" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+java.lang.Object 
+    java.util.AbstractCollection<E> 
+        java.util.AbstractList<E> 
+            java.util.ArrayList<E> 
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="实现接口" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+Serializable, Cloneable, Iterable<E>, Collection<E>, List<E>, RandomAccess 
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="基本属性" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+transient Object[] elementData; // 存放数组的元素，transient表示该字段不进行序列化操作
+private int size; // 已经放入数组中的元素个数，非数组的长度
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="构造方法" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
                      <![CDATA[
 
+// 构造方法，指定初始化的数组长度
+public ArrayList(int initialCapacity) {
+    super();
+    if (initialCapacity < 0)
+        throw new IllegalArgumentException("Illegal Capacity: "+
+                                           initialCapacity);
+    this.elementData = new Object[initialCapacity];
+}
 
-数组，是一种典型的顺序存储结构。具有以下特点：
 
-是物理存储连续、逻辑存储连续的顺序表。
+// 无参构造方法
+public ArrayList() {
+    super();
+    this.elementData = EMPTY_ELEMENTDATA;
+}
 
-利于查询。这种存储方式的优点是查询的时间复杂度为O(1)，通过首地址和偏移量就可以直接访问到某元素。
 
-不利于修改。插入和删除的时间复杂度最坏能达到O(n)，如果你在第一个位置插入一个元素，你需要把数组的每一个元素向后移动一位，如果你在第一个位置删除一个元素，你需要把数组的每一个元素向前移动一位。
+// 构造方法，参数为集合元素
+public ArrayList(Collection<? extends E> c) {
+    //将集合转换成数组，并赋值给elementData数组
+    elementData = c.toArray();
+    size = elementData.length;
+    //如果c.toArray返回的不是Object[]类型的数组，转换成Object[]类型
+    if (elementData.getClass() != Object[].class)
+        elementData = Arrays.copyOf(elementData, size, Object[].class);
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+上面是 ArrayList 的三个构造方法，使用三种方法都可以创建一个 ArrayList 集合，但是它们还是有一些区别，
+</div>
 
-容量的固定性。就是当你不确定元素的数量时，你开的数组必须保证能够放下元素最大数量，遗憾的是如果实际数量比最大数量少很多时，你开的数组没有用到的内存就只能浪费掉了。
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+<li>使用第一个构造方法， 直接创建了指定大小的 Object[] 数组来创建集合，</li>
+<li>使用第二个构造方法，创建的是一个空的数组，是将一个已经创建好的，使用 static final 修饰的数组的引用赋值给了 elementData, 此时的长度为零，当添加元素时， elementData = Arrays.copyOf(elementData, newCapacity); 完成了 elementData 新的初始化工作，此时的长度才为10。</li>
+<li>第三种构造方法是将集合转化为 ArrayList, 在底层实现中，先调用集合的 toArray() 方法，并赋值给 elementData ， 然后进行类型的判断，是如果类型不是 Object[] 类型，那么将使用反射生成一个 Object[] 的数组，并重新赋值给 elementData。</li>
+</ul>
+]]>
+    </c:sourceContent>
 
-ArrayList作为List的典型实现，完全实现了List的全部接口功能，它是基于数组实现的List类，它封装了一个Object[]类型的数组，长度可以动态的增长。如果在创建ArrayList时没有指定Object[]数组的长度，它默认创建一个长度为10的数组，当新添加的元素已经没有位置存放的时候,ArrayList就会自动进行扩容，扩容的长度为原来长度的1.5倍。它的线程是不安全的。
+    <c:sourceContent type="html" title="动态扩容" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div style="margin-bottom:.3em;">数组有个明显的特点就是它的容量是固定不变的，一旦数组被创建则容量则无法改变。所以在往数组中添加指定元素前，首先要考虑的就是其容量是否饱和。</div>
+
+<div style="margin-bottom:.3em;">若接下来的添加操作会时数组中的元素超过其容量，则必须对其进行扩容操作。受限于数组容量固定不变的特性，扩容的本质其实就是创建一个容量更大的新数组，再将旧数组的元素复制到新数组当中去。</div>
+
+<div style="margin-bottom:.3em;">这里以 ArrayList 的 添加操作为例，来看下 ArrayList 内部数组扩容的过程。</div>
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.15em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+public boolean add(E e) {
+    // 关键 -> 添加之前，校验容量
+    ensureCapacityInternal(size + 1); 
+    
+    // 修改 size，并在数组末尾添加指定元素
+    elementData[size++] = e;
+    return true;
+}
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+可以发现 ArrayList 在进行添加操作前，会检验内部数组容量并选择性地进行数组扩容。在 ArrayList 中，通过私有方法 ensureCapacityInternal 来进行数组的扩容操作。下面来看具体的实现过程：
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.15em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+/**** 1. 扩容操作的第一步会去判断当前 ArrayList 内部数组是否为空，为空则将最小容量 minCapacity 设置为 10。****/
+// 内部数组的默认容量
+private static final int DEFAULT_CAPACITY = 10;
+
+// 空的内部数组
+private static final Object[] EMPTY_ELEMENTDATA = {};
+
+// 关键 -> minCapacity = seize+1，即表示执行完添加操作后，数组中的元素个数 
+private void ensureCapacityInternal(int minCapacity) {
+    // 判断内部数组是否为空
+    if (elementData == EMPTY_ELEMENTDATA) {
+        // 设置数组最小容量（>=10）
+        minCapacity = Math.max(DEFAULT_CAPACITY, minCapacity);
+    }
+    ensureExplicitCapacity(minCapacity);
+}
+
+/**** 2. 接着判断添加操作会不会导致内部数组的容量饱和。****/
+private void ensureExplicitCapacity(int minCapacity) {
+    modCount++;
+    
+    // 判断结果为 true，则表示接下来的添加操作会导致元素数量超出数组容量
+    if (minCapacity - elementData.length > 0){
+        // 真正的扩容操作
+        grow(minCapacity);
+    }
+}
+
+/**** 3. 数组容量不足，则进行扩容操作，关键的地方有两个：扩容公式、通过从旧数组复制元素到新数组完成扩容操作。 ****/
+private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+
+private void grow(int minCapacity) {
+    
+    int oldCapacity = elementData.length;
+    
+    // 关键-> 容量扩充公式
+    int newCapacity = oldCapacity + (oldCapacity >> 1);
+    
+    // 针对新容量的一系列判断
+    if (newCapacity - minCapacity < 0){
+        newCapacity = minCapacity;
+    }
+    if (newCapacity - MAX_ARRAY_SIZE > 0){
+        newCapacity = hugeCapacity(minCapacity);
+    }
+        
+    // 关键 -> 复制旧数组元素到新数组中去
+    elementData = Arrays.copyOf(elementData, newCapacity);
+}
+
+private static int hugeCapacity(int minCapacity) {
+    if (minCapacity < 0){
+        throw new OutOfMemoryError();
+    }
+            
+    return (minCapacity > MAX_ARRAY_SIZE) ? Integer.MAX_VALUE : MAX_ARRAY_SIZE;
+}
 
 ]]>
     </c:sourceContent>
 
 
+    <c:sourceContent type="" title="遍历方式" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+List<String> list = new ArrayList<>() ;
 
+// 第一种
+for (int i = 0; i < list.size(); i++) {
+    list.get(i);
+}
+
+// 第二种
+for (Iterator iter = list.iterator(); iter.hasNext(); ) {
+    iter.next();
+}
+
+// 第三种
+for (Object obj : list) ;
+
+// 第四种 ， 只支持JDK1.8+
+list.forEach( e -> { } );
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+在集合的数量非常小的情况的，一二三中的遍历速度没有显著的差别，但是随之数量的增加，第一中方式最快，第三种方法第二，第二种第三，第四种最慢。
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[Arrays.copy() 和 System.copy()]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+       通过源码不难看出，Arrays.copyOf() 是依靠 System.copyOf() 方法来实现的。而 System.copyOf() 的方式被 native 关键字修饰，这说明它调用的是 c++ 的底层函数，已经不是 java 的范围。 它们两者的主要是区别是，Arrays.copyOf() 不仅仅是拷贝数组中的元素，在拷贝数组元组的时候会生成一个新的数组对象，但是 System.copyOf() 仅仅是拷贝数组中的元素。
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+// Arrays.copyOf()
+public static <T,U> T[] copyOf(U[] original, int newLength, Class<? extends T[]> newType) {
+    @SuppressWarnings("unchecked")
+    T[] copy = ((Object)newType == (Object)Object[].class)
+        ? (T[]) new Object[newLength]
+        : (T[]) Array.newInstance(newType.getComponentType(), newLength);
+    System.arraycopy(original, 0, copy, 0,
+                     Math.min(original.length, newLength));
+    return copy;
+}
+
+// System.copyOf()
+public static native void arraycopy(Object src,  int  srcPos,
+                                        Object dest, int destPos,
+                                        int length);
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[Vector]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+       Vector 其实就跟 ArrayList 差不多，就时一个同步的 ArrayList，可以再并发情况下使用，
+       用 add() 方法举个栗子，其实很多方法都加入了 synchronized 同步语句，来保证线程安全。但是我很少见到有人使用 vector 的，因为再并发下，效率确实不怎么高。如果有并发的需求，可以用之前提到 CopyOnWriteArrayList。
+       <br /> 来看看源码：
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+public synchronized boolean add(E e) {
+    modCount++;
+    ensureCapacityHelper(elementCount + 1);
+    elementData[elementCount++] = e;
+    return true;
+}
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[LinkedList]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+       LinkedList 基于链表（双向链表）实现，删除和插入操作速度快于 ArrayList，但也是因为基于链表，所以不支持随机访问，查询速度比 ArrayList慢。<br />
+
+LinkedList 继承 AbstractSequentialList 类，实现了 List，Deque，Cloneable, java.io.Seriaizable 接口。
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+public synchronized boolean add(E e) {
+    modCount++;
+    ensureCapacityHelper(elementCount + 1);
+    elementData[elementCount++] = e;
+    return true;
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="获取指定索引的数据" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+// linkedList 查找数据慢，它是用链表实现的，不像数组有索引标识，所以当然慢。
+public E get(int index) {
+    checkElementIndex(index);//检查索引是否合法
+    return node(index).item;//查找数据
+}
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[ArrayList 和 LinkedList 区别]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+    <li>ArrayList 是实现了基于动态数组的数据结构，LinkedList 基于链表的数据结构。 （LinkedList 是双向链表，有 next 也有 previous）</li>
+    <li>对于随机访问 get 和 set，ArrayList 觉得优于 LinkedList，因为 LinkedList 要移动指针。 </li>
+    <li>对于新增和删除操作 add 和 remove，LinedList 比较占优势，因为 ArrayList 要移动数据。 </li>
+</ul>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="时间复杂度" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+首先一点关键的是，ArrayList 的内部实现是基于基础的对象数组的。因此，它使用 get 方法访问列表中的任意一个元素时(random access)，它的速度要比 LinkedList 快。LinkedList 中的 get 方法是按照顺序从列表的一端开始检查，直到另外一端。对 LinkedList 而言，访问列表中的某个指定元素没有更快的方法了。 
+假设我们有一个很大的列表，它里面的元素已经排好序了，这个列表可能是 ArrayList 类型的也可能是 LinkedList 类型的，现在我们对这个列表来进行二分查找(binary search)，比较列表是 ArrayList 和 LinkedList 时的查询速度，看下面的程序： 
+
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+package com.mangocity.test; 
+
+import java.util.LinkedList;   
+import java.util.List;   
+import java.util.Random;   
+import java.util.ArrayList;   
+import java.util.Arrays;   
+import java.util.Collections;   
+
+public class TestList {   
+
+     public static final int N=50000;   
+  
+     public static List values;   
+  
+     static {   
+
+         Integer vals[]=new Integer[N];   
+  
+         Random r=new Random();   
+  
+         for(int i=0,currval=0;i<N;i++) {   
+             vals=new Integer(currval);   
+             currval+=r.nextInt(100)+1;   
+         }   
+  
+         values=Arrays.asList(vals);   
+     }   
+  
+     static long timeList(List lst) {   
+         long start=System.currentTimeMillis();   
+         for(int i=0;i<N;i++) {
+            // 二分查找   
+            int index=Collections.binarySearch(lst, values.get(i));   
+            if(index!=i)   
+                System.out.println("***错误***");   
+         }   
+         return System.currentTimeMillis()-start;   
+     } 
+
+     public static void main(String args[]) {   
+         System.out.println("ArrayList消耗时间："+timeList(new ArrayList(values)));      // 15
+         System.out.println("LinkedList消耗时间："+timeList(new LinkedList(values)));    // 2596
+     }   
+
+}   
+]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="空间复杂度 " id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+// 在 LinkedList 中有一个私有的内部类，定义如下：
+private static class Entry {   
+    Object element;   
+    Entry next;   
+    Entry previous;   
+}   
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+<div style="margin-bottom:.5em;">
+每个 Entry 对象 reference 列表中的一个元素，同时还有在 LinkedList 中它的上一个元素和下一个元素。一个有1000个元素的 LinkedList 对象将有 1000 个链接在一起的 Entr y对象，每个对象都对应于列表中的一个元素。这样的话，在一个 LinkedList 结构中将有一个很大的空间开销，因为它要存储这1000个 Entity 对象的相关信息。
+</div>
+
+<div>
+ArrayList 使用一个内置的数组来存储元素，这个数组的起始容量是10.当数组需要增长时，新的容量按如下公式获得：新容量=(旧容量*3)/2+1，也就是说每一次容量大概会增长50%。这就意味着，如果你有一个包含大量元素的 ArrayList 对象，那么最终将有很大的空间会被浪费掉，这个浪费是由 ArrayList 的工作方式本身造成的。如果没有足够的空间来存放新的元素，数组将不得不被重新进行分配以便能够增加新的元素。对数组进行重新分配，将会导致性能急剧下降。如果我们知道一个 ArrayList 将会有多少个元素，我们可以通过构造方法来指定容量。我们还可以通过 trimToSize() 方法在 ArrayList 分配完毕之后去掉浪费掉的空间。 
+</div>
+
+]]>
+    </c:sourceContent>
 
     <c:comment>
       <c:comment1>
