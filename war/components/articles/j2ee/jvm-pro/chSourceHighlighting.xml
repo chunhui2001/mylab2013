@@ -849,4 +849,63 @@ G1收集器是当今收集器技术发展最前沿的成果，它是一款面向
   </c:entry>
 
 
+
+
+
+
+  <c:entry style="margin-top:2em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">JVM1.7和1.8的永久代和元空间的变化</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div>
+  Java 8: 从永久代（PermGen）到元空间（Metaspace）
+</div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .625em;color:black;">
+    <li>字符串存在永久代中，容易出现性能问题和内存溢出。</li>
+    <li><b>类及方法的信息等比较难确定其大小</b>，因此对于永久代的大小指定比较困难，太小容易出现永久代溢出，太大则容易导致老年代溢出。</li>
+    <li>永久代会为 GC 带来不必要的复杂度，并且回收效率偏低。</li>
+    <li>Oracle 可能会将HotSpot 与 JRockit 合二为一。</li>
+</ul>
+        ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="元空间: Metaspace" id="sourceContent1"
+                     style="margin-top:.6em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<ul style="margin-left: 1.5em;list-style-type: disc;color:black;">
+    <li>大部分类元数据都在本地内存中分配。</li>
+    <li>默认情况下，类元数据只受可用的本地内存限制（容量取决于是32/64位操作系统的可用虚拟内存大小）。</li>
+    <li><b>新参数（MaxMetaspaceSize）用于限制本地内存分配给类元数据的大小</b>。如果没有指定这个参数，元空间会在运行时根据需要动态调整。</li>
+    <li>对于将死的类及类加载器的垃圾回收将在元数据使用达到“MaxMetaspaceSize”参数的设定值时进行。</li>
+    <li>实时地监控和调整元空间对于减小垃圾回收频率和减少延时是很有必要的。持续的元空间垃圾回收说明，可能存在类、类加载器导致的内存泄漏或是大小设置不合适。</li>
+</ul>
+
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="永久代: PermGen" id="sourceContent1"
+                     style="margin-top:.6em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<ul style="margin-left: 1.5em;list-style-type: disc;color:black;">
+    <li>在 JKD1.8 中这部分内存空间将全部移除。</li>
+    <li>JVM的参数：PermSize 和 MaxPermSize 会被忽略并给出警告（如果在启用时设置了这两个参数）。</li>
+</ul>
+
+    ]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
 </c:component>
