@@ -419,4 +419,255 @@ Max_data_length: 0
   </c:entry>
 
 
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>索引</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        索引是数据库中非常非常重要的概念，它是存储引擎能够快速定位记录的秘密武器，对于提升数据库的性能、减轻数据库服务器的负担有着非常重要的作用；索引优化是对查询性能优化的最有效手段，它能够轻松地将查询的性能提高几个数量级。MySQL普遍使用B+Tree实现其索引结构。
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="B-Tree(平衡多路查找树) 和 B+Tree" id="sourceContent1"
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+
+<div style="margin-top:1em;">
+<b style="color:red;">系统从磁盘读取数据到内存时是以磁盘块（block）为基本单位的，位于同一个磁盘块中的数据会被一次性读取出来，而不是需要什么取什么。</b>
+InnoDB存储引擎中有页（Page）的概念，页是其磁盘管理的最小单位。InnoDB存储引擎中默认每个页的大小为16KB，可通过参数innodb_page_size将页的大小设置为4K、8K、16K.
+</div>
+
+<div style="margin-top:.625em;">
+而系统一个磁盘块的存储空间往往没有这么大，因此InnoDB每次申请磁盘空间时都会是若干地址连续磁盘块来达到页的大小16KB。InnoDB在把磁盘数据读入到磁盘时会以页为基本单位，在查询数据时如果一个页中的每条数据都能有助于定位数据记录的位置，这将会减少磁盘I/O次数，提高查询效率。
+</div>
+
+<div style="margin-top:.325em;">
+  目前大部分数据库系统及文件系统都采用B-Tree或其变种B+Tree作为索引结构，在本文的下一节会结合存储器原理及计算机存取原理讨论为什么B-Tree和B+Tree在被如此广泛用于索引，这一节先单纯从数据结构角度描述它们。
+</div>
+
+<h4 style="color:green;margin-top:1em;font-size:2.2em;">BTree</h4>
+<div style="margin-top:.325em;">
+B-Tree结构的数据可以让系统高效的找到数据所在的磁盘块。为了描述B-Tree，首先定义一条记录为一个二元组[key, data] ，key为记录的键值，对应表中的主键值，data为一行记录中除主键外的数据。对于不同的记录，key值互不相同。一棵m阶的B-Tree有如下特性：
+</div>
+
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+    <li>每个节点最多有m个孩子。 </li>
+    <li>除了根节点和叶子节点外，其它每个节点至少有Ceil(m/2)个孩子。 </li>
+    <li>若根节点不是叶子节点，则至少有2个孩子 </li>
+    <li>所有叶子节点都在同一层，且不包含其它关键字信息 </li>
+    <li>每个非终端节点包含n个关键字信息（P0,P1,…Pn, k1,…kn） </li>
+    <li>关键字的个数n满足：ceil(m/2)-1 <= n <= m-1 </li>
+    <li>ki(i=1,…n)为关键字，且关键字升序排序。 </li>
+    <li>Pi(i=1,…n)为指向子树根节点的指针。P(i-1)指向的子树的所有节点关键字均小于ki，但都大于k(i-1)</li>
+</ul>
+
+<div style="margin-top:.325em;">
+B-Tree中的每个节点根据实际情况可以包含大量的关键字信息和分支，如下图所示为一个3阶的B-Tree： 
+</div>
+
+<div style="margin-top:.325em;">
+  <img width="680px" src="/images/mysql/innodb-btree.jpg" />
+</div>
+
+
+<div style="margin-top:.625em;">
+每个节点占用一个盘块的磁盘空间，一个节点上有两个升序排序的关键字和三个指向子树根节点的指针，指针存储的是子节点所在磁盘块的地址。两个关键词划分成的三个范围域对应三个指针指向的子树的数据的范围域。以根节点为例，关键字为17和35，P1指针指向的子树的数据范围为小于17，P2指针指向的子树的数据范围为17~35，P3指针指向的子树的数据范围为大于35。
+</div>
+
+<h4 style="margin-top:.625em;">模拟查找关键字29的过程：</h4>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+    <li>根据根节点找到磁盘块1，读入内存。【磁盘I/O操作第1次】</li>
+    <li>比较关键字29在区间（17,35），找到磁盘块1的指针P2。</li>
+    <li>根据P2指针找到磁盘块3，读入内存。【磁盘I/O操作第2次】</li>
+    <li>比较关键字29在区间（26,30），找到磁盘块3的指针P2。</li>
+    <li>根据P2指针找到磁盘块8，读入内存。【磁盘I/O操作第3次】</li>
+    <li>在磁盘块8中的关键字列表中找到关键字29。</li>
+</ul>
+
+
+<div style="margin-top:.625em;">
+分析上面过程，发现需要3次磁盘I/O操作，和3次内存查找操作。由于内存中的关键字是一个有序表结构，可以利用二分法查找提高效率。而3次磁盘I/O操作是影响整个B-Tree查找效率的决定因素。B-Tree相对于AVLTree缩减了节点个数，使每次磁盘I/O取到内存的数据都发挥了作用，从而提高了查询效率。
+</div>
+
+
+<h4 style="color:green;margin-top:1em;font-size:2.2em;">B+Tree</h4>
+
+<div style="margin-top:.625em;">
+B+Tree是在B-Tree基础上的一种优化，使其更适合实现外存储索引结构，InnoDB存储引擎就是用B+Tree实现其索引结构。
+</div>
+<div style="margin-top:.625em;">
+从上一节中的B-Tree结构图中可以看到每个节点中不仅包含数据的key值，还有data值。而每一个页的存储空间是有限的，如果data数据较大时将会导致每个节点（即一个页）能存储的key的数量很小，当存储的数据量很大时同样会导致B-Tree的深度较大，增大查询时的磁盘I/O次数，进而影响查询效率。在B+Tree中，所有数据记录节点都是按照键值大小顺序存放在同一层的叶子节点上，而非叶子节点上只存储key值信息，这样可以大大加大每个节点存储的key值数量，降低B+Tree的高度。
+</div>
+
+<h4 style="margin-top:.625em;">与B-Tree相比，B+Tree有以下不同点：</h4>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+    <li>非叶子节点只存储键值信息。</li>
+    <li>所有叶子节点之间都有一个链指针。</li>
+    <li>数据记录都存放在叶子节点中。</li>
+</ul>
+<div style="margin-top:.625em;">
+将上一节中的B-Tree优化，由于B+Tree的非叶子节点只存储键值信息，假设每个磁盘块能存储4个键值及指针信息，则变成B+Tree后其结构如下图所示： 
+</div>
+
+<div style="margin-top:.325em;">
+  <img width="680px" src="/images/mysql/innodb-b+tree.png" />
+</div>
+
+<div style="margin-top:.625em;">
+  通常在B+Tree上有两个头指针，一个指向根节点，另一个指向关键字最小的叶子节点，而且所有叶子节点（即数据节点）之间是一种链式环结构。因此可以对B+Tree进行两种查找运算：一种是对于主键的范围查找和分页查找，另一种是从根节点开始，进行随机查找。
+</div>
+<div style="margin-top:.625em;">
+  可能上面例子中只有22条数据记录，看不出B+Tree的优点，下面做一个推算：
+</div>
+<div style="margin-top:.625em;">
+InnoDB存储引擎中页的大小为16KB，一般表的主键类型为INT（占用4个字节）或BIGINT（占用8个字节），指针类型也一般为4或8个字节，也就是说一个页（B+Tree中的一个节点）中大概存储16KB/(8B+8B)=1K个键值（因为是估值，为方便计算，这里的K取值为〖10〗^3）。也就是说<b style="color:red;">一个深度为3的B+Tree索引可以维护10^3 * 10^3 * 10^3 = 10亿 条记录</b>。
+</div>
+<div style="margin-top:.625em;">
+实际情况中每个节点可能不能填充满，因此在数据库中，B+Tree的高度一般都在2~4层。<b style="color:red;">mysql的InnoDB存储引擎在设计时是将根节点常驻内存的，也就是说查找某一键值的行记录时最多只需要1~3次磁盘I/O操作。</b>
+</div>
+<div style="margin-top:.625em;">
+数据库中的B+Tree索引可以分为聚集索引（clustered index）和辅助索引（secondary index）。上面的B+Tree示例图在数据库中的实现即为聚集索引，<b style="color:red;">聚集索引的B+Tree中的叶子节点存放的是整张表的行记录数据</b>。<b style="color:blue;">辅助索引与聚集索引的区别在于辅助索引的叶子节点并不包含行记录的全部数据，而是存储相应行数据的聚集索引键，即主键</b>。当通过辅助索引来查询数据时，InnoDB存储引擎会遍历辅助索引找到主键，然后再通过主键在聚集索引中找到完整的行记录数据。
+</div>
+
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>主存存取原理</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        目前计算机使用的主存基本都是随机读写存储器（RAM），现代RAM的结构和存取原理比较复杂，这里本文抛却具体差别，抽象出一个十分简单的存取模型来说明RAM的工作原理。
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+
+<div style="margin-top:.325em;">
+  <img width="380px" src="/images/mysql/primary-memary.png" />
+</div>
+
+<div style="margin-top:.625em;">
+  从抽象角度看，主存是一系列的存储单元组成的矩阵，每个存储单元存储固定大小的数据。每个存储单元有唯一的地址，现代主存的编址规则比较复杂，这里将其简化成一个二维地址：通过一个行地址和一个列地址可以唯一定位到一个存储单元。上图展示了一个4 x 4的主存模型。
+</div>
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+
+<div style="margin-top:.325em;">
+主存的存取过程如下：
+</div>
+<div style="margin-top:.325em;">
+<b>当系统需要读取主存时，则将地址信号放到地址总线上传给主存，主存读到地址信号后，解析信号并定位到指定存储单元，然后将此存储单元数据放到数据总线上，供其它部件读取。</b>
+</div>
+<div style="margin-top:.325em;">
+写主存的过程类似，系统将要写入单元地址和数据分别放在地址总线和数据总线上，主存读取两个总线的内容，做相应的写操作。
+</div>
+<div style="margin-top:.325em;">
+这里可以看出，主存存取的时间仅与存取次数呈线性关系，因为不存在机械操作，两次存取的数据的“距离”不会对时间有任何影响，例如，先取A0再取A1和先取A0再取D3的时间消耗是一样的。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>磁盘存取原理</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        索引一般以文件形式存储在磁盘上，索引检索需要磁盘I/O操作。与主存不同，磁盘I/O存在机械运动耗费，因此磁盘I/O的时间消耗是巨大的。
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+
+<div style="margin-top:.325em;">
+  <img width="380px" src="/images/mysql/disk.png" />
+</div>
+
+<div style="margin-top:.625em;">
+  一个磁盘由大小相同且同轴的圆形盘片组成，磁盘可以转动（各个磁盘必须同步转动）。在磁盘的一侧有磁头支架，磁头支架固定了一组磁头，每个磁头负责存取一个磁盘的内容。磁头不能转动，但是可以沿磁盘半径方向运动（实际是斜切向运动），每个磁头同一时刻也必须是同轴的，即从正上方向下看，所有磁头任何时候都是重叠的（不过目前已经有多磁头独立技术，可不受此限制）。
+</div>
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+
+<div style="margin-top:.325em;">
+下图是磁盘结构的示意图。
+</div>
+
+<div style="margin-top:.325em;">
+  <img width="380px" src="/images/mysql/disk2.png" />
+</div>
+
+<div style="margin-top:.625em;">
+  盘片被划分成一系列同心环，圆心是盘片中心，每个同心环叫做一个磁道，所有半径相同的磁道组成一个柱面。磁道被沿半径线划分成一个个小的段，每个段叫做一个扇区，每个扇区是磁盘的最小存储单元。为了简单起见，我们下面假设磁盘只有一个盘片和一个磁头。
+</div>
+
+<div style="margin-top:.625em;">
+当需要从磁盘读取数据时，系统会将数据逻辑地址传给磁盘，磁盘的控制电路按照寻址逻辑将逻辑地址翻译成物理地址，即确定要读的数据在哪个磁道，哪个扇区。为了读取这个扇区的数据，需要将磁头放到这个扇区上方，为了实现这一点，磁头需要移动对准相应磁道，这个过程叫做寻道，所耗费时间叫做寻道时间，然后磁盘旋转将目标扇区旋转到磁头下，这个过程耗费的时间叫做旋转时间。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="局部性原理与磁盘预读" id="sourceContent1"
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+
+<div style="margin-top:.325em;">
+由于存储介质的特性，磁盘本身存取就比主存慢很多，再加上机械运动耗费，磁盘的存取速度往往是主存的几百分分之一，因此为了提高效率，要尽量减少磁盘I/O。为了达到这个目的，磁盘往往不是严格按需读取，而是每次都会预读，即使只需要一个字节，磁盘也会从这个位置开始，顺序向后读取一定长度的数据放入内存。这样做的理论依据是计算机科学中著名的局部性原理：
+</div>
+
+<div style="margin-top:.625em;">
+当一个数据被用到时，其附近的数据也通常会马上被使用。
+</div>
+
+<div style="margin-top:.625em;">
+程序运行期间所需要的数据通常比较集中。
+</div>
+
+<div style="margin-top:.625em;">
+由于磁盘顺序读取的效率很高（不需要寻道时间，只需很少的旋转时间），因此对于具有局部性的程序来说，预读可以提高I/O效率。
+</div>
+
+<div style="margin-top:.625em;">
+预读的长度一般为页（page）的整倍数。页是计算机管理存储器的逻辑块，硬件及操作系统往往将主存和磁盘存储区分割为连续的大小相等的块，每个存储块称为一页（在许多操作系统中，页得大小通常为4k），主存和磁盘以页为单位交换数据。当程序要读取的数据不在主存中时，会触发一个缺页异常，此时系统会向磁盘发出读盘信号，磁盘会找到数据的起始位置并向后连续读取一页或几页载入内存中，然后异常返回，程序继续运行。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
 </c:component>
