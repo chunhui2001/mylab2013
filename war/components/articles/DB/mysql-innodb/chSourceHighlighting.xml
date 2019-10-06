@@ -669,5 +669,452 @@ InnoDB存储引擎中页的大小为16KB，一般表的主键类型为INT（占�
   </c:entry>
 
 
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>MySQL-InnoDB Compact 行记录格式</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        索引一般以文件形式存储在磁盘上，索引检索需要磁盘I/O操作。与主存不同，磁盘I/O存在机械运动耗费，因此磁盘I/O的时间消耗是巨大的。
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="yb1.ibd" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+> create table yb1(
+  t1 varchar(10),
+  t2 varchar(10),
+  t3 char(10),
+  t4 varchar(10)
+) row_format=compact;
+
+> insert into yb1 values('a','bb','bb','ccc');
+> insert into yb1 values('d','ee','ee','fff');
+> insert into yb1 values('d',NULL,NULL,'fff');
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="hexdump -C -v yb1.ibd  > yb1.txt" id="sourceContent1"
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.65em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+0000c070  73 75 70 72 65 6d 75 6d  03 0a 02 01 00 00 00 10  |supremum........|
+0000c080  00 2d 00 00 01 fa dd d5  00 00 00 00 39 ea a3 00  |.-..........9...|
+0000c090  00 01 e8 01 10 61 62 62  62 62 20 20 20 20 20 20  |.....abbbb      |
+0000c0a0  20 20 63 63 63 03 0a 02  01 00 00 00 18 00 2b 00  |  ccc.........+.|
+0000c0b0  00 01 fa dd d6 00 00 00  00 39 eb a4 00 00 01 e9  |.........9......|
+0000c0c0  01 10 64 65 65 65 65 20  20 20 20 20 20 20 20 66  |..deeee        f|
+0000c0d0  66 66 03 01 06 00 00 20  ff 96 00 00 01 fa dd d7  |ff..... ........|
+0000c0e0  00 00 00 00 39 f0 a7 00  00 01 ea 01 10 64 66 66  |....9........dff|
+0000c0f0  66 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |f...............|
+0000c100  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+0000c110  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+0000c120  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="hexdump -C -v yb1.ibd  > yb1.txt" id="sourceContent1"
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.65em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<pre>
+第一行记录从0000c078开始：
+03 0a 02 01 /* 变长字段长度列表，逆序的
+               03表示t4字段的值ccc的长度，
+               0a表示t3字段的长度，
+               02表示t2字段的值bb的长度，
+               01表示t1字段的值a的长度 */
+00 /* NULL标志位，第一行没有NULL值 */
+00 00 10 00 2d /* record header，固定5字节 */
+00 00 01 fa dd d5 /* rowid，innodb自动创建，6个字节 */ 
+00 00 00 00 39 ea /* 事务ID */
+a3 00 00 01 e8 01 10 /* 回滚指针 */
+61 /* 列1数据'a' */
+62 62 /* 列2数据'bb' */
+62 62 20 20 20 20 20 20 20 20  /* 列3数据'bb' (固定长度未完全使用时，使用0x20表示) */
+63 63 63 /* 列4数据'ccc' */
+</pre>
+<pre style="margin-top:1em;">
+第二行记录从0000c0a5开始：
+03 0a 02 01 /* 变长字段长度列表，逆序的
+               03表示t4字段的值fff的长度，
+               0a表示t3字段的长度，
+               02表示t2字段的值ee的长度，
+               01表示t1字段的值d的长度 */
+00 /* NULL标志位，第一行没有NULL值 */
+00 00 18 00 2b /* record header，固定5字节 */
+00 00 01 fa dd d6 /* rowid，innodb自动创建，6个字节 */ 
+00 00 00 00 39 eb /* 事务ID */
+a4 00 00 01 e9 01 10 /* 回滚指针 */
+64 /* 列1数据'd' */
+65 65 /* 列2数据'ee' */
+65 65 20 20 20 20 20 20 20 20  /* 列3数据'ee' (固定长度未完全使用时，使用0x20表示) */
+66 66 66 /* 列4数据'fff' */
+</pre>
+<pre style="margin-top:1em;">
+第三行记录从0000c0d2开始：
+03 01 /* 变长字段长度列表，逆序的
+         03表示t4字段的值fff的长度，
+         01表示t1字段的值d的长度 */
+06 /* NULL标志位，第三行有NULL值。06换成二进制为00000110，表示第2,3列是null */
+00 00 20 ff 96 /* record header，固定5字节 */
+00 00 01 fa dd d7 /* rowid，innodb自动创建，6个字节 */ 
+00 00 00 00 39 f0 /* 事务ID */
+a7 00 00 01 ea 01 10 /* 回滚指针 */
+64 /* 列1数据'd' */
+64 64 64 /* 列4数据'fff' */
+</pre>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Record Lock、Gap Lock 和 Next-Key Lock</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        索引一般以文件形式存储在磁盘上，索引检索需要磁盘I/O操作。与主存不同，磁盘I/O存在机械运动耗费，因此磁盘I/O的时间消耗是巨大的。
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Record Lock" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+  记录锁（Record Lock）是加到索引记录上的锁，假设我们存在下面的一张表 users：
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.65em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+creEATE TABLE users (
+   id INT NOT NULL AUTO_INCREMENT,
+   last_name VARCHAR(255) NOT NULL,
+   first_name VARCHAR(255),
+   age INT,
+   PRIMARY KEY(id),
+   KEY(last_name),
+   KEY(age)
+);
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+如果我们使用 id 或者 last_name 作为 SQL 中 WHERE 语句的过滤条件，那么 InnoDB 就可以通过索引建立的 B+ 树找到行记录并添加索引，但是如果使用 first_name 作为过滤条件时，由于 InnoDB 不知道待修改的记录具体存放的位置，也无法对将要修改哪条记录提前做出判断就会锁定整个表。
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Gap Lock" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+  记录锁是在存储引擎中最为常见的锁，除了记录锁之外，InnoDB 中还存在间隙锁（Gap Lock），间隙锁是对索引记录中的一段连续区域的锁；当使用类似 SELECT * FROM users WHERE id BETWEEN 10 AND 20 FOR UPDATE; 的 SQL 语句时，就会阻止其他事务向表中插入 id=15 的记录，因为整个范围都被间隙锁锁定了。
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Next-Key Lock" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+  Next-Key 锁相比前两者就稍微有一些复杂，它是记录锁和记录前的间隙锁的结合，<b>Next-Key 锁定的是当前值和前面的范围</b>。假如在 users 表中有以下记录：
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
++------+-------------+--------------+-------+
+|   id | last_name   | first_name   |   age |
+|------+-------------+--------------+-------|
+|    4 | stark       | tony         |    21 |
+|    1 | tom         | hiddleston   |    30 |
+|    3 | morgan      | freeman      |    40 |
+|    5 | jeff        | dean         |    50 |
+|    2 | donald      | trump        |    80 |
++------+-------------+--------------+-------+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-top:.625em;">
+如果使用 Next-Key 锁，那么 Next-Key 锁就可以在需要的时候锁定以下的范围：
+</div>
+
+<pre>
+(-∞, 21]
+(21, 30]
+(30, 40]
+(40, 50]
+(50, 80]
+(80, ∞)
+</pre>
+
+<div style="margin-top:.625em;">
+当我们更新一条记录，比如 SELECT * FROM users WHERE age=30 FOR UPDATE;，InnoDB 不仅会在范围 (21,30] 上加 Next-Key 锁，还会在这条记录后面的范围 (30,40] 加间隙锁，所以插入 (21,40]范围内的记录都会被锁定。
+</div>
+
+<div style="margin-top:.325em;font-weight:bold;">
+Next-Key 锁的作用其实是为了解决幻读的问题。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="死锁的发生" id="sourceContent1"
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+既然 InnoDB 中实现的锁是悲观的，那么不同事务之间就可能会互相等待对方释放锁造成死锁，最终导致事务发生错误；想要在 MySQL 中制造死锁的问题其实非常容易：
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="background-color:white;margin-top:.325em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+session1
+begin
+select * from users where id=1 for update;
+select * from users where id=2 for update;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="background-color:white;margin-top:.325em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+session2
+begin
+select * from users where id=2 for update;
+select * from users where id=1 for update;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+两个会话都持有一个锁，并且尝试获取对方的锁时就会发生死锁，不过 MySQL 也能在发生死锁时及时发现问题，并保证其中的一个事务能够正常工作，这对我们来说也是一个好消息。
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>事务与隔离级别</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        事务的 ACID 四大特性：原子性（Atomicity）、一致性（Consistency）、隔离性（Isolation）和持久性（Durability）；
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+  事务的隔离性是数据库处理数据的几大基础之一，而隔离级别其实就是提供给用户用于在性能和可靠性做出选择和权衡的配置项。ISO 和 ANIS SQL 标准制定了四种事务隔离级别，而 InnoDB 遵循了 SQL92 标准中的四种隔离级别： 
+  <br />
+  <b>READ UNCOMMITED、 READ COMMITED、 REPEATABLE READ和 SERIALIZABLE；</b>
+</div>
+
+<h3>每个事务的隔离级别其实都比上一级多解决了一个问题：</h3>
+<ul style="margin-left: 1.5em;list-style-type: disc;">
+    <li><b>RAED UNCOMMITED</b> 使用查询语句不会加锁，可能会读到未提交的行（Dirty Read/脏读）；</li>
+    <li><b>READ COMMITED</b> 只对记录加记录锁，而不会在记录之间加间隙锁，所以允许新的记录插入到被锁定记录的附近，所以再多次使用查询语句时，可能得到不同的结果（Non-Repeatable Read）；</li>
+    <li><b>REPEATABLE READ</b> 多次读取同一范围的数据会返回第一次查询的快照，不会返回不同的数据行，但是可能发生幻读（Phantom Read）；</li>
+    <li><b>SERIALIZABLE</b> InnoDB 隐式地将全部的查询语句加上共享锁，解决了幻读的问题；</li>
+</ul>
+
+<table style="color:darkgreen;font-size:1.325em;margin:.5em 0;line-height:1.3em;">
+    <tbody>
+        <tr style="padding: 0;margin: 0;">
+            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;font-weight: normal;">
+            &nbsp;
+            </td>
+            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;">Dirty Read</td>
+            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;padding-right:1.325em;">Non-Repeatable Read</td>
+            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;">Phantom Read</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;">
+            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;font-weight: normal;">
+            RAED UNCOMMITED
+            </td>
+            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;">&times;</td>
+            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;padding-right:1.325em;">&times;</td>
+            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;">&times;</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;">
+            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;font-weight: normal;">
+            READ COMMITED
+            </td>
+            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;">&radic;</td>
+            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;padding-right:1.325em;">&times;</td>
+            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;">&times;</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;">
+            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;font-weight: normal;">
+            REPEATABLE READ
+            </td>
+            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;">&radic;</td>
+            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;padding-right:1.325em;">&radic;</td>
+            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;">&times;</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;">
+            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;font-weight: normal;">
+            SERIALIZABLE
+            </td>
+            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;">&radic;</td>
+            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;padding-right:1.325em;">&radic;</td>
+            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;">&radic;</td>
+        </tr>
+    </tbody>
+</table>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="脏读" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+当事务的隔离级别为 READ UNCOMMITED 时，我们在 SESSION2 中插入的未提交数据在 SESSION1 中是可以访问的。
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="不可重复读" id="sourceContent1"
+                     style="background-color:white;margin-top:.325em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+当事务的隔离级别为 READ COMMITED 时，虽然解决了脏读的问题，但是如果在 SESSION1 先查询了一个范围的数据，在这之后 SESSION2 中插入一条数据并且提交了修改，在这时，如果 SESSION1 中再次使用相同的查询语句，就会发现两次查询的结果不一样。
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+session1
+> begin
+> select * from users where id < 5;
+> sleep(2000) # 此时另一个session2插入了一条数据
+> select * from users where id < 5; # READ COMMITED 的隔离级别下, 两次可能读到不同的结果　
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+session2
+> begin
+> insert into values (4);
+> commit
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+不可重复读的原因就是，在 READ COMMITED 的隔离级别下，存储引擎不会在查询记录时添加间隙锁，锁定 id<5 这个范围。
+</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="幻读" id="sourceContent1"
+                     style="background-color:white;margin-top:.325em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+重新开启了两个会话 SESSION1 和 SESSION2，在 SESSION1中我们查询全表的信息，没有得到任何记录；在 SESSION2中向表中插入一条数据并提交；由于 REPEATABLE READ 的原因，再次查询全表的数据时，我们获得到的仍然是空集，但是在向表中插入同样的数据却出现了错误。
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+session1
+> begin
+> select * from users;
+> sleep(2000) # 此时另一个session2插入了一条数据并
+> select * from users;
+> insert into values (1);
+> Duplicate entry '1' for 'id'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+session2
+> begin
+> insert into values (1);
+> commit
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+这种现象在数据库中就被称作幻读，虽然我们使用查询语句得到了一个空的集合，但是插入数据时却得到了错误，好像之前的查询是幻觉一样。
+在标准的事务隔离级别中，幻读是由更高的隔离级别 SERIALIZABLE 解决的，但是它也可以通过 MySQL 提供的 Next-Key 锁解决：
+</div>
+<div style="margin-top:.325em;">
+<b>REPERATABLE READ 和 READ UNCOMMITED 其实是矛盾的，如果保证了前者就看不到已经提交的事务，如果保证了后者，就会导致两次查询的结果不同</b>，MySQL 为我们提供了一种折中的方式，能够在 REPERATABLE READ 模式下加锁访问已经提交的数据，其本身并不能解决幻读的问题，而是通过文章前面提到的 Next-Key 锁来解决。
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 
 </c:component>
