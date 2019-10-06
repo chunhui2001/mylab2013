@@ -955,47 +955,61 @@ select * from users where id=1 for update;
     <li><b>SERIALIZABLE</b> InnoDB 隐式地将全部的查询语句加上共享锁，解决了幻读的问题；</li>
 </ul>
 
-<table style="color:darkgreen;font-size:1.325em;margin:.5em 0;line-height:1.3em;">
+<table style="color:darkgreen;margin:.5em 0;line-height:1.3em;">
     <tbody>
-        <tr style="padding: 0;margin: 0;">
-            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;font-weight: normal;">
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;
+          border-top: solid 1px black;border-style: dashed;">
+            <td style="padding: 0;margin: 0;text-align: center;font-weight: normal;">
             &nbsp;
             </td>
-            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;">Dirty Read</td>
-            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;padding-right:1.325em;">Non-Repeatable Read</td>
-            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;">Phantom Read</td>
+            <td style="padding: 0;margin: 0;text-align:right;">Dirty <br />Read</td>
+            <td style="padding: 0;margin: 0;text-align: center;">Non-Repeatable <br />Read</td>
+            <td style="padding: 0;margin: 0;text-align: center;">Phantom <br />Read</td>
+            <td style="padding: 0;margin: 0;text-align: center;width:520px;">&nbsp;</td>
         </tr>
-        <tr style="padding: 0;margin: 0;">
-            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;font-weight: normal;">
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;">
+            <td style="vertical-align: middle;padding: 0;margin: 0;text-align:right;font-weight: normal;">
             RAED UNCOMMITED
             </td>
-            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;">&times;</td>
-            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;padding-right:1.325em;">&times;</td>
-            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;">&times;</td>
+            <td style="vertical-align: middle;padding: 0;margin: 0;text-align: center;font-size: 1.5em;">&radic;</td>
+            <td style="padding: 0;margin: 0;text-align: center;vertical-align: middle;font-size: 1.5em;">&radic;</td>
+            <td style="vertical-align: middle;padding: 0;margin: 0;text-align: center;font-size: 1.5em;">&radic;</td>
+            <td style="font-size:.85em;padding: 0;margin: 0;text-align:left;">
+              事务能够看到其他事务没有提交的修改，当另一个事务又回滚了修改后的情况，又被称为脏读 dirty read
+            </td>
         </tr>
-        <tr style="padding: 0;margin: 0;">
-            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;font-weight: normal;">
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;">
+            <td style="vertical-align: middle;padding: 0;margin: 0;text-align:right;font-weight: normal;">
             READ COMMITED
             </td>
-            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;">&radic;</td>
-            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;padding-right:1.325em;">&times;</td>
-            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;">&times;</td>
+            <td style="vertical-align: middle;padding: 0;margin: 0;text-align: center;font-size: 2.2em;">&times;</td>
+            <td style="vertical-align: middle;padding: 0;margin: 0;text-align: center;font-size: 1.5em;">&radic;</td>
+            <td style="vertical-align: middle;padding: 0;margin: 0;text-align: center;font-size: 1.5em;">&radic;</td>
+            <td style="font-size:.85em;padding: 0;margin: 0;text-align:left;">
+              事务能够看到其他事务提交后的修改，这时会出现一个事务内两次读取数据可能因为其他事务提交的修改导致不一致的情况，称为不可重复读
+            </td>
         </tr>
-        <tr style="padding: 0;margin: 0;">
-            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;font-weight: normal;">
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;">
+            <td style="padding: 0;margin: 0;text-align:right;font-weight: normal;">
             REPEATABLE READ
             </td>
-            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;">&radic;</td>
-            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;padding-right:1.325em;">&radic;</td>
-            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;">&times;</td>
+            <td style="vertical-align: middle;padding: 0;margin: 0;text-align: center;font-size: 2.2em;">&times;</td>
+            <td style="vertical-align: middle;padding: 0;margin: 0;text-align: center;font-size: 2.2em;">&times;</td>
+            <td style="vertical-align: middle;padding: 0;margin: 0;text-align: center;font-size: 1.5em;">&radic;</td>
+            <td style="vertical-align: middle;font-size:.85em;padding: 0;margin: 0;text-align:left;">
+              事务在两次读取时读取到的数据的状态是一致的
+            </td>
         </tr>
-        <tr style="padding: 0;margin: 0;">
-            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;font-weight: normal;">
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;">
+            <td style="vertical-align: middle;padding: 0;margin: 0;text-align:right;font-weight: normal;">
             SERIALIZABLE
             </td>
-            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;">&radic;</td>
-            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;padding-right:1.325em;">&radic;</td>
-            <td style="padding: 0;margin: 0;padding-right:1.325em;text-align: center;">&radic;</td>
+            <td style="vertical-align: middle;padding: 0;margin: 0;text-align: center;font-size: 2.2em;">&times;</td>
+            <td style="vertical-align: middle;padding: 0;margin: 0;text-align: center;font-size: 2.2em;">&times;</td>
+            <td style="vertical-align: middle;padding: 0;margin: 0;text-align: center;font-size: 2.2em;">&times;</td>
+            <td style="font-size:.85em;padding: 0;margin: 0;text-align:left;">
+              可重复读中可能出现第二次读读到第一次没有读到的数据，也就是被其他事务插入的数据，这种情况称为幻读phantom read, 该级别中不能出现幻读
+            </td>
         </tr>
     </tbody>
 </table>
@@ -1109,6 +1123,44 @@ session2
 </div>
     ]]>
     </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>mysql MVCC原理</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+MVCC多版本控制: 指的是一种提高并发的技术。最早的数据库系统，<b>只有读读之间可以并发，读写，写读，写写都要阻塞</b>。<b style="color:blue;">引入多版本之后，只有写写之间相互阻塞，其他三种操作都可以并行</b>，这样大幅度提高了InnoDB的并发度。在内部实现中，与Postgres在数据行上实现多版本不同，<b style="color:red;">InnoDB是在undolog中实现的，通过undolog可以找回数据的历史版本</b>。找回的数据历史版本可以提供给用户读(按照隔离级别的定义，有些读请求只能看到比较老的数据版本)，也可以在回滚的时候覆盖数据页上的数据。在InnoDB内部中，会记录一个全局的活跃读写事务数组，其主要用来判断事务的可见性。
+</div>
+
+<div style="margin-top:.625em;">
+MySQL的大多数事务型存储引擎实现的都不是简单的行级锁。基于提升并发性能的考虑，它们一般都同时实现了多版本并发控制（MVCC）。不仅仅是MySQL，包括Oracle，PostgreSQL等其他数据库系统也都实现了MVCC，但是各自的实现机制并不相同，因为MVCC并没有一个统一的标准。MVCC在很多情况下避免了加锁操作，因此开销更低。<b>大多数的MVCC都实现了非阻塞的读操作，写操作也只锁定必要的行。</b>
+</div>
+
+<div style="margin-top:.625em;">
+MVCC的实现，是通过保存数据在某个时间点的快照来实现的。也就是说，不管需要执行多长时间，每个事务看到的数据是一致的。根据事务开始的时间不同，每个事物对同一张表，同一时刻看到的数据可能是不一样的。不同存储引擎的MVCC实现是不同的，典型的有乐观（optimistic）并发控制和悲观（pessimistic）并发控制。
+</div>
+
+<div style="margin-top:.625em;">
+MVCC只在REPEATABLE READ和READ COMMITTED两个隔离级别下工作。其他两个隔离级别都和MVCC不兼容，因为READ UNCOMMITTED总是读取最新的数据行，而不是符合当前事务版本的数据行，而SERIALIZABLE会对所有读取到的行都加锁。
+</div>
+    ]]>
+    </c:sourceContent>
+
 
     <c:comment>
       <c:comment1>
