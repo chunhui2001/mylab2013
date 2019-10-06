@@ -2,22 +2,283 @@
 <c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
   <c:abstract style="font-size:1em;line-height:1.6em;">
     <![CDATA[
-
+Spring Boot是由Pivotal团队提供的全新框架，其设计目的是用来简化新Spring应用的初始搭建以及开发过程。该框架使用了特定的方式来进行配置，从而使开发人员不再需要定义样板化的配置。通过这种方式，Spring Boot致力于在蓬勃发展的快速应用开发领域(rapid application development)成为领导者。
 ]]>
   </c:abstract>
   
 
-  <c:entry style="margin-top:2em;">
-    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;"></h1>]]></c:title>
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[Spring Bean的生命周期]]></c:title>
     <c:desc>
-      <c:desc1> <![CDATA[]]></c:desc1>
+      <c:desc1> <![CDATA[
+       
+      ]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="" title="" id="sourceContent1"
-                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
-      <![CDATA[
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  <h3>实例化 -> 属性赋值 -> 初始化 -> 销毁</h3>
+</div>
+<div style="margin-top:.625em;">
+  <img width="550px" src="/images/j2ee/spring-bean-life.jpg" />
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="SimpleBean" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+public class SimpleBean implements InitializingBean, DisposableBean, BeanNameAware, BeanFactoryAware {
 
-    ]]>
+    private String name;
+    private int age;
+ 
+    private String beanName;  // 实现了BeanNameAware接口，Spring可以将BeanName注入该属性中
+    private BeanFactory beanFactory;  // 实现了BeanFactory接口，Spring可将BeanFactory注入该属性中
+ 
+    public StudentBean(){
+        System.out.println("【Bean构造方法】学生类的无参构造方法");
+    }
+ 
+    @Override
+    public String toString() {
+        return "StudentBean{" +
+                "name='" + name + '\'' +
+                ", age=" + age +
+                ", beanName='" + beanName + '\'' +
+                '}';
+    }
+ 
+    public String getName() {
+        return name;
+    }
+ 
+    public void setName(String name) {
+        System.out.println("【set注入】注入学生的name属性");
+        this.name = name;
+    }
+ 
+    public int getAge() {
+        return age;
+    }
+ 
+    public void setAge(int age) {
+        System.out.println("【set注入】注入学生的age属性");
+        this.age = age;
+    }
+ 
+    /**
+     * 自己编写的初始化方法
+     */
+    public void myInit(){
+        System.out.println("【init-method】调用init-method属性配置的初始化方法");
+    }
+ 
+    /**
+     * 自己编写的销毁方法
+     */
+    public void myDestroy(){
+        System.out.println("【destroy-method】调用destroy-method属性配置的销毁方法");
+    }
+ 
+    /**
+     * BeanFactoryAware接口的方法
+     * @param beanFactory
+     * @throws BeansException
+     */
+    @Override
+    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+        this.beanFactory = beanFactory;
+        System.out.println("【BeanFactoryAware接口】调用BeanFactoryAware的setBeanFactory方法得到beanFactory引用");
+    }
+ 
+    /**
+     * BeanNameAware接口的方法
+     * @param name
+     */
+    @Override
+    public void setBeanName(String name) {
+        this.beanName = name;
+        System.out.println("【BeanNameAware接口】调用BeanNameAware的setBeanName方法得到Bean的名称");
+    }
+ 
+    /**
+     * InitializingBean接口的方法
+     * @throws Exception
+     */
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        System.out.println("【InitializingBean接口】调用InitializingBean接口的afterPropertiesSet方法");
+    }
+ 
+    /**
+     * DisposableBean接口的方法
+     * @throws Exception
+     */
+    @Override
+    public void destroy() throws Exception {
+        System.out.println("【DisposableBean接口】调用DisposableBean接口的destroy方法");
+    }
+
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="MyBeanPostProcessor" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+public class MyBeanPostProcessor implements BeanPostProcessor {
+ 
+    public MyBeanPostProcessor(){
+        System.out.println("【BeanPostProcessor接口】调用BeanPostProcessor的构造方法");
+    }
+ 
+    @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+        System.out.println("【BeanPostProcessor接口】调用postProcessBeforeInitialization方法，这里可对"+beanName+"的属性进行更改。");
+        return bean;
+    }
+ 
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        System.out.println("【BeanPostProcessor接口】调用postProcessAfterInitialization方法，这里可对"+beanName+"的属性进行更改。");
+        return bean;
+    }
+
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="MyInstantiationAwareBeanPostProcessor" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+public class MyInstantiationAwareBeanPostProcessor extends InstantiationAwareBeanPostProcessorAdapter {
+ 
+    public MyInstantiationAwareBeanPostProcessor() {
+        System.out.println("【InstantiationAwareBeanPostProcessor接口】调用InstantiationAwareBeanPostProcessor构造方法");
+    }
+ 
+    /**
+     * 实例化Bean之前调用
+    */
+    @Override
+    public Object postProcessBeforeInstantiation(Class beanClass, String beanName) throws BeansException {
+        System.out.println("【InstantiationAwareBeanPostProcessor接口】调用InstantiationAwareBeanPostProcessor接口的postProcessBeforeInstantiation方法");
+        return null;
+    }
+ 
+    /**
+     * 实例化Bean之后调用
+     */
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        System.out.println("【InstantiationAwareBeanPostProcessor接口】调用InstantiationAwareBeanPostProcessor接口的postProcessAfterInitialization方法");
+        return bean;
+    }
+ 
+    /**
+     * 设置某个属性时调用
+     */
+    @Override
+    public PropertyValues postProcessPropertyValues(PropertyValues pvs, PropertyDescriptor[] pds, Object bean, String beanName)
+            throws BeansException {
+        System.out.println("【InstantiationAwareBeanPostProcessor接口】调用InstantiationAwareBeanPostProcessor接口的postProcessPropertyValues方法");
+        return pvs;
+    }
+
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="MyBeanFactoryPostProcessor" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+public class MyBeanFactoryPostProcessor implements BeanFactoryPostProcessor {
+ 
+    public MyBeanFactoryPostProcessor() {
+        System.out.println("【BeanFactoryPostProcessor接口】调用BeanFactoryPostProcessor实现类构造方法");
+    }
+ 
+    /**
+     * 重写BeanFactoryPostProcessor接口的postProcessBeanFactory方法，可通过该方法对beanFactory进行设置
+     */
+    @Override
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory)
+            throws BeansException {
+        System.out.println("【BeanFactoryPostProcessor接口】调用BeanFactoryPostProcessor接口的postProcessBeanFactory方法");
+        BeanDefinition beanDefinition = beanFactory.getBeanDefinition("studentBean");
+        beanDefinition.getPropertyValues().addPropertyValue("age", "21");
+    }
+
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Spring 配置文件 beans.xml" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="
+            http://www.springframework.org/schema/beans
+            http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
+ 
+    <!--配置Bean的后置处理器-->
+    <bean id="beanPostProcessor" class="MyBeanPostProcessor">
+    </bean>
+ 
+    <!--配置instantiationAwareBeanPostProcessor-->
+    <bean id="instantiationAwareBeanPostProcessor" class="MyInstantiationAwareBeanPostProcessor">
+    </bean>
+ 
+    <!--配置BeanFactory的后置处理器-->
+    <bean id="beanFactoryPostProcessor" class="MyBeanFactoryPostProcessor">
+    </bean>
+ 
+    <bean id="SimpleBean" class="StudentBean" init-method="myInit"
+          destroy-method="myDestroy" scope="singleton">
+        <property name="name" value="yanxiao"></property>
+        <property name="age" value="21"></property>
+    </bean>
+ 
+</beans>
+
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="进行测试" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+public class TestCyclelife {
+ 
+    public static void main(String[] args){
+
+        System.out.println("--------------【初始化容器】---------------");
+ 
+        ApplicationContext context = new ClassPathXmlApplicationContext("META-INF/beans1.xml");
+
+        System.out.println("-------------------【容器初始化成功】------------------");
+
+        // 得到 simpleBean
+        SimpleBean simpleBean = context.getBean("simpleBean",SimpleBean.class);
+        System.out.println(studentBean);
+ 
+        System.out.println("--------------------【销毁容器】----------------------");
+        ((ClassPathXmlApplicationContext)context).registerShutdownHook();
+    }
+}
+]]>
     </c:sourceContent>
 
     <c:comment>
@@ -26,7 +287,6 @@
       </c:comment1>
     </c:comment>
   </c:entry>
-  
 
 
 </c:component>
