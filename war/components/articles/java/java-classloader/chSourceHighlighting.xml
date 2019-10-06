@@ -14,30 +14,180 @@ jvm 有三类 classloader，分别是 <b>bootstrap classloader, extended classlo
       ]]></c:desc1>
     </c:desc>
 
-    <c:sourceContent type="html" title="bootstrap classloader" id="sourceContent1" 
+    <c:sourceContent type="html" title="▪▪ bootstrap classloader (BootClassLoader)" id="sourceContent1" 
                      style="background-color:white;margin-top:1em;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
                      <![CDATA[
-1
+<div>
+bootstrap classloader 是系统在启动 jvm 时默认加载的。当用户在命令行输入java Test时，系统会首先加载jvm。在 windows 系统下，jvm 的路径通常位于 %JAVA_HOME%/jdk/jre/client/jvm.dll 和 %JAVA_HOME%/jdk/jre/server/jvm.dll.
+</div>
+
+<div style="margin-top:.325em;">
+  <p style="color:red;">bootstrap classloader 在 jvm 启动之后自动加载。bootstrap classloader 由 c 实现，不属于 java 类。</p>
+</div>
+
+<div style="margin-top:.325em;">
+  <p style="color:black;">bootstrap classloader 负责加载 sun.boot.class.path 路径下的 .class 文件以及 jar 包。sun.boot.class.path 通常对应环境变量 CLASSPATH 的路径。</p>
+</div>
+
+<div style="margin-top:.325em;">
+bootstrap classloader 加载后，会载入 extended classloader，并将 extended classloader 的父类设为 bootstrap classloader。然后，bootstrap classloader 接着载入 system classloader，并将 system classloader 的父类设为 extended classloader。至此，<b>bootstrap 》extended 》system</b> 三级继承结构形成。
+</div>
+
 ]]>
     </c:sourceContent>
-    <c:sourceContent type="html" title="extended classloader" id="sourceContent1" 
+    <c:sourceContent type="html" title="▪▪ extended classloader (ExtClassLoader)" id="sourceContent1" 
                      style="background-color:white;margin-top:1em;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
                      <![CDATA[
-1
+<div style="margin-top:.325em;">
+  <p style="color:green;">extended classloader 由 java 实现，通常为 sun.misc.Lancher$ExtClassLoader.</p>
+</div>
+<div style="margin-top:.325em;">
+  <p style="color:black;">extended classloader 负责加载 java.ext.dirs 路径下的 .class 文件以及 jar 包。java.ext.dirs 通常对应 $JAVA_HOME/jre/lib/ext 目录。</p>
+</div>
 ]]>
     </c:sourceContent>
-    <c:sourceContent type="html" title="system classloader" id="sourceContent1" 
+    <c:sourceContent type="html" title="▪▪ system classloader (AppClassLoader)" id="sourceContent1" 
                      style="background-color:white;margin-top:1em;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
                      <![CDATA[
-1
+<div style="margin-top:.325em;">
+  <p style="color:blue;">system classloader 由 java 实现，通常为 sun.misc.Lancher$AppClassLoader.</p>
+</div>
+<div style="margin-top:.325em;">
+  <p style="color:black;">system classloader 负责加载 java.class.path 路径下的 .class 文件以及 jar 包。java.class.path 对应用户自身的类路径。</p>
+</div>
+
+<div style="margin-top:.325em;">主要负责java -classpath / -Djava.class.path 所指的目录下的类与 jar 包装入工作.</div>
 ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="▪▪ User Custom ClassLoader 用户自定义类加载器(java.lang.ClassLoader的子类)" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div style="margin-top:.325em;">
+  在程序运行期间, 通过java.lang.ClassLoader的子类动态加载class文件, 体现java动态实时类装入特性.
+</div>
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
+        ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[类加载到何处]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+jvm 由<b>方法区，堆，栈，pc寄存器和本地方法栈</b>构成。<b>类加载器的任务就是将 class 二进制文件加载到方法区</b>，供虚拟机模制出在堆中存放的对象。
+      ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="JVM structrue" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
+        ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[双亲委托机制]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+<div>classloader 加载类的过程为:</div>
+
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;color:black;">
+    <li>检查被加载类是否被加载。</li>
+    <li>如果没有被加载则调用父 classloader 加载该类。</li>
+    <li>如果1、2不成功，则仍由自身进行类加载。</li>
+</ul>
+<div style="margin-top:.325em;">
+这种机制又叫双亲委派机制。</div>
+      ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<b style="font-size:1.5em;">避免重复造轮子</b>双亲委派机制的好处是，避免多个类加载器加载同一个类到不同的jvm方法区中。因为如果类A由 ClassLoaderA 加载，同时，又被 ClassLoaderB 加载，这样，内存中就会存在两份不同的A的定义，于是形成A既是 ClassLoaderA 罩的，又是 ClassLoaderB 罩着，造成灾难性后果。
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="用户自定义类的加载顺序" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+首先调用 AppClassLoader 加载类，AppClassLoader 调用 ExtClassLoader，ExtClassLoader 调用 BootClassLoader，BootClassLoader 在 sun.boot.class.path 寻找改类，没找到，加载失败；ExtClassLoader 也未加载类，失败，最后由 AppClassLoader 加载成功。从这个加载顺序可以看出来，三个类加载器的对类的可见性是不同的。
+</div>
+
+<div style="margin-top:.625em;">
+java 中的类是由 java 的全名以及类的 classloader 来限定的。只有当二者完全一样才会认为是同一个类。否则是不同的类。因此，可以定义一个同名的类，包名也一样，只要保证该类被不同的类加载器加载即可。
+</div>
+]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="当前类加载器和线程上下文类加载器" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<h4 style="color:deeppink;">当前类加载器</h4>
+<div style="margin-top:.325em;">
+当前类加载器是指当前方法所在的类使用的类加载器。在程序中使用Class.forName或者Class.getResource抑或Class.class时就是使用的该类加载器。
+</div>
+
+<h4 style="margin-top:.625em;color:deeppink;">线程上下文类加载器</h4>
+<div style="margin-top:.325em;">
+<b>线程上下文类加载器可以不遵循双亲委派机制。</b>线程的上下文类加载器有 Thread.currentThread().setContextClassLoader() 来为当前线程设置线程上下文类加载器。如果没有设置当前线程的上下文类加载器，则继承父类的上下文类加载器。
+</div>
+
+
+<h4 style="margin-top:.625em;color:deeppink;">为什么还需要线程上下文类加载器？</h4>
+<div style="margin-top:.325em;">
+考虑一种情况，当我们的程序必须由 jvm 的核心代码去加载第三方类的时候。比如 jndi: jndi 的核心是 rt.jar 包中实现的，由 Bootstrap classloader 负责加载，但是 jndi 必须加载第三方厂商的具体的 jndi 实现，这个时候调用 Bootstrap 加载只对其子类加载器可见的类，就会出现失败。这个时候就可以使用线程上下文类加载器。
+</div>
+<div style="margin-top:.325em;">
+大部分 java app 服务器(jboss, tomcat..) 也是采用线程上下文类加载器来处理 web 服务。
+还有一些采用 hotswap 特性的框架, 也使用了线程上下文类加载器, 比如 seasar (full stack framework in japenese)。线程上下文从根本解决了一般应用不能违背双亲委派模式的问题。<b>使 java 类加载体系显得更灵活。</b>
+</div>
+
+<div style="margin-top:.325em;">
+使用线程上下文加载类, 也要注意, 保证多个需要通信的线程间的类加载器应该是同一个,
+防止因为不同的类加载器, 导致类型转换异常(ClassCastException).
+</div>
+
+
+]]>
+    </c:sourceContent>
+    
 
     <c:comment>
       <c:comment1>
