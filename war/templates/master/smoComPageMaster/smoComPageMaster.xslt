@@ -141,7 +141,7 @@
 								</div>
 							</xsl:for-each>
 					</div>
-			</xsl:for-each>
+			  </xsl:for-each>
 	  	</div>
 
 <h1 style="display:none;">
