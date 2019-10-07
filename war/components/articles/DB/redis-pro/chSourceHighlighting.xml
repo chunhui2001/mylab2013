@@ -785,6 +785,33 @@ typedef struct dict {
     </c:sourceContent>
 
 
+
+    <c:sourceContent type="html" title="渐进式 rehash" id="sourceContent1" 
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+<div>
+  上面我们说到，在进行扩容或者压缩的时候，可以直接将所有的键值对rehash 到ht[1]中，这是因为数据量比较小。在实际开发过程中，这个rehash 操作并不是一次性、集中式完成的，而是分多次、渐进式地完成的。
+</div>
+
+
+<h3 style="color:green;">渐进式rehash 的详细步骤：</h3>
+<ul style="margin-left: 1.5em;list-style-type: disc;">
+    <li>为 ht[1] 分配空间，让字典同时持有ht[0]和ht[1]两个哈希表</li>
+    <li>在几点钟维持一个索引计数器变量 rehashidx，并将它的值设置为0，表示 rehash 开始</li>
+    <li>在 rehash 进行期间，每次对字典执行 CRUD 操作时，程序除了执行指定的操作以外，还会将 ht[0] 中的数据 rehash 到ht[1]表中，并且 ++rehashidx</li>
+    <li>当ht[0]中所有数据转移到ht[1]中时，将 rehashidx 设置成 -1，表示 rehash 结束</li>
+</ul>
+
+<div style="margin-top:1em;">
+  采用渐进式 rehash 的好处在于它采取分而治之的方式，避免了集中式 rehash 带来的庞大计算量。
+</div>
+]]>
+    </c:sourceContent>
+
+
     <c:comment>
       <c:comment1>
         <![CDATA[
