@@ -70,7 +70,7 @@ dict 中 ht[2] 中有两个 hash 表, 我们第一次存储数据的数据时, h
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
                      <![CDATA[
 <div>
-Redis 列表是简单的字符串列表，<b>按照插入顺序排序</b>。你可以添加一个元素到列表的头部（左边）或者尾部（右边）
+Redis 列表是简单的字符串列表，<b>按照插入顺序排序, 有顺序可重复</b>。你可以添加一个元素到列表的头部（左边）或者尾部（右边）
 </div>
 <div style="margin-top:.325em;">
 格式: lpush  name  value  # 在 key 对应 list 的头部添加字符串元素
@@ -505,7 +505,7 @@ struct sdshdr {
 
 
 
-    <c:sourceContent type="html" title="链表 - list" id="sourceContent1" 
+    <c:sourceContent type="html" title="链表 - list (有顺序可重复)" id="sourceContent1" 
                      style="background-color:white;margin-top:1em;"
                      titleStyle="padding-left:0;color:blue;font-size:1.625em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
@@ -812,9 +812,210 @@ typedef struct dict {
     </c:sourceContent>
 
 
+
+
+    <c:sourceContent type="html" title="跳跃表 —— sorted set (有顺序，不能重复)" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.625em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+跳跃表（skiplist）是一种有序数据结构，它通过在每个节点中维持多个指向其他节点的指针，从而达到快速访问节点的目的。跳跃表是一种随机化的数据,跳跃表以有序的方式在层次化的链表中保存元素，<b>效率和平衡树媲美 —— 查找、删除、添加等操作都可以在对数期望时间下完成</b>，并且比起平衡树来说，跳跃表的实现要简单直观得多。
+</div>
+<div style="margin-top:.325em;">
+  Redis 只在两个地方用到了跳跃表，一个是实现有序集合键，另外一个是在集群节点中用作内部数据结构。
+</div>
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+<div style="margin-top:.325em;">
+  <img width="620px" src="/images/redis/redis-zset-skiplist.png" />
+</div>
+
+<div style="margin-top:.325em;">
+  从结构图中我们可以清晰的看到，header，tail 分别指向跳跃表的头结点和尾节点。level 用于记录最大的层数，length 用于记录我们的节点数量。
+</div>
+
+
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;color:blue;">
+    <li>跳跃表是有序集合的底层实现之一</li>
+    <li>主要有 zskiplist 和 zskiplistNode 两个结构组成</li>
+    <li>每个跳跃表节点的层高都是1至32之间的随机数</li>
+    <li>在同一个跳跃表中，多个节点可以包含相同的分值，但每个节点的对象必须是唯一的</li>
+    <li>节点按照分值的大小从大到小排序，如果分值相同，则按成员对象大小排序</li>
+</ul>
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="跳跃表的定义" id="sourceContent1" 
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+/**
+ * zskiplistNode（节点） 数据结构：
+ */
+typedef struct zskiplistNode{
+　　　// 层: level 数组可以包含多个元素，每个元素都包含一个指向其他节点的指针。
+     struct zskiplistLevel{
+　　　　　// 前进指针: 用于指向表尾方向的前进指针
+        struct zskiplistNode *forward;
+　　　　  // 跨度: 用于记录两个节点之间的距离
+        unsigned int span;
+    } level[];
+　　 // 后退指针: 用于从表尾向表头方向访问节点
+    struct zskiplistNode *backward;
+　　 // 分值: 跳跃表中的所有节点都按分值从小到大排序。
+    double score;
+　　 // 成员对象: 成员对象指向一个字符串，这个字符串对象保存着一个SDS值
+    robj *obj;
+}
+
+/**
+ * zskiplist 数据结构
+ */
+typedef struct zskiplist {
+     // 表头节点和表尾节点
+     structz skiplistNode *header,*tail;
+     // 表中节点数量
+     unsigned long length;
+     // 表中层数最大的节点的层数
+     int level;
+
+} zskiplist;
+
+]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="html" title="整数集合（Intset）" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.625em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+整数集合是集合建的底层实现之一，当一个集合中只包含整数，且这个集合中的元素数量不多时，redis 就会使用整数集合 intset 作为集合的底层实现
+</div>
+<div style="margin-top:.325em;">
+  他其实就是一个特殊的集合，里面存储的数据只能够是整数，并且数据量不能过大。<b>提升灵活性、节约内存</b>
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="整数集合的定义" id="sourceContent1" 
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+typedef struct intset {
+  // 编码方式: 用于定义整数集合的编码方式
+  uint32_t enconding;
+  // 集合包含的元素数量: 用于记录整数集合中变量的数量
+  uint32_t length;
+  // 保存元素的数组: 用于保存元素的数组，虽然我们在数据结构图中看到，intset将数组定义为int8_t，但实际上数组保存的元素类型取决于encoding
+  int8_t contents[];
+}
+]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="压缩列表" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.625em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+压缩列表是列表键和哈希键的底层实现之一。当一个列表键只有很少量列表项，并且每个列表项要么就是小整数，要么就是长度比较短的字符串，那么 Redis 就会使用压缩列表来做列表键的底层实现。
+</div>
+<div style="margin-top:.325em;">
+  一个压缩列表的组成如下：
+</div>
+
+
+<table style="font-size:.85em;">
+<tbody>
+  <tr>
+    <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">zlbytes</td>
+    <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">zltail</td>
+    <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">zllen</td>
+    <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">entry1</td>
+    <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">entry2</td>
+    <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">...</td>
+    <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">entryN</td>
+    <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">zlend</td>
+  </tr>
+</tbody>
+</table>
+
+
+<div style="margin-top:.625em;">
+  每个字段含义解释说明：
+</div>
+<table style="font-size:.85em;">
+<tbody>
+  <tr>
+    <td style="padding:4px 8px;text-align:right;border:solid 1px goldenrod;">属性</td>
+    <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">类型</td>
+    <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">长度</td>
+    <td style="padding:4px 8px;text-align:left;border:solid 1px goldenrod;">用途</td>
+  </tr>
+  <tr>
+    <td style="padding:4px 8px;text-align:right;border:solid 1px goldenrod;">zlbytes</td>
+    <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">uint32_t</td>
+    <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">4字节</td>
+    <td style="padding:4px 8px;text-align:left;border:solid 1px goldenrod;">记录整个压缩列表占用的内存数，在对压缩列表进行内存重分配或者计算zlend时使用</td>
+  </tr>
+  <tr>
+    <td style="padding:4px 8px;text-align:right;border:solid 1px goldenrod;">zltail</td>
+    <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">uint32_t</td>
+    <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">4字节</td>
+    <td style="padding:4px 8px;text-align:left;border:solid 1px goldenrod;">记录压缩列表尾节点距离压缩列表起始地址有多少个字节，通过这个偏移量程序无需遍历整个压缩列表就可以确定表尾节点的地址</td>
+  </tr>
+  <tr>
+    <td style="padding:4px 8px;text-align:right;border:solid 1px goldenrod;">zllen</td>
+    <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">uint16_t</td>
+    <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">2字节</td>
+    <td style="padding:4px 8px;text-align:left;border:solid 1px goldenrod;">记录了压缩列表包含的节点数量，<br />
+    当这个值小于uini16_max(65535)时，这个属性的值就是压缩列表包含节点的数量，<br />
+    当这个值等于uint16_max时，节点的真实数量需要遍历整个压缩列表才能计算出来</td>
+  </tr>
+  <tr>
+    <td style="padding:4px 8px;text-align:right;border:solid 1px goldenrod;">entryX</td>
+    <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">列表节点</td>
+    <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">不定</td>
+    <td style="padding:4px 8px;text-align:left;border:solid 1px goldenrod;">压缩列表包含的各个节点，节点的长度由节点保存的内容决定</td>
+  </tr>
+  <tr>
+    <td style="padding:4px 8px;text-align:right;border:solid 1px goldenrod;">zlend</td>
+    <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">uint8_t</td>
+    <td style="padding:4px 8px;text-align:center;border:solid 1px goldenrod;">1字节</td>
+    <td style="padding:4px 8px;text-align:left;border:solid 1px goldenrod;">特殊值0xFF(十进制255)，用于标记压缩列表的末端</td>
+  </tr>
+</tbody>
+</table>
+
+
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top:1em;color:black;">
+    <li>压缩列表是一种为了节约内存而开发的顺序型数据结构</li>
+    <li>压缩列表被用作列表键和哈希键的底层实现之一</li>
+    <li>压缩列表可以包含多个节点，每个节点可以保存一个字节数组或者整数值</li>
+    <li>添加新节点到压缩列表，可能会引发连锁更新操作。</li>
+</ul>
+
+]]>
+    </c:sourceContent>
+
     <c:comment>
       <c:comment1>
         <![CDATA[
+        
         ]]>
       </c:comment1>
     </c:comment>
