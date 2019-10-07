@@ -342,7 +342,7 @@ Redis 的复制（replication）功能允许用户根据一个 Redis 服务器�
 
     <c:sourceContent type="html" title="简单动态字符串（simple dynamic string）SDS" id="sourceContent1" 
                      style="background-color:white;margin-top:0em;"
-                     titleStyle="padding-left:0;color:blue;font-size:1.2em;background-color:white;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.625em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
                      <![CDATA[
 <div>
@@ -499,6 +499,160 @@ struct sdshdr {
   但是在Redis中，不是靠空字符来判断字符串的结束的，而是通过len这个属性。那么，即便是中间出现了空字符对于SDS来说，读取该字符仍然是可以的。
 </div>
 
+]]>
+    </c:sourceContent>
+
+
+
+
+    <c:sourceContent type="html" title="链表 - list" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.625em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  链表提供了高效的节点重排能力，以及顺序性的节点访问方式，并且可以通过增删节点来灵活地调整链表的长度。
+</div>
+<div style="margin-top:.325em;">
+  链表在 Redis 中的应用非常广泛，比如列表键的底层实现之一就是链表。当一个列表键包含了数量较多的元素，又或者列表中包含的元素都是比较长的字符串时，Redis 就会使用链表作为列表键的底层实现。
+</div>
+<div style="margin-top:.325em;">
+  <img width="850px" src="/images/redis/redis-list1.png" />
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="链表的数据结构" id="sourceContent1" 
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+// 链表节点: 每个链表节点使用一个 listNode结构表示（adlist.h/listNode）
+typedef struct listNode{
+      struct listNode *prev;
+      struct listNode * next;
+      void * value;  
+}
+
+// 双向链表
+typedef struct list {
+    listNode  * head; // 表头节点
+    listNode  * tail; // 表尾节点
+    unsigned long len;  // 链表长度
+    void *(*dup) (void *ptr); // 节点值复制函数
+    void (*free) (void *ptr); // 节点值释放函数
+    int (*match)(void *ptr, void *key); // 节点值对比函数
+}
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  list 组成的结构图
+</div>
+<div style="margin-top:.325em;">
+  <img width="450px" src="/images/redis/redis-list2.png" />
+</div>
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="链表的特性" id="sourceContent1" 
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+    <li>双向：链表节点带有 prev 和 next 指针，获取某个节点的前置节点和后置节点的时间复杂度都是 O(N)</li>
+    <li>无环：表头节点的 prev 指针和表尾节点的 next 都指向 NULL，对立案表的访问时以 NULL 为截止</li>
+    <li>表头和表尾：因为链表带有 head 指针和 tail 指针，程序获取链表头结点和尾节点的时间复杂度为 O(1)</li>
+    <li>长度计数器：链表中存有记录链表长度的属性 len</li>
+    <li>多态：链表节点使用 void* 指针来保存节点值，并且可以通过 list 结构的 dup 、 free、 match 三个属性为节点值设置类型特定函数。</li>
+</ul>
+]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="html" title="字典 - hash" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.625em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  字典，又称为符号表（symbol table）、关联数组（associative array）或映射（map），是一种用于保存键值对的抽象数据结构。　
+</div>
+<div style="margin-top:.325em;">
+  在字典中，一个键（key）可以和一个值（value）进行关联，字典中的每个键都是独一无二的。在C语言中，并没有这种数据结构，但是 Redis 中构建了自己的字典实现。
+</div>
+<div style="margin-top:.325em;">
+  一个空的字典的结构图如下:
+</div>
+<div style="margin-top:.325em;">
+  <img width="280px" src="/images/redis/redis-dict.png" />
+</div>
+<div style="margin-top:.325em;">
+  我们可以看到，在结构中存有指向 dictEntry 数组的指针，而我们用来存储数据的空间既是 dictEntry
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="字典的定义 - 哈希表" id="sourceContent1" 
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+// Redis 字典所使用的哈希表由 dict.h/dictht 结构定义：
+typedef struct dictht {
+   //哈希表数组
+   dictEntry **table;
+   //哈希表大小
+   unsigned long size;
+
+   //哈希表大小掩码，用于计算索引值
+   unsigned long sizemask;
+   //该哈希表已有节点的数量
+   unsigned long used;
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="哈希表节点 (dictEntry)" id="sourceContent1" 
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+typeof struct dictEntry{
+
+   // 键
+   void *key;
+   
+   // 值
+   union {
+      void *val;
+      uint64_tu64;
+      int64_ts64;
+   }
+
+   struct dictEntry *next;
+
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="链地址法解决哈希冲突" id="sourceContent1" 
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+在数据结构中，我们清楚 key 是唯一的，但是我们存入里面的 key 并不是直接的字符串，而是一个 hash 值，通过hash 算法，将字符串转换成对应的 hash 值，然后在 dictEntry 中找到对应的位置。
+</div>
+<div style="margin-top:.325em;">
+这时候我们会发现一个问题，如果出现 hash 值相同的情况怎么办？Redis 采用了链地址法：当k1 和k0 的hash 值相同时，将k1中的next 指向k0 形成一个链表。
+</div>
+<div style="margin-top:.325em;">
+  <img width="680px" src="/images/redis/redis-hash-link.png" />
+</div>
 ]]>
     </c:sourceContent>
 
