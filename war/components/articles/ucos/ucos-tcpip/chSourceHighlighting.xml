@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<div>
+  实时多任务操作系统(RTOS)是嵌入式应用软件的基础和开发平台。目前，商品化的RTOS可支持从8BIT的8051到32BIT的PowerPC及DSP等几十个系列的嵌入式处理器。提供高质量源代码RTOS的著名公司主要集中在美国。
+</div>
+<div style="margin-top:.625em;">
+  目前在中国大多数嵌入式软件开发还是基于处理器直接编写，没有采用商品化的RTOS，不能将系统软件和应用软件分开处理。<b style="color:red;">RTOS是一段嵌入在目标代码中的软件，用户的其它应用程序都建立在RTOS之上。</b>不但如此，<b style="color:blue;">RTOS还是一个可靠性和可信性很高的实时内核，将CPU时间、中断、I/O、定时器等资源都包装起来，留给用户一个标准的API，并根据各个任务的优先级，合理地在不同任务之间分配CPU时间</b>。
+</div>
+]]>
+  </c:abstract>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[简化的 &mu;C/TCP-IP 模块及模块之间关系图]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+      ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  <div style="float:left;">
+    <img width="420px" src="/images/ucos/uctcpip-model.jpg" />
+  </div>
+  <div style="float:left;margin-left:.5em;width:460px;font-size:.625em;">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:60px;text-align:right;">模块</th>
+          <th>文件</th>
+          <th style="width:180px;">说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="text-align:right;">&mu;C/LIB</td>
+          <td><ul style="list-style: disc;margin-left: 1.5em;">
+            <li>lib_def.h</li>
+            <li>lib_mem.*</li>
+            <li>lib_mem_a.*</li>
+          </ul></td>
+          <td>
+            所有标准库函数都已被重写, 用于提高安全性. 例如: strcpy(), memset(), etc.
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align:right;">BSD套接字API层</td>
+          <td><ul style="list-style: disc;margin-left: 1.5em;">
+            <li>net_bsd.c/h</li>
+            <li>net_sock.c/h</li>
+          </ul></td>
+          <td>
+            BSD套接字API, 用于开发 TCP/IP 应用。属于 &mu;C/TCP-IP 的一部分
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align:right;">&mu;C/TCP-IP层</td>
+          <td><ul style="list-style: disc;margin-left: 1.5em;">
+            <li style="color: blue;"><b>TCP/IP协议相关文件:</b></li>
+            <li>ARP(net_arp.*)</li>
+            <li>ICMP(net_icmp.*)</li>
+            <li>IGMP(net_igmp.*)</li>
+            <li>IP(net_ip.*)</li>
+            <li>TCP(net_tcp.*)</li>
+            <li>UDP(net_udp.*)</li>
+          </ul><ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+            <li style="color: blue;"><b>辅助性文件:</b></li>
+            <li>ASCII码转换(net_ascii.*)</li>
+            <li>缓存管理(net_buf.*)</li>
+            <li>TCP/UDP连接管理(net_conn.*)</li>
+            <li>计数器管理(net_ctr.*)</li>
+            <li>统计(net_stat.*)</li>
+            <li>定时器管理(net_tmr.*)</li>
+            <li>其他(net_util.*)</li>
+          </ul><ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+            <li style="color: blue;"><b>各种头文件:</b></li>
+            <li>主要&mu;C/TCP-IP头文件(net_c.h)</li>
+            <li>错误码文件(net_err.h)</li>
+            <li>各种&mu;C/TCP-IP数据类型(net_type.h)</li>
+            <li>各种定义(net_def.h)</li>
+            <li>调试相关(net_dbg.h)</li>
+            <li>配置定义(net_cfg_net.h)</li>
+          </ul></td>
+          <td>
+            包含大部分的与CPU、RTOS 和编译器无关的代码
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align:right;">网络接口(IF)层</td>
+          <td><ul style="list-style: disc;margin-left: 1.5em;">
+            <li>net_if.*</li>
+            <li>lnet_if_*.*</li>
+          </ul></td>
+          <td>
+            包含几种类型的网络接口, 当前版本的 &mu;C/TCP-IP 仅支持以太网接口
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align:right;">网络设备驱动层</td>
+          <td><ul style="list-style: disc;margin-left: 1.5em;">
+            <li>net_bsp.c</li>
+          </ul></td>
+          <td>
+            这一层处理硬件细节, 例如: 如何<b>初始化设备</b>、如何使能或禁止<b>设备中断</b>、如何知道接收<b>数据包的大小</b>、如何从帧缓存中<b>读一个数据包</b>, 以及如何向设备<b>写入一个数据包</b>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align:right;">物理(PHY)层</td>
+          <td>&mdash;&nbsp;&mdash;&nbsp;&mdash;&nbsp;&mdash;</td>
+          <td>
+            设备接口需要初始化和控制，Micri&mu;m 提供了一个通用的PHY驱动，可控制大多数以太网物理层设备
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align:right;">CPU层</td>
+          <td><ul style="list-style: disc;margin-left: 1.5em;">
+            <li>cpu_a.asm</li>
+            <li>cpu.h</li>
+            <li>cpu_def.h</li>
+          </ul></td>
+          <td>
+            <div>▪▪ &mu;C/TCP-IP可用于处理8位、6位、32位甚至64位CPU, 但<b style="color:blue">必须配置CPU的相关信息</b>。不论CPU是大端模式还是小端模式，也不论CPU是如何禁止和使能中断，CPU层都将这种信息定义为16位或32位变量的C数据类型</div>
+            <div style="margin-top:.325em;">▪▪ CPU相关文件在 ...\&mu;c-CPU目录下, 用于配置&mu;C/TCP-IP适应不同的CPU。</div>
+            <div style="margin-top:.325em;">▪▪ 可<b style="color:blue;">修改 cpu*.* 文件</b>或根据&mu;C-CPU目录提供的示例文件创建新文件。修改现有文件更方便。</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align:right;">实时操作系统(RTOS)层</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="clear"></div>
+</div>
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
+        ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+</c:component>
