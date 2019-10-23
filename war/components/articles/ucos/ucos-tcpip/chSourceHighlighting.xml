@@ -493,4 +493,196 @@ Cube 软件是一个图形化的配置软件，我们只需要点一点鼠标，
     </c:comment>
   </c:entry>
 
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[uCOS-II移植到STM32上的详细步骤]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<pre>
+▪▪ 去 uCOS-II 官网下载要移植芯片CPU的相关资料，不一定完全对应，找最相似的系列
+▪▪ 编程环境一般有两种，分别是 IAR 和 MDK, 根据自己的编程环境进行下载
+▪▪ 本案例需要将 uC/OS-II 移植到 STM32F103ZET6 上, 而官网提供的案例是基于 IAR 环境的, 所以要基于 IAR 进行更改
+▪▪ 使用 MDK 创建一个无操作系统的最简单程序, 确保这个程序能够使用
+▪▪ 移植的最大改动主要有两部分，一个是头文件的增减, 另外一个是向量表中 PendSV_Handler 和 SysTick_Handler 的修改
+▪▪ 网上传的一大堆关于 OS_CPU.h 的更改还有各种函数的分析, 这部分不需要移植者去修改，
+▪▪ 官网提供的案例都已经提供了 OS_CPU.h 相关的修改，除非你选择的CPU是比较偏的.
+</pre>
+      ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="创建一个无操作系统的简单裸板系统" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<h3 style="color:green;">创建源文件工程文件夹</h3>
+<pre>
++ CMSIS
++ STM32F10x_StdPeriph
++ Usr
++ List
++ Output
+</pre>
+
+<h3 style="color:green;">CMSIS包含内核接口相关文件</h3>
+<pre>
+- core_cm3.h
+- core_cm3.c
+- stm32f10x.h
+- startup_stm32f10x_hd.s
+- system_stm32f10x.h
+- system_stm32f10x.c
+</pre>
+
+<h3 style="color:green;">STM32F10x_StdPeriph 包含固件驱动文件, 这里把 STM32F10x 的固件全部复制过来</h3>
+<pre>
+- 略
+</pre>
+
+<h3 style="color:green;">Usr 包含其他文件</h3>
+<pre>
+- stm32f10x_conf.h
+- stm32f10x_it.h
+- stm32f10x_it.c
+- main.c          # 里边要有一个 main 函数, 否则编译会报错
+</pre>
+
+<h3 style="color:green;">List 和 Output 存放编译期间的产出物</h3>
+<pre>
+- 略
+</pre>
+
+<h3 style="color:green;">创建后的工程目录结构</h3>
+<pre>
++ uCOS-STM32F1
+  + CMSIS
+    - core_cm3.h
+    - core_cm3.c
+    - stm32f10x.h
+    - startup_stm32f10x_hd.s
+    - system_stm32f10x.h
+    - system_stm32f10x.c
+  + User
+    - stm32f10x_conf.h
+    - stm32f10x_it.h
+    - stm32f10x_it.c
+    - main.c
+  + STM32F10x_StdPeriph
+    - 略
+  + List
+    - 略
+  + Output
+    - 略
+</pre>
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="简单裸板系统 —— 选配配置" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<h3 style="color:green;">Output 选项</h3>
+<div>
+  这里勾选了 Create HEX File 选项, 同时将项目输出放到了之前创建的 Output 文件夹
+</div>
+<div>
+  <img src="/images/ucos/keil/keil-config-output.png" />
+</div>
+
+<h3 style="color:green;margin-top:.625em;">Listing 选项</h3>
+<div>
+  将 List 产生的文件放入之前创建的 List 文件夹下
+</div>
+
+<h3 style="color:green;margin-top:.625em;">c/c++ 配置选项</h3>
+<pre>
+  ▪▪ 在 Define 选项中，填入: USE_STDPERIPH_DRIVER,STM32F10X_HD 这是告诉编译器使用标准外设库
+  ▪▪ 还有选择CPU的类型，其中CPU类型需要根据你选择移植的CPU进行适当修改.
+  ▪▪ Include Paths 是要包含的头文件路径，这里为了保险起见, 将项目中的所有包含 *.h 文件的文件夹都包含进去。
+</pre>
+<div>
+  <img src="/images/ucos/keil/keil-config-c_c++.png" />
+</div>
+
+<h3 style="color:green;margin-top:.625em;">Debug 配置选项</h3>
+<div>
+  这里使用的是 JLink 进行烧写调试, 所以选择了 JLink / J-Trace Cortex
+</div>
+<div>
+  <img src="/images/ucos/keil/keil-config-debug.png" />
+</div>
+
+<h3 style="color:green;margin-top:.625em;">Debug - Settings 配置选项</h3>
+<div>
+  这里要勾选 Reset and Run, 这样做的目的是: 每次烧写下载完毕后, CPU 进行复位并运行.
+</div>
+<div>
+  <img src="/images/ucos/keil/keil-config-debug-settings.png" />
+</div>
+
+<h3 style="color:green;margin-top:.625em;">Utilities 配置选项</h3>
+<div>
+  <img src="/images/ucos/keil/keil-config-utilities.png" />
+</div>
+
+<div style="color:red;font-size:1.325em;margin-top:.625em;">
+  至此，配置完毕，编译一下，没有错误，创建一个简单的点亮 LED 程序，验证一下即可。
+</div>
+]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
+        ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[移植 uCOS-II 到 STM32F10X 上]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<pre>
+▪▪ 去 uCOS-II 官网下载基于 STM32 的移植工程案例，里面的移植文档 AN-1018 中是作者写的移植文档，移植前多看看该文档
+</pre>
+      ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+<div>
+  <img src="/images/ucos/keil/ucosii-to-stm32.png" />
+</div>
+https://wenku.baidu.com/view/08422b52c5da50e2524d7f65?ivk_sa=1023194j&from=timeline
+]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
+        ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
 </c:component>
