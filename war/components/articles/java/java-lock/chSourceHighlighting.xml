@@ -2003,16 +2003,16 @@ JavaThread* biased_locker() const {
     <c:sourceContent type="html" title="偏向锁的批量再偏向（Bulk Rebias）机制" id="sourceContent1" 
                      style="background-color:white;margin-top:1.5em;"
                      titleStyle="padding-left:0;color:blue;font-size:1.425em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.325em;font-family:monospace;">
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
                      <![CDATA[
 
-<div style="margin-top:.325em;">
+<div style="margin-top:.625em;">
     偏向锁这个机制很特殊，别的锁在执行完同步代码块后，都会有释放锁的操作，而偏向锁并没有直观意义上的“释放锁”操作。
 </div>
-<div style="margin-top:.325em;">
-    那么作为开发人员，很自然会产生的一个问题就是，如果一个对象先偏向于某个线程，执行完同步代码后，另一个线程就不能直接重新获得偏向锁吗？ 答案是可以，JVM 提供了批量再偏向机制（Bulk Rebias）机制
+<div style="margin-top:.625em;">
+    那么作为开发人员，很自然会产生的一个问题就是，如果一个对象先偏向于某个线程，执行完同步代码后，另一个线程就不能直接重新获得偏向锁吗？答案是可以，JVM 提供了批量再偏向机制（Bulk Rebias）机制
 </div>
-<div style="margin-top:.325em;">
+<div style="margin-top:.625em;">
     该机制的主要工作原理如下：
 </div>
 <ul style="margin-left: 1.5em;list-style-type: disc;margin-top:.325em;">
@@ -2024,6 +2024,62 @@ JavaThread* biased_locker() const {
     <li>退出安全点后，当有线程需要尝试获取偏向锁时，直接检查 class C 中存储的 epoch 值是否与目标对象中存储的 epoch 值相等，如果不相等，则说明该对象的偏向锁已经无效了，可以尝试对此对象重新进行偏向操作。</li>
 </ul>
 
+
+<h4 style="color:green;margin-top:1em;">偏向锁 -> 轻量级锁</h4>
+
+<div style="margin-top:.625em;">
+    从之前的描述中可以看到，存在超过一个线程竞争某一个对象时，会发生偏向锁的撤销操作。有趣的是，偏向锁撤销后，对象可能处于两种状态。
+</div>
+
+<div style="margin-top:.625em;">
+    ▪▪ 一种是<b>不可偏向的无锁状态</b>，如下图（之所以不允许偏向，是因为已经检测到了多于一个线程的竞争，升级到了轻量级锁的机制）
+</div>
+
+<div style="margin-top:.625em;">
+    ▪▪ 另一种是<b>不可偏向的已锁 (轻量级锁) 状态</b>
+</div>
+
+<div style="margin-top:.625em;">
+    <img style="float:left;margin-right:1em;" src="/images/java/non-biasable-unlocked.jpg" />
+    <img style="float:left;" src="/images/java/lightweight-locked-object.jpg" />
+    <div class="clear"></div>
+</div>
+
+<div style="margin-top:.625em;">
+    之所以会出现上述两种状态，是因为偏向锁不存在解锁的操作，只有撤销操作。触发撤销操作时：
+</div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top:.325em;">
+    <li>原来已经获取了偏向锁的线程可能已经执行完了同步代码块，使得对象处于“闲置状态”，相当于原有的偏向锁已经过期无效了。此时该对象就应该被直接转换为不可偏向的无锁状态。</li>
+    <li>原来已经获取了偏向锁的线程也可能尚未执行完同步代码块，偏向锁依旧有效，此时对象就应该被转换为被轻量级加锁的状态</li>
+</ul>
+
+
+<h4 style="color:green;margin-top:1em;">轻量级加锁过程</h4>
+
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top:.325em;">
+    <li>首先根据标志位判断出对象状态处于不可偏向的无锁状态(如上图）</li>
+    <li>在当前线程的栈桢（Stack Frame）中创建用于存储锁记录（lock record）的空间，并将对象头中的 Mark Word 复制到锁记录中，官方称为 Displaced Mark Word。</li>
+    <li>然后线程尝试使用 CAS 操作将对象头中的 Mark Word 替换为指向锁记录的指针。</li>
+    <li>如果成功，当前线程获得锁。</li>
+    <li>如果失败，表示该对象已经被加锁了，先进行<em style="font-size:1.125em;color:red;">自旋操作</em>，再次尝试 CAS 争抢，如果仍未争抢到，则进一步升级锁至重量级锁。</li>
+</ul>
+
+<div style="margin-top:.625em;">
+    下图展示了两个 Synchronized 线程竞争锁，最终导致锁膨胀为重量级锁的过程。<br />
+    注意：下图中第一个标绿 MarkWord 的起始状态是错误的，正确的起始状态应该是 <b>ThreadId(空)|age|1|01</b> 而 <b>HashCode|age|0|01</b> 是偏向锁未被启用时，分配对象后的状态。
+</div>
+
+<div style="margin-top:.625em;">
+    <img src="/images/java/lock-upgrade-flow.png" />
+</div>
+
+
+<h4 style="color:green;margin-top:1em;">重量级锁</h4>
+<div style="margin-top:.625em;">
+    重量级锁依赖于操作系统的互斥量（mutex）实现，其具体的详细机制此处暂不展开，日后可能补充。此处暂时只需要了解<em style="font-size:1.125em;color:red;">重量级锁加锁过程会导致进程从用户态与内核态之间的切换</em>，是一个开销较大的操作。
+</div>
+
+<a href="https://blog.csdn.net/zqz_zqz/article/details/70233767">https://blog.csdn.net/zqz_zqz/article/details/70233767</a>
 ]]>
     </c:sourceContent>
 
