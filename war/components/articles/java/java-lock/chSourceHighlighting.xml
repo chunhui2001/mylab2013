@@ -1964,18 +1964,65 @@ JavaThread* biased_locker() const {
 
 </pre>
 
-<h4 style="color:blue;margin-top:1em;">如果为可偏向状态, 则尝试用CAS操作， 将自己的线程ID写入 MarkWord</h4>
+<h4 style="color:green;margin-top:1em;">如果为可偏向状态, 则尝试用CAS操作， 将自己的线程ID写入 MarkWord</h4>
 <ul style="margin-left: 1.5em;list-style-type: disc;margin-top:.325em;">
     <li>如果 CAS 操作成功，则认为已经获取到该对象的偏向锁，执行同步块代码。注意，age 后面的标志位中的值并没有变化，这点之后会用到</li>
     <li>补充：一个线程在执行完同步代码块以后，并不会尝试将 MarkWord 中的 thread ID 赋回原值。这样做的好处是：如果该线程需要再次对这个对象加锁，而这个对象之前一直没有被其他线程尝试获取过锁，依旧停留在可偏向的状态下，即可在不修改对象头的情况下，直接认为偏向成功。</li>
     <li><em style="font-size:1.125em;color:red;">如果 CAS 操作失败，则说明，有另外一个线程 Thread B 抢先获取了偏向锁。这种状态说明该对象的竞争比较激烈，此时需要撤销 Thread B 获得的偏向锁，将 Thread B 持有的锁升级为轻量级锁。</em>该操作需要等待全局安全点 JVM safepoint (此时间点，没有线程在执行字节码)。</li>
 </ul>
 
-<h4 style="color:blue;margin-top:1em;">从上面的偏向锁机制描述中，可以注意到</h4>
+<h4 style="color:green;margin-top:1em;">从上面的偏向锁机制描述中，可以注意到</h4>
 
 <div style="margin-top:.325em;">
     偏向锁的撤销（revoke）是一个很特殊的操作，为了执行撤销操作，需要等待全局安全点（Safe Point），此时间点所有的工作线程都停止了字节码的执行。
 </div>
+
+]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="偏向锁的撤销（Revoke）" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+<div style="margin-top:.325em;">
+    如上文提到的，偏向锁的撤销（Revoke）操作并不是将对象恢复到无锁可偏向的状态，而是在偏向锁的获取过程中，发现了竞争时，直接将一个被偏向的对象 “升级到” 被加了轻量级锁的状态。这个操作的具体完成方式如下：
+</div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top:.325em;">
+    <li>在偏向锁 CAS 更新操作失败以后，等待到达全局安全点。</li>
+    <li>通过 MarkWord 中已经存在的 Thread Id 找到成功获取了偏向锁的那个线程, 然后在该线程的栈帧中新增一条锁记录（Lock Record），然后将被获取了偏向锁对象的 MarkWord 更新为指向这条锁记录的指针。</li>
+    <li>至此，锁撤销操作完成，阻塞在安全点的线程可以继续执行。</li>
+</ul>
+
+]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="偏向锁的批量再偏向（Bulk Rebias）机制" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.325em;font-family:monospace;">
+                     <![CDATA[
+
+<div style="margin-top:.325em;">
+    偏向锁这个机制很特殊，别的锁在执行完同步代码块后，都会有释放锁的操作，而偏向锁并没有直观意义上的“释放锁”操作。
+</div>
+<div style="margin-top:.325em;">
+    那么作为开发人员，很自然会产生的一个问题就是，如果一个对象先偏向于某个线程，执行完同步代码后，另一个线程就不能直接重新获得偏向锁吗？ 答案是可以，JVM 提供了批量再偏向机制（Bulk Rebias）机制
+</div>
+<div style="margin-top:.325em;">
+    该机制的主要工作原理如下：
+</div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top:.325em;">
+    <li>引入一个概念 epoch, 其本质是一个时间戳，代表了偏向锁的有效性。</li>
+    <li>从前文描述的对象头结构中可以看到，epoch 存储在可偏向对象的 MarkWord 中。</li>
+    <li>除了对象中的 epoch, 对象所属的类 class 信息中， 也会保存一个 epoch 值。</li>
+    <li>每当遇到一个全局安全点时，如果要对 class C 进行批量再偏向，则首先对 class C 中保存的 epoch 进行增加操作，得到一个新的 epoch_new。</li>
+    <li>然后扫描所有持有 class C 实例的线程栈，根据线程栈的信息判断出该线程是否锁定了该对象，仅将 epoch_new 的值赋给被锁定的对象中。</li>
+    <li>退出安全点后，当有线程需要尝试获取偏向锁时，直接检查 class C 中存储的 epoch 值是否与目标对象中存储的 epoch 值相等，如果不相等，则说明该对象的偏向锁已经无效了，可以尝试对此对象重新进行偏向操作。</li>
+</ul>
 
 ]]>
     </c:sourceContent>
