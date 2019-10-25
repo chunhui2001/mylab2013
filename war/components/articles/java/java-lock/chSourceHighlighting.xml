@@ -154,7 +154,7 @@ volatile 类型是这样的，其数据确实可能在未知的情况下发生�
                      <![CDATA[
 
 <div>
-  <b>可见性，是指线程之间的可见性，一个线程修改的状态对另一个线程是可见的。</b>也就是一个线程修改的结果。另一个线程马上就能看到。比如：用 volatile 修饰的变量，就会具有可见性。<b>volatile 修饰的变量<em style="font-size:1.5em;color:red;">不允许线程内部缓存和重排序</em>，即直接修改内存。</b>所以对其他线程是可见的。但是这里需要注意一个问题，volatile 只能让被他修饰内容具有可见性，但不能保证它具有原子性。比如 volatile int a = 0；之后有一个操作 a++；这个变量a具有可见性，但是 <b style="font-size:1.5em;color:red;">a++ 依然是一个非原子操作</b>，也就是这个操作同样存在线程安全问题。
+  <b>可见性，是指线程之间的可见性，一个线程修改的状态对另一个线程是可见的。</b>也就是一个线程修改的结果。另一个线程马上就能看到。比如：用 volatile 修饰的变量，就会具有可见性。<b>volatile 修饰的变量<em style="font-size:1.5em;color:red;">不允许线程内部缓存和重排序</em>，即直接修改内存。</b>所以对其他线程是可见的。但是这里需要注意一个问题，volatile 只能让被他修饰内容具有可见性，但不能保证它具有原子性。比如 volatile int a = 0；之后有一个操作 a++；这个变量a具有可见性，但是 <em style="font-size:1.5em;color:red;">a++ 依然是一个非原子操作</em>，也就是这个操作同样存在线程安全问题。
 </div>
 
 <h4 style="margin-top:.625em;">在 Java 中 volatile、synchronized 和 final 实现可见性。</h4>
@@ -1782,7 +1782,6 @@ function cas(p , old , new ) returns bool {
 
 ]]>
     </c:sourceContent>
-
     <c:sourceContent type="" title="" id="sourceContent1" 
                      style="background-color:white;margin-top:.325em;"
                      titleStyle="padding-left:0;color:blue;font-size:1.425em;background-color:white;"
@@ -1801,6 +1800,185 @@ function cas( p , old , new) returns bool {
 ]]>
     </c:sourceContent>
 
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+<h4 style="color:green;">误区二：CAS 操作的 ABA 问题</h4>
+<div style="margin-top:.325em;">
+    大部分网络博文对 ABA 问题的常见描述是：应用 CAS 操作时，目标地址的值刚开始为 A，工作线程/进程 读取后，进行了一系列运算，计算得出了新值 C， 在此期间，目标地址的值被其他线程已经进行了不止一次修改，其值已经从 A 被改为 B，又改回 A，此时便会发生同步问题。
+</div>
+<div style="margin-top:.625em;">
+    上面的描述是其实是错误的，思考一下就会发现，如果工作线程的操作目的是将目标地址的值从 A 改为 C， 那么即便在这期间目标地址的值经过了其他线程或进程的多次修改，其语义依旧是正确的。
+</div>
+<div style="margin-top:.625em;">
+    例如目前要将某银行账号的余额扣除 50，通过 CAS 保证同步：
+</div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top:.125em;">
+    <li>首先读取原有余额为 100</li>
+    <li>计算余额应该赋值为 100 - 50 = 50</li>
+    <li>此时该线程被挂起，该账户同时又发生了转入 150 和转出 150 的操作，余额经历了 100 -》250 -》100 的变动</li>
+    <li>线程被唤醒，进行 CAS 赋值操作 cas（p， 100， 50），正常得以执行。</li>
+    <li>该账户的余额依旧是正确的</li>
+</ul>
+<div style="margin-top:.625em;">
+    通过上述例子就可以发现，ABA 的问题并不在于多次修改。查阅一下 CAS 的 wiki 解释，就会发现，ABA 真正的问题是，假如目标地址的内容被多次修改以后， 虽然从二进制上来看是依旧是 A，但是其语义已经不是 A 。例如，发生了整数溢出，内存回收等等。
+</div>
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="栈帧（Stack Frame）的概念" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div style="margin-top:.325em;">
+    这个概念涉及的内容较多，不便于展开叙述。从理解下文的角度上来讲，需要知道，每个线程都有自己独立的内存空间，栈帧就是其中的一部分。里面可以存储仅属于该线程的一些信息。
+</div>
+<div style="margin-top:.325em;">
+    需要深入了解，请自行查阅"栈帧"相关的概念 ........
+</div>
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="轻量级加锁的过程" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div style="margin-top:.325em;">
+    ▪ 在代码进入同步块的时候，如果同步对象锁状态为无锁状态（锁标志位为“01”状态，是否为偏向锁为“0”），虚拟机首先将<em style="font-size:1.325em;color:red;">在当前线程的栈帧中建立一个名为锁记录（Lock Record）的空间(1)</em>，用于存储锁对象目前的 Mark Word 的拷贝，官方称之为 Displaced Mark Word。
+</div>
+<div style="margin-top:.325em;">
+    ▪ <em style="font-size:1.325em;color:red;">将对象头中的 Mark Word 复制到锁记录中(2)</em>。这时候线程堆栈与对象头的状态如下图1所示。
+</div>
+<div style="margin-top:.325em;">
+    ▪ 拷贝成功后，虚拟机将<em style="font-size:1.325em;color:red;">使用 CAS 操作尝试将对象的 Mark Word 更新为指向 Lock Record 的指针，并将 Lock record 里的 owner 指针指向 object mark word(3)</em>。
+</div>
+<div style="margin-top:.325em;">
+    ▪ 如果<em style="font-size:1.325em;color:red;">(3)</em>更新动作成功了，那么这个线程就拥有了该对象的锁，并且对象 Mark Word 的锁标志位设置为 “00”，即表示此对象处于轻量级锁定状态，这时候线程堆栈与对象头的状态如下图2所示。
+</div>
+<div style="margin-top:.3em;">
+    <img width="430px" style="float:left;border: solid 1px gray;margin-right:1em;" src="/images/java/stackframe-class-header.png" />
+    <img width="305px" style="float:left;border: solid 1px gray;" src="/images/java/stackframe-class-header2.png" />
+    <div class="clear"></div>
+</div>
+<div style="margin-top:.325em;">
+    ▪ 如果<em style="font-size:1.325em;color:red;">(3)</em>更新操作失败了，说明多个线程竞争锁，轻量级锁就要膨胀为重量级锁。
+</div>
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="重量级加锁的过程" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+<div style="margin-top:.325em;">
+    ▪ 轻量级锁在向重量级锁膨胀的过程中，一个操作系统的互斥量（mutex）和条件变量（condition variable) 会和这个被锁的对象关联起来。
+</div>
+
+<div style="margin-top:.325em;">
+    ▪ 具体而言，在锁膨胀时，<em style="font-size:1.325em;color:red;">被锁对象的 markword 会被通过 CAS 操作尝试更新为一个数据结构的指针</em>，这个数据结构中进一步包含了指向操作系统互斥量(mutex) 和 条件变量（condition variable）的指针
+</div>
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="synchronized 关键字之锁的升级（偏向锁->轻量级锁->重量级锁）" id="sourceContent1" 
+                     style="background-color:white;margin-top:1.5em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+<div style="margin-top:.325em;">
+    前面提到过，synchronized 代码块是由一对 monitorenter/moniterexit 字节码指令实现，monitor 是其同步实现的基础，Java SE1.6 为了改善性能，使得 JVM 会根据竞争情况，使用如下 3 种不同的锁机制:
+</div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top:.125em;">
+    <li>偏向锁（Biased Lock ）</li>
+    <li>轻量级锁（ Lightweight Lock）</li>
+    <li>重量级锁（Heavyweight Lock）</li>
+</ul>
+
+<div style="margin-top:1em;">
+    上述这三种机制的切换是根据竞争激烈程度进行的，在几乎无竞争的条件下，会使用偏向锁，在轻度竞争的条件下，会由偏向锁升级为轻量级锁，在重度竞争的情况下，会升级到重量级锁。
+</div>
+
+<div style="margin-top:1em;">
+    注意 JVM 提供了关闭偏向锁的机制，JVM 启动命令指定如下参数即可:
+</div>
+<div style="margin-top:0em;">
+    -XX:-UseBiasedLocking
+</div>
+
+<div style="margin-top:1em;">
+    下图展现了一个对象在创建（allocate）后，根据偏向锁机制是否打开，对象 MarkWord 状态以不同方式转换的过程:
+</div>
+
+<div style="margin-top:.3em;">
+    <img width="490px" style="float:left;border: solid 1px gray;margin-right:5px;" src="/images/java/lock-level-upgrade.jpeg" />
+    <img width="470px" style="float:left;border: solid 1px gray;" src="/images/java/lock-level-upgrade2.png" />
+    <div class="clear"></div>
+</div>
+
+<h4 style="color:green;margin-top:1em;">无锁 -> 偏向锁</h4>
+
+<div style="margin-top:1em;">
+    从上图可以看到，偏向锁的获取方式是将对象头的 MarkWord 部分中，标记上线程ID，以表示哪一个线程获得了偏向锁。具体的赋值逻辑如下：
+</div>
+
+<h4 style="color:blue;margin-top:1em;">Open Jdk/ JDK 8 源码 </h4>
+<pre style="font-size:.625em;padding:1em;background-color:beige;color:green;margin-top:.325em;border:solid 1px cadetblue;">
+// Indicates that the mark has the bias bit set but that it has not
+// yet been biased toward a particular thread
+bool is_biased_anonymously() const {
+    return (has_bias_pattern() && (biased_locker() == NULL));
+}
+
+/****** markOop.hpp ******/
+// Biased Locking accessors.
+// These must be checked by all code which calls into the
+// ObjectSynchronizer and other code. The biasing is not understood
+// by the lower-level CAS-based locking code, although the runtime
+// fixes up biased locks to be compatible with it when a bias is
+// revoked.
+bool has_bias_pattern() const {
+    return (mask_bits(value(), biased_lock_mask_in_place) == biased_lock_pattern);
+}
+
+JavaThread* biased_locker() const {
+    assert(has_bias_pattern(), "should not call this otherwise");
+    return (JavaThread*) 
+           ((intptr_t) 
+           (mask_bits(value(), ~(biased_lock_mask_in_place | age_mask_in_place | epoch_mask_in_place))));
+}
+
+// has_bias_pattern() 返回 true 时代表 markword 的可偏向标志 bit 位为 1 ，且对象头末尾标志为 01。
+// biased_locker() == NULL 返回 true 时代表对象 Mark Word 中 bit field 域存储的 Thread Id 为空。
+
+</pre>
+
+<h4 style="color:blue;margin-top:1em;">如果为可偏向状态, 则尝试用 CAS 操作， 将自己的线程 ID 写入MarkWord</h4>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top:.325em;">
+    <li>如果 CAS 操作成功，则认为已经获取到该对象的偏向锁，执行同步块代码。注意，age 后面的标志位中的值并没有变化，这点之后会用到</li>
+    <li>补充：一个线程在执行完同步代码块以后，并不会尝试将 MarkWord 中的 thread ID 赋回原值。这样做的好处是：如果该线程需要再次对这个对象加锁，而这个对象之前一直没有被其他线程尝试获取过锁，依旧停留在可偏向的状态下，即可在不修改对象头的情况下，直接认为偏向成功。</li>
+    <li><em style="font-size:1.125em;color:red;">如果 CAS 操作失败，则说明，有另外一个线程 Thread B 抢先获取了偏向锁。这种状态说明该对象的竞争比较激烈，此时需要撤销 Thread B 获得的偏向锁，将 Thread B 持有的锁升级为轻量级锁。</em>该操作需要等待全局安全点 JVM safepoint (此时间点，没有线程在执行字节码)。</li>
+</ul>
+
+<h4 style="color:blue;margin-top:1em;">从上面的偏向锁机制描述中，可以注意到</h4>
+
+<div style="margin-top:.325em;">
+    偏向锁的撤销（revoke）是一个很特殊的操作，为了执行撤销操作，需要等待全局安全点（Safe Point），此时间点所有的工作线程都停止了字节码的执行。
+</div>
+
+]]>
+    </c:sourceContent>
 
     <c:comment>
       <c:comment1>
