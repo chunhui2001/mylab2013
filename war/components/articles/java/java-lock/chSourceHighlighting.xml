@@ -1964,7 +1964,7 @@ JavaThread* biased_locker() const {
 
 </pre>
 
-<h4 style="color:blue;margin-top:1em;">如果为可偏向状态, 则尝试用 CAS 操作， 将自己的线程 ID 写入MarkWord</h4>
+<h4 style="color:blue;margin-top:1em;">如果为可偏向状态, 则尝试用CAS操作， 将自己的线程ID写入 MarkWord</h4>
 <ul style="margin-left: 1.5em;list-style-type: disc;margin-top:.325em;">
     <li>如果 CAS 操作成功，则认为已经获取到该对象的偏向锁，执行同步块代码。注意，age 后面的标志位中的值并没有变化，这点之后会用到</li>
     <li>补充：一个线程在执行完同步代码块以后，并不会尝试将 MarkWord 中的 thread ID 赋回原值。这样做的好处是：如果该线程需要再次对这个对象加锁，而这个对象之前一直没有被其他线程尝试获取过锁，依旧停留在可偏向的状态下，即可在不修改对象头的情况下，直接认为偏向成功。</li>
