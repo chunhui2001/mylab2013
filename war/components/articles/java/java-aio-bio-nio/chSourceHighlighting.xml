@@ -318,6 +318,121 @@ select，poll，epoll 都是IO多路复用中的模型。同其他IO的不同的
      &#x278C; 调用epoll_wait收集发生事件的连接。
     </li>
 </ul>
+
+<div style="margin-top:.625em;">
+  从上面的调用方式就可以看到epoll比select/poll的优越之处：因为后者每次调用时都要传递你所要监控的所有socket给select/poll系统调用，这意味着需要将用户态的socket列表copy到内核态，如果以万计的句柄会导致每次都要copy几十几百KB的内存到内核态，非常低效。而我们调用epoll_wait时就相当于以往调用select/poll，但是这时却不用传递socket句柄给内核，因为内核已经在epoll_ctl中拿到了要监控的句柄列表。
+</div>
+
+<div style="margin-top:.625em;">
+  所以，实际上在你调用epoll_create后，内核就已经在内核态开始准备帮你存储要监控的句柄了，每次调用epoll_ctl只是在往内核的数据结构里塞入新的socket句柄。
+</div>
+
+<div style="margin-top:.625em;">
+  在内核里，一切皆文件。所以，epoll向内核注册了一个文件系统，用于存储上述的被监控socket。当你调用epoll_create时，就会在这个虚拟的epoll文件系统里创建一个file结点。当然这个file不是普通文件，它只服务于epoll。
+</div>
+
+<div style="margin-top:.625em;">
+  epoll在被内核初始化时（操作系统启动），同时会开辟出epoll自己的内核高速cache区，用于安置每一个我们想监控的socket，<em style="font-size:1.125em;color:green;">这些socket会以红黑树的形式保存在内核cache里</em>，以支持快速的查找、插入、删除。这个内核高速cache区，就是建立连续的物理内存页，然后在之上建立slab层，简单的说，就是物理上分配好你想要的size的内存对象，每次使用时都是使用空闲的已分配好的对象。
+</div>
+
+<div style="margin-top:.625em;">
+  epoll的高效就在于，当我们调用epoll_ctl往里塞入百万个句柄时，epoll_wait仍然可以飞快的返回，并有效的将发生事件的句柄给我们用户。这是由于<em style="font-size:1.125em;color:chocolate;">我们在调用epoll_create时，内核除了帮我们在epoll文件系统里建了个file结点，在内核cache里建了个红黑树用于存储以后epoll_ctl传来的socket外，还会再建立一个list链表，用于存储准备就绪的事件，当epoll_wait调用时，仅仅观察这个list链表里有没有数据即可。有数据就返回，没有数据就sleep，等到timeout时间到后即使链表没数据也返回。</em>所以，epoll_wait非常高效。
+</div>
+
+<div style="margin-top:.625em;">
+  而且，通常情况下即使我们要监控百万计的句柄，大多一次也只返回很少量的准备就绪句柄而已，所以，epoll_wait仅需要从内核态copy少量的句柄到用户态而已，如何能不高效？！
+</div>
+
+<div style="margin-top:.625em;">
+  那么，这个准备就绪list链表是怎么维护的呢？<em style="font-size:1.125em;color:darkorchid;">当我们执行epoll_ctl时，除了把socket放到epoll文件系统里file对象对应的红黑树上之外，还会给内核中断处理程序注册一个回调函数，告诉内核，如果这个句柄的中断到了，就把它放到准备就绪list链表里。所以，当一个socket上有数据到了，内核在把网卡上的数据copy到内核中后就来把socket插入到准备就绪链表里了。</em>
+</div>
+
+<div style="margin-top:.625em;">
+  如此，一颗红黑树，一张准备就绪句柄链表，少量的内核cache，就帮我们解决了大并发下的socket处理问题。执行epoll_create时，创建了红黑树和就绪链表，执行epoll_ctl时，如果增加socket句柄，则检查在红黑树中是否存在，存在立即返回，不存在则添加到树干上，然后向内核注册回调函数，用于当中断事件来临时向准备就绪链表中插入数据。执行epoll_wait时立刻返回准备就绪链表里的数据即可。
+</div>
+
+
+<h4 style="color:green;margin-top:1em;">两种模式LT和ET</h4>
+
+<div style="margin-top:.625em;">
+  最后看看epoll独有的两种模式LT和ET。无论是LT和ET模式，都适用于以上所说的流程。区别是，LT模式下，只要一个句柄上的事件一次没有处理完，会在以后调用epoll_wait时次次返回这个句柄，而ET模式仅在第一次返回。
+</div>
+
+<div style="margin-top:.625em;">
+  这件事怎么做到的呢？当一个socket句柄上有事件时，内核会把该句柄插入上面所说的准备就绪list链表，这时我们调用epoll_wait，会把准备就绪的socket拷贝到用户态内存，然后清空准备就绪list链表，最后，epoll_wait干了件事，就是检查这些socket，如果不是ET模式（就是LT模式的句柄了），并且这些socket上确实有未处理的事件时，又把该句柄放回到刚刚清空的准备就绪链表了。所以，非ET的句柄，只要它上面还有事件，epoll_wait每次都会返回。而ET模式的句柄，除非有新中断到，即使socket上的事件没有处理完，也是不会次次从epoll_wait返回的。
+</div>
+
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.325em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+<div>
+epoll 用 kmem_cache_create（slab分配器）分配内存用来存放 struct epitem 和 struct eppoll_entry。
+</div>
+
+<div style="margin-top:.325em;">
+当向系统中添加一个 fd 时，就创建一个 epitem 结构体，这是内核管理 epoll 的基本数据结构：
+</div>
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="epitem" id="sourceContent1" 
+                     style="background-color:white;margin-top:.325em;"
+                     titleStyle="padding-left:0;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+struct epitem {
+  struct rb_node rbn;       // 用于主结构管理的红黑树
+  struct list_head rdllink; // 事件就绪队列
+  struct epitem *next;      // 用于主结构体中的链表
+  struct epoll_filefd ffd;  // 这个结构体对应的被监听的文件描述符信息
+  int nwait;                // poll操作中事件的个数
+  struct list_head pwqlist; // 双向链表，保存着被监视文件的等待队列，功能类似于select/poll中的poll_table
+  struct eventpoll *ep;     // 该项属于哪个主结构体（多个epitm从属于一个eventpoll）
+  struct list_head fllink;  // 双向链表，用来链接被监视的文件描述符对应的struct file。因为file里有f_ep_link,用来保存所有监视这个文件的epoll节点
+  struct epoll_event event; // 注册的感兴趣的事件,也就是用户空间的epoll_event
+}
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="eventpoll" id="sourceContent1" 
+                     style="background-color:white;margin-top:.325em;"
+                     titleStyle="padding-left:0;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+struct eventpoll {
+  spin_lock_t lock;            // 对本数据结构的访问
+  struct mutex mtx;            // 防止使用时被删除
+  wait_queue_head_t wq;        // sys_epoll_wait() 使用的等待队列
+  wait_queue_head_t poll_wait; // file->poll() 使用的等待队列
+  struct list_head rdllist;    // 事件满足条件的链表 /* 双链表中则存放着将要通过 epoll_wait 返回给用户的满足条件的事件 */
+  struct rb_root rbr;          // 用于管理所有fd的红黑树（树根）/* 红黑树的根节点，这颗树中存储着所有添加到 epoll 中的需要监控的事件 */
+  struct epitem *ovflist;      // 将事件到达的fd进行链接起来发送至用户空间
+}
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<h4 style="color:green;">struct eventpoll 在 epoll_create 时创建。所以内核中维护了一棵红黑树，大致的结构如下：</h4>
+<div style="margin-top:.325em;">
+  <img style="width:100%;" src="/images/java/eventpoll-tree.png"></img>
+</div>
+
+<h4 style="color:green;">struct eventpoll 底层架构流程</h4>
+<div style="margin-top:.325em;">
+  <img style="width:100%;" src="/images/java/eventpoll.png"></img>
+</div>
 ]]>
     </c:sourceContent>
 
@@ -391,9 +506,9 @@ NioSocketChannel → EpollSocketChannel
     <c:sourceContent type="html" title="" id="sourceContent1" 
                      style="background-color:white;margin-top:.625em;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     bodyStyle="color:red;padding:0;font-size:1em;line-height:1.625em;">
                      <![CDATA[
-Netty 的 epoll transport 使用 epoll edge-triggered 而 java 的 nio 使用 level-triggered。另外 netty epoll transport 暴露了更多的 nio 没有的配置参数，如 TCP_CORK, SO_REUSEADDR 等等
+<b>Netty 的 epoll transport 使用 epoll edge-triggered 而 java 的 nio 使用 level-triggered。另外 netty epoll transport 暴露了更多的 nio 没有的配置参数，如 TCP_CORK, SO_REUSEADDR 等等</b>
 ]]>
     </c:sourceContent>
     <c:sourceContent type="html" title="高效的 epoll" id="sourceContent1" 
