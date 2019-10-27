@@ -249,6 +249,86 @@ while (true) {
 
 
 
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[网络编程 select, poll, epoll 区别于联系]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div>
+select，poll，epoll 都是IO多路复用中的模型。同其他IO的不同的是, IO多路复用一次可以等多个文件描述符。大大提高了等待数据准备好的时间的效率。以下是一组多路复用的模型图示:
+</div>
+
+<div style="margin-top:.325em;">
+  <img style="width:680px;" src="/images/java/select.png"></img>
+</div>
+
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="select 的缺点" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  <b style="color:green;">单个进程监控的文件描述符有限，通常为1024*8个文件描述符。</b>当然可以改进，由于select采用轮询方式扫描文件描述符。文件描述符数量越多，性能越差。
+</div>
+<div style="margin-top:.625em;">
+  <b style="color:green;">内核/用户数据拷贝频繁，操作复杂。</b>select在调用之前，需要手动在应用程序里将要监控的文件描述符添加到fed_set集合中。然后加载到内核进行监控。用户为了检测时间是否发生，还需要在用户程序手动维护一个数组，存储监控文件描述符。当内核事件发生，在将fed_set集合中没有发生的文件描述符清空，然后拷贝到用户区，和数组中的文件描述符进行比对。再调用selecct也是如此。每次调用，都需要来回拷贝。
+</div>
+<div style="margin-top:.625em;">
+  <b style="color:green;">轮询时间效率低。</b>select返回的是整个数组的句柄。应用程序需要遍历整个数组才知道谁发生了变化。轮询代价大。
+</div>
+<div style="margin-top:.625em;">
+  <b style="color:green;">select 是水平触发。</b>应用程序如果没有完成对一个已经就绪的文件描述符进行IO操作。那么之后select调用还是会将这些文件描述符返回，通知进程。
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="poll 特点" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  poll操作比select稍微简单点。select采用三个位图来表示fd_set，poll使用pollfd的指针. pollfd结构包含了要监视的event和发生的event，不再使用select传值的方法。更方便
+</div>
+<div style="margin-top:.625em;">
+  <b style="color:green;">select的缺点依然存在。</b>拿select为例，加入我们的服务器需要支持100万的并发连接。则在FD_SETSIZE为1024的情况下，我们需要开辟100个并发的进程才能实现并发连接。除了进程上下调度的时间消耗外。从内核到用户空间的无脑拷贝，数组轮询等，也是系统难以接受的。因此，基于select实现一个百万级别的并发访问是很难实现的。
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="epoll模型" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  由于epoll和上面的实现机制完全不同，所以上面的问题将在epoll中不存在。
+</div>
+<div style="margin-top:.625em;">
+  在select/poll中，服务器进程每次调用select都需要把这100万个连接告诉操作系统（从用户态拷贝到内核态）。让操作系统检测这些套接字是否有时间发生。轮询完之后，再将这些句柄数据复制到操作系统中，让服务器进程轮询处理已发生的网络时间。这一过程耗时耗力，而epoll通过在linux申请一个建议的文件系统，把select调用分为了三部分。
+</div>
+
+<ul style="margin-left:.5em;margin-top:.625em;line-height:1.425em;">
+    <li style="margin-bottom: .3em;">
+      &#x278A; 调用epoll_create建立一个epoll对象，这个对象包含了一个红黑树和一个双向链表。并与底层建立回调机制。
+    </li>
+    <li style="margin-bottom: .3em;">
+      &#x278B; 调用epoll_ctl向epoll对象中添加这100万个连接的套接字
+    </li>
+    <li style="margin-bottom: .3em;">
+     &#x278C; 调用epoll_wait收集发生事件的连接。
+    </li>
+</ul>
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
     <c:title><![CDATA[Java NIO && Netty 的 epoll实现]]></c:title>
