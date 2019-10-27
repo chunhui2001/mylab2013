@@ -10,10 +10,36 @@
 IO 类设计出来，肯定是为了解决 IO 相关的操作的，想一想哪里会有 IO 操作？网络、磁盘。网络操作相关的类是在 java.net 包下，不在本文的总结范围内。提到磁盘，你可能会想到文件，文件操作在 IO 中是比较典型的操作。在 Java 中引入了 “流” 的概念，它表示任何有能力产生数据源或有能力接收数据源的对象。数据源可以想象成水源，海水、河水、湖水、一杯水等等。数据传输可以想象为水的运输，古代有用桶运水，用竹管运水的，现在有钢管运水，不同的运输方式对应不同的运输特性。
 </div>
 
-
 <div style="margin-top:.625em;">
     <img style="margin:auto;width:100%;" src="/images/java/java-io.webp" />
 <div>
+
+<div style="margin-top:.625em;">
+在高性能的I/O设计中，有两个比较著名的模式Reactor和Proactor模式，其中Reactor模式用于同步I/O，而Proactor运用于异步I/O操作。
+</div>
+
+<div style="margin-top:.625em;">
+在比较这两个模式之前，我们首先的搞明白几个概念，什么是<b style="color:blue;">阻塞和非阻塞</b>，什么是<b style="color:green;">同步和异步</b>, 同步和异步是针对应用程序和内核的交互而言的，<b style="color:green;">同步指的是用户进程触发IO操作并等待或者轮询的去查看IO操作是否就绪，而异步是指用户进程触发IO操作以后便开始做自己的事情，而当IO操作已经完成的时候会得到IO完成的通知</b>。而<b style="color:blue;">阻塞和非阻塞是针对于进程在访问数据的时候，根据IO操作的就绪状态来采取的不同方式</b>，说白了是一种读取或者写入操作函数的实现方式，阻塞方式下读取或者写入函数将一直等待，而非阻塞方式下，读取或者写入函数会立即返回一个状态值。
+</div>
+
+
+<h4 style="color:red;margin-top:1em;">一般来说I/O模型可以分为：同步阻塞，同步非阻塞，异步阻塞，异步非阻塞IO</h4>
+
+<div style="margin-top:.625em;">
+▪▪ <b>同步阻塞IO:</b> 在此种方式下，用户进程在发起一个IO操作以后，必须等待IO操作的完成，只有当真正完成了IO操作以后，用户进程才能运行。JAVA传统的IO模型属于此种方式！
+</div>
+
+<div style="margin-top:.625em;">
+▪▪ <b>同步非阻塞IO:</b> 在此种方式下，用户进程发起一个IO操作以后边可返回做其它事情，但是用户进程需要时不时的询问IO操作是否就绪，这就要求用户进程不停的去询问，从而引入不必要的CPU资源浪费。其中目前JAVA的NIO就属于同步非阻塞IO。
+</div>
+
+<div style="margin-top:.625em;">
+▪▪ <b>异步阻塞IO:</b> 此种方式下是指应用发起一个IO操作以后，不等待内核IO操作的完成，等内核完成IO操作以后会通知应用程序，这其实就是同步和异步最关键的区别，同步必须等待或者主动的去询问IO是否完成，那么为什么说是阻塞的呢？因为此时是通过 select 系统调用来完成的，而 select 函数本身的实现方式是阻塞的，而采用 select 函数有个好处就是它可以同时监听多个文件句柄，从而提高系统的并发性！
+</div>
+
+<div style="margin-top:.625em;">
+▪▪ <b>异步非阻塞IO:</b> 在此种模式下，用户进程只需要发起一个IO操作然后立即返回，等IO操作真正的完成以后，应用程序会得到IO操作完成的通知，此时用户进程只需要对数据进行处理就好了，不需要进行实际的IO读写操作，因为真正的IO读取或者写入操作已经由内核完成了。目前Java中还没有支持此种IO模型。 
+</div>
 
 ]]>
   </c:abstract>
@@ -221,6 +247,125 @@ while (true) {
     </c:comment>
   </c:entry>
 
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[Java NIO && Netty 的 epoll实现]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+<h4 style="color:green;">Java NIO 根据操作系统不同， 针对 nio 中的 Selector 有不同的实现</h4>
+<ul style="list-style-type:disc;margin-left:1.5em;margin-top:.625em;line-height:1.425em;">
+    <li style="margin-bottom:.3em;">macosx: KQueueSelectorProvider</li>
+    <li style="margin-bottom:.3em;">solaris: DevPollSelectorProvider</li>
+    <li style="margin-bottom:.3em;">Linux: EPollSelectorProvider (Linux kernels >= 2.6) 或 PollSelectorProvider</li>
+    <li style="margin-bottom:.3em;">windows: WindowsSelectorProvider</li>
+</ul>
+<div style="margin-top:.625em;">
+  所以毋须特别指定，Oracle jdk 会自动选择合适的 Selector。如果想设置特定的 Selector，可以属性：
+</div>
+<pre style="font-size:.625em;padding:1em;background-color:beige;color:green;margin-top:.625em;border:solid 1px cadetblue;">
+  -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.EPollSelectorProvider
+</pre>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Netty" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  自4.0.16起, Netty为Linux通过JNI的方式提供了 native socket transport. 使用 native socket transport 很简单，只需将相应的类替换即可。
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.325em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+<dependency>
+    <groupId>io.netty</groupId>
+    <artifactId>netty-transport-native-epoll</artifactId>
+    <version>${project.version}</version>
+    <classifier>${os.detected.classifier}</classifer>
+</dependency>
+
+NioEventLoopGroup → EpollEventLoopGroup
+NioEventLoop → EpollEventLoop
+NioServerSocketChannel → EpollServerSocketChannel
+NioSocketChannel → EpollSocketChannel
+
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+既然如上面所说，Oracle JDK 在 Linux 已经默认使用 epoll 方式，为什么 netty 还要提供一个基于 epoll 的实现呢？这是 stackoverflow(https://stackoverflow.com/questions/23465401/why-native-epoll-support-is-introduced-in-netty) 上的一个问题。Netty 的核心开发者 Norman Maurer 这么说的：
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+Netty 的 epoll transport 使用 epoll edge-triggered 而 java 的 nio 使用 level-triggered。另外 netty epoll transport 暴露了更多的 nio 没有的配置参数，如 TCP_CORK, SO_REUSEADDR 等等
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="高效的 epoll" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+epoll 是 Linux 下，高效的多路复用技术，也是 Linux 下高性能网络服务器的关键技术。通过网络 socket 链接，把远程资源加载到本地内存中。如何来优化这个性能呢？
+</div>
+<div style="margin-top:.625em;">
+poll 和 select 相对之前的AIO有很大的提高，但是由于需要监视着 “等待队列” 与及 “阻塞进程”，性能还是未完全释放。这个时候CPU又被别的进程给抢走，上下文切换的性能又被消耗。</div>
+<div style="margin-top:.625em;">
+select 要进行遍历，才能感知到那个socket来了数据，因此select只能一个一个遍历，来唤醒每个socketChanel。</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="epoll 原理" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+epoll 监视多个 socket, 改进了 select 维护等待队列和阻塞进程进一步改进。把这两步动作给拆分开来。
+</div>
+<div style="margin-top:.325em;">
+epoll_ctl 维护等待队列</div>
+<div style="margin-top:.325em;">
+epoll_wait 阻塞队列</div>
+<div style="margin-top:.325em;">
+调用 epoll_create 方法，另外会创建一个 eventpoll 对象。</div>
+<div style="margin-top:.325em;">
+eventpoll 维护着就绪列表，如果有 socket 来数据，就把 socket 添加到就绪列表。</div>
+<div style="margin-top:.325em;">
+阻塞进程收到就绪列表的回调，既可以开始 socket 数据传输工作。</div>
+<div style="margin-top:.325em;">
+  <img style="float:left;margin-right:1em;" src="/images/java/nio-eventpoll.webp"></img>
+  <img style="float:left;border:dashed 1px orangered;" src="/images/java/eventpoll.webp"></img>
+  <div class="clear"></div>
+</div>
+]]>
+    </c:sourceContent>
+
+
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 
 
 </c:component>
