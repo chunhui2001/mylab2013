@@ -57,6 +57,170 @@ IO 类设计出来，肯定是为了解决 IO 相关的操作的，想一想哪�
   </c:entry>
 
 
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[AIO、BIO、NIO 区别]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<h4 style="color:green;">Java对BIO、NIO、AIO的支持</h4>
+<div style="margin-top:.625em;">
+  <b>Java BIO:</b> 同步并阻塞，服务器实现模式为一个连接一个线程，即客户端有连接请求时服务器端就需要启动一个线程进行处理，如果这个连接不做任何事情会造成不必要的线程开销，当然可以通过线程池机制改善。
+</div>
+<div style="margin-top:.625em;">
+  <b>Java NIO:</b> 同步非阻塞，服务器实现模式为一个请求一个线程，即客户端发送的连接请求都会注册到多路复用器上，多路复用器轮询到连接有I/O请求时才启动一个线程进行处理。
+</div>
+<div style="margin-top:.625em;">
+  <b>Java AIO(NIO.2):</b> 异步非阻塞，服务器实现模式为一个有效请求一个线程，客户端的I/O请求都是由OS先完成了再通知服务器应用去启动线程进行处理。
+</div>
+
+<h4 style="color:green;margin-top:1.5em;">BIO、NIO、AIO适用场景分析</h4>
+<div style="margin-top:.625em;">
+  BIO方式适用于连接数目比较小且固定的架构，这种方式对服务器资源要求比较高，并发局限于应用中，JDK1.4以前的唯一选择，但程序直观简单易理解。
+</div>
+<div style="margin-top:.625em;">
+  NIO方式适用于连接数目多且连接比较短（轻操作）的架构，比如聊天服务器，并发局限于应用中，编程比较复杂，JDK1.4开始支持。
+</div>
+<div style="margin-top:.625em;">
+  AIO方式使用于连接数目多且连接比较长（重操作）的架构，比如相册服务器，充分调用OS参与并发操作，编程比较复杂，JDK7开始支持。
+</div>
+
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="bio 同步阻塞" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+ServerSocket serverSocket = new ServerSocket(10101);
+
+while (true) {
+   // 获取一个套接字(阻塞) 
+   final Socket socket = serverSocket.accept();
+
+   // 开个线程, 处理连接的 clint socket... new
+
+   // 此时接受客户端连接的线程(请求线程), 一直处于阻塞状态, 等待客户端连接(阻塞),
+   // 每个 client 连接后分配一个线程 (用户线程(进程线程))(同步) --> 同步阻塞
+   // ... 
+}
+
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div style="margin-top:.625em;">
+在JDK1.4出来之前，我们建立网络连接的时候采用BIO模式，需要先在服务端启动一个ServerSocket，然后在客户端启动Socket来与服务端进行通信，默认情况下服务端需要对每个请求建立一堆线程等待请求，而客户端发送请求后，先咨询服务端是否有线程响应，如果没有则会一直等待或者遭到拒绝请求，如果有的话，客户端会线程会等待请求结束后才继续执行。
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="nio 同步非阻塞" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+SocketChannel serverChannel = SocketChannel.open();
+
+selector = Selector.open();
+serverChannel.socket().bind(new InetSocketAddress(8080));
+serverChannel.configureBlocking(false);
+serverChannel.register(selector, SelectionKey.OP_ACCEPT);
+
+// selector.selectedKeys() 一直轮询着, 如果事件处理很费时间, 依旧是阻塞的
+// 也需要要开线程去异步处理, 保证请求的主线程不被阻塞, 达到非阻塞目的, 
+// 所以它可以被设计成阻塞的, 也可以被设计成非阻塞的, 他也是基于进程线程的读写,
+// 所以属于同步 --> 综上可得到他是同步非阻塞
+Set<SelectionKey> sleSet = selector.selectedKeys();
+
+while (true) {
+
+   int count = selector.select();
+   Iterator<SelectionKey> iterator = sleSet.iterator();
+
+   while (iterator.hasNext()) {
+
+       SelectionKey selectionKey = iterator.next();
+       Buffer buffer = ByteBuffer.allocate(1024);
+
+       if(selectionKey.isAcceptable()) {
+           ServerSocketChannel socketChannel = (ServerSocketChannel) selectionKey.channel();
+           // 处理逻辑,开线程
+
+       } else if(selectionKey.isReadable()){
+
+       } else if (selectionKey.isWritable()){
+
+       }
+
+       iterator.remove();
+   }
+}
+
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  NIO本身是基于事件驱动思想来完成的，其主要想解决的是BIO的大并发问题：在使用同步I/O的网络应用中，如果要同时处理多个客户端请求，或是在客户端要同时和多个服务器进行通讯，就必须使用多线程来处理。也就是说，将每一个客户端请求分配给一个线程来单独处理。这样做虽然可以达到我们的要求，但同时又会带来另外一个问题。由于每创建一个线程，就要为这个线程分配一定的内存空间（也叫工作存储器），而且操作系统本身也对线程的总数有一定的限制。如果客户端的请求过多，服务端程序可能会因为不堪重负而拒绝客户端的请求，甚至服务器可能会因此而瘫痪。
+</div>
+<div style="margin-top:.625em;">
+  NIO基于Reactor，当socket有流可读或可写入socket时，操作系统会相应的通知引用程序进行处理，应用再将流读取到缓冲区或写入操作系统。也就是说，这个时候，已经<em style="font-size:1.125em;color:red;">不是一个连接就要对应一个处理线程了，而是有效的请求对应一个线程，当连接没有数据时，是没有工作线程来处理的</em>。
+</div>
+<div style="margin-top:.625em;">
+  <em style="font-size:1.125em;color:blue;">BIO与NIO一个比较重要的不同，是我们使用BIO的时候往往会引入多线程，每个连接一个单独的线程；而NIO则是使用单线程或者只使用少量的多线程，多个连接共用一个线程。</em>
+</div>
+<div style="margin-top:.625em;">
+  NIO的最重要的地方是当一个连接创建后，不需要对应一个线程，这个连接会被注册到多路复用器上面，所以所有的连接只需要一个线程就可以搞定，当这个线程中的多路复用器进行轮询的时候，发现连接上有请求的话，才开启一个线程进行处理，也就是一个请求一个线程模式。
+</div>
+<div style="margin-top:.625em;">
+  在NIO的处理方式中，当一个请求来的话，开启线程进行处理，可能会等待后端应用的资源(JDBC连接等)，其实这个线程就被阻塞了，当并发上来的话，还是会有BIO一样的问题。
+</div>
+<div style="margin-top:.625em;">
+  HTTP/1.1出现后，有了Http长连接，这样除了超时和指明特定关闭的http header外，这个链接是一直打开的状态的，这样在NIO处理中可以进一步的进化，在后端资源中可以实现资源池或者队列，<em style="font-size:1.125em;color:green;">当请求来的时候，开启的线程把请求和请求数据传送给后端资源池或者队列里面就返回，并且在全局的地方保持住这个现场(哪个连接的哪个请求等)，这样前面的线程还是可以去接受其他的请求，而后端的应用的处理只需要执行队列里面的就可以了，这样请求处理和后端应用是异步的. 当后端处理完，到全局地方得到现场并产生响应，这个就实现了异步处理</em>。
+</div>
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="aio 异步非阻塞" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+// 基于事件的回调, future/callback, 大概的过程是操作系统内核线程处理完, 通知进程线程拿到结果, 
+// 期间进程线程可以做其他的事情, 这样做的好处是充分利用操作系统的并发能力.
+
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  与NIO不同，当进行读写操作时，只须直接调用API的read或write方法即可。这两种方法均为异步的，对于读操作而言，当有流可读取时，操作系统会将可读的流传入read方法的缓冲区，并通知应用程序；对于写操作而言，当操作系统将write方法传递的流写入完毕时，操作系统主动通知应用程序。即可以理解为，read/write方法都是异步的，完成后会主动调用回调函数。  在JDK1.7中，这部分内容被称作NIO.2，主要在java.nio.channels包下增加了下面四个异步通道：
+</div>
+<pre style="font-size:.625em;padding:1em;background-color:beige;color:green;margin-top:.325em;border:solid 1px cadetblue;">
+  AsynchronousSocketChannel
+  AsynchronousServerSocketChannel
+  AsynchronousFileChannel
+  AsynchronousDatagramChannel
+</pre>
+]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
 
 
 </c:component>
