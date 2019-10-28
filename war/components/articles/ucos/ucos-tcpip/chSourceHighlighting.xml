@@ -658,6 +658,473 @@ Cube 软件是一个图形化的配置软件，我们只需要点一点鼠标，
 
 
 
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[Programming the STM32F1 Discovery]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+      ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.325emem;font-family:monospace;">
+                     <![CDATA[
+
+<div>
+  You will be needing Keil to program this device. Keil is an older platform developed by ARM for programming their microcontrollers and microprocessors. You can download it <a href="http://www2.keil.com/mdk5/install/">here</a>.
+</div>
+
+<div style="margin-top:.625em;">
+  The next thing you will need is the STM32 Discovery Package which is free to download <a href="http://www.st.com/web/en/catalog/tools/PF257914">here</a>. Find the "get software" button at the bottom of the page. You may need to register to continue. You also need the <a href="http://www.st.com/en/development-tools/stsw-link004.html">ST-Link Utility</a> software to download your firmware to the board.
+</div>
+
+<div style="margin-top:.625em;">
+  Once you have all of these, it's time to start copying some example codes (heh.)
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Using Keil" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.325em;font-family:monospace;">
+                     <![CDATA[
+
+<h4 style="color:green;">
+Step 1
+</h4>
+<div style="margin-top:.325em;">
+  Run Keil and click Project -> Open Project
+</div>
+<div style="margin-top:.325em;">
+  <img src="/images/ucos/led/stm32-discover1.png" />
+</div>
+
+<h4 style="color:green;margin-top:1em;">
+Step 2
+</h4>
+<div style="margin-top:.325em;">
+  Locate the firmware package you've downloaded. Open the folder: \stm32vldiscovery_package\Project\Examples\GPIOToggle\MDK-ARM. Here you will find the file shown in the picture:
+</div>
+<div style="margin-top:.325em;">
+  <img src="/images/ucos/led/stm32-discover2.png" />
+</div>
+
+<h4 style="color:green;margin-top:1em;">
+Step 3
+</h4>
+<div style="margin-top:.325em;">
+  If your Keil is version 5 like me, a dialog box will appear like the one below. Just press the "Migrate to Device Pack" button. This will download the necessary files for the example project.
+</div>
+<div style="margin-top:.325em;">
+  <img src="/images/ucos/led/stm32-discover3.png" />
+</div>
+
+<h4 style="color:green;margin-top:1em;">
+Step 4
+</h4>
+<div style="margin-top:.325em;">
+  After that, you can now see the main.c file on the User folder via the Project Explorer sidebar. If you're like me who is entirely a beginner with ARM programming,  you'll be overwhelmed with the code. A lot would say that the learning curve for ARM programming is very steep as compared to PIC or Arduino programming. But I'll tell you, you will get the hang of it if you spend more time with it.
+</div>
+<div style="margin-top:.325em;">
+  The next we'll do is we will replace the entire contents of the main.c file with code that is much more beginner friendly (<a href="https://github.com/kurimawxx00/stm32/blob/master/blink.c">github link</a>):
+</div>
+
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.325em;font-family:monospace;">
+                     <![CDATA[
+#include "stm32f10x.h"
+#include "stm32f10x_rcc.h"
+#include "stm32f10x_gpio.h"
+
+GPIO_InitTypeDef GPIO_InitStruct;
+void delay(int a);
+
+int main(void)
+{
+  // Enable clock for GPIOB
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+  // Configure PB0 as open-drain output
+  GPIO_InitStruct.GPIO_Pin = GPIO_Pin_0;
+  GPIO_InitStruct.GPIO_Speed = GPIO_Speed_2MHz;
+  GPIO_InitStruct.GPIO_Mode = GPIO_Mode_Out_OD;
+  GPIO_Init(GPIOB, &GPIO_InitStruct);
+  while (1)
+ {
+  // Turn on LED on PB0 (LED circuit is active low)
+  GPIO_ResetBits(GPIOB, GPIO_Pin_0);
+  delay(500000);
+  // Turn off LED on PB0
+  GPIO_SetBits(GPIOB, GPIO_Pin_0);
+  delay(500000);
+ }
+}
+
+void delay (int a)
+{
+ volatile int i,j;
+ for (i=0 ; i < a ; i++)
+ {
+  j++;
+ }
+ return;
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.325em;font-family:monospace;">
+                     <![CDATA[
+
+<h4 style="color:green;">
+Step 5
+</h4>
+<div style="margin-top:.325em;">
+  It's time to build the code! Go to Project -> Rebuild All Target Files
+</div>
+<div style="margin-top:.325em;">
+  <img src="/images/ucos/led/stm32-discover4.png" />
+</div>
+
+<div style="margin-top:.325em;">
+  If everything is good, you should see this in the Build Output window:
+</div>
+<div style="margin-top:.325em;">
+  <img src="/images/ucos/led/stm32-discover5.png" />
+</div>
+
+<h4 style="color:green;margin-top:1em;">
+Step 6
+</h4>
+<div style="margin-top:.325em;">
+  The next step is to download the program to the board. Before that, click on Flash -> Configure Flash Tools... first
+</div>
+<div style="margin-top:.325em;">
+  <img src="/images/ucos/led/stm32-discover6.png" />
+</div>
+<div style="margin-top:.325em;">
+  By this time, your board should be already connected to your computer via USB. Click the Utilities tab and change the target driver for device programming to ST-Link Debugger.
+</div>
+<div style="margin-top:.325em;">
+  <img src="/images/ucos/led/stm32-discover7.png" />
+</div>
+<div style="margin-top:.325em;">
+  Next, press the Settings button and click on the Debug tab. Find the port option and change it to SW.
+</div>
+<div style="margin-top:.325em;">
+  <img src="/images/ucos/led/stm32-discover8.png" />
+</div>
+<div style="margin-top:.325em;">
+  Press OK to close the dialog box and now you're ready to burn the program to your board. Press Flash and Download (F8) and you should see something written on the Build Output window. If everything's OK, this should be the last message shown:
+</div>
+<div style="margin-top:.325em;">
+  <img src="/images/ucos/led/stm32-discover9.png" />
+</div>
+
+<h4 style="color:green;margin-top:1em;">
+Step 7
+</h4>
+<div style="margin-top:.325em;">
+So what was that program we just loaded to the board? It's a simple blink program that blinks a LED connected to PBO. To see the code in action,  connect a LED to PBO like this:
+</div>
+<div style="margin-top:.325em;">
+  <img src="/images/ucos/led/stm32-discover10.png" />
+</div>
+<div style="margin-top:.325em;">
+Oh, you also need to press the reset button on the board after loading the program. After that, the LED should be blinking.
+</div>
+
+]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="Explaining the Code -- Headers" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.325em;font-family:monospace;">
+                     <![CDATA[
+#include "stm32f10x.h"
+#include "stm32f10x_rcc.h"
+#include "stm32f10x_gpio.h"
+ 
+GPIO_InitTypeDef GPIO_InitStruct;
+void delay(int a);
+]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.325em;font-family:monospace;">
+                     <![CDATA[
+
+<div style="margin-top:.325em;">
+We needed three header files in order for this to work: the main header file (stm32f10x.h), the peripheral clock header file (stm32f10x_rcc.h) and the gpio header file (stm32f10x_gpio.h).
+</div>
+<div style="margin-top:.325em;">
+To access the GPIOs, we need to instantiate a GPIO_InitTypeDef class and name it GPIO_InitStruct. We also initiate our delay function here as we used it after the main function (which would result in a compiler error if we didn't).
+</div>
+]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="Explaining the Code -- Main Function" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.325em;font-family:monospace;">
+                     <![CDATA[
+int main(void)
+{
+  // Enable clock for GPIOB
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+  // Configure PB0 as open-drain output
+  GPIO_InitStruct.GPIO_Pin = GPIO_Pin_0;
+  GPIO_InitStruct.GPIO_Speed = GPIO_Speed_2MHz;
+  GPIO_InitStruct.GPIO_Mode = GPIO_Mode_Out_OD;
+  GPIO_Init(GPIOB, &GPIO_InitStruct);
+  while (1)
+  {
+    // Turn on LED on PB0 (LED circuit is active low)
+    GPIO_ResetBits(GPIOB, GPIO_Pin_0);
+    delay(500000);
+    // Turn off LED on PB0
+    GPIO_SetBits(GPIOB, GPIO_Pin_0);
+    delay(500000);
+  }
+}
+]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.325em;font-family:monospace;">
+                     <![CDATA[
+
+<div style="margin-top:.325em;">
+As it turns out, you need to enable the clock of the STM32F1 discovery's peripheral because they are not enabled at power on. (This was weird for me being a PIC and Arduino guy where the GPIO peripheral don't need any clock setting). This is what
+</div>
+<div style="margin-top:.325em;">
+RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+</div>
+<div style="margin-top:.325em;">
+does.
+</div>
+]]>
+    </c:sourceContent>
+    
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
+        ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[Blink On-board LEDs on STM32F1 Discovery]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+      ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+<div>
+  This tutorial and my succeeding tutorials will be using Keil IDE for programming so download it if you haven't and the STM32Discovery Package. Also, you will need an internet connection for the first part of this tutorial for downloading the necessary run-time environment packages. The STM32F1 discovery board will be connected only when you are ready to flash the program to it but have it connected via the USB cable nonetheless.
+</div>
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Step 1:" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+Open Keil. Then click Project -> New μVision Project. A dialog window will appear. Name your project and save. (Example, OBLed_example.uvprojx)
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Step 2:" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  The device manager window will appear. Click the (+) on STMicroelectronics then again on the STM32F1 Series then click on STM32F100RB. This is the microcontroller on the STM32F1 discovery board. Click OK.
+</div>
+<div style="margin-top:.325em;">
+  <img src="/images/ucos/led/stm32-led1.jpg" />
+</div>
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Step 3: " id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  The Run-Time Environment will appear. You will need to click on the checkbox for the following components for this example and then press OK:
+</div>
+
+<ul style="margin-left:.5em;line-height: 1.425em;">
+    <li style="margin-bottom: .3em;">&#10004; CMSIS -> CORE</li>
+    <li style="margin-bottom: .3em;">&#10004; Device -> GPIO</li>
+    <li style="margin-bottom: .3em;">&#10004; Device -> Startup</li>
+    <li style="margin-bottom: .3em;">&#10004; Device -> StdPeriph Drivers -> Framework</li>
+    <li style="margin-bottom: .3em;">&#10004; Device -> StdPeriph Drivers -> GPIO</li>
+    <li style="margin-bottom: .3em;">&#10004; Device -> StdPeriph Drivers -> RCC</li>
+</ul>
+
+<div style="margin-top:.325em;">
+  <img src="/images/ucos/led/stm32-led2.jpg" />
+</div>
+]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="Step 4: " id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  Once the dialog box closes, you'll have an empty workspace. Right click on Source Group 1 under Target 1 on the Project Explorer pane then select Add New Item to Group 'Source Group 1':st
+</div>
+<div style="margin-top:.325em;">
+  <img src="/images/ucos/led/stm32-led3.jpg" />
+</div>
+]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="Step 5: " id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  Create a file named main.c on the same project folder.
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Step 6: " id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+Paste this code then click Project -> Build Target (or press F7).
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+#include "stm32f10x.h"
+#include "stm32f10x_rcc.h"
+#include "stm32f10x_gpio.h"
+ 
+GPIO_InitTypeDef GPIO_InitStruct;
+void delay(int a);
+ 
+int main(void)
+{
+  // Enable clock for GPIOC
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
+  // Configure PC9 as push-pull output
+  GPIO_InitStruct.GPIO_Pin = GPIO_Pin_9;
+  GPIO_InitStruct.GPIO_Speed = GPIO_Speed_2MHz;
+  GPIO_InitStruct.GPIO_Mode = GPIO_Mode_Out_PP;
+  GPIO_Init(GPIOC, &GPIO_InitStruct);
+  while (1)
+ {
+  // Turn on LED on PC9
+  GPIO_ResetBits(GPIOC, GPIO_Pin_9);
+  delay(500000);
+  // Turn off LED on PC9
+  GPIO_SetBits(GPIOC, GPIO_Pin_9);
+  delay(500000);
+ }
+}
+ 
+void delay (int a)
+{
+ volatile int i,j;
+ for (i=0 ; i < a ; i++)
+ {
+  j++;
+ }
+ return;
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Step 7: " id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  You should see the line "0 Error(s), 0 Warnings (s). " on the Build Output window if everything was done right.  Before we can download the program to the STM32F1 Discovery board, we need to configure flash programming first. Click Flash -> Configure Flash Tools. On the Utilities tab, uncheck Use Debug Driver and Select ST-Link Debugger under Use Target Driver for Flash Programming:
+</div>
+
+<div style="margin-top:.325em;">
+  <img src="/images/ucos/led/stm32-led4.jpg" />
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Step 8: " id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  Click OK to close the dialog and then press F8 to download the program to the board. If every thing is good then you will this on the Build Output window:
+</div>
+
+<div style="margin-top:.325em;">
+  <img src="/images/ucos/led/stm32-led5.jpg" />
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Step 9: " id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  Now press the reset button (the black button) on the STM31F1 discovery board and watch the PC9 LED flash!
+</div>
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
+        ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
 
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
