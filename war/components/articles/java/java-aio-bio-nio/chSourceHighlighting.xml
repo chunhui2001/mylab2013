@@ -841,33 +841,39 @@ POSIX message queues     (bytes, -q) 819200
 real-time priority              (-r) 0
 stack size              (kbytes, -s) 8192
 cpu time               (seconds, -t) unlimited
-max user processes              (-u) 4096
+max user processes              (-u) 4096         # 系统限制某用户下最多可以运行多少进程
 virtual memory          (kbytes, -v) unlimited
 file locks                      (-x) unlimited
 
 $ ulimit -u 8192 设置当前用户的最大进程数为8192，只在当前shell中生效
 $ ulimit -n 8192 设置当前用户的最大文件打开数8192，只在当前shell中生效
+
+#### root 账号下 ulimit -u 出现的 max user processes 的值默认是 /proc/sys/kernel/threads-max 的值 / 2，即系统线程数的一半
+#### 普通账号下 ulimit -u 出现的 max user processes 的值默认是 /etc/security/limits.d/20-nproc.conf (centos6 是 90-nproc.conf) 文件中的
+# Default limit for number of user's processes to prevent
+# accidental fork bombs.
+# See rhbz #432903 for reasoning.
+*          soft    nproc     8192
+root       soft    nproc     unlimited
 ]]>
     </c:sourceContent>
-    <c:sourceContent type="html" title="设置配置文件" id="sourceContent1" 
+    <c:sourceContent type="html" title="如何修改这些个值" id="sourceContent1" 
                      style="background-color:white;margin-top:1em;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
                      <![CDATA[
 
-<div>
-  配置文件主要分为：
-</div>
-
-<ul style="margin-left:.5em;margin-top:.625em;line-height:1.425em;">
+<ul style="margin-left:.5em;margin-top:.0em;line-height:1.425em;">
     <li style="margin-bottom:.3em;">&#x278A; 将命令写至 profile 和 bashrc 中，相当于在登陆时自动动态修改限制。</li>
     <li style="margin-bottom:.3em;">&#x278B; 在 /etc/security/limits.conf 中添加记录（需重启生效，并且在 /etc/pam.d/ 中的 seesion 有使用到 limit 模块）。</li>
+    <li style="margin-bottom:.3em;">&#x278C; 修改 /etc/security/limits.conf 对普通用户 max user processes 值是不生效的，需要修改 /etc/security/limits.d/20-nproc.conf (centos6 是 90-nproc.conf)  文件中的值。</li>
+    <li style="margin-bottom:.3em;">&#x278D; 如果使用 * 号让全局用户生效是受文件 /etc/security/limits.d/20-nproc.conf 中 nproc 值大小制约的，而如果仅仅是针对某个用户，那么就不受该文件 nproc 值大小的影响。</li>
 </ul>
 
 ]]>
     </c:sourceContent>
     <c:sourceContent type="" title="/etc/security/limits.conf" id="sourceContent1" 
-                     style="background-color:white;margin-top:1em;"
+                     style="background-color:white;margin-top:.625em;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
                      <![CDATA[
@@ -946,7 +952,7 @@ postgres soft stack 10240
   如上面的配置： #@student hard nproc 20，表示student用户在硬件上最大的进程数只有20，* soft nofile 32768表示软件上所有用户的最大文件打开数是32768。
 </div>
 <div style="margin-top:.625em;">
-  只修改了这个文件还无法完成配置，还需要修改 /etc/security/limits.d/90-nproc.conf 配置文件，可以先查看下这个文件的内容：
+  只修改了这个 /etc/security/limits.conf 文件对普通用户是不生效的，还需要修改 /etc/security/limits.d/90-nproc.conf 配置文件，可以先查看下这个文件的内容：
 </div>
 ]]>
     </c:sourceContent>
@@ -970,6 +976,39 @@ root       soft    nproc     unlimited
                      <![CDATA[
 <div>
   从注释中可以看出，是针对用户进程的默认限制。从配置中可以看出 root 用户不做进程数量的限制，其他用户的最大进程数为 8192。
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="系统总限制" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  其实上面的 max user processes 65535 的值也只是表象，普通用户最大进程数无法达到 65535 ，因为用户的 max user processes 的值，最后是受全局的 kernel.pid_max 的值限制的。也就是说 kernel.pid_max=1024，那么你用户的 max user processes 的值是127426，用户能打开的最大进程数还是1024.
+</div>
+
+<h4 style="color:green;margin-top:1em;">查看全局的 pid_max 方法</h4>
+<div style="margin-top:.325em;">
+  $ cat /proc/sys/kernel/pid_max 或 $ sysctl kernel.pid_max
+</div>
+
+<h4 style="color:green;margin-top:1em;">修改这个值方法</h4>
+<div style="margin-top:.325em;">
+  $ echo 65535 > /proc/sys/kernel/pid_max
+</div>
+<div style="margin-top:.325em;">
+  以上都操作完成后，才算是正确修改了 max user processes 的值
+</div>
+
+<h4 style="color:green;margin-top:1em;">永久生效方法</h4>
+<pre style="margin-top:.325em;">
+$ vim /etc/sysctl.conf
+> kernel.pid_max = 65535
+</pre>
+
+<div style="margin-top:.325em;">
+  然后重启机器。
 </div>
 ]]>
     </c:sourceContent>
