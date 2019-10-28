@@ -913,14 +913,108 @@ int main(void)
 As it turns out, you need to enable the clock of the STM32F1 discovery's peripheral because they are not enabled at power on. (This was weird for me being a PIC and Arduino guy where the GPIO peripheral don't need any clock setting). This is what
 </div>
 <div style="margin-top:.325em;">
-RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+<b style="color:blue;">RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);</b>
 </div>
 <div style="margin-top:.325em;">
 does.
 </div>
+<div style="margin-top:.325em;">
+Next, you need to specify and configure the GPIO you will be using. This is done via the functions under the GPIO_InitStruct class. The GPIO_Init() handles which GPIO port to use and loads the GPIO_InitStruct settings declared.
+</div>
 ]]>
     </c:sourceContent>
-    
+
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.325em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.325em;font-family:monospace;">
+                     <![CDATA[
+GPIO_InitStruct.GPIO_Pin = GPIO_Pin_0;
+GPIO_InitStruct.GPIO_Speed = GPIO_Speed_2MHz;
+GPIO_InitStruct.GPIO_Mode = GPIO_Mode_Out_OD;
+GPIO_Init(GPIOB, &GPIO_InitStruct);
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.325em;font-family:monospace;">
+                     <![CDATA[
+The blinking is done via the functions GPIO_ResetBits() and GPIO_SetBits() which takes the GPIO port and GPIO pin as arguments:
+]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.325em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.325em;font-family:monospace;">
+                     <![CDATA[
+while (1)
+{
+  // Turn on LED on PB0 (LED circuit is active low)
+  GPIO_ResetBits(GPIOB, GPIO_Pin_0);
+  delay(500000);
+  // Turn off LED on PB0
+  GPIO_SetBits(GPIOB, GPIO_Pin_0);
+  delay(500000);
+}
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Let's Delay Things" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.325em;font-family:monospace;">
+                     <![CDATA[
+Finally, the last part of the code is the delay function. It increments variable i until it reaches the value of the passed argument a. For example, if the value of a is 500000 then it would take this function would count to 500000, keeping the CPU busy, thus a delay .
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.325em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.325em;font-family:monospace;">
+                     <![CDATA[
+void delay (int a)
+{
+  volatile int i,j;
+  for (i=0 ; i < a ; i++)
+  {
+    j++;
+  }
+  return;
+}
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Summary" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:blue;font-size:1.5em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.325em;font-family:monospace;">
+                     <![CDATA[
+
+<div>
+Let's summarize all the things you need to do to program the STM32F1:
+</div>
+<div style="margin-top:.325em;">
+  <ul style="margin-left:.5em;line-height: 1.425em;">
+      <li style="margin-bottom: .3em;">&#10004; First, download <a href="http://www2.keil.com/mdk5/install/">Keil</a></li>
+      <li style="margin-bottom: .3em;">&#10004; Second, download the <a href="http://www.st.com/web/en/catalog/tools/PF257914">STM32 Discovery Package</a></li>
+      <li style="margin-bottom: .3em;">&#10004; Third, follow the steps outlined in this tutorial</li>
+      <li style="margin-bottom: .3em;">&#10004; Fourth, load the example <a href="https://github.com/kurimawxx00/stm32/blob/master/blink.c">blink code</a></li>
+      <li style="margin-bottom: .3em;">&#10004; Fifth and finally, download the code to the STM32 board</li>
+  </ul>
+</div>
+<div style="margin-top:.625em;">
+  So that's it! I'll be doing a full-pledge STM32F1 discovery tutorial in the future. In the mean time, if you have any questions or reactions, just leave a comment below. Good luck!
+</div>
+]]>
+    </c:sourceContent>
+
+
     <c:comment>
       <c:comment1>
         <![CDATA[
