@@ -805,4 +805,180 @@ sendfile(socket, file, len);
   </c:entry>
 
 
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[Linux中最大进程数和最大文件数]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div>
+  Linux系统中可以设置关于资源的使用限制，比如：进程数量，文件句柄数，连接数等等。在日常的工作中应该遇到过：
+</div>
+<pre style="margin-top:.325em;">
+$ -bash: fork: retry: Resource temporarily unavailable 或者
+$ too many open files
+</pre>
+<div style="margin-top:.625em;">
+  这些类似的操作错误，前者是由于当前用户的进程数超出限制，后者由于当前用户的文件打开数超出限制。
+</div>
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="通过参数-a查看当前用户的所有限制情况" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+$ ulimit -a
+core file size          (blocks, -c) unlimited
+data seg size           (kbytes, -d) unlimited
+scheduling priority             (-e) 0
+file size               (blocks, -f) unlimited
+pending signals                 (-i) 127510
+max locked memory       (kbytes, -l) 64
+max memory size         (kbytes, -m) unlimited
+open files                      (-n) 32768
+pipe size            (512 bytes, -p) 8
+POSIX message queues     (bytes, -q) 819200
+real-time priority              (-r) 0
+stack size              (kbytes, -s) 8192
+cpu time               (seconds, -t) unlimited
+max user processes              (-u) 4096
+virtual memory          (kbytes, -v) unlimited
+file locks                      (-x) unlimited
+
+$ ulimit -u 8192 设置当前用户的最大进程数为8192，只在当前shell中生效
+$ ulimit -n 8192 设置当前用户的最大文件打开数8192，只在当前shell中生效
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="设置配置文件" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+<div>
+  配置文件主要分为：
+</div>
+
+<ul style="margin-left:.5em;margin-top:.625em;line-height:1.425em;">
+    <li style="margin-bottom:.3em;">&#x278A; 将命令写至 profile 和 bashrc 中，相当于在登陆时自动动态修改限制。</li>
+    <li style="margin-bottom:.3em;">&#x278B; 在 /etc/security/limits.conf 中添加记录（需重启生效，并且在 /etc/pam.d/ 中的 seesion 有使用到 limit 模块）。</li>
+</ul>
+
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="/etc/security/limits.conf" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+#Each line describes a limit for a user in the form:
+#
+#<domain>        <type>  <item>  <value>
+#
+#Where:
+#<domain> can be:
+#        - a user name
+#        - a group name, with @group syntax
+#        - the wildcard *, for default entry
+#        - the wildcard %, can be also used with %group syntax,
+#           for maxlogin limit
+#
+#<type> can have the two values:
+#        - "soft" for enforcing the soft limits
+#        - "hard" for enforcing hard limits
+#
+#<item> can be one of the following:
+#        - core - limits the core file size (KB)
+#        - data - max data size (KB)
+#        - fsize - maximum filesize (KB)
+#        - memlock - max locked-in-memory address space (KB)
+#        - nofile - max number of open file descriptors
+#        - rss - max resident set size (KB)
+#        - stack - max stack size (KB)
+#        - cpu - max CPU time (MIN)
+#        - nproc - max number of processes
+#        - as - address space limit (KB)
+#        - maxlogins - max number of logins for this user
+#        - maxsyslogins - max number of logins on the system
+#        - priority - the priority to run user process with
+#        - locks - max number of file locks the user can hold
+#        - sigpending - max number of pending signals
+#        - msgqueue - max memory used by POSIX message queues (bytes)
+#        - nice - max nice priority allowed to raise to values: [-20, 19]
+#        - rtprio - max realtime priority
+#
+#<domain>      <type>  <item>         <value>
+#
+
+#*               soft    core            0
+#*               hard    rss             10000
+#@student        hard    nproc           20
+#@faculty        soft    nproc           20
+#@faculty        hard    nproc           50
+#ftp             hard    nproc           0
+#@student        -       maxlogins       4
+
+# End of file
+* soft nofile 32768
+* hard nofile 65536
+#use for oracle
+postgres soft nproc 2047
+postgres hard nproc 16384
+postgres soft nofile 2048
+postgres hard nofile 65536
+postgres soft stack 10240
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.625em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+
+<ul style="margin-left:.5em;margin-top:.625em;line-height:1.425em;">
+    <li style="margin-bottom:.3em;">&#x278A; domain 部分：用来表示用户名或者组名。@后接用户名或者组名表示用户名或者组名；*表示所有用户。</li>
+    <li style="margin-bottom:.3em;">&#x278B; type 部分：表示资源层面，有两种值soft和hard。soft表示在软件层面，hard表示在硬件层面。</li>
+    <li style="margin-bottom:.3em;">&#x278C; item 部分：表示可以限制的资源类型。core限制核心的文件大小；locks表示用户可以持有的最大文件锁数量；nproc表示最大的进程数；nofile表示最大的打开文件句柄数。</li>
+    <li style="margin-bottom:.3em;">&#x278D; value部分：限制的资源数量的值。</li>
+</ul>
+
+<div style="margin-top:.625em;">
+  如上面的配置： #@student hard nproc 20，表示student用户在硬件上最大的进程数只有20，* soft nofile 32768表示软件上所有用户的最大文件打开数是32768。
+</div>
+<div style="margin-top:.625em;">
+  只修改了这个文件还无法完成配置，还需要修改 /etc/security/limits.d/90-nproc.conf 配置文件，可以先查看下这个文件的内容：
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:.325em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+# Default limit for number of user's processes to prevent
+# accidental fork bombs.
+# See rhbz #432903 for reasoning.
+
+*          soft    nproc     8192
+root       soft    nproc     unlimited
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+<div>
+  从注释中可以看出，是针对用户进程的默认限制。从配置中可以看出 root 用户不做进程数量的限制，其他用户的最大进程数为 8192。
+</div>
+]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
 </c:component>
