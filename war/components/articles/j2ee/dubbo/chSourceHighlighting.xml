@@ -287,6 +287,54 @@ public class DemoServiceImpl implements DemoService {
 </beans>
     ]]>
     </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     style="margin-top:.325em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+package com.alibaba.dubbo.provider;
+
+
+@ComponentScan("com.")
+@EnableConfigurationProperties
+@ImportResource("classpath*:/META-INF/spring/context.xml")
+public class Main {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Main.class);
+
+    public static void main(String[] args) throws Exception {
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT+9"));
+        ApplicationContext ctx = new SpringApplicationBuilder(Main.class)
+            .web(WebApplicationType.NONE).run(args);
+        String file = ctx.getBean(AppCheck.class).createLockFile();
+        ctx.getBean("SHUTDOWN_LATCH", CountDownLatch.class).await();
+    }
+
+    @Bean
+    public AppCheck appCheck() {
+        return new AppCheck();
+    }
+
+    @Bean("SHUTDOWN_LATCH")
+    public CountDownLatch shutdownLatch() {
+        return new CountDownLatch(1);
+    }
+
+    private static class AppCheck {
+
+        @Value("${lockfile}")
+        private String lockFile;
+
+        String createLockFile() throws IOException {
+            if (!new File(lockFile).createNewFile()) {
+                LOG.info(format("服务创建文件异常", kv("lock", lockFile)));
+            }
+            return lockFile;
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
 
 
     <c:sourceContent type="html" title="dubbo-consumer" id="sourceContent1"
