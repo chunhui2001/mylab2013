@@ -11,6 +11,17 @@
   <xsl:template match="c:component[@type='chArticleHeader']">
   	
   	<div class="chArticleHeader" id="{@componentId}">			
+
+      <xsl:if test="normalize-space($PAGE_URI) != ''">
+        <xsl:variable name="currentArticleMaster" 
+                      select="document(concat($APP_ROOT,'/RichMedia/blog/smoArticleMaster.xml'))/*/c:article[normalize-space(c:articleLink)=normalize-space($PAGE_URI)]" />
+        <div style="text-align:right;font-family:fantasy;font-size:2.5em;">
+          <xsl:call-template name="util-formatDate">
+            <xsl:with-param name="value" select="$currentArticleMaster/c:pubDate" />
+          </xsl:call-template>
+        </div>
+      </xsl:if>
+
 	  	<h1 style="border-bottom:1px solid #ccc;{c:h1/@style}">
         <xsl:value-of disable-output-escaping="yes" select="c:h1" />	
 	  	</h1>
@@ -21,15 +32,6 @@
 	  	  </h2>
       </xsl:if>
 
-      <xsl:if test="normalize-space($PAGE_URI) != ''">
-        <xsl:variable name="currentArticleMaster" 
-                      select="document(concat($APP_ROOT,'/RichMedia/blog/smoArticleMaster.xml'))/*/c:article[normalize-space(c:articleLink)=normalize-space($PAGE_URI)]" />
-        <span>
-          <xsl:call-template name="util-formatDate">
-            <xsl:with-param name="value" select="$currentArticleMaster/c:pubDate" />
-          </xsl:call-template>
-        </span>
-      </xsl:if>
       
   	</div>
   </xsl:template>
