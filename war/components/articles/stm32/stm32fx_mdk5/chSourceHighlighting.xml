@@ -3,12 +3,13 @@
   <c:abstract>
     <![CDATA[
 
+<div style="font-size:.625em;">
 <h3 style="color:green;">ST 官方首页</h3>
 <h4>https://www.st.com/content/st_com/en.html</h4>
 <h4 style="color:blueviolet;margin-top:.325em;">[Tools & Software] &gt; [Embedded Software] &gt; [STM32 Embedded Software] &gt; [Product Selector] &gt; [View all STM32 Embedded Software products]</h4>
 
 
-<h3 style="margin-top:.325em;color:green;">STM32 固件库下载</h3>
+<h3 style="margin-top:.325em;color:green;">STM32 标准固件库下载</h3>
 <h4>https://www.st.com/en/embedded-software/stm32-standard-peripheral-libraries.html#products</h4>
 
 <div style="margin-top:1em;line-height:1.65em;">
@@ -29,7 +30,7 @@
       ~/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/CMSIS/CM3/CoreSupport/<b>core_cm3.h</b>
     </li>
     <li style="margin-bottom: .3em;">&#10004; 
-      ~/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x/startup/arm/<b>startup_stm32f10x_hd.s</b>
+      ~/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x/startup/arm/<b>startup_stm32f10x_<span style="color:red;font-weight:bold;">hd</span>.s</b>
     </li>
     <li style="margin-bottom: .3em;">&#10004; 
       ~/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x/<b>stm32f10x.h</b>
@@ -80,6 +81,7 @@
 64K   < FLASH < 128K  md <br />
 256K  < FLASH < 512K  hd
 </pre>
+</div>
 ]]>
   </c:abstract>
 
@@ -94,7 +96,7 @@
     <c:sourceContent type="html" title="" id="sourceContent1" 
                      style="background-color:white;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.425em;font-family:monospace;">
+                     bodyStyle="background-color:white;padding:0;font-size:.625em;line-height:1.425em;font-family:monospace;">
                      <![CDATA[
 
 <h3 style="color:blue;margin-top:0;padding-top:0;">按照如下结构创建文件夹，从上面提到的文件路径复制到各自的文件夹中:</h3>
@@ -293,15 +295,107 @@ Build Time Elapsed:  00:00:01
     <c:desc>
       <c:desc1> <![CDATA[
 
+<h4 style="color:green;">我们点亮LED之前的工作就是在驱动LED, 点亮一个LED的大致步骤就是: </h4>
+<ul style="margin-left:.5em;line-height:1.425em;margin-top:.625em;">
+    <li style="margin-bottom: .3em;">
+      &#x278A; 配置（使能）系统时钟
+    </li>
+    <li style="margin-bottom: .3em;">
+      &#x278B; 设置IO口
+    </li>
+</ul>
       ]]></c:desc1>
     </c:desc>
 
     <c:sourceContent type="html" title="" id="sourceContent1" 
                      style="background-color:white;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:1.625em;line-height:1.425em;font-family:monospace;">
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
                      <![CDATA[
-https://blog.csdn.net/bestBT/article/details/57074391
+<div>
+  在工程项目文件夹下建立 Bsp 文件夹, 为了让工程目录结构更加信息, 在 Keil5 中新建对应的文件组并起名 Bsp, 并将 Bsp 文件夹下的所有 .c 文件加入到该组中. 最后将该 Bsp 文件夹加入到项目的 include path 中
+</div>
+<pre style="margin-top:.325em;color:gray;">
++ uCOS-STM32F1 (项目根文件夹)
+  + CMSIS
+  + User
+  + STM32F10x_StdPeriph
+  + <span style="color:blue;">Bsp
+    - led.h
+    - led.c</span>
+</pre>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="led.h" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+#ifndef __LED_H  // 条件编译，防止重复引用
+#define __LED_H
+#include "stm32f0xx.h"
+void led_init(void);   //声明函数
+void  led_on(void);
+void  led_off(void);
+#endif
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="led.c" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+#include "stm32f0xx.h"
+#include "led.h"
+
+GPIO_InitTypeDef        GPIO_InitStructure;             // 定义GPIO参数初始化结构体，这个结构体包括了全部GPIO的参数
+
+void led_init() {
+
+    // 使能GPIOC时钟，C脚上面有时钟
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE); 
+    
+    // 使用顶部定义的结构体来配置参数
+    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_13 ;       // 第13引脚
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_OUT;      // 输出模式（stm32输出和输入是分别两个格式）
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;      // 推挽输出模式，具体百度
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;   // 输出速率50Mhz   
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;   // 无上拉（浮空）
+    GPIO_Init(GPIOC, &GPIO_InitStructure);              // 把上面的参数应用到GPIOC
+
+    /* 实际上一开始定义的结构体就像是一个配件单，写明了要求，最后一步我们把这个配件单送给相应的商家，让商家下单十分清晰 */
+
+}
+
+void  led_on(){
+    GPIO_ResetBits(GPIOC,GPIO_Pin_13);     // 对一个脚置0函数
+}
+
+void  led_off(){
+    GPIO_SetBits(GPIOC,GPIO_Pin_13);       // 对一个脚置1函数
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="主函数 main.c" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+#include "main.h"
+#include "led.h"
+
+int main(void) {
+
+  led_init();       // 初始化led 
+
+  while (1) {
+    led_on();   // 点亮led
+  }
+
+}
+
+// 插上 STLink, 点 LOAD 就可以写入程序了！
+
 ]]>
     </c:sourceContent>
 
@@ -314,19 +408,114 @@ https://blog.csdn.net/bestBT/article/details/57074391
   </c:entry>
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title><![CDATA[系统级延时]]></c:title>
+    <c:title><![CDATA[系统级延时 &mdash; Systick定时器]]></c:title>
     <c:desc>
       <c:desc1> <![CDATA[
-
+在点亮LED工程基础上进一步编写程序, 让LED能亮一秒, 灭一秒. 我们将使用 STM32 内部的 sysTick 定时器（滴答定时器）进行精确定时.
       ]]></c:desc1>
     </c:desc>
 
-    <c:sourceContent type="html" title="" id="sourceContent1" 
+    <c:sourceContent type="html" title="目录结构: 新建 systick.h 和 systick.c 文件并放入 Bsp 文件夹下" id="sourceContent1" 
                      style="background-color:white;"
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
-                     bodyStyle="background-color:white;padding:0;font-size:1.625em;line-height:1.425em;font-family:monospace;">
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.425em;font-family:monospace;">
                      <![CDATA[
-https://blog.csdn.net/bestBT/article/details/57079538
+
+<pre style="margin-top:.325em;color:gray;">
++ uCOS-STM32F1 (项目根文件夹)
+  + CMSIS
+  + User
+  + STM32F10x_StdPeriph
+  + Bsp
+    - led.h
+    - led.c<span style="color:blue;">
+    - systick.h
+    - systick.c</span>
+</pre>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="systick.h" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+#ifndef __SYSTICK_H 
+#define __SYSTICK_H
+
+#include "stm32f0xx.h"
+
+void Systick_Init(void);
+void Delay_ms(__IO uint32_t nTime);
+void TimingDelay_Decrement(void);
+
+#endif /* __SYSTICK_H */
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="systick.c" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+#include "systick.h"
+
+static __IO uint32_t TimingDelay;
+
+void Delay_ms(__IO uint32_t nTime) { 
+  TimingDelay = nTime;
+  while(TimingDelay != 0);
+}
+
+/**
+  * @brief  Decrements the TimingDelay variable.
+  * @param  None
+  * @retval None
+  */
+void TimingDelay_Decrement(void) {
+  if (TimingDelay != 0x00) { 
+    TimingDelay--;
+  }
+}
+
+void Systick_Init(void) {
+  // 配置为1ms
+  if (SysTick_Config(SystemCoreClock / 1000)) { 
+    /* Capture error */ 
+    while (1);
+  }
+}
+
+// 既然用到定时器，和51类似，也要用定时器中断
+// 在 stm32f0xx.it.c 中找到 SysTick_Handler 在函数内部添加一句话
+void SysTick_Handler(void) {
+  TimingDelay_Decrement();  // 调动中断函数
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="主函数 main.c" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+                     <![CDATA[
+#include "main.h"
+#include "led.h"
+#include "systick.h"
+
+int main(void) {
+
+  SystemInit();    // 初始化系统
+  Systick_Init();  // 初始化滴答定时器
+
+  led_init();
+
+  while (1) {
+    led_on();
+    Delay_ms(1000);
+    led_off();
+    Delay_ms(1000);
+  }
+
+}
+
 ]]>
     </c:sourceContent>
 
@@ -337,6 +526,33 @@ https://blog.csdn.net/bestBT/article/details/57079538
       </c:comment1>
     </c:comment>
   </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[stm32F103采用内部晶振8MHz时钟和外部晶振初始化代码]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+https://blog.csdn.net/u010659754/article/details/88933141
+      ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.425em;font-family:monospace;">
+                     <![CDATA[
+
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
+        ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
 
 
 </c:component>
