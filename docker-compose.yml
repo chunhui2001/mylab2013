@@ -8,15 +8,6 @@
 # docker-compose --version
 # docker-compose up -d
 
-# docker stats
-# [CONTAINER]：以短格式显示容器的 ID。
-# [CPU %]：CPU 的使用情况。
-# [MEM USAGE / LIMIT]：当前使用的内存和最大可以使用的内存。
-# [MEM %]：以百分比的形式显示内存使用情况。
-# [NET I/O]：网络 I/O 数据。
-# [BLOCK I/O]：磁盘 I/O 数据。 
-# [PIDS]：PID 号。
-
 # ngrok http -subdomain=inconshreveable 80
 # ngrok start -config ~/ngrok.yml -config ~/projects/example/ngrok.yml website ttcp
 
@@ -24,24 +15,19 @@ version: '2.4'
 networks:
   nets:
     external: false
-    # aliases: net1
 
 services:
   mylab2013:                
     container_name: mylab2013
-    image: chunhui2001/ubuntu_1804_dev:tomcat8
+    image: chunhui2001/alpine:3.9.tomcat8.5
     hostname: mylab2013
     mem_limit: 300m
     ports: 
       - 9000:8080
-    #entrypoint: ["/usr/bin/supervisord"]
     entrypoint: ["/usr/local/tomcat/bin/catalina.sh", "run"]
-    #command: ["/bin/bash", "-c", "while true; do echo 1 >/dev/null 2>/dev/null; sleep 1; done"]
     volumes:
-      - ./conf/server.xml:/usr/local/apache-tomcat-8.5.45/conf/server.xml:ro
-      - ./supervisord.conf:/etc/supervisor/conf.d/supervisord.conf:ro
+      - ./conf/server.xml:/usr/local/tomcat/conf/server.xml:ro
       - ./war:/usr/local/tomcat/webapps/ROOT:ro
     restart: always
-    # docker network connect multi-host-network my_container1
     networks:
       - nets
