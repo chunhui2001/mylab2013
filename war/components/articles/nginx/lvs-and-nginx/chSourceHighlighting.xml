@@ -612,4 +612,122 @@ keepalive_timeout 说明:
     </c:comment>
   </c:entry>
 
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">lvs四层+nginx七层负载均衡</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+lvs采用DR模式基本上没有性能瓶颈，用户请求输入至lvs经过负载转发到后台服务上，通过后台服务输出响应给用户。nginx的负载性能远没有lvs好，lvs四层+nginx七层负载的好处是最前端是lvs接收请求进行负载转发，由多个nginx共同完成七层负载，这样nginx的负载性能就可以线性扩展。
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="准备环境" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;padding-bottom: 0;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;font-family:monospace;">
+      <![CDATA[
+vip：192.168.101.100
+lvs-director：192.168.101.8
+nginx1：192.168.101.3      安装nginx
+nginx2：192.168.101.4      安装nginx
+tomcat1：192.168.101.5     安装tomcat
+tomcat2：192.168.101.6     安装tomcat
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Director Server 配置" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:.625em;padding-bottom: 0;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;font-family:monospace;">
+      <![CDATA[
+vip：192.168.101.100
+lvs-director：192.168.101.8
+参考lvs四层负载DR模式进行配置
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Real Server 配置" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:.625em;padding-bottom: 0;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;font-family:monospace;">
+      <![CDATA[
+nginx1：192.168.101.3    安装nginx
+nginx2：192.168.101.4    安装nginx
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+参考 lvs 四层负载DR模式进行配置，需要修改 nginx 的配置文件使每个 nginx 对两个 tomcat 进行负载，如下：
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;font-family:monospace;">
+      <![CDATA[
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+    sendfile      on;
+    upstream tomcat_server_pool{
+      server 192.168.101.5:8080 weight=10;
+      server 192.168.101.6:8080 weight=10;
+    }
+    server {
+        listen 80;
+        server_name localhost;
+        location / {
+          proxy_pass http://tomcat_server_pool;
+          index index.jsp index.html index.htm;
+        }
+    }
+} 
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="验证" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;font-family:monospace;">
+      <![CDATA[
+请求 http://192.168.101.100，lvs 负载到不同的 nginx 上，如果停止任意一台 nginx 或停止任意一台 tomcat 不影响访问。
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">lvs高可用</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div>
+lvs作为负载均衡器，所有请求都先到达lvs，可见lvs处于非常重要的位置，如果lvs服务器宕机后端web服务将无法提供服务，影响严重。
+</div>
+<div style="margin-top:.625em;">
+为了屏蔽负载均衡服务器的宕机，需要建立一个备份机。主服务器和备份机上都运行高可用（High Availability）监控程序，通过传送诸如“I am alive”这样的信息来监控对方的运行状况。当备份机不能在一定的时间内收到这样的信息时，它就接管主服务器的服务IP并继续提供负载均衡服务；当备份管理器又从主管理器收到“I am alive”这样的信息时，它就释放服务IP地址，这样的主服务器就开始再次提供负载均衡服务。
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="keepalived+lvs实现主备" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;padding-bottom: 0;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;font-family:monospace;">
+      <![CDATA[
+<h2>什么是keepalived</h2>
+<div>keepalived是集群管理中保证集群高可用的一个服务软件，用来防止单点故障。</div>
+<div style="margin-top:.6em;">Keepalived的作用是检测web服务器的状态，如果有一台web服务器死机，或工作出现故障，Keepalived将检测到，并将有故障的web服务器从系统中剔除，当web服务器工作正常后Keepalived自动将web服务器加入到服务器群中，这些工作全部自动完成，不需要人工干涉，需要人工做的只是修复故障的web服务器。</div>
+
+<h2>keepalived工作原理</h2>
+<div>  keepalived是以VRRP协议为实现基础的，VRRP全称Virtual Router Redundancy Protocol，即虚拟路由冗余协议。</div>
+<div style="margin-top:.6em;">虚拟路由冗余协议，可以认为是实现路由器高可用的协议，即将N台提供相同功能的路由器组成一个路由器组，这个组里面有一个master和多个backup，master上面有一个对外提供服务的vip（该路由器所在局域网内其他机器的默认路由为该vip），master会发组播，当backup收不到VRRP包时就认为master宕掉了，这时就需要根据VRRP的优先级来选举一个backup当master。这样的话就可以保证路由器的高可用了。</div>
+<div style="margin-top:.6em;">keepalived主要有三个模块，分别是core、check和VRRP。core模块为keepalived的核心，负责主进程的启动、维护以及全局配置文件的加载和解析。check负责健康检查，包括常见的各种检查方式。VRRP模块是来实现VRRP协议的。</div>
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
 </c:component>
