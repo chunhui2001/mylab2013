@@ -1,0 +1,615 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract style="font-size:1em;line-height:1.6em;">
+    <![CDATA[
+<div>
+  <img style="margin:auto" src="/images/nginx/1020536-20180704121611316-511194243.png" />
+</div>
+<div style="margin-top:.625em;">
+一台普通服务器的处理能力是有限的，最佳情况能达到每秒几万个到几十万个请求，但却无法在一秒钟内处理上百万个甚至更多的请求。但若能将多台这样的服务器组成一个系统，并通过软件技术将所有请求平均分配给所有服务器，那么这个系统就完全拥有每秒钟处理几百万个甚至更多请求的能力。这就是负载均衡最初的基本设计思想。
+</div>
+<div style="margin-top:.3em;">
+负载均衡是由多台服务器以对称的方式组成一个服务器集合，每台服务器都具有等价的地位，都可以单独对外提供服务而无须其他服务器的辅助。通过某种负载分担技术，将外部发送来的请求按照某种策略分配到服务器集合的某一台服务器上，而接收到请求的服务器独立地回应客户的请求。负载均衡解决了大量并发访问服务问题，其目的就是用最少的投资获得接近于大型主机的性能。
+</div>
+]]>
+  </c:abstract>
+  
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">基于DNS的负载均衡</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div>
+  <img style="margin:auto;width:350px;" src="/images/nginx/1020536-20180704121633884-1136830955.png" />
+</div>]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+DNS（Domain Name System，域名系统），因特网上作为域名和IP地址相互映射的一个分布式数据库，能够使用户更方便的访问互联网，而不用去记住能够被机器直接读取的IP数串。通过主机名，最终得到该主机名对应的IP地址的过程叫做域名解析（或主机名解析）。DNS协议运行在UDP协议之上，使用端口号53。DNS负载均衡技术是最早的负载均衡解决方案，它是通过DNS服务中的随机名字解析来实现的，在DNS服务器中，可以为多个不同的地址配置同一个名字，而最终查询这个名字的客户机将在解析这个名字时得到其中的一个地址。因此，对于同一个名字，不同的客户机会得到不同的地址，它们也就访问不同地址上的Web服务器，从而达到负载均衡的目的。
+</div>
+<div>
+<ul style="margin-left:2em;list-style:disc;line-height:1.8em;margin-top:.625em;">
+<li>
+<b>优点：</b><br />实现简单、实施容易、成本低、适用于大多数TCP/IP应用；
+</li>
+<li><b>缺点1：</b><br />负载分配不均匀，DNS服务器将Http请求平均地分配到后台的Web服务器上，而不考虑每个Web服务器当前的负载情况；如果后台的Web服务器的配置和处理能力不同，最慢的Web服务器将成为系统的瓶颈，处理能力强的服务器不能充分发挥作用；</li>
+<li><b>缺点2：</b><br />可靠性低，如果后台的某台Web服务器出现故障，DNS服务器仍然会把DNS请求分配到这台故障服务器上，导致不能响应客户端。</li>
+<li><b>缺点3：</b><br />变更生效时间长，如果更改DNS有可能造成相当一部分客户不能享受Web服务，并且由于DNS缓存的原因，所造成的后果要持续相当长一段时间(一般DNS的刷新周期约为24小时)。</li>
+</ul>
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">基于四层交换技术的负载均衡</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div>
+  <img style="margin:auto;width:350px;" src="/images/nginx/1020536-20180704121655803-2035673535.png" />
+</div>]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+基于四层交换技术的负载均衡是通过报文中的目标地址和端口，再加上负载均衡设备设置的服务器选择方式，决定最终选择的内部服务器与请求客户端建立TCP连接，然后发送Client请求的数据。 client发送请求至4层负载均衡器，4层负载均衡器根据负载策略把client发送的报文目标地址(原来是负载均衡设备的IP地址)修改为后端服务器（可以是web服务器、邮件服务等）IP地址，这样client就可以直接跟后端服务器建立TCP连接并发送数据。具有代表意义的产品：LVS（开源软件），F5（硬件）
+</div>
+<div>
+<ul style="margin-left:2em;list-style:disc;line-height:1.8em;margin-top:.625em;">
+<li>
+  <b>优点：</b><br />性能高、支持各种网络协议
+</li>
+<li>
+  <b>缺点1：</b><br />对网络依赖较大，负载智能化方面没有7层负载好（比如不支持对url个性化负载），F5硬件性能很高但成本也高需要人民币几十万，对于小公司就望而却步了。
+</li>
+</ul>
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">基于七层交换技术的负载均衡</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div>
+  <img style="margin:auto;width:350px;" src="/images/nginx/1020536-20180704121714922-1390221287.png" />
+</div>]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+基于七层交换技术的负载均衡也称内容交换，也就是主要通过报文中的真正有意义的应用层内容，再加上负载均衡设备设置的服务器选择方式，决定最终选择的服务器。七层负载均衡服务器起了一个代理服务器的作用，client要访问webserver要先与七层负载设备进行三次握手后建立TCP连接，把要访问的报文信息发送给七层负载均衡；然后七层负载均衡再根据设置的均衡规则选择特定的webserver，然后通过三次握手与此台webserver建立TCP连接，然后webserver把需要的数据发送给七层负载均衡设备，负载均衡设备再把数据发送给client。具有代表意义的产品：nginx（软件）、apache（软件）
+</div>
+<div>
+<ul style="margin-left:2em;list-style:disc;line-height:1.8em;margin-top:.625em;">
+<li>
+  <b>优点：</b><br />对网络依赖少，负载智能方案多（比如可根据不同的url进行负载）
+</li>
+<li>
+  <b>缺点1：</b><br />网络协议有限，nginx和apache支持http负载，性能没有4层负载高
+</li>
+</ul>
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">确定使用四层+七层负载结合方案</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div>
+  <img style="margin:auto;width:350px;" src="/images/nginx/1020536-20180704121836906-165220622.png" />
+</div>]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+四层负载使用lvs软件或F5硬件实现。
+七层负载使用nginx实现。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">nginx集群背景</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+在keepalived+nginx的主备容灾高可用的架构中，nginx是作为外部访问系统的唯一入口，理论上一台nginx的最大并发量可以高达50000，但是当并发量更大的时候，keepalived+nginx的高可用机制是没办法满足需求的，因为keepalived+nginx的架构中确确实实是一台nginx在工作，只有当master宕机或异常时候，备份机才会上位。那么如何解决更大的高并发问题呢，也许会问能不能搭建nginx集群，直接对外提供访问？
+
+很显然这是欠妥当的，因为当nginx作为外部的唯一访问入口，没办法直接以集群的形式对外提供服务，没有那么多的公网ip资源可用，既太浪费也不友好。但是在内网环境下，是可以用nginx集群（nginx横向扩展服务集合）的，当然总得有一个对外入口，所以需要在nginx集群之上，在加一层负载均衡器，作为系统的唯一入口。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">lvs实现四层负载DR模式</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="什么是lvs" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+LVS 是 Linux Virtual Server 的简写，意即 Linux 虚拟服务器，是一个虚拟的服务器集群系统。本项目在1998年5月由章文嵩博士成立，是中国国内最早出现的自由软件项目之一。
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="lvs实现负载的三种方式" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+运行 lVS 软件的服务器，在整个负载均衡集群中承担统一调度角色，（即向真实服务器分配从客户端过来的请求。LVS中的调度方法有三种 ：NAT（Network Address Translation网络地址转换）、TUN（tunnel 隧道）、DR（direct route 直接路由）
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="LVS-DR 模式" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+  <img style="margin:auto;width:650px;" src="/images/nginx/1020536-20180704121911135-320957540.png" />
+</div>
+<div>
+  请求由LVS接受，由真实提供服务的服务器(RealServer, RS)直接返回给用户，返回的时候不经过LVS。
+</div>
+<div>
+DR模式下需要LVS服务器和RS绑定同一个VIP， 一个请求过来时，LVS只需要将网络帧的MAC地址修改为某一台RS的MAC，该包就会被转发到相应的RS处理，注意此时的源IP和目标IP都没变，RS收到LVS转发来的包，发现MAC是自己的，发现IP也是自己的，于是这个包被合法地接受，而当RS返回响应时，只要直接向源IP(即用户的IP)返回即可，不再经过LVS。
+</div>
+<div>
+DR模式下，lvs接收请求输入，将请求转发给RS，由RS输出响应给用户，性能非常高。
+</div>
+<div>
+它的不足之处是要求负载均衡器与RS在一个物理段上。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="LVS-NAT 模式" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+  <img style="margin:auto;width:650px;" src="/images/nginx/1020536-20180704121927761-160280847.png" />
+</div>
+<div>
+NAT(Network Address Translation)是一种外网和内网地址映射的技术。NAT模式下，LVS需要作为RS的网关，当网络包到达LVS时，LVS做目标地址转换(DNAT)，将目标IP改为RS的IP。RS接收到包以后，处理完，返回响应时，源IP是RS IP，目标IP是客户端的IP，这时RS的包通过网关(LVS)中转，LVS会做源地址转换(SNAT)，将包的源地址改为VIP，对于客户端只知道是LVS直接返回给它的。   
+</div>
+<div>
+NAT模式请求和响应都需要经过lvs，性能没有DR模式好。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="LVS-TUN 模式" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+  <img style="margin:auto;width:650px;" src="/images/nginx/1020536-20180704122017928-369958775.png" />
+</div>
+<div>
+TUN模式是通过ip隧道技术减轻lvs调度服务器的压力，许多Internet服务（例如WEB服务器）的请求包很短小，而应答包通常很大，负载均衡器只负责将请求包分发给物理服务器，而物理服务器将应答包直接发给用户。所以，负载均衡器能处理很巨大的请求量。相比NAT性能要高的多，比DR模式的优点是不限制负载均衡器与RS在一个物理段上。但是它的不足需要所有的服务器（lvs、RS）支持"IP Tunneling"(IP Encapsulation)协议。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">lvs-DR环境</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+vip：<b>192.168.101.100</b> <br />
+lvs-director：<b>192.168.101.8</b> <br />
+nginx1：<b>192.168.101.3</b> <br />
+nginx2：<b>192.168.101.4</b>
+<div>
+  <h3>see: http://www.ultramonkey.org/papers/lvs_tutorial/html/</h3>
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="安装lvs" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+在192.168.101.8上安装lvs
+centos6.5自带lvs，检查linux内核是否集成lvs模块：
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ find /lib/modules/$(uname -r)/ -iname "**.ko*" | cut -d/ -f5- | grep ipvs
+> kernel/net/netfilter/ipvs/ip_vs.ko.xz
+> kernel/net/netfilter/ipvs/ip_vs_dh.ko.xz
+> kernel/net/netfilter/ipvs/ip_vs_ftp.ko.xz
+> kernel/net/netfilter/ipvs/ip_vs_lblc.ko.xz
+> kernel/net/netfilter/ipvs/ip_vs_lblcr.ko.xz
+> kernel/net/netfilter/ipvs/ip_vs_lc.ko.xz
+> kernel/net/netfilter/ipvs/ip_vs_nq.ko.xz
+> kernel/net/netfilter/ipvs/ip_vs_pe_sip.ko.xz
+> kernel/net/netfilter/ipvs/ip_vs_rr.ko.xz
+> kernel/net/netfilter/ipvs/ip_vs_sed.ko.xz
+> kernel/net/netfilter/ipvs/ip_vs_sh.ko.xz
+> kernel/net/netfilter/ipvs/ip_vs_wlc.ko.xz
+> kernel/net/netfilter/ipvs/ip_vs_wrr.ko.xz
+> kernel/net/netfilter/xt_ipvs.ko.xz
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="安装lvs的管理工具ipvsadm" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+安装依赖
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ yum install -y gcc gcc-c++ makepcre pcre-devel kernel-devel openssl-devel libnl-devel popt*
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+安装ipvsadm: 将ipvsadm-1.26.tar.gz拷贝至/usr/local/下
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ wget http://ftp.riken.jp/Linux/kernel.org/linux/utils/kernel/ipvsadm/ipvsadm-1.31.tar.xz  -O /usr/local/ipvsadm-1.31.tar.xz
+$ cd /usr/local
+$ tar -Jxvf ipvsadm-1.31.tar.xz
+$ cd ipvsadm-1.31
+$ make
+$ make install 
+OR
+$ sudo yum install ipvsadm
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+校验是否安装成功：
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ ipvsadm -h
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+> ipvsadm v1.27 2008/5/15 (compiled with popt and IPVS v1.2.1)
+> Usage:
+>   ipvsadm -A|E -t|u|f service-address [-s scheduler] [-p [timeout]] [-M netmask] [--pe persistence_engine] [-b sched-flags]
+>   ipvsadm -D -t|u|f service-address
+>   ipvsadm -C
+>   ipvsadm -R
+>   ipvsadm -S [-n]
+>   ipvsadm -a|e -t|u|f service-address -r server-address [options]
+>   ipvsadm -d -t|u|f service-address -r server-address
+>   ipvsadm -L|l [options]
+>   ipvsadm -Z [-t|u|f service-address]
+>   ipvsadm --set tcp tcpfin udp
+>   ipvsadm --start-daemon state [--mcast-interface interface] [--syncid sid]
+>   ipvsadm --stop-daemon state
+>   ipvsadm -h
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">Real Server 安装</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+在192.168.101.3和192.168.101.4上安装nginx。
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="nginx配置文件" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+    sendfile        on;
+    server {
+        listen       80;
+        server_name  localhost;
+        location / {
+            root   html;
+            index  index.html index.htm;
+        }
+    }
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">Director Server 配置</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+在192.168.101.3和192.168.101.4上安装nginx。
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="在eth0上绑定虚拟ip" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+ifconfig eth0:0 192.168.101.100 broadcast 192.168.101.100 netmask 255.255.255.255 up 
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:.825em;">
+      <![CDATA[
+<div>此处在eth0设备上绑定了一个虚拟设备eth0:0，同时设置了一个虚拟IP是192.168.101.100，然后指定广播地址也为192.168.101.100，需要特别注意的是，虚拟ip地址的广播地址是它本身，子网掩码是255.255.255.255。
+  </div>
+<div style="margin-top:.325em;">
+  <img style="margin:auto;width:100%;" src="/images/nginx/1020536-20180704122339091-1653669796.png" />
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="添加路由规则" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:.825em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ route add -host 192.168.101.100 dev eth0:0
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="启用系统的包转发功能" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:.825em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ echo "1" >/proc/sys/net/ipv4/ip_forward  # 参数值为1时启用ip转发，为0时禁止ip转发。
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="清除原有转发规则" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:.825em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ ipvsadm --clear
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="添加虚拟IP规则" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:.825em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+# -s rr表示采用轮询策略。
+# :80表示负载转发的端口是80
+$ ipvsadm -A -t 192.168.101.100:80 -s rr
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="在虚拟IP中添加服务规则" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:.825em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+# 在新加虚拟IP记录中添加两条新的 Real Server 记录，-g 表示指定 LVS 的工作模式为直接路由模式。
+# lvs 进行负载转发需要保证 lvs 负载的端口要和nginx服务的端口的一致，这里都为80。
+$ ipvsadm -a -t 192.168.101.100:80 -r 192.168.101.3:80 -g
+$ ipvsadm -a -t 192.168.101.100:80 -r 192.168.101.4:80 -g 
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="重启lvs" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:.825em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ ipvsadm
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-top:.325em;">
+  <img style="margin:auto;width:100%;" src="/images/nginx/1020536-20180704122615967-1163424496.png" />
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Real Server 配置" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:.825em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+在 lvs 的 DR 和 TUn 模式下，用户的访问请求到达真实服务器后，是直接返回给用户的，而不再经过前端的 Director Server，因此，就需要在每个 Real server 节点上增加虚拟的 VIP 地址，这样数据才能直接返回给用户。
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">Real Server 配置</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+在 lvs 的 DR 和 TUn 模式下，用户的访问请求到达真实服务器后，是直接返回给用户的，而不再经过前端的 Director Server，因此，就需要在每个 Real server 节点上增加虚拟的 VIP 地址，这样数据才能直接返回给用户。
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="在回环设备上绑定了一个虚拟IP地址" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ ifconfig lo:0 192.168.101.100 broadcast 192.168.101.100 netmask 255.255.255.255 up
+$ /sbin/route add -host 192.168.101.100 dev lo:0
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-top:.325em;">
+  <img style="margin:auto;width:100%;" src="/images/nginx/1020536-20180704122733275-2139838300.png" />
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="关闭arp解析" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:.825em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.825em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<h5>arp_announce: 定义不同级别：当ARP请求通过某个端口进来是否利用这个接口来回应。</h5>
+<ul style="margin-left:2em;list-style:disc;line-height:1.8em;margin-top:.625em;">
+  <li>0 - 利用本地的任何地址，不管配置在哪个接口上去响应ARP请求；</li>
+  <li>1 - 避免使用另外一个接口上的mac地址去响应ARP请求；</li>
+  <li>2 - 尽可能使用能够匹配到ARP请求的最佳地址。</li>
+</ul>
+<h5 style="margin-top:.625em;">arp_ignore: 当ARP请求发过来后发现自己正是请求的地址是否响应；</h5>
+<ul style="margin-left:2em;list-style:disc;line-height:1.8em;margin-top:.625em;">
+  <li>0 - 利用本地的任何地址，不管配置在哪个接口上去响应ARP请求；</li>
+  <li>1 - 哪个接口上接受ARP请求，就从哪个端口上回应。</li>
+</ul>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ echo "1" >/proc/sys/net/ipv4/conf/lo/arp_ignore
+$ echo "2" >/proc/sys/net/ipv4/conf/lo/arp_announce 
+$ echo "1" >/proc/sys/net/ipv4/conf/all/arp_ignore
+$ echo "2" >/proc/sys/net/ipv4/conf/all/arp_announce 
+$ sysctl -p #使用修改生效
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-top:.325em;">
+  <img style="margin:auto;width:100%;" src="/images/nginx/1020536-20180704123008306-1567537129.png" />
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">测试</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<b>预期目标:</b> 由于lvs设置为rr轮询策略，当访问虚IP http://192.168.101.100，每次刷新请求通过lvs负载到不同的服务器。
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="注意事项" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+1、测试时需要在 nginx 的 http 中设置 keepalive_timeout  0; 取消使用 http 持久连接模式，保证每次客户端发起请求都需要向服务端建立连接，这样做是为了每次刷新页面都要经过 lvs 负载转发。
+</div>
+<div>
+2、lvs 进行负载转发需要保证 lvs 负载的端口要和 nginx 服务的端口的一致，这里都为80。
+</div>
+<div>
+keepalive_timeout 说明: 
+</div>
+<div>
+在 nginx 中 keepalive_timeout 的默认值是75秒，默认使用 http 持久连接模式，可使客户端到服务器端的连接持续有效，当出现对服务器的后继请求时，可避免建立或重新建立连接。生产环境建议 keepalive_timeout 不要设置为0。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="测试过程" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+修改 192.168.101.3 和 192.168.101.4 下 html 目录中 index.html 的内容使之个性化。<br />
+浏览器频繁刷新: http://192.168.101.100. 发现每次请求被负载到不同的 nginx 上。
+</div>
+<div style="margin-top:.325em;">
+任意停止掉一个 nginx，请求 http://192.168.101.100 继续可以浏览，由于 lvs 采用轮询策略如果其中一个 nginx 请求不可到达则去请求另外的 nginx。
+</div>
+<div>
+<img style="float:left;width:50%;" src="/images/nginx/1020536-20180704123114341-112159776.png" />
+<img style="float:left;width:50%;" src="/images/nginx/1020536-20180704123136649-619695590.png" />
+<div style="float:none;clear:both;"></div>
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+</c:component>
