@@ -1121,4 +1121,106 @@ $ service lvsdr start
     </c:comment>
   </c:entry>
 
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">keepalived+lvs实现双主</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div>
+上边主备方案是当前只有一台lvs工作，这造成资源浪费，可以采用双主结构，让两台lvs当前都进行工作，采用dns轮询方式，当用户访问域名通过dns轮询每台lvs，双主结构需要两个vip，这两个vip要绑定域名
+</div>
+<div style="margin-top:.625em;">
+同样，在每台lvs上安装keepalived软件，当keepalived检测到其中一个lvs宕机则将宕机的vip漂移到活动lvs上，当lvs恢复则vip又重新漂移回来。
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.625em;line-height: 1.825em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+
+<div>
+  <div style="float:left;width:33%;border-right:dashed 1px gray;">
+    <h3>初始状态</h3>
+    <div>每台lvs绑定一个vip，共两个vip，DNS设置域名对应这两个vip，通过DNS轮询每次解析到不同的vip上即解析到不同的lvs上。</div>
+    <img style="width:100%;" src="/images/nginx/1020536-20180704124726547-1587892228.png" />
+  </div>
+  <div style="float:left;width:33%;border-right:dashed 1px gray;">
+    <h3>其中一个主机宕机</h3>
+    <div>其中一个主机宕机，每台lvs上安装的keepalived程序会检测到对方宕机，将宕机一方的vip漂移至活动的lvs服务器上，这样DNS轮询全部到一台lvs继续对外提供服务。</div>
+    <img style="width:100%;" src="/images/nginx/1020536-20180704124647804-1667096885.png" />
+  </div>
+  <div style="float:left;width:33%;border-right:dashed 1px gray;">
+    <h3>主机恢复</h3>
+    <div>当主机恢复又回到初始状态，每个vip绑定在不同的lvs上。</div>
+    <img style="width:100%;" src="/images/nginx/1020536-20180704124801020-312515257.png" />
+  </div>
+  <div style="float:none;clear:both;"></div>
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">lvs扩展的思考</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+前端使用1到2台lvs作为负载基本可以满足中小型网站的并发要求，当lvs的负载成为瓶颈此时就需要对lvs进行优化、扩展。
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="方案1：LVS-ospf集群" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;font-family:monospace;">
+      <![CDATA[
+<div>
+OSPF(Open Shortest Path First 开放式最短路径优先）是一个内部网关协议(Interior Gateway Protocol，简称IGP），用于在单一自治系统（autonomous system,AS）内决策路由。
+LVS（DR）通过 ospfd，做lvs集群，实现一个VIP，多台LVS同时工作提供服务，这种方案需要依赖三层交换机设备实现。
+</div>
+<div>
+    <img style="width:auto;" src="/images/nginx/1020536-20180704124844740-1082302948.png" />
+</div>
+<div style="margin-top:.625em;">
+用户请求（VIP：42.xx.xx.100）到达三层交换机之后，通过对原地址、端口和目的地址、端口的hash，将链接分配到集群中的某一台LVS上，LVS通过内网（10.101.10.x）向后端转发请求，后端再将数据返回给用户。
+</div>
+<div style="margin-top:.625em;">
+LVS-ospf集群模式的最大优势就在于: 
+</div>
+<ul style="margin-left:2em;list-style:decimal;line-height:1.8em;margin-top:.625em;">
+  <li>LVS调度机自由伸缩，横向线性扩展(最大8台，受限于三层设备允许的等价路由数目 maximum load-balancing)</li>
+  <li>LVS机器同时工作，不存在备机，提高利用率；</li>
+  <li>做到了真正的高可用，某台LVS机器宕机后，不会影响服务</li>
+</ul>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="方案2：DNS轮询" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;font-family:monospace;">
+      <![CDATA[
+<div>
+上面讲的是一组双主结构，可以采用多组双主结构达到横向扩展lvs的目的，此方案需要每台lvs都绑定一个vip（公网ip），DNS设置域名轮询多个vip，如下图: 
+</div>
+<div>
+    <img style="width:550px;" src="/images/nginx/1020536-20180704124934349-1305154377.png" />
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="方案3：使用硬件负载均衡设置" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;font-size:1.425em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;font-family:monospace;">
+      <![CDATA[
+如果资金允许可以购买硬件设置来完成负载均衡，性能不错的有F5、Array等都可以满足超高并发的要求。
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 </c:component>
