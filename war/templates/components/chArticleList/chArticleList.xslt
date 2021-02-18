@@ -54,12 +54,9 @@
 
   <xsl:template name="get-icon">
     <xsl:param name="cate_name" />
-
     <xsl:variable name="categoryMaster" select="document(concat($APP_ROOT,'/RichMedia/smoCategoryMaster.xml'))" />
-
     <div style="background-image:url({$categoryMaster/*/c:category[c:name=$cate_name]/c:icon});float:left;
                 background-size:100%;width:80px;height:80px;background-repeat:no-repeat;background-position:center top;">
-
     </div>
   </xsl:template>
 </xsl:stylesheet>
