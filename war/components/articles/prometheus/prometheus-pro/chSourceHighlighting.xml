@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+
+  <c:abstract>
+    <![CDATA[
+<div>
+本文档主要分为两部分，分别讲解PromQL和Grafana的基础使用，在阅读PromQL部分时，建议不要联想Grafana中要怎么使用这些查询表达式，又是怎么根据查询结果绘图的，因为PromQL对于Grafana来说和SQL并没有区别，都是查询出结果，然后根据各种指定配置进行绘图，所以阅读和理解PromQL部分，应关注查询结果是什么样的，不要关注这些结果在Grafana中是怎么绘图的。
+</div>
+<h3 style="padding-bottom: 0;">主要参考: </h3>
+<div>
+    <a target="_blank" style="color:rgb(11, 95, 208);" 
+      href="https://github.com/yunlzheng/prometheus-book">https://github.com/yunlzheng/prometheus-book</a>
+</div>
+    ]]>
+  </c:abstract>
+  <c:entry style="margin-top:1em;">
+    <c:title>理解时间序列</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="指标" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;">
+<![CDATA[
+指标就是要监控的目标。在形式上所有的指标(Metric) 都通过如下格式标示：
+]]></c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;">
+<![CDATA[
+<metric-name> { <label-name>=<label-value>, ... }
+例如:
+container_cpu_usage_seconds_total { image!="", container_name!="POD", pod_name="acw62egvxd95l7t3q5uxee" }
+]]></c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;margin-top:.625em;">
+<![CDATA[
+指标名称(metric name) 一般反映被监控样本的含义(比如 http_request_total - 表示当前系统接收到的HTTP请求总量)。标签(label)反映了当前样本的特征维度，通过这些维度可以对样本数据进行过滤，聚合等。
+]]></c:sourceContent>
+    <c:sourceContent type="html" title="样本" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;">
+<![CDATA[
+<div>
+  Prometheus 会定时到指定的 Exportor 上 pull 当前的样本数据，然后根据 pull 的时间以时间序列的方式保存在内存数据库中，并且定时持久化到硬盘上，Exportor 只维护指标的值。每条时间序列由指标名称(metrics) 和一组标签集(labelset) 确定并命令，也就是说一个指标名称可能对应很多条时间序列。
+</div>
+<div style="margin-top:.625em;">
+  可以将时间序列理解为一个以时间为轴的矩阵，如下所示，有三个时间序列在时间轴上分别对应不同的值：
+</div>
+]]></c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;">
+<![CDATA[
+^
+│  . . . . . . . . . .   node_cpu { cpu="cpu0", mode="idle" }     . . . . . . . . . .
+│  . . . . . . . . . .   node_cpu { cpu="cpu0", mode="system" }   . . . . . . . . . .
+│  . . . . . . . . . .   node_load1 { }                           . . . . . . . . . .
+v
+  <--------------------------------------- 时间 -------------------------------------->
+]]></c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;margin-top:.625em;">
+<![CDATA[
+<div>
+  每一个点称为一个样本（sample），样本由以下三部分组成：
+</div>
+<ul style="margin-top:.425em;list-style: disc;margin-left: 1.5em;">
+  <li><b>指标</b> (metric): metric name 和描述当前样本特征的 labelsets;</li>
+  <li><b>时间戳</b> (timestamp): 一个精确到毫秒的时间戳;</li>
+  <li><b>值</b> (value): 表示该时间的样本的值。</li>
+</ul>
+]]></c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;">
+<![CDATA[
+<------------------- metric --------------------->  <- timestamp ->   <-value->
+http_request_total { status="200", method="GET" }   @1434417560938 => 94355
+http_request_total { status="200", method="GET" }   @1434417561287 => 94334
+http_request_total { status="404", method="GET" }   @1434417560938 => 38473
+http_request_total { status="404", method="GET" }   @1434417561287 => 38544
+http_request_total { status="200", method="POST" }  @1434417560938 => 4748
+http_request_total { status="200", method="POST" }  @1434417561287 => 4785
+]]></c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;margin-top:.625em;">
+<![CDATA[
+所以查询值的 where 条件就是指标、标签和时间戳（区间）。
+]]></c:sourceContent>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;">
+    <c:title>查询语法</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="指标查询（瞬时向量查询）" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;">
+<![CDATA[
+<div>
+  通过指标名称和标签进行查询，可以查询该指标下的所有时间序列距离当前系统时间最新的值，无时间概念，所以查询的结果称为瞬时向量（instant vector），如下图所示：
+</div>
+<div style="margin-top:.325em;">
+  <img width="100%" src="/images/prometheus/20200428204016680.png" />
+</div>
+<div style="margin-top:.325em;">
+  可以看到查询到的多条时间序列都包含指定的标签。单独使用指标名称，相当于不使用标签进行过滤，同样独单使用标签查询也可以。
+</div>
+<div style="margin-top:.325em;">
+  标签过滤支持使用 <b style="color:red;">=</b> 和 <b style="color:red;">!=</b> 两种完全匹配模式：
+</div>
+<ul style="margin-top:.425em;list-style: disc;margin-left: 1.5em;">
+  <li>通过使用 label=value 可以选择那些标签满足表达式定义的时间序列；</li>
+  <li>反之使用 label!=value 则可以根据标签匹配排除时间序列；</li>
+</ul>
+<div style="margin-top:.625em;">
+  除了使用完全匹配的方式对时间序列进行过滤以外，还支持使用正则表达式作为匹配条件，多个正则表达式之间使用|进行分离：
+</div>
+<ul style="margin-top:.425em;list-style: disc;margin-left: 1.5em;">
+  <li>使用 label=~regx 表示选择符合正则表达式定义的时间序列；</li>
+  <li>反之使用 label=!~regx 进行反向选择；</li>
+</ul>
+<div style="margin-top:.625em;">
+  例如，如果想查询多个环境下的请求数统计，可以使用如下表达式：
+</div>
+]]></c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;">
+<![CDATA[
+http_requests_total { environment=~"prodect|test|development", method!="GET" }
+]]></c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;margin-top:.625em;">
+<![CDATA[
+每个正则表达式就是简单的字符串。
+]]></c:sourceContent>
+    <c:sourceContent type="html" title="时间范围查询（区间向量查询）" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;">
+<![CDATA[
+ 如果我们想过去一段时间范围内的样本数据时，我们则需要使用区间向量表达式。区间向量表达式和瞬时向量表达式之间的差异在于需要定义时间范围，通过时间范围选择器[]进行定义。例如查询距离当前系统时间最近5分钟内的所有样本数据：
+]]></c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;">
+<![CDATA[
+  <img width="100%" src="/images/prometheus/20200428204044538.png" />
+]]></c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;margin-top:.425em;">
+<![CDATA[
+<div>
+可以看到结果中每个时间序列都有5个值并且@了不同的时间戳(因为该 prometheus 每分钟 pull 一次，所以5分钟有5个结果)。除了使用m表示分钟以外，PromQL 的时间范围选择器支持其它时间单位：
+</div>
+<ul style="margin-top:.425em;list-style: disc;margin-left: 1.5em;">
+  <li><b style="color:red;">s</b> - 秒</li>
+  <li><b style="color:red;">m</b> - 分钟</li>
+  <li><b style="color:red;">h</b> - 小时</li>
+  <li><b style="color:red;">d</b> - 天</li>
+  <li><b style="color:red;">w</b> - 周</li>
+  <li><b style="color:red;">y</b> - 年</li>
+</ul>
+]]></c:sourceContent>
+    <c:sourceContent type="html" title="时间位移" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;">
+<![CDATA[
+ 在瞬时向量表达式或者区间向量表达式中，都是以prometheus当前系统时间为基准进行查询：
+]]></c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;">
+<![CDATA[
+http_request_total { }      # 瞬时向量表达式，选择当前最新的数据
+http_request_total { } [5m] # 区间向量表达式，选择以当前时间为基准过去5分钟内的所有数据
+]]></c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;margin-top:.625em;">
+<![CDATA[
+而如果我们想查询5分钟之前的最新数据，或者想查询昨天的所有数据呢?这个时候我们就可以使用位移操作，位移操作的关键字为 <b style="color:red;">offset</b>，例如：
+]]></c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;">
+<![CDATA[
+http_request_total { } offset 5m
+http_request_total { } [1d] offset 1d
+]]></c:sourceContent>
+    <c:sourceContent type="html" title="操作符" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;">
+<![CDATA[
+ 除了能够方便的查询和过滤时间序列以外，还支持丰富的操作符，用户可以使用这些操作符进一步的对事件序列进行二次加工。这些操作符包括：数学运算符，逻辑运算符，布尔运算符等等。
+]]></c:sourceContent>
+  </c:entry>
+
+</c:component>
