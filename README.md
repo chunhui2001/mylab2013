@@ -1,6 +1,9 @@
 mylab2013
 =========
 
+git remote set-url origin git@github.com:chunhui2001/mylab2013.git
+
+
 # eclipse 插件
 gae - http://dl.google.com/eclipse/plugin/4.4
 
@@ -12,9 +15,6 @@ $ /usr/local/google-cloud-sdk/bin/gcloud app deploy
 /usr/local/bin/ngrok tcp localhost:9188
 /usr/local/bin/ngrok http -subdomain=inconshreveable 80
 /usr/local/bin/ngrok start -config ~/ngrok.yml -config ~/projects/example/ngrok.yml website ttcp
-
-
-
 
 
 ### ngrok.yml
