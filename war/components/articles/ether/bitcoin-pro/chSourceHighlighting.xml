@@ -141,6 +141,145 @@ curl --user blockdaemon:blockdaemon \
     </c:comment>
   </c:entry>
 
+  <c:entry style="margin-top:.5em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">比特币测试币</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.85em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<h5>目前支持对testnet中的交易进行查询的网站有: </h5>
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li>Blockchain.info Testnet Explorer</li>
+  <li>Bitcoin Testnet on Blockr.io</li>
+  <li>Bitcoin Testnet on insight.bitpay.com</li>
+  <li>BlockTrail Testnet Explorer, Testnet API and Testnet Faucet</li>
+  <li>BlockCypher Testnet Explorer(推荐)</li>
+</ul>
+<h5 style="margin-top:.825em;">获取测试币: </h5>
+<div style="margin-top:.325em;">
+  这里选择的是 <b>https://coinfaucet.eu/en/btc-testnet/</b>，打开网站后，填入你的比特币地址，即可获得网站站主给予你的一定数量的测试用币。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="创建你自己的测试网节点 bitcoin-testnet-box" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.425em;background-color:white;margin-top:1em;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.25em;font-family:monospace;">
+      <![CDATA[
+$ git clone git@github.com:freewil/bitcoin-testnet-box.git
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.425em;background-color:white;margin-top:1em;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.25em;font-family:monospace;">
+      <![CDATA[
+$ docker run -t -i -p 19001:19001 -p 19011:19011 freewil/bitcoin-testnet-box
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.425em;background-color:white;margin-top:1em;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.25em;font-family:monospace;">
+      <![CDATA[
+##########################
+### docker-compose.yml ###
+##########################
+version: '2.4'
+networks:
+    br0:
+      external: true
+
+services:
+  bitcoin-testnet-box:
+    container_name: bitcoin-testnet-box
+    image: freewil/bitcoin-testnet-box
+    hostname: bitcoin-testnet-box
+    mem_limit: 300m
+    ports:
+      - 19001:19001
+      - 19011:19011
+    restart: always
+    networks:
+      br0:
+        ipv4_address: 172.16.197.220
+
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.425em;background-color:white;margin-top:1em;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.25em;margin-top:1.2em;">
+      <![CDATA[
+<div>
+  The docker image will run two bitcoin nodes in the background and is meant to be attached to allow you to type in commands. The image also exposes the two JSON-RPC ports from the nodes if you want to be able to access them from outside the container.
+</div>
+<div style="margin-top:.625em;">
+  This will start up two nodes using the two datadirs <b>1</b> and <b>2</b>. They will only connect to each other in order to remain an isolated private testnet. Two nodes are provided, as one is used to generate blocks and it's balance will be increased as this occurs (imitating a miner). You may want a second node where this behavior is not observed.
+</div>
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li><b>Node 1</b> will listen on port 19000, allowing <b>node 2</b> to connect to it.</li>
+  <li><b>Node 1</b> will listen on port 19001 and <b>node 2</b> will listen on port 19011 for the JSON-RPC server.</li>
+</ul>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Makefile" id="sourceContent1"
+                     titleStyle="margin:1em 0 0 0;padding:0;color:green;font-size:1.425em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.425em;line-height:1.25em;margin-top:.62em;">
+      <![CDATA[
+BITCOIND=bitcoind
+BITCOINGUI=bitcoin-qt
+BITCOINCLI=bitcoin-cli
+B1_FLAGS=
+B2_FLAGS=
+B1=-datadir=1 $(B1_FLAGS)
+B2=-datadir=2 $(B2_FLAGS)
+BLOCKS=1
+ADDRESS=
+AMOUNT=
+ACCOUNT=
+start:
+  $(BITCOIND) $(B1) -daemon
+  $(BITCOIND) $(B2) -daemon
+start-gui:
+  $(BITCOINGUI) $(B1) &
+  $(BITCOINGUI) $(B2) &
+### To generate a block:
+### To generate more than 1 block: 
+### >>> make generate BLOCKS=10
+generate:
+  $(BITCOINCLI) $(B1) -generate $(BLOCKS)
+#### Check the status of the nodes
+getinfo:
+  $(BITCOINCLI) $(B1) -getinfo
+  $(BITCOINCLI) $(B2) -getinfo
+### Sending bitcoins
+sendfrom1:
+  $(BITCOINCLI) $(B1) sendtoaddress $(ADDRESS) $(AMOUNT)
+sendfrom2:
+  $(BITCOINCLI) $(B2) sendtoaddress $(ADDRESS) $(AMOUNT)
+### Generate a wallet address for the second wallet
+address1:
+  $(BITCOINCLI) $(B1) getnewaddress $(ACCOUNT)
+address2:
+  $(BITCOINCLI) $(B2) getnewaddress $(ACCOUNT)
+stop:
+  $(BITCOINCLI) $(B1) stop
+  $(BITCOINCLI) $(B2) stop
+clean:
+  find 1/regtest/* -not -name 'server.*' -delete
+  find 2/regtest/* -not -name 'server.*' -delete
+docker-build:
+  docker build --tag bitcoin-testnet-box .
+docker-run:
+  docker run -ti bitcoin-testnet-box
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
   
   <c:entry style="margin-top:1em;">
     <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">Original Bitcoin client/API calls list</div>]]></c:title>
