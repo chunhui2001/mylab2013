@@ -171,11 +171,62 @@ curl --user blockdaemon:blockdaemon \
 $ git clone git@github.com:freewil/bitcoin-testnet-box.git
    ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1"
-                     titleStyle="padding-left:0;color:green;font-size:1.425em;background-color:white;margin-top:1em;font-size:1.2em;"
-                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.25em;font-family:monospace;">
+    <c:sourceContent type="" title="Dockerfile" id="sourceContent1"
+                     titleStyle="margin:1em 0 0 0;padding:0;color:green;font-size:1.425em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.425em;line-height:1.25em;margin-top:.62em;">
       <![CDATA[
-$ docker run -t -i -p 19001:19001 -p 19011:19011 freewil/bitcoin-testnet-box
+# chunhui2001/bitcoin-testnet-box
+# Version 0.0.1
+FROM ubuntu
+MAINTAINER Chunhui.Zhang "chunhui2001@gmail.com"
+
+# install make
+RUN apt-get update && \
+  apt-get install --yes make wget curl vim build-essential lsb-release net-tools iputils-ping apt-utils
+
+# create a non-root user
+RUN adduser --disabled-login --gecos "" tester
+
+# run following commands from user's home directory
+WORKDIR /home/tester
+
+ENV BITCOIN_CORE_VERSION "0.21.0"
+
+# download and install bitcoin binaries
+RUN mkdir tmp \
+  && cd tmp \
+  && wget "https://bitcoincore.org/bin/bitcoin-core-${BITCOIN_CORE_VERSION}/bitcoin-${BITCOIN_CORE_VERSION}-x86_64-linux-gnu.tar.gz" \
+  && tar xzf "bitcoin-${BITCOIN_CORE_VERSION}-x86_64-linux-gnu.tar.gz" \
+  && cd "bitcoin-${BITCOIN_CORE_VERSION}/bin" \
+  && install --mode 755 --target-directory /usr/local/bin *
+
+# clean up
+RUN rm -r tmp
+
+# copy the testnet-box files into the image
+ADD . /home/tester/bitcoin-testnet-box
+
+# make tester user own the bitcoin-testnet-box
+RUN chown -R tester:tester /home/tester/bitcoin-testnet-box
+
+# color PS1
+RUN mv /home/tester/bitcoin-testnet-box/.bashrc /home/tester/ && \
+  cat /home/tester/.bashrc >> /etc/bash.bashrc
+
+# use the tester user when running the image
+USER tester
+
+# run commands from inside the testnet-box directory
+WORKDIR /home/tester/bitcoin-testnet-box
+
+# expose two rpc ports for the nodes to allow outside container access
+EXPOSE 19001 19011
+CMD ["/bin/bash", "-c", "while true; do echo 1 >/dev/null 2>/dev/null; sleep 1; done"]
+
+# docker build . -t 'chunhui2001/bitcoin-testnet-box'
+# docker push chunhui2001/bitcoin-testnet-box
+# docker pull chunhui2001/bitcoin-testnet-box
+
    ]]>
     </c:sourceContent>
     <c:sourceContent type="" title="" id="sourceContent1"
@@ -193,16 +244,17 @@ networks:
 services:
   bitcoin-testnet-box:
     container_name: bitcoin-testnet-box
-    image: freewil/bitcoin-testnet-box
+    image: chunhui2001/bitcoin-testnet-box
     hostname: bitcoin-testnet-box
     mem_limit: 300m
+    command: ["/bin/bash", "-c", "while true; do echo 1 >/dev/null 2>/dev/null; sleep 1; done"]
     ports:
       - 19001:19001
       - 19011:19011
     restart: always
     networks:
       br0:
-        ipv4_address: 172.16.197.220
+        ipv4_address: 172.16.197.226
 
    ]]>
     </c:sourceContent>
@@ -245,22 +297,44 @@ start-gui:
   $(BITCOINGUI) $(B2) &
 ### To generate a block:
 ### To generate more than 1 block: 
-### >>> make generate BLOCKS=10
+# >> make generate BLOCKS=10
 generate:
   $(BITCOINCLI) $(B1) -generate $(BLOCKS)
 #### Check the status of the nodes
 getinfo:
   $(BITCOINCLI) $(B1) -getinfo
   $(BITCOINCLI) $(B2) -getinfo
+getinfo2:
+      curl --user admin1:123 \
+      --data-binary '{"jsonrpc": "1.0", "id": "curltest", "method": "getblockchaininfo", "params": []}' \
+      -H 'content-type: text/plain;' http://127.0.0.1:19001/
 ### Sending bitcoins
 sendfrom1:
   $(BITCOINCLI) $(B1) sendtoaddress $(ADDRESS) $(AMOUNT)
 sendfrom2:
   $(BITCOINCLI) $(B2) sendtoaddress $(ADDRESS) $(AMOUNT)
-### Generate a wallet address for the second wallet
-address1:
+### 列出所有钱包
+listwallets1:
+  $(BITCOINCLI) $(B1) listwallets
+listwallets2:
+  $(BITCOINCLI) $(B2) listwallets
+### 根据地址查询账户
+# >> make getaccount1 ADDRESS=1D1ZrZNe3JUo7ZycKEYQQiQAWd9y54F4XX
+getaccount1:
+  $(BITCOINCLI) $(B1) getaccount $(ADDRESS)
+getaccount2:
+  $(BITCOINCLI) $(B1) getaccount $(ADDRESS)
+### 创建钱包 
+# >> make wallet1 WALLET_NAME=chunhui.zhang.wallet1
+create_wallet1:
+  $(BITCOINCLI) $(B1) createwallet $(WALLET_NAME)
+create_wallet2:
+  $(BITCOINCLI) $(B2) createwallet $(WALLET_NAME)
+### Generate a wallet address for the first wallet
+create_address1:
   $(BITCOINCLI) $(B1) getnewaddress $(ACCOUNT)
-address2:
+### Generate a wallet address for the second wallet
+create_address2:
   $(BITCOINCLI) $(B2) getnewaddress $(ACCOUNT)
 stop:
   $(BITCOINCLI) $(B1) stop
@@ -272,6 +346,7 @@ docker-build:
   docker build --tag bitcoin-testnet-box .
 docker-run:
   docker run -ti bitcoin-testnet-box
+
    ]]>
     </c:sourceContent>
     <c:comment>
