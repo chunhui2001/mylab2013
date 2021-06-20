@@ -213,6 +213,206 @@ $ docker pull chunhui2001/bitcoin-testnet-box
       </c:comment1>
     </c:comment>
   </c:entry>
+
+
+  <c:entry style="margin-top:.5em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">比特币开发之 &mdash; Testnet & Segnet & Regtest</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Testnet &amp;mdash; 比特币的试验场" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkmagenta;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+Testnet是用于测试的区块链，网络和货币的总称。 testnet是一个功能齐全的在线P2P网络，包括钱包，测试比特币（testnet币），挖矿以及类似主干网的所有其他功能。实际上它和主网只有两个区别：testnet币是毫无价值的，挖掘难度足够低，任何人都可以相对容易地使用testnet币）。
+</div>
+<div style="margin-top:.325em;">
+任何打算在比特币主干网上用于生产的软件开发都应该首先在testnet上用测试币进行测试。这样可以保护开发人员免受由于软件错误而导致的金钱损失，也可以保护网络免受由于软件错误导致的意外攻击。
+</div>
+<div style="margin-top:.325em;">
+然而，保持测试币的无价值和易挖掘并不容易。尽管有来自开发商的呼吁，但还是有人使用先进的设备（GPU和ASIC）在testnet上挖矿。这就增加了难度，使用CPU挖矿不可能，导致获取测试币非常困难，以致于人们开始赋予其一定价值，所以测试币并不是毫无价值。结果，时不时地testnet必须被报废并重新从创始区块启动，重新进行难度设置。
+</div>
+<div style="margin-top:.325em;">
+目前的testnet被称为testnet3，是testnet的第三次迭代，于2011年2月重启，重置了之前的testnet网络的难度。
+</div>
+<div style="margin-top:.325em;">
+请记住，testnet3是一个大区块链，在2017年初超过20 GB。完全同步需要一天左右的时间，并占用您的计算机资源。它不像主干网，也不是“轻量级”。运行testnet节点的一个好方法就是将其运行为一个专用的虚拟机镜像（例如，VirtualBox，Docker，Cloud Server等）。
+</div>
+<h4 style="margin-top:.625em;color:blueviolet;">使用 testnet</h4>
+<div style="margin-top:.325em;">
+像几乎所有其他比特币软件一样，Bitcoin Core 完全支持在 testnet 网络运行而不是只能在主干网上运行，还允许您进行测试币挖矿并运行一个 testnet 全节点。
+</div>
+<div style="margin-top:.325em;">
+如果要在 testnet 上启动 Bitcoin Core，而不是在主干网启动，您可以使用 testnet 开关：<br />
+<span style="color:green;">$ bitcoind -testnet</span>
+</div>
+<div style="margin-top:.325em;">
+在日志中，您应该会看到，bitcoind正在默认bitcoind目录的testnet3子目录中构建一个新的区块链：<br />
+<span style="color:green;">bitcoind: Using data directory /home/username/.bitcoin/testnet3</span>
+</div>
+<div style="margin-top:1.325em;">
+要连接 bitcoind，可以使用 bitcoin-cli 命令行工具，但是要记得切换到 testnet 模式：
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;margin-top:.6em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ bitcoin-cli -testnet getinfo
+> {
+    "version": 130200,
+    "protocolversion": 70015,
+    "walletversion": 130000,
+    "balance": 0.00000000,
+    "blocks": 416,
+    "timeoffset": 0,
+    "connections": 3,
+    "proxy": "",
+    "difficulty": 1,
+    "testnet": true,
+    "keypoololdest": 1484801486,
+    "keypoolsize": 100,
+    "paytxfee": 0.00000000,
+    "relayfee": 0.00001000,
+    "errors": ""
+  }
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:1.25em;">
+      <![CDATA[
+您还可以使用 getblockchaininfo 命令确认 testnet3 区块链的详细信息和同步进度：
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;margin-top:.6em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ bitcoin-cli -testnet getblockchaininfo
+> {
+    "chain": "test",
+    "blocks": 1088,
+    "headers": 139999,
+    "bestblockhash": "0000000063d29909d475a1c4ba26da64b368e56cce5d925097bf3a2084370128",
+    "difficulty": 1,
+    "mediantime": 1337966158,
+    "verificationprogress": 0.001644065914099759,
+    "chainwork": "0000000000000000000000000000000000000000000000000000044104410441",
+    "pruned": false,
+    "softforks": [
+   
+    [...]
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:1.25em;">
+      <![CDATA[
+<div>
+在 testnet3 上，你也可以运行使用其他语言和框架实现的全节点来实验和学习，例如 btcd（用Go编写）和 bcoin（用JavaScript编写）。
+</div>
+<div style="margin-top:.325em;">
+  在2017年初，testnet3 支持主网的所有功能，也包括在主干网络上尚未激活的隔离见证（Segregated Witness &mdash; 见[segwit]隔离见证章节）。因此 testnet3 也可用于测试隔离见证功能。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Segnet &amp;mdash; 隔离见证测试网络" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkmagenta;font-size:1em;background-color:white;font-size:1.2em;margin-top:.825em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+2016年，启动了一个特殊用途的测试网络，以帮助开发和测试隔离见证（也称为segwit;见[segwit]）。 该测试区块链称为 segnet，可以通过运行 Bitcoin Core 的特殊版本（分支）来连接。
+</div>
+<div style="margin-top:.325em;">
+  由于已经将 segwit 添加到 testnet3 中，因此后来不再使用 segnet 来测试 egwit 功能。在将来，我们可能会看到其他专门用于测试单个功能或主要架构更改（如segnet）的测试网络区块链。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Regtest &amp;mdash; 本地区块链" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkmagenta;font-size:1em;background-color:white;font-size:1.2em;margin-top:.825em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+Regtest 代表“回归测试”，是一种比特币核心功能，允许您创建本地区块链以进行测试。与 testnet3（它是一个公共和共享的测试区块链）不同，regtest 区块链旨在作为本地测试的封闭系统运行。您从头开始启动 regtest 区块链，创建一个本地的创世区块。您可以将其他节点添加到网络中，或者使用单个节点运行它来测试 Bitcoin Core 软件。
+</div>
+<div style="margin-top:.325em;">
+要在 regtest 模式下启动 Bitcoin Core，您可以使用 regtest 标志：<br />
+<span style="color:green;">$ bitcoind -regtest</span>
+</div>
+<div style="margin-top:.325em;">
+就像使用 testnet 一样，Bitcoin Core 将在 bitcoind 默认目录的 regtest 子目录下初始化一个新的区块链：<br />
+<span style="color:green;">bitcoind: Using data directory /home/username/.bitcoin/regtest</span>
+</div>
+<div style="margin-top:.325em;">
+要使用命令行工具，还需要指定 regtest 标志。 我们来试试 getblockchaininfo 命令来检查 regtest 区块链：
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;margin-top:.6em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ bitcoin-cli -regtest getblockchaininfo
+> {
+    "chain": "regtest",
+    "blocks": 0,
+    "headers": 0,
+    "bestblockhash": "0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206",
+    "difficulty": 4.656542373906925e-10,
+    "mediantime": 1296688602,
+    "verificationprogress": 1,
+    "chainwork": "0000000000000000000000000000000000000000000000000000000000000002",
+    "pruned": false,
+    [...]
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:.825em;">
+      <![CDATA[
+你可以看到，还没有任何区块。 让我们开始挖一些（500块），赚取奖励：
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;margin-top:.6em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ bitcoin-cli -regtest generate 500
+> [
+    "7afed70259f22c2bf11e406cb12ed5c0657b6e16a6477a9f8b28e2046b5ba1ca",
+    "1aca2f154a80a9863a9aac4c72047a6d3f385c4eec5441a4aafa6acaa1dada14",
+    "4334ecf6fb022f30fbd764c3ee778fabbd53b4a4d1950eae8a91f1f5158ed2d1",
+    "5f951d34065efeaf64e54e91d00b260294fcdfc7f05dbb5599aec84b957a7766",
+    "43744b5e77c1dfece9d05ab5f0e6796ebe627303163547e69e27f55d0f2b9353",
+     [...]
+    "6c31585a48d4fc2b3fd25521f4515b18aefb59d0def82bd9c2185c4ecb754327"
+  ]
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:.825em;">
+      <![CDATA[
+挖掘所有这些块只需要几秒钟，这样就可以很容易地进行测试。 如果您检查您的钱包余额，您将看到您获得了前400个区块的奖励（Coinbase的奖励必须挖满100块之后才能花费）:
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;margin-top:.6em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ bitcoin-cli -regtest getbalance
+> 12462.50000000
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
   
   <c:entry style="margin-top:1em;">
     <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">UTXO的定义（交易，输入输出）</div>]]></c:title>
