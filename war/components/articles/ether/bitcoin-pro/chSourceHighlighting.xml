@@ -1860,6 +1860,503 @@ We could see the new associated address using getaddressinfo command.
 
 
   <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">BlockCypher</div>]]></c:title>
+    <c:desc>
+      <c:desc1 style="line-height:1.425em;"> <![CDATA[
+<div>
+  成立于美国加州的 BlockCypher，为用户提供一个加密货币应用程序可以很容易开发和扩展的平台。其中一个关键部分是低延迟的API库和其他工具让实现区块链基础设施变得更加容易。
+</div>
+<div style="margin-top:.425em;line-height:1.625em;">
+  BlockCypher 自 2013 年年底推出，是由经验丰富的软件老兵 Matthieu Riou 和 Nicholson 共建。Riou 是一个在银行、软件和 SaaS 公司等繁杂系统中，拥有超过 14 多年工作经验的设计师。Nicholson 则是一个在软件产品管理、产品营销，并涉及环境、能源和国防等多个领域的工程师，他有 15 年以上的工作经历。
+</div>
+<div style="margin-top:.425em;line-height:1.625em;">
+  BlockCypher 旨在降低区块链应用构建的技术壁垒，促进创新让开发人员能够轻松建立、监控和安全使用他们的应用程序。BlockCypher 的云服务，能够让团队关注于应用程序的功能而不是比特币的托管服务。
+</div>
+<div style="margin-top:.425em;line-height:1.625em;">
+  2014 年 7 月份，BlockCypher 发布了多重签名的 API，随后在 3 月末发布了支付端口 API。
+</div>
+<div style="margin-top:.425em;line-height:1.625em;">
+  作为一家为大型机构（如交易所和支付服务提供商）提供比特币钱包服务的公司，BlockCypher 最重要的服务就是他们所称的“置信因子”（ConfidenceFactor）技术，如果 Blockcypher 处理器有合理的理由确定（即99%以上）<b style="color:crimson;">双花攻击</b>不会被发起，那么交易就会以零确认来处理。
+</div>
+<div style="margin-top:.425em;line-height:1.625em;">
+对此，Blockcypher 这样描述道：“简单来说，如果一个未经确认的交易反馈了 99.9% 的置信因子，那么我们的数据就会明确双花将有0.1%的机会成功。在设计上，我们是保守的。即使当我们确认有90%的置信因子，一个双花成功的可能性也明显低于10%。”
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="工作量证明和双花攻击" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+  2008年，中本聪提出了一种完全通过点对点技术实现的电子现金系统，它使得在线支付能够直接由一方发起并支付给另外一方，中间不需要通过任何的金融机构。虽然数字签名部分解决了这个问题，但是如果仍然需要第三方的支持才能防止双重支付的话，那么这种系统也就失去了存在的价值。比特币的工作量证明机制(PoW)的本质，就是要使现金系统在点对点的环境下运行，并防止双花攻击。
+</div>
+<div style="margin-top:.425em;">
+工作量证明机制的原理如下：网络中每一个区块都包含当前网络中的交易和上一个区块的区块头哈希。<b style="color:crimson;">新区块产生，其区块头哈希必须满足工作量证明条件。整个网络将满足工作量证明的哈希链连接起来，从而形成区块链。</b>即: <b style="color:blue;">最先算出区块头哈希的节点将产生一个区块，并将这个区块通过P2P协议广播到网络上, 其他节点接收到这个哈希后会做同样的计算，如果验证通过则将该区块记录到本地账本中，最先算出区块头哈希的节点将得到奖励。</b>除非攻击者重新完成全部的工作量证明，否则形成的交易记录将不可更改。<b style="color:darkviolet;">最长的区块链不仅将作为被观察到的交易序列的证明，而且被看做是来自算力最大的群体的共识。</b>只要整个网络中大多数算力都没有打算合作起来对全网进行攻击，那么诚实的节点将会生成最长的、超过攻击者的链条，从而实现对双花攻击的抵抗。
+</div>
+<div style="margin-top:.425em;">
+双花攻击实际上是一个结果。<b style="color:deeppink;text-shadow: 0px 0px 14px #ff0000;">如果一个攻击者A将同一个比特币同时支付给B和C两个用户，并且B和C两个用户都认可了这笔交易。那么我们说A将该比特币花了两次，A实现了一次双花攻击。</b>针对工作量证明机制的双花攻击中，51%攻击是被讨论的最多的一种攻击形式。但针对工作量证明机制的双花攻击实际上有多种形式，包括芬妮攻击、竞争攻击、Vector76攻击等。实际上，实用的数字货币双花攻击还有很多种其他形式。下文中，我们将通过多个我们发现的多个安全漏洞，讨论多种数字货币双花攻击的多种原因，并提出一种高效的减缓措施。
+</div>
+<div style="margin-top:.425em;">
+比特币白皮书中，有过这样的表述：诚实节点控制算力的总和，大于有合作关系的攻击者算力的总和，该系统就是安全的。
+</div>
+<div style="margin-top:.425em;">
+换句说，当系统中有合作关系的恶意节点所控制的算力，超过诚实节点所控制的算力，系统就是有被攻击的风险。这种<b style="color:brown;">由恶意节点控制超过50%算力所发起的攻击，称为51%算力攻击（51% Attack）</b>。
+</div>
+<div style="margin-top:.425em;">
+那是不是所有的加密货币系统都有可能遭遇51%算力攻击的风险呢？其实并不是的，<b style="color:darkblue;">只有基于PoW（工作量证明）共识机制的加密货币，才存在51%算力攻击</b>，比如比特币、比特现金和目前阶段的以太坊等；而非PoW共识算法的加密货币则不存在51%算力攻击，如基于DPoS（委托权益证明）共识机制的EOS、TRON等。
+</div>
+<h3 style="font-style: italic;">双花（Double Spending）。双花的意思是一份"钱"花了两次甚至多次。</h3>
+<div style="margin-top:.425em;">
+51% 算力攻击是如何做到双花的呢？假设小黑有 666BTC，他把这些币支付的大白同时，也把这些币发到自己的另一钱包地址上。换一句话说，小黑的一份钱，同时转给两个人。最终，发给大白那笔交易先被得到了确认，并打包在区块高度为N的区块内。
+</div>
+<div style="margin-top:.425em;">
+这时，控制了超过50%算力的小黑，发起51%算力攻击。他通过重新组装第N个区块，将发给自己那笔交易打包进区块里，并持续在这条链上延展区块，由于算力的优势，这条量将成为最长合法链。这样小黑666BTC双花成功，大白钱包里的666BTC"不翼而飞"了。
+</div>
+<div>
+  <img style="width:100%;margin:auto;" src="/images/ether/double-spending.png" />
+</div>
+<div style="margin-top:.425em;">
+那拥有超过50%的算力，就可以为所欲为，什么坏事都可以做吗？其实并不是的。即使控制超过50%的算力，也不能转移其他人的币（偷币），<b style="color:darkcyan;">因为这个操作是需要私钥进行签名，如果想伪造签名来“偷币”，这种行为是诚实的矿工所不能容忍的，这将颠覆系统共识</b>。<b style="color:brown;">这种情况下，其他矿工将不会在他挖出的区块后继续拓展区块链，会主动分叉出合法的区块链</b>，“偷币”矿工挖出的区块将被孤立。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">共识算法</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+  区块链可以看作一本记录所有交易的分布式公开帐簿，区块链网络中的每个参与者都把它看作一本所有权的权威记录。
+</div>
+<div style="margin-top:.425em;">
+公开账本历史数据不可篡改，只允许往后添加，每个节点都具有相同的权限，那么就带来一个问题：
+</div>
+<h3 style="font-style: italic;color:gray;">公开账本每个新区块由谁来负责写入？</h3>
+<div style="margin-top:.425em;">
+因为所有节点都一样，如果所有节点同时一起写入账本数据，那么肯定数据会不一致。
+</div>
+<div style="margin-top:.425em;">
+因此<b style="color:blueviolet;font-size:1.2em;font-weight: normal;">需要一种机制来保证区块链中的每一个区块只能由一个节点来负责写入，如何选出写入账本数据的节点，这就是共识机制</b>。让平等的参与者按照某种秩序达成一致意见。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="主流的共识算法有哪些？" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+  区块链中的共识算法说到底还是分布式系统中最重要的一致性问题：
+</div>
+<h3 style="font-style: italic;color:gray;">在分布式网络中如何保证数据一致性。</h3>
+<div style="margin-top:.425em;">
+说到一致性问题，就不得不提大名鼎鼎的拜占庭将军问题。是 Leslie Lamport 1982 年提出用来解释一致性问题的一个虚构模型。拜占庭是古代东罗马帝国的首都，由于地域宽广，守卫边境的多个将军（系统中的多个节点）需要通过信使来传递消息，达成某些一致的决定。但由于将军中可能存在叛徒（系统中节点出错），这些叛徒将努力向不同的将军发送不同的消息，试图会干扰一致性的达成。
+</div>
+<div style="margin-top:.425em;">
+Leslie Lamport 证明，当叛变者不超过1/3时，存在有效的算法，不论叛变者如何折腾，忠诚的将军们总能达成一致的结果。如果叛变者过多，则无法保证一定能达到一致性。
+</div>
+<h3 style="font-style: italic;color:gray;">分布式一致性算法(CAP) &mdash;&mdash; Paxos、Raft、ZAB、Gossip (一般用于数据库设计)</h3>
+<div>
+Lesile Lamport，Latex 的发明者，提出了 Paxos 算法。他虚拟了一个叫做 Paxos 的希腊城邦，这个岛按照议会民主制的政治模式制定法律，但是没有人愿意将自己的全部时间和精力放在这件事上。所以无论是议员、议长或者传递纸条的服务员都不能承诺别人需要时一定会出现，也无法承诺批准决议后者传递消息的时间。由于 Paxos 让人太难以理解，Lamport 觉得同行不能理解他的幽默感，于是后来又重新发表了朴实的算法描述版本《Paxos Made Simple》。
+</div>
+<div>
+  <img style="max-width:650px;" src="/images/ether/v2-1ca63958654275596030c929bbd953df_720w.jpeg" />
+</div>
+<div style="margin-top:.425em;">
+该共识算法就整体来说，存在两个阶段，如图，第一个阶段是提议，第二个阶段是决定。
+</div>
+<div style="margin-top:.425em;">
+分布式系统要做到 fault tolorence，就需要共识模型，而节点达成共识，不仅需要节点之间的算法，还会取决于 client 的行为。比如即使副本系统使用 multi-paxos 在所有副本服务器上同步了日志序号，但如果 Client 被允许从非 Leader 节点写入数据，则整个副本系统仍然不是强一致的。
+</div>
+<table style="width:100%;margin-top:.625em;">
+  <thead>
+    <tr>
+      <th style="border: dashed 1px;padding: 5px 10px;">共识算法</th>
+      <th style="border: dashed 1px;padding: 5px 10px;">币种</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">PoW</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">BTC、ETH、LTC</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">PoS</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Peercoin、NXT、ARDR</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">DPoS</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Bitshare、EOS、LSK、XAS</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">DBFT</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">NEO</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">PBFT</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">ZIL</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">POS+IPOS</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">QTUM</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">POS+POW</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">AE</td>
+    </tr>
+  </tbody>
+</table>
+<h3 style="font-style: italic;color:gray;">主流区块链共识算法</h3>
+<table style="width:100%;">
+  <thead>
+    <tr>
+      <th style="border: dashed 1px;padding: 5px 10px;">区块链</th>
+      <th style="border: dashed 1px;padding: 5px 10px;">语言</th>
+      <th style="border: dashed 1px;padding: 5px 10px;">合约</th>
+      <th style="border: dashed 1px;padding: 5px 10px;width: 85px;">共识算法</th>
+      <th style="border: dashed 1px;padding: 5px 10px;">技术支持方</th>
+      <th style="border: dashed 1px;padding: 5px 10px;">特点</th>
+      <th style="border: dashed 1px;padding: 5px 10px;">性能</th>
+      <th style="border: dashed 1px;padding: 5px 10px;">开源许可</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Bitcoin</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">C++</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">否</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">POW</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Core/Classic</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">公链/图灵不完备</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">7</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">MIT</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Elements</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">C++</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">&nbsp;</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">&nbsp;</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Blockstream</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">侧链</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">&nbsp;</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">MIT</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Ethereum</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Go等</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">是</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">POW</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">EthCore</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">公链/联盟+图灵完备</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">25</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">GPL</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Hydrachain</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Python</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">是</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">类PBFT</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">私链/联盟(原型)</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">GPL</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Factom</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Go</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">否</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">类POS</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">公证通</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">存在证明</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">27</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">MIT</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">BitShares</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">C++</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">否</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">DPoS</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">联盟链</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">100k</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">MIT</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Ripple</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">C++</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">rpca</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Ripple</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">撮合交易/交易所</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">1000</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">MIT</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Stellar</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">C++</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">SCP</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Jed Mccaleb</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">撮合交易/交易所</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">1000</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">ISC</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">OBC</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Go</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">是</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">PBFT</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">IBM</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">私链/联盟链</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">2000+</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Apache</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Fabric</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Go</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">是</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">PBFT</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Linux基金会</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">私链/联盟链</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">300-2000</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Apache</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Tendermint</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Go</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">是</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">PBFT</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">分区+公/私/联盟</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">10k</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Apache</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">OpenChain</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">C#</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">是</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Coinprism</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">联盟链</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Apache</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Lisk</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">JavaScript</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">是</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">DPoS</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">lisk.io</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">基于Crypti，分区+侧链</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">MIT</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Asch</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">JavaScript</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">DPoS+BPFT</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">ASCH</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">基于Crypti，分区+侧链</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">MIT</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">北航链</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">C++</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">是</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">CBFT(并行)</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">天德/蔡维德</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">私链/联盟链</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">40K+</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">不开源</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">OnChain</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">C#</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">是</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">dBFT(委托)</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">小蚁/达鸿飞</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">部分开源</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Qtum量子链</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">C++</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">IPOS/PoT/BFT</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">BitSE/帅初</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">基于bc-0.13，增加合约支持</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">不开源</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">云象区块链</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">yBFT</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">杭州云象网络/黄步添</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">不开源</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">Hyperchain</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">是</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">杭州趣链科技/李伟</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;"></td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">10K</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">不开源</td>
+    </tr>
+  </tbody>
+</table>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="PoW共识算法" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div>
+比特币&莱特币&以太坊 采用的是PoW（Proof of Work）工作量证明，通过计算来猜测一个数值（nonce），得以解决规定的 hash 问题。
+</div>
+<div style="margin-top:.425em;">
+挖矿的过程就是找到 x 使得以下等式成立：
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+SHA256(SHA256(version + prev_hash + merkle_root + ntime + nbits + x )) < TARGET
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+上式的x的范围是0~2^32, TARGET可以根据当前难度求出的。由于hash的特性，找这样一个x只能暴力搜索。
+</div>
+<div style="margin-top:.425em;">
+PoW共识算法的核心是所有节点通过暴力查找x，使得上面的等式成立。
+</div>
+<div style="margin-top:.425em;">
+谁先找到谁就获得这一区块的写入权，并获得奖励，因此 pow 共识机制对所有节点都公平，谁的算力强谁就更有机会更高概率获得写入权。
+</div>
+<div style="margin-top:.425em;">
+以太坊也是采用PoW工作量证明算法，具体实现算法叫（Ethash）。
+</div>
+<div style="margin-top:.425em;">
+具体内容可以看官方 wiki：https://github.com/ethereum/wiki/wiki/Ethash
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="附比特币出块源码" id="sourceContent1"
+                     titleStyle="padding-left:0;color:gray;background-color:white;font-size:1.2em;margin-top:1em;font-style: italic;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+// https://github.com/bitcoin/bitcoin/blob/master/src/rpc/mining.cpp
+    static bool GenerateBlock (
+      ChainstateManager& chainman, CBlock& block, uint64_t& max_tries, unsigned int& extra_nonce, uint256& block_hash) {
+        block_hash.SetNull();
+
+        {
+            LOCK(cs_main);
+            IncrementExtraNonce(&block, chainman.ActiveChain().Tip(), extra_nonce);
+        }
+
+        CChainParams chainparams(Params());
+
+122:    while (max_tries > 0 && 
+              block.nNonce < std::numeric_limits<uint32_t>::max() && 
+              !CheckProofOfWork(block.GetHash(), block.nBits, chainparams.GetConsensus()) && 
+              !ShutdownRequested()) {
+123:        ++block.nNonce;
+124:        --max_tries;
+        }
+        if (max_tries == 0 || ShutdownRequested()) {
+            return false;
+        }
+        if (block.nNonce == std::numeric_limits<uint32_t>::max()) {
+            return true;
+        }
+
+        std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(block);
+        if (!chainman.ProcessNewBlock(chainparams, shared_pblock, true, nullptr)) {
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
+        }
+
+        block_hash = block.GetHash();
+        return true;
+    }
+
+// https://github.com/bitcoin/bitcoin/blob/master/src/primitives/block.h
+    class CBlockHeader {
+      public:
+          // header
+          int32_t nVersion;   // block 的版本 version
+          uint256 hashPrevBlock; // 上一个 block 的 hash 值: prev_hash
+          uint256 hashMerkleRoot; // 需要写入的交易记录的 hash 树的值: merkle_root
+          uint32_t nTime; // 更新时间: ntime
+          uint32_t nBits; // 当前难度: nbits
+          uint32_t nNonce;
+
+          CBlockHeader() {
+              SetNull();
+          }
+
+          SERIALIZE_METHODS(CBlockHeader, obj) { 
+            READWRITE(obj.nVersion, obj.hashPrevBlock, obj.hashMerkleRoot, obj.nTime, obj.nBits, obj.nNonce); 
+          }
+
+          void SetNull() {
+              nVersion = 0;
+              hashPrevBlock.SetNull();
+              hashMerkleRoot.SetNull();
+              nTime = 0;
+              nBits = 0;
+              nNonce = 0;
+          }
+
+          bool IsNull() const {
+              return (nBits == 0);
+          }
+
+          uint256 GetHash() const;
+
+          int64_t GetBlockTime() const {
+              return (int64_t)nTime;
+          }
+    };
+
+]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;">
     <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">Original Bitcoin client/API calls list</div>]]></c:title>
     <c:desc>
       <c:desc1> <![CDATA[JSONRPC 接口列表 <a href="https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list">https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list</a>]]></c:desc1>
