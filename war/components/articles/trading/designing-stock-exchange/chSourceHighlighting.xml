@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract style="font-size:1em;line-height:1.6em;">
+    <![CDATA[
+<h4>X_TRADER</h4>
+<div>
+  https://www.tradingtechnologies.com/xtrader-help/x-trader/order-types/duration-orders/
+</div>
+]]>
+  </c:abstract>
+  
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+<img style="margin:auto;width:100%;" src="/images/trading/Architecture-1.png" />
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Requirements" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.5em;background-color:white;margin-top:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<h3>order-matching system for buy and sell orders. Types of orders:</h3>
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li>Market Orders (市价单)</li>
+  <li>Limit Orders (限价单)</li>
+  <li>Stop-Loss Orders (止损单)</li>
+  <li>Fill-Or-Kill Orders (FOK/全部成交或撤销)</li>
+  <li>Duration Of Orders (限期订单)</li>
+  <li>Immediately Or Cancel (IOC/立即成交或取消)</li>
+</ul>
+<h3>high availability and low latency for millions of users:</h3>
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li>async design - use messaging queue extensively (btw. side-effect: engineers work on one service pub to a queue and does not even know where exactly is the downstream service and hence cannot do evil.)</li>
+</ul>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Components and How do they interact with each other. " id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.5em;background-color:white;margin-top:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<h3>order matching system</h3>
+<ul style="margin-top:.325em;list-style:disc;margin-left:1.5em;">
+  <li>shard by stock code</li>
+  <li>order’s basic data model (other metadata are omitted): Order(id, stock, side, time, qty, price)</li>
+  <li>the core abstraction of the order book is the matching algorithm. there are a bunch of matching algorithms(ref to stackoverflow, ref to medium)</li>
+  <li>
+    <p>example 1: price-time FIFO - a kind of 2D vector cast or flatten into 1D vector</p>
+    <ul style="margin-top:.325em;list-style:revert;margin-left: 1.5em;">
+      <li>x-axis is price</li>
+      <li>
+        <p>y-axis is orders. Price/time priority queue, FIFO.</p>
+        <ul style="margin-top:.325em;list-style:decimal;margin-left:1.5em;">
+          <li>Buy-side: ascending in price, descending in time.</li>
+          <li>Sell-side: ascending in price, ascending in time.</li>
+        </ul>
+      </li>
+      <li>
+        <p>in other words</p>
+        <ul style="margin-top:.325em;list-style:decimal;margin-left:1.5em;">
+          <li>Buy-side: the higher the price and the earlier the order, the nearer we should put it to the center of the matching.</li>
+          <li>Sell-side: the lower the price and the earlier the order, the nearer we should put it to the center of the matching.</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+<h3 style="margin-top:.325em;">x-axis</h3>
+<div>
+  <img style="margin:auto;width:100%;" src="/images/trading/singleMarket.png" />
+</div>
+<h3 style="margin-top:.325em;">with y-axis cast into x-axis</h3>
+<pre>
+  Id   Side    Time   Qty   Price   Qty    Time   Side  
+---+------+-------+-----+-------+-----+-------+------
+#3                        20.30   200   09:05   SELL  
+#1                        20.30   100   09:01   SELL  
+#2                        20.25   100   09:03   SELL  
+#5   BUY    09:08   200   20.20                       
+#4   BUY    09:06   100   20.15                       
+#6   BUY    09:09   200   20.15                       
+</pre>
+<h3 style="margin-top:.325em;">Order book from Coinbase Pro</h3>
+<div>
+  <img style="margin:auto;width:100%;" src="/images/trading/1_EiZZjOVe0mqXhxbOhe4_uw.png" />
+</div>
+<h3 style="margin-top:.325em;">The Single Stock-Exchange Simulator</h3>
+<div>
+  <img style="margin:auto;width:100%;" src="/images/trading/SSESNIK.gif" />
+</div>
+<div>
+  <h3 style="margin-top:.325em;">example 2: pro-rata</h3>
+  <img style="margin:auto;" src="/images/trading/1_hahTecyPk0aKMJ1CCME4qw.png" />
+</div>
+
+<h3 style="margin-top:.325em;">How to implement the price-time FIFO matching algorithm?</h3>
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li>shard by stock, CP over AP: one stock one partition</li>
+  <li>
+    <p>stateful in-memory tree-map</p>
+    <ul style="margin-top:.325em;list-style:revert;margin-left:1.5em;">
+      <li>periodically iterate the treemap to match orders</li>
+    </ul>
+  </li>
+  <li>data persistence with cassandra</li>
+  <li>in/out requests of the order matching services are made through messaging queues</li>
+  <li>
+    <p>failover</p>
+    <ul style="margin-top:.325em;list-style:revert;margin-left:1.5em;">
+      <li>the in-memory tree-maps are snapshotting into database</li>
+      <li>in an error case, recover from the snapshot and de-duplicate with cache</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 style="margin-top:.325em;">How to transmit data of the order book to the client-side in realtime?</h3>
+<ul style="margin-top:.325em;list-style:disc;margin-left:1.5em;">
+  <li>websocket</li>
+</ul>
+
+<h3 style="margin-top:.325em;">How to support different kinds of orders?</h3>
+<ul style="margin-top:.325em;list-style:disc;margin-left:1.5em;">
+  <li>
+    <p>same SELL or BUY: qty @ price in the treemap with different creation setup and matching conditions</p>
+    <ul style="margin-top:.325em;list-style:revert;margin-left:1.5em;">
+      <li>Market Orders: place the order at the last market price.</li>
+      <li>Limit Orders: place the order with at a specific price.</li>
+      <li>Stop-Loss Orders: place the order with at a specific price, and match it in certain conditions.</li>
+      <li>Fill-or-Kill Orders: place the order with at a specific price, but match it only once.</li>
+      <li>Duration of Orders: place the order with at a specific price, but match it only in the given time span.</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 style="margin-top:.325em;">Orders Service</h3>
+<ul style="margin-top:.325em;list-style:disc;margin-left:1.5em;">
+  <li>Preserves all active orders and order history.</li>
+  <li>Writes to order matching when receives a new order.</li>
+  <li>Receives matched orders and settle with external clearing house (async external gateway call + cronjob to sync DB)</li>
+</ul>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="References" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.5em;background-color:white;margin-top:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li><a href="https://www.investopedia.com/terms/f/financial-information-exchange.asp">The Financial Information eXchange (“FIX”) Protocol</a></li>
+  <li><a href="https://ref.onixs.biz/java-fix-engine-guide/">Java Fix Engine Guide</a></li>
+  <li><a href="https://github.com/objectcomputing/liquibook">GitHub - objectcomputing/liquibook: Modern C++ order matching engine</a></li>
+  <li><a href="https://github.com/cyanly/gotrade">GitHub - cyanly/gotrade: A proof of concept of an electronic trading system written in Golang</a></li>
+  <li><a href="http://www.tradersplace.in/TypesofOrders.html">Training,Coaching & Mentoring for Traders / Investors - Types of orders used when buying or selling a stock</a></li>
+  <li><a href="https://github.com/fmstephe/matching_engine">GitHub - fmstephe/matching_engine: A simple financial trading matching engine. Built to learn more about how they work.</a></li>
+  <li><a href="http://homepages.gold.ac.uk/nikolaev/aalts.htm">Automated Algorithmic Trading: Learning Agents for Limit Order Book Trading</a></li>
+</ul>
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+</c:component>
