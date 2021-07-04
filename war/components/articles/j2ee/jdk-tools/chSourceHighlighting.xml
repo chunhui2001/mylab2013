@@ -12,10 +12,10 @@
     <c:desc>
       <c:desc1> <![CDATA[
 <div>
-  jps(Java Virtual Machine Process Status Tool)是JDK 1.5提供的一个显示当前所有java进程pid的命令，简单实用，非常适合在linux/unix平台上简单察看当前java进程的一些简单情况。
+  jps (Java Virtual Machine Process Status Tool)是 JDK 1.5 提供的一个显示当前所有 java 进程 pid 的命令，简单实用，非常适合在 linux/unix 平台上简单察看当前 java 进程的一些简单情况。
 </div>
 <div style="margin-top:.625em;">
-    我想很多人都是用过unix系统里的ps命令，这个命令主要是用来显示当前系统的进程情况，有哪些进程，及其 id。 jps 也是一样，它的作用是显示当前系统的java进程情况，及其id号。我们可以通过它来查看我们到底启动了几个java进程（因为每一个java程序都会独占一个java虚拟机实例），和他们的进程号（为下面几个程序做准备），并可通过opt来查看这些进程的详细启动参数。
+    我想很多人都是用过 unix 系统里的 ps 命令，这个命令主要是用来显示当前系统的进程情况，有哪些进程，及其 id。 jps 也是一样，它的作用是显示当前系统的 java 进程情况，及其id号。我们可以通过它来查看我们到底启动了几个 java 进程（因为每一个 java 程序都会独占一个 java 虚拟机实例），和他们的进程号（为下面几个程序做准备），并可通过 opt 来查看这些进程的详细启动参数。
 </div>
         ]]></c:desc1>
     </c:desc>
@@ -127,20 +127,20 @@ $ javah test.JNITest
 #include <jni.h>
 /* Header for class test_JNITest */
 #ifndef _Included_test_JNITest
-#define _Included_test_JNITest
-#ifdef __cplusplus
-extern "C" {
-#endif
-/*
- * Class:     test_JNITest
- * Method:    test
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_test_JNITest_test
-  (JNIEnv *, jobject);
-#ifdef __cplusplus
-}
-#endif
+  #define _Included_test_JNITest
+  #ifdef __cplusplus
+    extern "C" {
+  #endif
+  /*
+   * Class:     test_JNITest
+   * Method:    test
+   * Signature: ()I
+   */
+  JNIEXPORT jint JNICALL Java_test_JNITest_test
+    (JNIEnv *, jobject);
+  #ifdef __cplusplus
+    }
+  #endif
 #endif
     ]]>
     </c:sourceContent>
@@ -153,59 +153,126 @@ JNIEXPORT jint JNICALL Java_test_JNITest_test
 
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title><![CDATA[jstack是java虚拟机自带的一种堆栈跟踪工具。]]></c:title>
+    <c:title><![CDATA[jstack 是 java 虚拟机自带的一种堆栈跟踪工具。]]></c:title>
     <c:desc>
       <c:desc1> <![CDATA[
-<div>
-  jstack用于生成java虚拟机当前时刻的线程快照。线程快照是当前java虚拟机内每一条线程正在执行的方法堆栈的集合，生成线程快照的主要目的是定位线程出现长时间停顿的原因，如线程间死锁、死循环、请求外部资源导致的长时间等待等。
-线程出现停顿的时候通过jstack来查看各个线程的调用堆栈，就可以知道没有响应的线程到底在后台做什么事情，或者等待什么资源。
+<div style="line-height: 1.625em;">
+  jstack 用于生成 java 虚拟机当前时刻的线程快照 <b>Thread Dump</b>。线程快照是当前 java 虚拟机内每一条线程正在执行的方法堆栈的集合，生成线程快照的主要目的是定位线程出现长时间停顿的原因，如线程间死锁、死循环、请求外部资源导致的长时间等待等。
+线程出现停顿的时候通过 jstack 来查看各个线程的调用堆栈，就可以知道没有响应的线程到底在后台做什么事情，或者等待什么资源。
 </div>
-<div style="margin-top:.425em;">
-如果java程序崩溃生成core文件，jstack工具可以用来获得core文件的java stack和native stack的信息，从而可以轻松地知道java程序是如何崩溃和在程序何处发生问题。另外，jstack工具还可以附属到正在运行的java程序中，看到当时运行的java程序的java stack和native stack的信息, 如果现在运行的java程序呈现hung的状态，jstack是非常有用的。
+<div style="margin-top:.425em;line-height: 1.625em;">
+如果 java 程序崩溃生成 core 文件，jstack 工具可以用来获得 core 文件的 java stack 和 native stack 的信息，从而可以轻松地知道 java 程序是如何崩溃和在程序何处发生问题。另外，jstack 工具还可以附属到正在运行的 java 程序中，看到当时运行的 java 程序的 java stack 和 native stack 的信息, 如果现在运行的 java 程序呈现 hung 的状态，jstack 是非常有用的。
 </div>
-<div style="margin-top:.425em;">
-注1: 不同的 JAVA虚机的线程 DUMP的创建方法和文件格式是不一样的，不同的 JVM版本， dump信息也有差别。
+<div style="margin-top:.425em;line-height: 1.625em;">
+注1: 不同的 JAVA 虚机的线程 DUMP 的创建方法和文件格式是不一样的，不同的 JVM 版本， dump 信息也有差别。
 </div>
-<div style="margin-top:.425em;">
-注2: 在实际运行中，往往一次 dump的信息，还不足以确认问题。建议产生三次 dump信息，如果每次 dump都指向同一个问题，我们才确定问题的典型性。
+<div style="margin-top:.425em;line-height: 1.625em;">
+注2: 在实际运行中，往往一次 dump 的信息，还不足以确认问题。建议产生三次 dump 信息，如果每次 dump 都指向同一个问题，我们才确定问题的典型性。
+</div>
+<h3>示例:</h3>
+<div style="margin-top:.425em;line-height: 1.625em;">
+<b>$ jstack –l 23561</b>
+</div>
+<h1 style="margin-top: .425em;line-height: 1.625em;color: blue;font-style: italic;margin-bottom: 0;padding-bottom: 0;">线程类型</h1>
+<h4 style="margin-top:.425em;line-height: 1.625em;color:crimson;">&euro; jvm 线程</h4>
+<div style="margin-top:.425em;line-height: 1.625em;">
+在线程中，有一些 JVM 内部的后台线程会在jvm启动时就会存在，来执行譬如垃圾回收，或者低内存的检测等等任务，这些线程往往在 JVM 初始化的时候就存在，如下所示：
+</div>
+<pre style="font-size:.825em;background-color:black;color:white;padding:1em .625em;margin-top:.325em;">
+  "Attach Listener" daemon prio=10 tid=0x0000000052fb8000 nid=0xb8f waiting on condition [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+   Locked ownable synchronizers:
+        - None
+destroyJavaVM" prio=10 tid=0x00002aaac1225800 nid=0x7208 waiting on condition [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+   Locked ownable synchronizers:
+        - None
+</pre>
+<h4 style="margin-top:.625em;line-height: 1.625em;color:crimson;">&euro; 用户级别的线程</h4>
+<div style="margin-top:.425em;line-height: 1.625em;">
+还有一类线程是用户级别的，它会根据用户请求的不同而发生变化。该类线程的运行情况往往是我们所关注的重点。而且这一部分也是最容易产生死锁的地方。
+</div>
+<pre style="font-size:.825em;background-color:black;color:white;padding:1em .625em;margin-top:.325em;">
+"qtp496432309-42" prio=10 tid=0x00002aaaba2a1800 nid=0x7580 waiting on condition [0x00000000425e9000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+        at sun.misc.Unsafe.park(Native Method)
+        - parking to wait for  <0x0000000788cfb020> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+        at java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:198)
+        at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.awaitNanos(AbstractQueuedSynchronizer.java:2025)
+        at org.eclipse.jetty.util.BlockingArrayQueue.poll(BlockingArrayQueue.java:320)
+        at org.eclipse.jetty.util.thread.QueuedThreadPool$2.run(QueuedThreadPool.java:479)
+        at java.lang.Thread.run(Thread.java:662)
+   Locked ownable synchronizers:
+        - None
+</pre>
+<h4 style="margin-top:.625em;line-height: 1.625em;">从上述的代码示例中我们可以看到该用户线程的以下几类信息：</h4>
+<ul style="margin-top:.325em;list-style: none;margin-left: 1em;">
+  <li>&#x278A; 线程的状态：waiting on condition(等待条件发生)</li>
+  <li>&#x278B; 线程的调用情况；</li>
+  <li>&#x278C; 线程对资源的锁定情况；</li>
+</ul>
+
+<h1 style="margin-top: .425em;line-height: 1.625em;color: blue;font-style: italic;margin-bottom: 0;padding-bottom: 0;">线程的状态分析</h1>
+<h4 style="margin-top:.425em;line-height: 1.625em;color:crimson;">&euro; Runnable</h4>
+<div style="margin-top:.425em;line-height: 1.625em;">
+该状态表示线程具备所有运行条件，在运行队列中准备操作系统的调度，或者正在运行。 
+</div>
+<h4 style="margin-top:.425em;line-height: 1.625em;color:crimson;">&euro; Waiton condition </h4>
+<div style="margin-top:.425em;line-height: 1.625em;">
+  <p>
+  该状态出现在线程等待某个条件的发生。具体是什么原因，可以结合 stacktrace 来分析。最常见的情况是线程在等待网络的读写，比如当网络数据没有准备好读时，线程处于这种等待状态，而一旦有数据准备好读之后，线程会重新激活，读取并处理数据。在 Java 引入 NIO之前，对于每个网络连接，都有一个对应的线程来处理网络的读写操作，即使没有可读写的数据，线程仍然阻塞在读写操作上，这样有可能造成资源浪费，而且给操作系统的线程调度也带来压力。在 NIO 里采用了新的机制，编写的服务器程序的性能和可扩展性都得到提高。 
+  </p>
+  <p style="margin-top:.425em;">
+  如果发现有大量的线程都在处在 Wait on condition，从线程 stack 看， 正等待网络读写，这可能是一个网络瓶颈的征兆。因为网络阻塞导致线程无法执行。一种情况是网络非常忙，几乎消耗了所有的带宽，仍然有大量数据等待网络读写；另一种情况也可能是网络空闲，但由于路由等问题，导致包无法正常的到达。所以要结合系统的一些性能观察工具来综合分析，比如 netstat 统计单位时间的发送包的数目，如果很明显超过了所在网络带宽的限制 ; 观察 cpu 的利用率，如果系统态的 CPU 时间，相对于用户态的 CPU 时间比例较高；如果程序运行在 Solaris 10 平台上，可以用 dtrace 工具看系统调用的情况，如果观察到 read/write 的系统调用的次数或者运行时间遥遥领先；这些都指向由于网络带宽所限导致的网络瓶颈。 
+  </p>
+  <p style="margin-top:.425em;">
+  另外一种出现 Wait on condition 的常见情况是该线程在 sleep，等待 sleep 的时间到了时候，将被唤醒。 
+  </p>
+</div>
+<h4 style="margin-top:.425em;line-height: 1.625em;color:crimson;">&euro; Waitingfor monitor entry 和 in Object.wait()</h4>
+<div style="margin-top:.425em;line-height: 1.625em;">
+  <p>
+  在多线程的 JAVA 程序中，实现线程之间的同步，就要说说 Monitor。Monitor 是 Java 中用以实现线程之间的互斥与协作的主要手段，它可以看成是对象或者 Class 的锁。每一个对象都有，也仅有一个 monitor。下面这个图，描述了线程和 Monitor 之间关系，以及线程的状态转换图： 
+  </p>
 </div>
         ]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="html" title="案例1------ top 命令查下系统运行情况，进程31951占用CPU 80.6%。" id="sourceContent1"
+    <c:sourceContent type="html" title="案例1------ 查看 java 进程内所有线程状态" id="sourceContent1"
                      titleStyle="padding-left:0;padding-bottom: 0;background-color:white;"
                      bodyStyle="padding:0;padding-top:.325em;">
       <![CDATA[
-<img src="/images/j2ee/jvm-utils/285763-20190111171430007-370123297.png" />
+<div style="line-height: 1.625em;">
+  场景：Java 应用持续占用很高 CPU，需要排查一下。
+</div>
+<div style="margin-top:.425em;line-height: 1.625em;">
+  模拟：造个场景简单模拟下，没什么实际意义，仅作演示。我启动了100个线程持续访问 我的博客，博客部署在 Ubuntu 16.04 上，是一个简单的 Spring Boot 应用，以 jar 包直接运行的。
+</div>
+<div style="margin-top:.425em;line-height: 1.625em;">
+  <img src="/images/j2ee/jvm-utils/285763-20190111171430007-370123297.png" />
+</div>
+<div style="line-height: 1.625em;margin-top:.625em">
+  $ jps -l ### 确认一下，31951 负载最高的进程ID，或 cat /proc/31951/cmdline 看下进程的启用命令。
+</div>
     ]]>
     </c:sourceContent>
     <c:sourceContent type="" title="" id="sourceContent1"
-                     titleStyle="padding-left:0;padding-bottom: 0;background-color:white;"
-                     bodyStyle="padding:0;padding-top:.325em;">
-      <![CDATA[
-Mem: 3767780K used, 112476K free, 1408K shrd, 0K buff, 329400K cached
-CPU:   2% usr   2% sys   0% nic  95% idle   0% io   0% irq   0% sirq
-Load average: 0.56 0.52 0.59 2/1412 114
-  PID  PPID USER     STAT   VSZ %VSZ CPU %CPU COMMAND
-    1     0 root     S    2569m  68%   0   1% java -Djava.library.path=/usr/local/tomcat/native-jni-lib -jar /root/app/app.jar
-   56     0 root     S     1584   0%   1   0% sh
-  114    56 root     R     1516   0%   0   0% top
-    ]]>
-    </c:sourceContent>
-    <c:sourceContent type="" title="案例1------ jps -l 确认一下，31951负载最高的进程ID，或 cat /proc/31951/cmdline 看下进程的启用命令。" id="sourceContent1"
                      titleStyle="padding-left:0;padding-bottom: 0;background-color:white;margin-top:1em;">
       <![CDATA[
 $ jps -l
-31951 /root/app/app.jar -Djava.library.path=/usr/local/tomcat/native-jni-lib
-103 sun.tools.jps.Jps -Dapplication.home=/opt/jdk1.8.0_202 -Xms8m
+28416 sun.tools.jps.Jps
+31951 blog.jar
 OR 
 $ cat /proc/31951/cmdline
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="html" title="案例1------ top -Hp 31951 以线程模式查看下进程31951的所有线程情况" id="sourceContent1"
+    <c:sourceContent type="html" title="" id="sourceContent1"
                      titleStyle="padding-left:0;padding-bottom: 0;background-color:white;margin-top:1em;"
                      bodyStyle="padding:0;padding-top:.325em;">
       <![CDATA[
-<div>
+<div style="line-height: 1.625em;margin-top:.625em">
+  $ top -Hp 31951 ### 以线程模式查看下进程31951的所有线程情况
+</div>
+<div style="margin-top:.625em;">
 <img src="/images/j2ee/jvm-utils/285763-20190111171511398-2140645173.png" />
 </div>
 <div style="margin-top:.625em;">
@@ -219,15 +286,18 @@ $ cat /proc/31951/cmdline
 $ printf '%x' 31998 #值为7cfe
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="案例1------ 获取该线程的信息(匹配7cf3后取20行差不多)" id="sourceContent1"
+    <c:sourceContent type="" title="" id="sourceContent1"
                      titleStyle="padding-left:0;padding-bottom: 0;background-color:white;margin-top:1em;">
       <![CDATA[
+### 获取该线程的信息 (匹配7cf3后取20行差不多)
 $ jstack 31951 | grep 7cfe -A 20
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="案例1------ 其中部分数据如下：" id="sourceContent1"
+    <c:sourceContent type="" title="" id="sourceContent1"
                      titleStyle="padding-left:0;padding-bottom: 0;background-color:white;margin-top:1em;">
       <![CDATA[
+### 其中部分数据如下: 
+### 注意：nid=0x7cfe 中的 nid 指 native id，是 OS 中线程 ID，对应上面 31998 线程的 16 进制值 7cfe；tid 为 Java 中线程的 ID。
 "Tomcat JDBC Pool Cleaner[11483240:1532362388783]" #31 daemon prio=5 os_prio=0 tid=0x0a29dc00 nid=0x7cfe in Object.wait() [0xa2a69000]
    java.lang.Thread.State: TIMED_WAITING (on object monitor)
     at java.lang.Object.wait(Native Method)
@@ -236,22 +306,15 @@ $ jstack 31951 | grep 7cfe -A 20
     at java.util.TimerThread.run(Timer.java:505)
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="html" title="" id="sourceContent1"
-                     titleStyle="padding-left:0;padding-bottom: 0;background-color:white;margin-top:.625em;">
-      <![CDATA[
-注意：nid=0x7cfe中的nid指native id，是OS中线程ID，对应上面31998线程的16进制值7cfe；tid为Java中线程的ID。
-    ]]>
-    </c:sourceContent>
-
 
     <c:sourceContent type="html" title="案例2-死锁" id="sourceContent1"
-                     titleStyle="padding-left:0;padding-bottom: 0;background-color:white;"
+                     titleStyle="padding-left:0;padding-bottom: 0;background-color:white;margin-top:1.625em"
                      bodyStyle="padding:0;padding-top:.325em;">
       <![CDATA[
 在多线程程序的编写中，如果不适当的运用同步机制，则有可能造成程序的死锁，经常表现为程序的停顿，或者不再响应用户的请求。比如在下面这个示例中，是个较为典型的死锁情况：
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="案例2-死锁" id="sourceContent1"
+    <c:sourceContent type="" title="" id="sourceContent1"
                      titleStyle="padding-left:0;padding-bottom: 0;background-color:white;"
                      bodyStyle="padding:0;padding-top:.325em;">
       <![CDATA[
@@ -272,7 +335,7 @@ atdeadlockthreads.TestThread.run(TestThread.java:31)
                      titleStyle="padding-left:0;padding-bottom: 0;background-color:white;"
                      bodyStyle="padding:0;padding-top:.325em;">
       <![CDATA[
-### 在 JAVA 5中加强了对死锁的检测。线程 Dump中可以直接报告出 Java级别的死锁，如下所示：
+### 在 JAVA 5 中加强了对死锁的检测。线程 Dump 中可以直接报告出 Java 级别的死锁，如下所示：
 ### thread dump 结果
 FoundoneJava-leveldeadlock:
 =============================
@@ -284,10 +347,13 @@ waitingtolockmonitor0x0003f314(object0x22c19f20,ajava.lang.Object),
 whichisheldby"Thread-1"[2]
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="用jstack进行分析和结果" id="sourceContent1"
+    <c:sourceContent type="" title="" id="sourceContent1"
                      titleStyle="padding-left:0;padding-bottom: 0;background-color:white;margin-top:1em;"
                      bodyStyle="padding:0;padding-top:.325em;">
       <![CDATA[
+#############################
+### 用 jstack 进行分析和结果 ###
+#############################
 $ jstack 7404
 
 Found one Java-level deadlock:
