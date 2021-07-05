@@ -169,6 +169,12 @@ $ javah test.JNITest
 <div style="margin-top:.425em;line-height: 1.625em;">
 注2: 在实际运行中，往往一次 dump 的信息，还不足以确认问题。建议产生三次 dump 信息，如果每次 dump 都指向同一个问题，我们才确定问题的典型性。
 </div>
+
+<h1 style="line-height: 1.625em;color: blue;font-style: italic;margin-bottom: 0;padding-bottom: 0;">dump</h1>
+<div style="margin-top:.425em;line-height: 1.625em;">
+Dump 的本意是 "倾卸垃圾"、"把(垃圾桶)倒空"。在计算机技术中使用 Dump 的主要意思仍然如此,即当电脑运行发现故障后, 无法排除而死机, 通常要重新启动。<span style="color: darkviolet;font-size: 1.2em;font-style: italic;">为了找出故障的原因, 需要分析现场(即死机时整个内存的当前状况), 在重新启动系统之前要把内存中的一片0、 1(这时它们尤如一堆垃圾)"卸出"保存起来, 以便由专家去分析引起死机的原因。</span>技术资料中 把这个"卸出"的过程叫 dump; 有时把卸出的"内容"也叫 dump。国际标准化组织(ISO)把前者定义为 To record, at a particular instant, the contents of all or part of one stora geevice in another storage device. Dumping is usually for the purpose of debuggin。"译文如下:"在某个特定时刻,把一个存储设备中的全部或部分的内容转录进另一个存储设备之中。转储的目的通常是用于排除故障。"因此, dump 作为动词,宜译为"转储";相应的动名词,或作为名词来看 ,则译为"转储(过程、动作…)"。同时,ISO把后者定义为 "Data that as been dumped。"译文如下:"经转储而产生的那些数据"。这些数据实际上就是内存中由一片0、1组成的map(映像),因此,这时的dump应译为"内像"(内存中的映像)。 
+</div>
+
 <h3>示例:</h3>
 <div style="margin-top:.425em;line-height: 1.625em;">
 <b>$ jstack –l 23561</b>
@@ -178,7 +184,7 @@ $ javah test.JNITest
 <div style="margin-top:.425em;line-height: 1.625em;">
 在线程中，有一些 JVM 内部的后台线程会在jvm启动时就会存在，来执行譬如垃圾回收，或者低内存的检测等等任务，这些线程往往在 JVM 初始化的时候就存在，如下所示：
 </div>
-<pre style="font-size:.825em;background-color:black;color:white;padding:1em .625em;margin-top:.325em;">
+<pre style="font-size:.825em;background-color:black;color:white;padding:1em;margin-top:.325em;">
   "Attach Listener" daemon prio=10 tid=0x0000000052fb8000 nid=0xb8f waiting on condition [0x0000000000000000]
    java.lang.Thread.State: RUNNABLE
    Locked ownable synchronizers:
@@ -192,7 +198,7 @@ destroyJavaVM" prio=10 tid=0x00002aaac1225800 nid=0x7208 waiting on condition [0
 <div style="margin-top:.425em;line-height: 1.625em;">
 还有一类线程是用户级别的，它会根据用户请求的不同而发生变化。该类线程的运行情况往往是我们所关注的重点。而且这一部分也是最容易产生死锁的地方。
 </div>
-<pre style="font-size:.825em;background-color:black;color:white;padding:1em .625em;margin-top:.325em;">
+<pre style="font-size:.825em;background-color:black;color:white;padding:1em;margin-top:.325em;">
 "qtp496432309-42" prio=10 tid=0x00002aaaba2a1800 nid=0x7580 waiting on condition [0x00000000425e9000]
    java.lang.Thread.State: TIMED_WAITING (parking)
         at sun.misc.Unsafe.park(Native Method)
@@ -235,6 +241,73 @@ destroyJavaVM" prio=10 tid=0x00002aaac1225800 nid=0x7208 waiting on condition [0
   在多线程的 JAVA 程序中，实现线程之间的同步，就要说说 Monitor。Monitor 是 Java 中用以实现线程之间的互斥与协作的主要手段，它可以看成是对象或者 Class 的锁。每一个对象都有，也仅有一个 monitor。下面这个图，描述了线程和 Monitor 之间关系，以及线程的状态转换图： 
   </p>
 </div>
+<div style="margin-top:.425em;line-height: 1.625em;">
+  <img style="max-width:450px;margin:auto;" src="/images/j2ee/jvm-utils/285763-20160512220605343-699813097.jpeg" />
+</div>
+<div style="margin-top:.425em;line-height: 1.625em;">
+  从图中可以看出，每个 Monitor 在某个时刻，只能被一个线程拥有，该线程就是 “Active Thread”，而其它线程都是 “Waiting Thread”，分别在两个队列 “ Entry Set” 和 “Wait Set” 里面等候。在 “Entry Set” 中等待的线程状态是 “Waiting for monitorentry”，而在 “Wait Set” 中等待的线程状态是 “in Object.wait()”。 
+</div>
+<div style="margin-top:.425em;line-height: 1.625em;">
+  先看 “Entry Set” 里面的线程。我们称被 synchronized 保护起来的代码段为临界区。当一个线程申请进入临界区时，它就进入了 “Entry Set” 队列。对应的 code 就像：
+</div>
+<pre style="font-size:.825em;background-color:black;color:white;padding:1em 1em;margin-top:.325em;">
+synchronized(obj) { 
+  ......... 
+} 
+</pre>
+<div style="margin-top:.425em;line-height: 1.625em;">
+  这时有两种可能性：
+  <br /> 
+  &#x278A; 该 monitor 不被其它线程拥有，Entry Set 里面也没有其它等待线程。本线程即成为相应类或者对象的 Monitor 的 Owner，执行临界区的代码。此时线程将处于 Runnable 状态；
+</div>
+<div style="margin-top:.425em;line-height: 1.625em;">
+  &#x278B; 该 monitor 被其它线程拥有，本线程在 Entry Set 队列中等待。此时 dump 的信息显示 “waiting for monitor entry”。
+</div>
+<pre style="font-size:.825em;background-color:black;color:white;padding:1em 1em;margin-top:.325em;">
+"Thread-0" prio=10 tid=0x08222eb0 nid=0x9 waiting for monitor entry [0xf927b000..0xf927bdb8] 
+at testthread.WaitThread.run(WaitThread.java:39) 
+- waiting to lock <0xef63bf08> (a java.lang.Object) 
+- locked <0xef63beb8> (a java.util.ArrayList) 
+at java.lang.Thread.run(Thread.java:595) 
+</pre>
+<div style="margin-top:.425em;line-height: 1.625em;">
+  临界区的设置，是为了保证其内部的代码执行的原子性和完整性。但是因为临界区在任何时间只允许线程串行通过，这和我们多线程的程序的初衷是相反的。如果在多线程的程序中，大量使用 synchronized，或者不适当的使用了它，会造成大量线程在临界区的入口等待，造成系统的性能大幅下降。如果在线程 DUMP中 发现了这个情况，应该审查源码，改进程序。 
+</div>
+<div style="margin-top:.425em;line-height: 1.625em;">
+  现在我们再来看现在线程为什么会进入 “Wait Set”。当线程获得了 Monitor，进入了临界区之后，如果发现线程继续运行的条件没有满足，它则调用对象（一般就是被 synchronized 的对象）的 wait() 方法，放弃了 Monitor，进入 “Wait Set”队列。只有当别的线程在该对象上调用了 notify() 或者 notifyAll() ， “ Wait Set” 队列中线程才得到机会去竞争，但是只有一个线程获得对象的 Monitor，恢复到运行态。在 “Wait Set” 中的线程， DUMP 中表现为：in Object.wait()，类似于： 
+</div>
+<pre style="font-size:.825em;background-color:black;color:white;padding:1em 1em;margin-top:.325em;">
+"Thread-1" prio=10 tid=0x08223250 nid=0xa in Object.wait() [0xef47a000..0xef47aa38] 
+at java.lang.Object.wait(Native Method) 
+- waiting on <0xef63beb8> (a java.util.ArrayList) 
+at java.lang.Object.wait(Object.java:474) 
+at testthread.MyWaitThread.run(MyWaitThread.java:40) 
+- locked <0xef63beb8> (a java.util.ArrayList) 
+at java.lang.Thread.run(Thread.java:595) 
+</pre>
+<div style="margin-top:.425em;line-height: 1.625em;">
+  仔细观察上面的 DUMP信息，你会发现它有以下两行： 
+</div>
+<pre style="font-size:.825em;background-color:black;color:white;padding:1em 1em;margin-top:.325em;">
+locked <0xef63beb8> (ajava.util.ArrayList) 
+waiting on <0xef63beb8> (ajava.util.ArrayList) 
+</pre>
+<div style="margin-top:.425em;line-height: 1.625em;">
+  这里需要解释一下，为什么先 lock了这个对象，然后又 waiting on 同一个对象呢？让我们看看这个线程对应的代码： 
+</div>
+<pre style="font-size:.825em;background-color:black;color:white;padding:1em 1em;margin-top:.325em;">
+synchronized(obj){
+  ......... 
+  obj.wait();
+  ......... 
+} 
+</pre>
+<div style="margin-top:.425em;line-height: 1.625em;">
+  线程的执行中，先用 synchronized 获得了这个对象的 Monitor（对应于 locked <0xef63beb8> ）。当执行到 obj.wait(), 线程即放弃了 Monitor 的所有权，进入 “wait set” 队列（对应于 waiting on<0xef63beb8> ）。 
+</div>
+<div style="margin-top:.425em;line-height: 1.625em;">
+  往在你的程序中，会出现多个类似的线程，他们都有相似的 dump 也可能是正常的。比如，在程序中有多个服务线程，设计成从一个队列里面读取请求数据。这个队列就是 lock 以及 waiting on 的对象。当队列为空的时候，这些线程都会在这个队列上等待，直到队列有了数据，这些线程被 notify，当然只有一个线程获得了 lock，继续执行，而其它线程继续等待。 
+</div>
         ]]></c:desc1>
     </c:desc>
     <c:sourceContent type="html" title="案例1------ 查看 java 进程内所有线程状态" id="sourceContent1"
@@ -248,7 +321,7 @@ destroyJavaVM" prio=10 tid=0x00002aaac1225800 nid=0x7208 waiting on condition [0
   模拟：造个场景简单模拟下，没什么实际意义，仅作演示。我启动了100个线程持续访问 我的博客，博客部署在 Ubuntu 16.04 上，是一个简单的 Spring Boot 应用，以 jar 包直接运行的。
 </div>
 <div style="margin-top:.425em;line-height: 1.625em;">
-  <img src="/images/j2ee/jvm-utils/285763-20190111171430007-370123297.png" />
+  <img style="width:100%" src="/images/j2ee/jvm-utils/285763-20190111171430007-370123297.png" />
 </div>
 <div style="line-height: 1.625em;margin-top:.625em">
   $ jps -l ### 确认一下，31951 负载最高的进程ID，或 cat /proc/31951/cmdline 看下进程的启用命令。
@@ -273,7 +346,7 @@ $ cat /proc/31951/cmdline
   $ top -Hp 31951 ### 以线程模式查看下进程31951的所有线程情况
 </div>
 <div style="margin-top:.625em;">
-<img src="/images/j2ee/jvm-utils/285763-20190111171511398-2140645173.png" />
+<img style="width:100%" src="/images/j2ee/jvm-utils/285763-20190111171511398-2140645173.png" />
 </div>
 <div style="margin-top:.625em;">
 假设想看下第二个线程31998的情况，31998是操作系统的线程ID，先转成16进制。（再例如：21233用计算器转换为16进制52f1，注意字母是小写）
