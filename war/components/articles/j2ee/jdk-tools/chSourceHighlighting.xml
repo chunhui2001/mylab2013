@@ -164,7 +164,7 @@ $ javah test.JNITest
 如果 java 程序崩溃生成 core 文件，jstack 工具可以用来获得 core 文件的 java stack 和 native stack 的信息，从而可以轻松地知道 java 程序是如何崩溃和在程序何处发生问题。另外，jstack 工具还可以附属到正在运行的 java 程序中，看到当时运行的 java 程序的 java stack 和 native stack 的信息, 如果现在运行的 java 程序呈现 hung 的状态，jstack 是非常有用的。
 </div>
 <div style="margin-top:.425em;line-height: 1.625em;">
-注1: 不同的 JAVA 虚机的线程 DUMP 的创建方法和文件格式是不一样的，不同的 JVM 版本， dump 信息也有差别。
+注1: 不同的 JAVA 虚拟机的线程 DUMP 的创建方法和文件格式是不一样的，不同的 JVM 版本， dump 信息也有差别。
 </div>
 <div style="margin-top:.425em;line-height: 1.625em;">
 注2: 在实际运行中，往往一次 dump 的信息，还不足以确认问题。建议产生三次 dump 信息，如果每次 dump 都指向同一个问题，我们才确定问题的典型性。
@@ -172,7 +172,7 @@ $ javah test.JNITest
 
 <h1 style="line-height: 1.625em;color: blue;font-style: italic;margin-bottom: 0;padding-bottom: 0;">dump</h1>
 <div style="margin-top:.425em;line-height: 1.625em;">
-Dump 的本意是 "倾卸垃圾"、"把(垃圾桶)倒空"。在计算机技术中使用 Dump 的主要意思仍然如此,即当电脑运行发现故障后, 无法排除而死机, 通常要重新启动。<span style="color: darkviolet;font-size: 1.2em;font-style: italic;">为了找出故障的原因, 需要分析现场(即死机时整个内存的当前状况), 在重新启动系统之前要把内存中的一片0、 1(这时它们尤如一堆垃圾)"卸出"保存起来, 以便由专家去分析引起死机的原因。</span>技术资料中 把这个"卸出"的过程叫 dump; 有时把卸出的"内容"也叫 dump。国际标准化组织(ISO)把前者定义为 To record, at a particular instant, the contents of all or part of one stora geevice in another storage device. Dumping is usually for the purpose of debuggin。"译文如下:"在某个特定时刻,把一个存储设备中的全部或部分的内容转录进另一个存储设备之中。转储的目的通常是用于排除故障。"因此, dump 作为动词,宜译为"转储";相应的动名词,或作为名词来看 ,则译为"转储(过程、动作…)"。同时,ISO把后者定义为 "Data that as been dumped。"译文如下:"经转储而产生的那些数据"。这些数据实际上就是内存中由一片0、1组成的map(映像),因此,这时的dump应译为"内像"(内存中的映像)。 
+Dump 的本意是 "倾卸垃圾"、"把(垃圾桶)倒空"。在计算机技术中使用 Dump 的主要意思仍然如此, 即当电脑运行发现故障后, 无法排除而死机, 通常要重新启动。<span style="color: darkviolet;font-size: 1.2em;font-style: italic;">为了找出故障的原因, 需要分析现场(即死机时整个内存的当前状况), 在重新启动系统之前要把内存中的一片0、 1(这时它们尤如一堆垃圾)"卸出"保存起来, 以便由专家去分析引起死机的原因。</span>技术资料中 把这个"卸出"的过程叫 dump; 有时把卸出的"内容"也叫 dump。国际标准化组织(ISO)把前者定义为 To record, at a particular instant, the contents of all or part of one stora geevice in another storage device. Dumping is usually for the purpose of debuggin。"译文如下:"在某个特定时刻, 把一个存储设备中的全部或部分的内容转录进另一个存储设备之中。转储的目的通常是用于排除故障。"因此, dump 作为动词,宜译为"转储";相应的动名词, 或作为名词来看, 则译为"转储(过程、动作…)"。同时,ISO把后者定义为 "Data that as been dumped。"译文如下:"经转储而产生的那些数据"。这些数据实际上就是内存中由一片0、1组成的map(映像)。因此, 这时的dump应译为"内像"(内存中的映像)。 
 </div>
 
 <h3>示例:</h3>
@@ -343,7 +343,7 @@ $ cat /proc/31951/cmdline
                      bodyStyle="padding:0;padding-top:.325em;">
       <![CDATA[
 <div style="line-height: 1.625em;margin-top:.625em">
-  $ top -Hp 31951 ### 以线程模式查看下进程31951的所有线程情况
+  $ ps -T 31951 ### 以线程模式查看下进程 31951 的所有线程情况
 </div>
 <div style="margin-top:.625em;">
 <img style="width:100%" src="/images/j2ee/jvm-utils/285763-20190111171511398-2140645173.png" />
@@ -479,6 +479,389 @@ Found 1 deadlock.
 <div style="margin-top:.325em;font-size:1.1em;line-height:1.65em;">
   jstat 工具特别强大，它有众多的可选项，通过提供多种不同的监控维度，使我们可以从不同的维度来了解到当前JVM堆的使用情况。详细查看堆内各个部分的使用量，使用的时候必须加上待统计的 Java 进程号，可选的不同维度参数以及可选的统计频率参数。
 </div>
+<div style="margin-top:.325em;font-size:1.1em;line-height:1.65em;">
+  它主要是用来显示GC及PermGen相关的信息，如果对GC不怎么了解，先看这篇文章：http://blog.csdn.net/fenglibing/archive/2011/04/13/6321453.aspx，否则其中即使你会使用 jstat 这个命令，你也看不懂它的输出。
+</div>
+<div style="margin-top:.325em;font-size:1.1em;line-height:1.65em;">
+  根据 jstat 统计的维度不同，可以使用如下表中的选项进行不同维度的统计，不同的操作系统支持的选项可能会不一样，可以通过 jstat -options 选项，查看不同操作系统所支持选项，如：
+</div>
+
+<table style="width:100%;">
+  <thead>
+    <tr>
+      <th style="border: dashed 1px;padding: 5px 10px;width:200px;">Option</th>
+      <th style="border: dashed 1px;padding: 5px 10px;">Displays</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">-class</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看类加载情况的统计</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">&nbsp;</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">
+        <table style="width:100%;">
+          <thead>
+            <tr>
+              <th style="border: dashed 1px;padding: 5px 10px;width:200px;">列名</th>
+              <th style="border: dashed 1px;padding: 5px 10px;">说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Loaded</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">加载了的类的数量</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Bytes</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">加载了的类的大小，单为Kb</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Unloaded</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">卸载了的类的数量</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Bytes</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">卸载了的类的大小，单为Kb</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Time</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">花在类的加载及卸载的时间</td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">-compiler</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看 HotSpot 中即时编译器编译情况的统计</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">&nbsp;</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">
+        <table style="width:100%;">
+          <thead>
+            <tr>
+              <th style="border: dashed 1px;padding: 5px 10px;width:200px;">列名</th>
+              <th style="border: dashed 1px;padding: 5px 10px;">说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Compiled</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">编译任务执行的次数</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Failed</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">编译任务执行失败的次数</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Invalid</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">编译任务非法执行的次数</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Time</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">执行编译花费的时间</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">FailedType</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">最后一次编译失败的编译类型</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">FailedMethod</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">最后一次编译失败的类名及方法名</td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">-gc</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看 JVM 中堆的垃圾收集情况的统计</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;vertical-align: top;">$ jstat -gc 9 3000</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">
+        <pre style="font-size:.125em;transform:scale(.74);transform-origin: top left;width: 140%;position: absolute;">
+S0C     S1C      S0U   S1U     EC       EU       OC          OU        MC      MU      CCSC    CCSU     YGC    YGCT     FGC    FGCT    GCT   
+12800.0 12800.0  0.0   11851.2 760832.0 314974.7 1572864.0   534338.9  89108.0 85979.5 10556.0 9943.9   4327   76.753   3      0.513   77.266
+12800.0 12800.0  0.0   11851.2 760832.0 317333.1 1572864.0   534338.9  89108.0 85979.5 10556.0 9943.9   4327   76.753   3      0.513   77.266
+12800.0 12800.0  0.0   11851.2 760832.0 319062.1 1572864.0   534338.9  89108.0 85979.5 10556.0 9943.9   4327   76.753   3      0.513   77.266
+12800.0 12800.0  0.0   11851.2 760832.0 321439.5 1572864.0   534338.9  89108.0 85979.5 10556.0 9943.9   4327   76.753   3      0.513   77.266
+        </pre>
+        <table style="width:100%;margin-top: 68px;">
+          <thead>
+            <tr>
+              <th style="border: dashed 1px;padding: 5px 10px;width:200px;">列名</th>
+              <th style="border: dashed 1px;padding: 5px 10px;">说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">S0C</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">新生代中Survivor space中S0当前容量的大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">S1C</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">新生代中Survivor space中S1当前容量的大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">S0U</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">新生代中Survivor space中S0容量使用的大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">S1U</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">新生代中Survivor space中S1容量使用的大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">EC</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Eden space当前容量的大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">EU</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Eden space容量使用的大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">OC</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Old space当前容量的大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">OU</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Old space使用容量的大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">PC</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Permanent space当前容量的大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">PU</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Permanent space使用容量的大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">YGC</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">从应用程序启动到采样时发生 Young GC 的次数</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">YGCT</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">从应用程序启动到采样时 Young GC 所用的时间(秒)</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">FGC</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">从应用程序启动到采样时发生 Full GC 的次数</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">FGCT</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">从应用程序启动到采样时 Full GC 所用的时间(秒)</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">GCT</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">T从应用程序启动到采样时用于垃圾回收的总时间(单位秒)，它的值等于YGC+FGC</td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">-gccapacity</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看新生代、老生代及持久代的存储容量情况</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">&nbsp;</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">
+        <table style="width:100%;">
+          <thead>
+            <tr>
+              <th style="border: dashed 1px;padding: 5px 10px;width:200px;">列名</th>
+              <th style="border: dashed 1px;padding: 5px 10px;">说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">NGCMN</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">新生代的最小容量大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">NGCMX</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">新生代的最大容量大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">NGC</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">当前新生代的容量大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">S0C</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">当前新生代中survivor space 0的容量大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">S1C</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">当前新生代中survivor space 1的容量大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">EC</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Eden space当前容量的大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">OGCMN</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">老生代的最小容量大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">OGCMX</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">老生代的最大容量大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">OGC</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">当前老生代的容量大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">OC</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">当前老生代的空间容量大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">PGCMN</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">持久代的最小容量大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">PGCMX</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">持久代的最大容量大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">PGC</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">当前持久代的容量大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">PC</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">当前持久代的空间容量大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">YGC</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">从应用程序启动到采样时发生 Young GC 的次数</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">FGC</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">从应用程序启动到采样时发生 Full GC 的次数</td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">-gccause</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看垃圾收集的统计情况（这个和 -gcutil 选项一样），如果有发生垃圾收集，它还会显示最后一次及当前正在发生垃圾收集的原因。</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">&nbsp;</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">
+        <table style="width:100%;">
+          <thead>
+            <tr>
+              <th style="border: dashed 1px;padding: 5px 10px;width:200px;">列名</th>
+              <th style="border: dashed 1px;padding: 5px 10px;">说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">LGCC</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">最后一次垃圾收集的原因，可能为“unknown GCCause”、“System.gc()”等</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">GCC</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">当前垃圾收集的原因</td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">-gcnew</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看新生代垃圾收集的情况</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">&nbsp;</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">
+        <table style="width:100%;">
+          <thead>
+            <tr>
+              <th style="border: dashed 1px;padding: 5px 10px;width:200px;">列名</th>
+              <th style="border: dashed 1px;padding: 5px 10px;">说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">S0C</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">当前新生代中 survivor space 0 的容量大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">S1C</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">当前新生代中 survivor space 1 的容量大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">S0U</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">S0已经使用的大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">S1U</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">S1已经使用的大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">TT</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Tenuring threshold，要了解这个参数，我们需要了解一点Java内存对象的结构，在 Sun JVM 中（除了数组之外的）对象都有两个机器字（words）的头部。第一个字中包含这个对象的标示哈希码以及其他一些类似锁状态和等标识信息，第二个字中包含一个指向对象的类的引用，其中第二个字节就会被垃圾收集算法使用到。
+在新生代中做垃圾收集的时候，每次复制一个对象后，将增加这个对象的收集计数，当一个对象在新生代中被复制了一定次数后，该算法即判定该对象是长周期的对象，把他移动到老生代，这个阈值叫着 tenuring threshold。这个阈值用于表示某个/些在执行批定次数 youngGC 后还活着的对象，即使此时新生的的 Survior 没有满，也同样被认为是长周期对象，将会被移到老生代中。</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">MTT</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Maximum tenuring threshold，用于表示TT的最大值。</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">DSS</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Desired survivor size (KB). 可以参与这里：http://blog.csdn.net/yangjun2/article/details/6542357</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">EC</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Eden space 当前容量的大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">EU</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Eden space 已经使用的大小（KB）</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">YGC</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">从应用程序启动到采样时发生 Young GC 的次数</td>
+            </tr>
+            <tr>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">YGCT</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">从应用程序启动到采样时 Young GC 所用的时间(单位秒)</td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">-gcnewcapacity</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看新生代的存储容量情况</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">-gcold</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看老生代及持久代发生GC的情况</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">-gcoldcapacity</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看老生代的容量</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">-gcpermcapacity</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看持久代的容量</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">-gcutil</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看新生代、老生代及持代垃圾收集的情况</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">-printcompilation</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">HotSpot编译方法的统计</td>
+    </tr>
+  </tbody>
+</table>
         ]]></c:desc1>
     </c:desc>
     <c:sourceContent type="" title="" id="sourceContent1"
