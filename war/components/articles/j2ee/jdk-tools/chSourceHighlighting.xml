@@ -477,6 +477,13 @@ Found 1 deadlock.
   <li>&#x278D; 查看新生代中 Eden 区及 Survior 区中容量及分配情况等</li>
 </ul>
 <div style="margin-top:.325em;font-size:1.1em;line-height:1.65em;">
+  <h3>Oracle上关于Jstat的使用说明：</h3>
+  <p>
+    <a href="http://docs.oracle.com/javase/1.5.0/docs/tooldocs/share/jstat.html">
+    http://docs.oracle.com/javase/1.5.0/docs/tooldocs/share/jstat.html</a>
+  </p>
+</div>
+<div style="margin-top:.325em;font-size:1.1em;line-height:1.65em;">
   jstat 工具特别强大，它有众多的可选项，通过提供多种不同的监控维度，使我们可以从不同的维度来了解到当前JVM堆的使用情况。详细查看堆内各个部分的使用量，使用的时候必须加上待统计的 Java 进程号，可选的不同维度参数以及可选的统计频率参数。
 </div>
 <div style="margin-top:.325em;font-size:1.1em;line-height:1.65em;">
@@ -496,11 +503,15 @@ Found 1 deadlock.
   <tbody>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">-class</td>
-      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看类加载情况的统计</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">监视类装载、卸载数量、总空间及类装载所耗费的时间</td>
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">&nbsp;</td>
-      <td style="border: dashed 1px darkgray;padding: 5px 5px;">
+        <td style="border: dashed 1px darkgray;padding: 5px 5px;">
+          <pre style="background-color: black;color: white;padding: 1em;font-size: .8em;margin-bottom: .325em;">
+  $ jstat -class 9
+  Loaded  Bytes     Unloaded  Bytes     Time   
+  15046   27276.6   0         0.0       17.62</pre>
         <table style="width:100%;">
           <thead>
             <tr>
@@ -527,7 +538,7 @@ Found 1 deadlock.
             </tr>
             <tr>
               <td style="border: dashed 1px darkgray;padding: 5px 5px;">Time</td>
-              <td style="border: dashed 1px darkgray;padding: 5px 5px;">花在类的加载及卸载的时间</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">花在类的加载及卸载的时间毫秒</td>
             </tr>
           </tbody>
         </table>
@@ -535,11 +546,15 @@ Found 1 deadlock.
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">-compiler</td>
-      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看 HotSpot 中即时编译器编译情况的统计</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">输出JIT编译器编译过的方法耗时等信息</td>
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">&nbsp;</td>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">
+        <pre style="background-color: black;color: white;padding: 1em;font-size: .8em;margin-bottom: .325em;">
+$ jstat -compiler 9
+Compiled Failed  Invalid  Time    FailedType FailedMethod
+30239    1       0        206.89  1          sun/misc/URLClassPath getLoader</pre>
         <table style="width:100%;">
           <thead>
             <tr>
@@ -578,7 +593,7 @@ Found 1 deadlock.
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">-gc</td>
-      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看 JVM 中堆的垃圾收集情况的统计</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">监视JVM堆状况，包括Eden区、2个Surviror区、老年代、永久代等的容量、已使用空间、GC时间合计等信息</td>
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;vertical-align: top;">$ jstat -gc 9 3000</td>
@@ -600,43 +615,43 @@ S0C     S1C      S0U   S1U     EC       EU       OC          OU        MC      M
           <tbody>
             <tr>
               <td style="border: dashed 1px darkgray;padding: 5px 5px;">S0C</td>
-              <td style="border: dashed 1px darkgray;padding: 5px 5px;">新生代中Survivor space中S0当前容量的大小（KB）</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">新生代中 Survivor space 中 S0 当前容量的大小（KB）</td>
             </tr>
             <tr>
               <td style="border: dashed 1px darkgray;padding: 5px 5px;">S1C</td>
-              <td style="border: dashed 1px darkgray;padding: 5px 5px;">新生代中Survivor space中S1当前容量的大小（KB）</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">新生代中 Survivor space 中 S1 当前容量的大小（KB）</td>
             </tr>
             <tr>
               <td style="border: dashed 1px darkgray;padding: 5px 5px;">S0U</td>
-              <td style="border: dashed 1px darkgray;padding: 5px 5px;">新生代中Survivor space中S0容量使用的大小（KB）</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">新生代中 Survivor space 中 S0 容量使用的大小（KB）</td>
             </tr>
             <tr>
               <td style="border: dashed 1px darkgray;padding: 5px 5px;">S1U</td>
-              <td style="border: dashed 1px darkgray;padding: 5px 5px;">新生代中Survivor space中S1容量使用的大小（KB）</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">新生代中 Survivor space 中 S1 容量使用的大小（KB）</td>
             </tr>
             <tr>
               <td style="border: dashed 1px darkgray;padding: 5px 5px;">EC</td>
-              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Eden space当前容量的大小（KB）</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Eden space 当前容量的大小（KB）</td>
             </tr>
             <tr>
               <td style="border: dashed 1px darkgray;padding: 5px 5px;">EU</td>
-              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Eden space容量使用的大小（KB）</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Eden space 容量使用的大小（KB）</td>
             </tr>
             <tr>
               <td style="border: dashed 1px darkgray;padding: 5px 5px;">OC</td>
-              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Old space当前容量的大小（KB）</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Old space 当前容量的大小（KB）</td>
             </tr>
             <tr>
               <td style="border: dashed 1px darkgray;padding: 5px 5px;">OU</td>
-              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Old space使用容量的大小（KB）</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Old space 使用容量的大小（KB）</td>
             </tr>
             <tr>
               <td style="border: dashed 1px darkgray;padding: 5px 5px;">PC</td>
-              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Permanent space当前容量的大小（KB）</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Permanent space 当前容量的大小（KB）</td>
             </tr>
             <tr>
               <td style="border: dashed 1px darkgray;padding: 5px 5px;">PU</td>
-              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Permanent space使用容量的大小（KB）</td>
+              <td style="border: dashed 1px darkgray;padding: 5px 5px;">Permanent space 使用容量的大小（KB）</td>
             </tr>
             <tr>
               <td style="border: dashed 1px darkgray;padding: 5px 5px;">YGC</td>
@@ -664,12 +679,17 @@ S0C     S1C      S0U   S1U     EC       EU       OC          OU        MC      M
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">-gccapacity</td>
-      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看新生代、老生代及持久代的存储容量情况</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">监视内容基本与-gc相同，但输出主要关注JVM堆各区域使用到的最大和最小空间</td>
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">&nbsp;</td>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">
-        <table style="width:100%;">
+        <pre style="font-size:.125em;transform:scale(.6);transform-origin: top left;width: 140%;position: absolute;">
+$ jstat -gccapacity 9
+NGCMN    NGCMX     NGC      S0C     S1C       EC        OGCMN      OGCMX       OGC         OC          MCMN  MCMX       MC        CCSMN    CCSMX      CCSC      YGC      FGC 
+786432.0 786432.0  786432.0 12800.0 12800.0   760832.0  1572864.0  1572864.0   1572864.0   1572864.0   0.0   1128448.0  89108.0   0.0      1048576.0  10556.0   4327     3
+        </pre>
+        <table style="width:100%;margin-top:3em;">
           <thead>
             <tr>
               <th style="border: dashed 1px;padding: 5px 10px;width:200px;">列名</th>
@@ -747,11 +767,16 @@ S0C     S1C      S0U   S1U     EC       EU       OC          OU        MC      M
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">-gccause</td>
-      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看垃圾收集的统计情况（这个和 -gcutil 选项一样），如果有发生垃圾收集，它还会显示最后一次及当前正在发生垃圾收集的原因。</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">基本与 -gcutil 功能一样，但是会额外输出导致上一次GC产生的原因</td>
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">&nbsp;</td>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">
+        <pre style="background-color: black;color: white;padding: 1em;font-size: .8em;margin-bottom: .325em;transform:scale(.8);transform-origin: top left;width:120%;">
+$ jstat -gccause 11
+S0     S1     E      O      M      CCS     YGC    YGCT    FGC    FGCT     GCT     LGCC                 GCC                 
+57.50  0.00   57.44  76.65  89.75  84.73   4132   49.547  1      0.516    50.064  Allocation Failure   No GC 
+        </pre>
         <table style="width:100%;">
           <thead>
             <tr>
@@ -774,11 +799,15 @@ S0C     S1C      S0U   S1U     EC       EU       OC          OU        MC      M
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">-gcnew</td>
-      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看新生代垃圾收集的情况</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看新生代GC的情况</td>
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">&nbsp;</td>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">
+        <pre style="background-color: black;color: white;padding: 1em;font-size: .8em;margin-bottom: .325em;">
+$ jstat -gcnew 9
+S0C     S1C        S0U    S1U     TT  MTT  DSS      EC       EU         YGC   YGCT  
+12800.0 12800.0    0.0    11851.2 15  15   12800.0  760832.0 519602.9   4327  76.753</pre>
         <table style="width:100%;">
           <thead>
             <tr>
@@ -838,11 +867,15 @@ S0C     S1C      S0U   S1U     EC       EU       OC          OU        MC      M
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">-gcnewcapacity</td>
-      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看新生代的存储容量情况</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">监视内容基本与-gcnew相同，输出主要关注使用到的最大和最小空间</td>
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">&nbsp;</td>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">
+        <pre style="background-color: black;color: white;padding: 1em;font-size: .8em;margin-bottom: .325em;">
+$ jstat -gcnewcapacity 9
+NGCMN      NGCMX       NGC      S0CMX     S0C     S1CMX     S1C       ECMX       EC        YGC   FGC 
+786432.0   786432.0    786432.0 262144.0  12800.0 262144.0  12800.0   785408.0   760832.0  4327  3</pre>
         <table style="width:100%;">
           <thead>
             <tr>
@@ -906,6 +939,10 @@ S0C     S1C      S0U   S1U     EC       EU       OC          OU        MC      M
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">&nbsp;</td>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">
+        <pre style="background-color: black;color: white;padding: 1em;font-size: .8em;margin-bottom: .325em;">
+$ jstat -gcold 9
+MC       MU       CCSC      CCSU     OC          OU        YGC    FGC  FGCT    GCT   
+89108.0  85979.5  10556.0   9943.9   1572864.0   534338.9  4327   3    0.513   77.266</pre>
         <table style="width:100%;">
           <thead>
             <tr>
@@ -952,11 +989,15 @@ S0C     S1C      S0U   S1U     EC       EU       OC          OU        MC      M
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">-gcoldcapacity</td>
-      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看老生代的容量</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">基本与-gcold相同，输出主要关注使用到的最大和最小空间</td>
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">&nbsp;</td>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">
+        <pre style="background-color: black;color: white;padding: 1em;font-size: .8em;margin-bottom: .325em;">
+$ jstat -gcoldcapacity 9
+OGCMN       OGCMX        OGC         OC         YGC   FGC    FGCT     GCT   
+1572864.0   1572864.0    1572864.0   1572864.0  4327  3      0.513    77.266</pre>
         <table style="width:100%;">
           <thead>
             <tr>
@@ -1003,7 +1044,7 @@ S0C     S1C      S0U   S1U     EC       EU       OC          OU        MC      M
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">-gcpermcapacity</td>
-      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看持久代的容量</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">输出永久代使用到的最大和最小空间</td>
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">&nbsp;</td>
@@ -1054,11 +1095,15 @@ S0C     S1C      S0U   S1U     EC       EU       OC          OU        MC      M
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">-gcutil</td>
-      <td style="border: dashed 1px darkgray;padding: 5px 5px;">用于查看新生代、老生代及持代垃圾收集的情况</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">监视内容基本与-gc相同，但输出主要关注已使用空间占总空间的百分比</td>
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">&nbsp;</td>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">
+        <pre style="background-color: black;color: white;padding: 1em;font-size: .8em;margin-bottom: .325em;">
+$ jstat -gcutil 9
+S0     S1    E      O      M      CCS     YGC    YGCT     FGC    FGCT     GCT   
+40.55  0.00  17.43  33.97  96.49  94.20   4328   76.766   3      0.513    77.279</pre>
         <table style="width:100%;">
           <thead>
             <tr>
@@ -1113,11 +1158,15 @@ S0C     S1C      S0U   S1U     EC       EU       OC          OU        MC      M
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">-printcompilation</td>
-      <td style="border: dashed 1px darkgray;padding: 5px 5px;">HotSpot编译方法的统计</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">输出已经被JIT编译过的方法</td>
     </tr>
     <tr>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">&nbsp;</td>
       <td style="border: dashed 1px darkgray;padding: 5px 5px;">
+        <pre style="background-color: black;color: white;padding: 1em;font-size: .8em;margin-bottom: .325em;">
+$ jstat -printcompilation 9
+Compiled  Size  Type Method
+30243     154   1    com/fasterxml/jackson/databind/util/ClassUtil findSuperTypes</pre>
         <table style="width:100%;">
           <thead>
             <tr>
