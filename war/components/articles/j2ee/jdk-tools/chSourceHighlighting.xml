@@ -1213,4 +1213,270 @@ Compiled  Size  Type Method
   </c:entry>
 
 
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[jdk工具之jmap（java memory map）]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div>
+  打印出某个 java 进程（使用pid）内存内的所有 ‘对象’ 的情况（如：产生那些对象，及其数量）。
+</div>
+<div style="margin-top:.425em;line-height: 1.625em;">
+可以输出所有内存中对象的工具，甚至可以将 VM 中的 heap，以二进制输出成文本。使用方法 jmap -histo pid。如果用 SHELL jmap -histo pid>a.log 可以将其保存到文本中去，在一段时间后，使用文本对比工具，可以对比出GC回收了哪些对象。jmap -dump:format=b,file=outfile 3024 可以将 3024 进程的内存heap输出出来到 outfile 文件里，再配合MAT（内存分析工具(Memory Analysis Tool），使用参见：http://blog.csdn.net/fenglibing/archive/2011/04/02/6298326.aspx）或与 jhat (Java Heap Analysis Tool)一起使用，能够以图像的形式直观的展示当前内存是否有问题。
+</div>
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;background-color:white;">
+      <![CDATA[
+### 查看该进程(pid)下堆内存的使用情况：
+$ jmap -heap pid
+
+### 快速定位内存泄漏的方法：只统计存活的对象
+$ jmap -histo:live pid
+
+### 还可以导出：
+$ jmap -histo:live pid >1.txt将信息输出到指定文件中
+
+### 打印等待回收的对象信息
+$ jmap -finalizerinfo 4783
+Attaching to process ID 4783, please wait...
+Debugger attached successfully.
+Server compiler detected.
+JVM version is 25.171-b11
+Number of objects pending for finalization: 0
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="-heap" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;background-color:white;margin-top:1em;">
+      <![CDATA[
+$ jmap -heap 2464  
+JVM version is 16.3-b01  
+      
+    using thread-local object allocation.  
+    Parallel GC with 13 thread(s)  
+      
+    Heap Configuration:  
+       MinHeapFreeRatio = 40  
+       MaxHeapFreeRatio = 70  
+       MaxHeapSize      = 8436842496 (8046.0MB)  
+       NewSize          = 5439488 (5.1875MB)  
+       MaxNewSize       = 17592186044415 MB  
+       OldSize          = 5439488 (5.1875MB)  
+       NewRatio         = 2  
+       SurvivorRatio    = 8  
+       PermSize         = 21757952 (20.75MB)  
+       MaxPermSize      = 88080384 (84.0MB)  
+      
+    Heap Usage:  
+    PS Young Generation  
+    Eden Space:  
+       capacity = 87883776 (83.8125MB)  
+       used     = 31053080 (29.614524841308594MB)  
+       free     = 56830696 (54.197975158691406MB)  
+       35.33425782706469% used  
+    From Space:  
+       capacity = 13828096 (13.1875MB)  
+       used     = 196608 (0.1875MB)  
+       free     = 13631488 (13.0MB)  
+       1.4218009478672986% used  
+    To Space:  
+       capacity = 16384000 (15.625MB)  
+       used     = 0 (0.0MB)  
+       free     = 16384000 (15.625MB)  
+       0.0% used  
+    PS Old Generation  
+       capacity = 156172288 (148.9375MB)  
+       used     = 27098208 (25.842864990234375MB)  
+       free     = 129074080 (123.09463500976562MB)  
+       17.35148299805917% used  
+    PS Perm Generation  
+       capacity = 88080384 (84.0MB)  
+       used     = 50847592 (48.492042541503906MB)  
+       free     = 37232792 (35.507957458496094MB)  
+       57.728622073218936% used  
+
+### 说明如下
+Parallel GC with 13 thread(s)   # 13个gc线程  
+  
+Heap Configuration: ### 堆内存初始化配置  
+   MinHeapFreeRatio = 40  #-XX:MinHeapFreeRatio设置JVM堆最小空闲比率  
+   MaxHeapFreeRatio = 70  #-XX:MaxHeapFreeRatio设置JVM堆最大空闲比率  
+   MaxHeapSize      = 8436842496 (8046.0MB)#-XX:MaxHeapSize=设置JVM堆的最大大小  
+   NewSize          = 5439488 (5.1875MB) #-XX:NewSize=设置JVM堆的‘新生代’的默认大小  
+   MaxNewSize       = 17592186044415 MB  #-XX:MaxNewSize=设置JVM堆的‘新生代’的最大大小  
+   OldSize          = 5439488 (5.1875MB) #-XX:OldSize=设置JVM堆的‘老生代’的大小  
+   NewRatio         = 2 #-XX:NewRatio=:‘新生代’和‘老生代’的大小比率  
+   SurvivorRatio    = 8 #-XX:SurvivorRatio=设置年轻代中Eden区与Survivor区的大小比值  
+   PermSize         = 21757952 (20.75MB) #-XX:PermSize=<value>:设置JVM堆的‘永生代’的初始大小  
+   MaxPermSize      = 88080384 (84.0MB) #-XX:MaxPermSize=<value>:设置JVM堆的‘永生代’的最大大小  
+  
+Heap Usage:  
+PS Young Generation  
+Eden Space: ### Eden区内存分布  
+   capacity = 87883776 (83.8125MB)  
+   used     = 31053080 (29.614524841308594MB)  
+   free     = 56830696 (54.197975158691406MB)  
+   35.33425782706469% used  
+From Space:#其中一个Survivor区的内存分布  
+   capacity = 13828096 (13.1875MB)  
+   used     = 196608 (0.1875MB)  
+   free     = 13631488 (13.0MB)  
+   1.4218009478672986% used  
+To Space:#另一个Survivor区的内存分布  
+   capacity = 16384000 (15.625MB)  
+   used     = 0 (0.0MB)  
+   free     = 16384000 (15.625MB)  
+   0.0% used  
+PS Old Generation ### 当前的Old区内存分布  
+   capacity = 156172288 (148.9375MB)  
+   used     = 27098208 (25.842864990234375MB)  
+   free     = 129074080 (123.09463500976562MB)  
+   17.35148299805917% used  
+PS Perm Generation ### 当前的 “永生代” 内存分布  
+   capacity = 88080384 (84.0MB)  
+   used     = 50847592 (48.492042541503906MB)  
+   free     = 37232792 (35.507957458496094MB)  
+   57.728622073218936% used
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="MAT &amp;mdash; Memory Analysis Tool" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;background-color:white;margin-top:1em;">
+      <![CDATA[
+### mat 为 eclipse 的一个内存分析插件，帮助查找内存泄漏和减少内存消耗。
+### 首先基于 jmap 导出的堆信息
+$ jmap -dump:live,format=b,file=test.bin 29030  
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding:0;padding-bottom: 0;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:.95em;line-height:1.8em;margin-top:1em;">
+      <![CDATA[
+<div>
+  执行之后用jmap输出堆信息, 然后导入分析工具, 我们可以看到图形化展示：
+</div>
+<div style="margin-top:.425em;">
+  <img style="width:500px" src="/images/j2ee/jvm-utils/mat-1.png" />
+</div>
+<div style="margin-top:.625em;">
+  然后我们点击 <b>Problem Suspect 1</b> 如下所示：
+</div>
+<div style="margin-top:.425em;">
+  <img style="width:500px" src="/images/j2ee/jvm-utils/mat-2.png" />
+</div>
+<div style="margin-top:.625em;">
+  然后点击详情
+</div>
+<div style="margin-top:0em;">
+  <img style="width:500px" src="/images/j2ee/jvm-utils/mat-3.png" />
+</div>
+<div style="margin-top:.625em;">
+  我们可以看到有很多的User对象
+</div>
+<div style="margin-top:0em;">
+  <img style="width:500px" src="/images/j2ee/jvm-utils/mat-4.png" />
+</div>
+<div style="margin-top:.625em;">
+  这些对象有可能会溢出，然后我们打开OQL窗口看他是否为null，执行如下OQL语句
+</div>
+<pre style="margin-top:0em;background-color:black;color:white;padding: .5em 0;">
+  SELECT u FROM org.learn.util.User u WHERE (u.value = null)  
+</pre>
+<div style="margin-top:.625em;">
+  结果如下：
+</div>
+<div style="margin-top:0em;">
+  <img style="width:500px" src="/images/j2ee/jvm-utils/mat-5.png" />
+</div>
+<div style="margin-top:.625em;">
+  也就是说这个是null，但是仍然有强引用存在，gc的时候是不能回收的，这样就会出现内存的溢出问题
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="如何用mat分析内存问题" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:.95em;line-height:1.8em;">
+      <![CDATA[
+<div>
+我用MAT打开了heap.bin，很容易看出，char[]的数量出其意料的多，占用90%以上的内存 。一般来说，char[]在JVM确实会占用很多内存，数量也非常多，因为String对象以char[]作为内部存储。但是这次的char[]太贪婪 了，仔细一观察，发现有数万计的char[]，每个都占用数百K的内存 。这个现象说明，Java程序保存了数以万计的大String对象 。结合程序的逻辑，这个是不应该的，肯定在某个地方出了问题。
+</div>
+<div style="margin-top:.425em;">
+  <img style="width:100%;" src="/images/j2ee/jvm-utils/285763-20190111185245320-438427167.png" />
+</div>
+<div style="margin-top:.425em;">
+  在可疑的 char[] 中，任意挑了一个，使用 Path To GC Root 功能，找到该 char[] 的引用路径，发现 String 对象是被一个 HashMap 中引用的 。这个也是意料中的事情，Java 的内存泄露多半是因为对象被遗留在全局的 HashMap 中得不到释放。不过，该 HashMap 被用作一个缓存，设置了缓 存条目的阈值，导达到阈值后会自动淘汰。从这个逻辑分析，应该不会出现内存泄露的。虽然缓存中的 String 对象已经达到数万计，但仍然没有达到预先设置的阈值（阈值设置地比较大，因为当时预估 String 对象都比较小）。
+</div>
+<div style="margin-top:.425em;">
+但是，另一个问题引起了我的注意：为什么缓存的 String 对象如此巨大？内部 char[] 的长度达数百K。虽然缓存中的 String 对象数量还没有达到阈值，但是 String 对象大小远远超出了我们的预期，最终导致内存被大量消耗，形成内存泄露的迹象（准确说应该是内存消 耗过多）。
+</div>
+<div style="margin-top:.425em;">
+就这个问题进一步顺藤摸瓜，看看 String 大对象是如何被放到HashMap中的。通过查看程序的源代码，我发现，确实有 String 大对象，不 过并没有把 String 大对象放到 HashMap 中，而是把 String 大对象进行 split（调用String.split方法），然后将 split 出来的 String 小对象放到 HashMap 中了。
+</div>
+<div style="margin-top:.425em;">
+这就奇怪了，放到 HashMap 中明明是 split 之后的 String 小对象，怎么会占用那么大空间呢？难道是 String 类的 split 方法有问题？
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding:0;padding-bottom: 0;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:.95em;line-height:1.8em;margin-top:1em;">
+      <![CDATA[
+<div>
+  
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[jdk工具之jinfo命令(Java Configuration Info)]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+jinfo 用于打印指定 Java 进程、核心文件或远程调试服务器的 Java 配置信息。配置信息包括 Java 系统属性、Java 虚拟机命令行标识参数。
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;background-color:white;"
+                     bodyStyle="padding:0;font-size:.95em;line-height:1.8em;">
+      <![CDATA[
+<pre style="background-color:black;color:white;padding: .5em">
+$ jinfo 9328
+</pre>
+<div style="margin-top:.425em;">
+  <img style="width:100%;" src="/images/j2ee/jvm-utils/285763-20161110122720670-1294650465.png" />
+</div>
+<pre style="margin-top:1em;background-color:black;color:white;padding: .5em">
+### 查看 jvm 的启动参数
+$ jinfo -flags process_id
+</pre>
+<div style="margin-top:.425em;">
+  <img style="width:100%;" src="/images/j2ee/jvm-utils/285763-20190109201108716-1517441125.png" />
+</div>
+<pre style="margin-top:1em;background-color:black;color:white;padding: .5em">
+### 查看 jvm 系统参数
+$ jinfo -sysprops process_id
+</pre>
+<div style="margin-top:.425em;">
+  <img style="width:100%;" src="/images/j2ee/jvm-utils/285763-20190109201138779-473565086.png" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
 </c:component>
