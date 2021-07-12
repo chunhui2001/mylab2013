@@ -1479,4 +1479,121 @@ $ jinfo -sysprops process_id
   </c:entry>
 
 
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[jdk工具之jconsole命令(Java Monitoring and Management Console)]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="margin-top:.425em;">
+jconsole:一个java GUI监视工具，可以以图表化的形式显示各种数据。并可通过远程连接监视远程的服务器VM。用java写的GUI程序，用来监控VM，并可监控远程的VM，非常易用，而且功能非常强。命令行里打 jconsole，选则进程就可以了。
+</div>
+<div style="margin-top:.425em;">
+需要注意的就是在运行jconsole之前，必须要先设置环境变量DISPLAY，否则会报错误，Linux下设置环境变量如下：
+</div>
+<div style="margin-top:.425em;">
+export DISPLAY=:0.0
+</div>
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;background-color:white;"
+                     bodyStyle="padding:0;font-size:.95em;line-height:1.8em;">
+      <![CDATA[
+<pre style="background-color:black;color:white;padding: .5em">
+$ jconsole
+</pre>
+<div style="margin-top:.425em;">
+  <img style="width:100%;" src="/images/j2ee/jvm-utils/285763-20161110145030108-630710446.png" />
+</div>
+<div style="margin-top:.425em;">
+  那我在 window 机器上的结果是，上两个图看一下：
+</div>
+<div style="margin-top:.425em;">
+  <img style="width:100%;" src="/images/j2ee/jvm-utils/285763-20161110145108014-1806240079.png" />
+</div>
+<div style="margin-top:.425em;">
+  可以这里选择查看本地进程的状况，还是远程进程的状况。
+</div>
+<div style="margin-top:.425em;">
+  <img style="width:100%;" src="/images/j2ee/jvm-utils/285763-20161110145150874-1863946978.png" />
+</div>
+<div style="margin-top:.425em;">
+  通过这张图可以看到内存、线程、类及CPU使用的一些情况。
+  <br />
+  内存情况：
+</div>
+<div style="margin-top:.425em;">
+  <img style="width:100%;" src="/images/j2ee/jvm-utils/285763-20161110145659858-1981776211.png" />
+</div>
+<div style="margin-top:.425em;">
+  VM概要：
+</div>
+<div style="margin-top:.425em;">
+  <img style="width:100%;" src="/images/j2ee/jvm-utils/285763-20161110145752655-1260919342.png" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="示例1" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;background-color:white;"
+                     bodyStyle="padding:0;font-size:.95em;line-height:1.8em;">
+      <![CDATA[
+package mat;
+public class Deadlock implements Runnable{
+    private int a;
+    private int b;
+    public Deadlock(int a, int b) {
+       super();
+       this.a = a;
+       this.b = b;
+    }
+    @Override
+    public void run() {
+       synchronized (Integer.valueOf(a)) {
+           synchronized (Integer.valueOf(b)) {
+              System.out.println("a+b="+(a+b));
+           }
+       }
+    }
+    public static void main(String[] args) {
+       for(int i = 0; i < 1000; ++i){
+           new Thread(new Deadlock(1, 2)).start();
+           new Thread(new Deadlock(2, 1)).start();
+       }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;background-color:white;"
+                     bodyStyle="padding:0;font-size:.95em;line-height:1.8em;">
+      <![CDATA[
+<div style="margin-top:.425em;">
+用 jconsole 连接上后，看线程页
+</div>
+<div style="margin-top:.425em;">
+  <img style="width:100%;" src="/images/j2ee/jvm-utils/285763-20161110145438139-1676386062.png" />
+</div>
+<div style="margin-top:.425em;">
+看死锁信息：
+</div>
+<div style="margin-top:.425em;">
+  <img style="width:100%;" src="/images/j2ee/jvm-utils/285763-20161110145508420-1295335681.png" />
+</div>
+<div style="margin-top:.425em;">
+用 jvisualVM 看上面的示例：
+</div>
+<div style="margin-top:.425em;">
+  <img style="width:100%;" src="/images/j2ee/jvm-utils/285763-20161110150531889-624152997.png" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
 </c:component>
