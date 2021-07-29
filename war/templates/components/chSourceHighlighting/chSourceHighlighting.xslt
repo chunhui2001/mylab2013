@@ -58,6 +58,11 @@
     <xsl:param name="entry" />
     <xsl:if test="normalize-space($entry/c:title) != ''">
       <h3 class="entry-title">
+        <xsl:if test="normalize-space($entry/c:title/@id) != ''">
+            <xsl:attribute name="id">
+              <xsl:value-of select="$entry/c:title/@id"/>
+            </xsl:attribute>
+        </xsl:if>
         <xsl:attribute name="style">
           <xsl:value-of select="concat('word-break:break-word;margin-top:2em;',$entry/@style)"/>
         </xsl:attribute>
