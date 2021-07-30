@@ -9,21 +9,29 @@ metamask 源码分析系列文章，基于 7.4.0 版本
 <h1>GitHub: <a href="https://github.com/MetaMask/metamask-extension">https://github.com/MetaMask/metamask-extension</a></h1>
 </div>
 <ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li style="margin: .325em 0;"><p>metamask 架构</p></li>
+  <li style="margin: .325em 0;"><p>metamask 开发</p></li>
+  <li style="margin: .325em 0;">
+    <p>参考资料</p>
+    <ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+      <li>Chrome Extension Development</li>
+      <li>Stream</li>
+    </ul>
+  </li>
   <li>
     <p><a href="#metamask-dependencies" style="color:firebrick;text-decoration: underline;">metamask 依赖分析</a></p>
     <ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
-      <li>3box</li>
-      <li>eth-block-tracker</li>
-      <li>json-rpc-engine</li>
-      <li>json-rpc-middleware-stream</li>
-      <li>metamask-inpage-provider</li>
-      <li>nonce-tracker</li>
-      <li>obs-store</li>
-      <li>post-message-stream</li>
+      <li><a href="#3box" style="color:firebrick;text-decoration: underline;">3box</a></li>
+      <li><a href="#eth-block-tracker" style="color:firebrick;text-decoration: underline;">eth-block-tracker</a></li>
+      <li><a href="#json-rpc-engine" style="color:firebrick;text-decoration: underline;">json-rpc-engine</a></li>
+      <li><a href="#json-rpc-middleware-stream" style="color:firebrick;text-decoration: underline;">json-rpc-middleware-stream</a></li>
+      <li><a href="#metamask-inpage-provider" style="color:firebrick;text-decoration: underline;">metamask-inpage-provider</a></li>
+      <li><a href="#nonce-tracker" style="color:firebrick;text-decoration: underline;">nonce-tracker</a></li>
+      <li><a href="#obs-store" style="color:firebrick;text-decoration: underline;">obs-store</a></li>
+      <li><a href="#post-message-stream" style="color:firebrick;text-decoration: underline;">post-message-stream</a></li>
     </ul>
   </li>
-  <li>metamask 架构</li>
-  <li>
+  <li style="margin: .325em 0;">
     <p>metamask 目录</p>
     <ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
       <li>
@@ -80,14 +88,6 @@ metamask 源码分析系列文章，基于 7.4.0 版本
           <li>app/manifest.json</li>
         </ul>
       </li>
-    </ul>
-  </li>
-  <li>metamask 开发</li>
-  <li>
-    <p>参考资料</p>
-    <ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
-      <li>Chrome Extension Development</li>
-      <li>Stream</li>
     </ul>
   </li>
 </ul>
@@ -1303,6 +1303,1393 @@ ganache-core
 <b>source-map-explorer</b><br />
 <b>static-server:</b> A simple http server to serve static resource files from a local directory.
 </p>
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title id="3box"><![CDATA[<div style="color:blue;font-size:1.625em;">3box</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="margin-bottom:.425em;font-size:1.425em;">
+  https://github.com/3box/3box-js
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.425em;">
+  3box 可让您设置，获取和删除与以太坊账户相关的私人和公共数据。使用启用了Web3的浏览器的dapp可以使用它存储身份数据，用户设置等。只要用户可以访问已使用的以太坊账户的私钥，就可以检索数据。数据已加密，未经用户授权的任何第三方都无法读取。默认情况下，所有授权的dapp都有一个共享的数据空间，然后dapp必须请求明确同意访问这些空间。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.425em;background-color:white;margin-top:.25em;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.25em;font-family:monospace;">
+      <![CDATA[
+const profile = await Box.getProfile('0x12345abcde')
+console.log(profile)
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.425em;background-color:white;margin-top:.25em;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.25em;font-family:monospace;">
+      <![CDATA[
+// 1. Create a 3Box instance
+const box = await Box.create(provider)
+
+// 2. Authenticate user
+const address = '0x12345abcde'
+const spaces = ['myDapp']
+await box.auth(spaces, { address })
+
+// 3. Sync user's available 3Box data from the network
+await box.syncDone
+
+// 4. Interact with 3Box profile data
+// use the public profile
+// get
+const nickname = await box.public.get('name')
+console.log(nickname)
+// set
+await box.public.set('name', 'oed')
+// remove
+await box.public.remove('name')
+
+// use the private store
+// get
+const email = await box.private.get('email')
+console.log(email)
+// set
+await box.private.set('email', 'oed@email.service')
+// remove
+await box.private.remove('email')
+
+const fields = ['name', 'website', 'employer']
+const values = ['Jon Schwartz', 'openworklabs.com', 'Open Work Labs']
+
+await box.public.setMultiple(fields, values)
+
+const privateFields = ['age', 'coinBalance']
+const privateValues = ['xxx', 'yyy']
+
+await box.private.setMultiple(privateFields, privateValues)
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title id="eth-block-tracker"><![CDATA[<div style="color:blue;font-size:1.625em;">eth-block-tracker</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="margin-bottom:.425em;font-size:1.425em;">
+  https://github.com/MetaMask/eth-block-tracker
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.425em;">
+  A JS module for keeping track of the latest Ethereum block by polling an ethereum provider.
+通过拉取以太坊的provider来跟踪最新的以太坊区块
+</div>
+<div style="margin-bottom:.425em;">
+  This module walks the Ethereum blockchain, keeping track of the latest block. It uses a web3 provider as a data source and will continuously poll for the next block.
+使用web3 provider作为其数据源，并不停地从最新的区块中拉取数据
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.425em;background-color:white;margin-top:.25em;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.25em;font-family:monospace;">
+      <![CDATA[
+const HttpProvider = require('ethjs-provider-http')
+const PollingBlockTracker = require('eth-block-tracker')
+
+const provider = new HttpProvider('https://mainnet.infura.io')
+const blockTracker = new PollingBlockTracker({ provider })
+blockTracker.on('latest', console.log)
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.425em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.25em;font-family:monospace;margin-top:.65em;">
+      <![CDATA[
+
+<h2 style="font-size: 1.625em;margin-top:.625em;">&diams; methods</h2>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;">
+/**
+ * creates a new block tracker with provider as a data source and
+ * pollingInterval (ms) timeout between polling for the latest block.
+ * If an Error is encountered when fetching blocks, it will wait retryTimeout (ms) before attempting again.
+ * If keepEventLoopActive is false, in Node.js it will unref the polling timeout, allowing the process to exit during the polling interval. defaults to true, meaning the process will be kept alive.
+ */
+
+new PollingBlockTracker({ provider, pollingInterval, retryTimeout, keepEventLoopActive })
+</pre>
+<div style="margin-top:.425em;font-size:1.1em;line-height:1.625em;">
+创建了一个指定 provider 数据源的区块追踪器，并在 pollingInterval 的间隔时间内拉取最新区块。当获取区块的时候如果出现了错误，那么她就会等待 retryTimeout (ms)再重新获取。如果 keepEventLoopActive 是 false，在 nodejs 中它会取消轮询超时，即在拉取的间隔中允许进程退出。默认是 true，意味着进程始终保持活跃
+</div>
+
+<h3 style="font-size: 1.425em;padding-bottom: 0;color: brown;"><b>getCurrentBlock()</b></h3>
+<div style="margin-top:.425em;font-size:1.1em;line-height:1.625em;">
+synchronous returns the current block. may be null. 同步获取当前的区块
+</div>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;margin-bottom:.25em;">
+console.log(blockTracker.getCurrentBlock())
+</pre>
+
+<h3 style="font-size: 1.425em;padding-bottom: 0;color: brown;"><b>async getLatestBlock()</b></h3>
+<div style="margin-top:.425em;font-size:1.1em;line-height:1.625em;">
+Asynchronously returns the latest block. 异步获取最新区块
+if not immediately available, it will fetch one.
+</div>
+
+<h3 style="font-size: 1.425em;padding-bottom: 0;color: brown;"><b>async checkForLatestBlock()</b></h3>
+<div style="margin-top:.425em;font-size:1.1em;line-height:1.625em;">
+Tells the block tracker to ask for a new block immediately, in addition to its normal polling interval.
+Useful if you received a hint of a new block (e.g. via tx.blockNumber from getTransactionByHash).
+</div>
+<div style="margin-top:.425em;font-size:1.1em;line-height:1.625em;">
+Will resolve to the new latest block when its done polling.
+要求区块追踪器马上去取新的区块，除非现在正处于正常的polling间隔。如果你收到了新的区块的暗示时这个功能就十分有用（via tx.blockNumber from getTransactionByHash）。当其拉取完后，将释放最新的区块
+</div>
+
+<h2 style="font-size: 1.625em;margin-top:.625em;padding-bottom: 0;">&diams; EVENTS</h2>
+<h3 style="font-size: 1.425em;padding-bottom: 0;color: brown;"><b>latest</b></h3>
+<div style="margin-top:.425em;font-size:1.1em;line-height:1.625em;">
+The latest event is emitted for whenever a new latest block is detected.
+This may mean skipping blocks if there were two created since the last polling period.
+当新的区块被检测到时，这个事件就会被触发。如果在上一个拉取周期中生成了两个区块，那么将会跳过，不会触发事件
+</div>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;margin-bottom:.25em;">
+blockTracker.on('latest', (newBlock) => console.log(newBlock))
+</pre>
+
+<h3 style="font-size: 1.425em;padding-bottom: 0;color: brown;"><b>sync</b></h3>
+<div style="margin-top:.425em;font-size:1.1em;line-height:1.625em;">
+The sync event is emitted the same as "latest" but includes the previous block.
+它跟"latest"是相同的，不同在与它还返回了之前的一个区块
+</div>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;margin-bottom:.25em;">
+blockTracker.on('sync', ({ newBlock, oldBlock }) => console.log(newBlock, oldBlock))
+</pre>
+
+<h3 style="font-size: 1.425em;padding-bottom: 0;color: brown;"><b>error</b></h3>
+<div style="margin-top:.425em;font-size:1.1em;line-height:1.625em;">
+The error event means an error occurred while polling for the latest block.
+当拉取最新的区块的时候出现错误时触发
+</div>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;margin-bottom:.25em;">
+blockTracker.on('error', (err) => console.error(err))
+</pre>
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title id="json-rpc-engine"><![CDATA[<div style="color:blue;font-size:1.625em;">json-rpc-engine</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="margin-bottom:.425em;font-size:1.425em;">
+  A tool for processing JSON RPC: https://github.com/MetaMask/json-rpc-engine
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="使用" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+const RpcEngine = require('json-rpc-engine')
+
+let engine = new RpcEngine()
+
+// Build a stack of json rpc processors by pushing in RpcEngine middleware.
+engine.push(function(req, res, next, end){
+  res.result = 42
+  end()
+})
+
+// JSON RPC are handled asynchronously, stepping down the stack until complete.
+let request = { id: 1, jsonrpc: '2.0', method: 'hello' }
+
+engine.handle(request, function(err, res){
+  // do something with res.result
+})
+
+// RpcEngine middleware has direct access to the request and response objects. It can let processing continue down the stack with next() or complete the request with end().
+engine.push(function(req, res, next, end){
+  if (req.skipCache) return next()
+  res.result = getResultFromCache(req)
+  end()
+})
+
+// By passing a 'return handler' to the next function, you can get a peek at the result before it returns.
+engine.push(function(req, res, next, end){
+  next(function(cb){
+    insertIntoCache(res, cb)
+  })
+})
+
+// RpcEngines can be nested by converting them to middleware asMiddleware(engine)
+const asMiddleware = require('json-rpc-engine/lib/asMiddleware')
+
+let engine = new RpcEngine()
+let subengine = new RpcEngine()
+engine.push(asMiddleware(subengine))
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="gotchas" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;color:green;font-size:1.425em;background-color:white;margin-top:.25em;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.25em;font-family:monospace;">
+      <![CDATA[
+// Handle errors via end(err), NOT next(err).
+// That said, next() will detect errors on the RPC response, and cause end(res.error) to be called.
+/* INCORRECT */
+engine.push(function(req, res, next, end){
+  next(new Error())
+})
+
+/* CORRECT */
+engine.push(function(req, res, next, end){
+  end(new Error())
+})
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title id="json-rpc-middleware-stream"><![CDATA[<div style="color:blue;font-size:1.625em;">json-rpc-middleware-stream</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="margin-bottom:.425em;font-size:1.225em;">
+  A small toolset for streaming json rpc and matching requests and responses. Made to be used with json-rpc-engine.
+</div>
+<div style="margin-bottom:.425em;font-size:1.225em;">
+  可以用来与json-rpc-engine结合使用，对输入的json rpc进行读入、写出处理
+</div>
+<div style="margin-bottom:.425em;font-size:1.425em;">
+  https://github.com/MetaMask/json-rpc-middleware-stream
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title id="metamask-inpage-provider"><![CDATA[<div style="color:blue;font-size:1.625em;">metamask-inpage-provider</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="margin-bottom:.425em;font-size:1.225em;">
+  Used to initialize the inpage ethereum provider injected by MetaMask.
+</div>
+<div style="margin-bottom:.425em;font-size:1.425em;">
+  https://github.com/MetaMask/metamask-inpage-provider
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="使用" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+// Create a stream to a remote provider:
+var metamaskStream = new LocalMessageDuplexStream({
+  name: 'inpage',
+  target: 'contentscript',
+})
+
+// compose the inpage provider
+var inpageProvider = new MetamaskInpageProvider(metamaskStream)
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="核心源码" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;color:green;font-size:1em;background-color:white;font-size:1.2em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+// https://github.com/MetaMask/metamask-inpage-provider/blob/master/index.js
+const pump = require('pump')
+const RpcEngine = require('json-rpc-engine')
+const createIdRemapMiddleware = require('json-rpc-engine/src/idRemapMiddleware')
+const createJsonRpcStream = require('json-rpc-middleware-stream')
+const ObservableStore = require('obs-store')
+const asStream = require('obs-store/lib/asStream')
+const ObjectMultiplex = require('obj-multiplex')
+const { inherits } = require('util')
+const SafeEventEmitter = require('safe-event-emitter')
+const dequal = require('fast-deep-equal')
+const { ethErrors } = require('eth-json-rpc-errors')
+const log = require('loglevel')
+
+const messages = require('./src/messages')
+const { sendSiteMetadata } = require('./src/siteMetadata')
+const {
+  createErrorMiddleware,
+  logStreamDisconnectWarning,
+  makeThenable,
+} = require('./src/utils')
+
+// resolve response.result, reject errors
+const getRpcPromiseCallback = (resolve, reject) => (error, response) => {
+  error || response.error
+    ? reject(error || response.error)
+    : Array.isArray(response)
+      ? resolve(response)
+      : resolve(response.result)
+}
+
+module.exports = MetamaskInpageProvider
+
+inherits(MetamaskInpageProvider, SafeEventEmitter)
+
+function MetamaskInpageProvider (connectionStream) {
+
+  // super constructor
+  SafeEventEmitter.call(this)
+
+  // private state, kept here in part for use in the _metamask proxy
+  this._state = {
+    sentWarnings: {
+      enable: false,
+      experimentalMethods: false,
+      isConnected: false,
+      sendAsync: false,
+      // TODO:deprecate:2020-Q1
+      autoReload: false,
+      sendSync: false,
+    },
+    isConnected: undefined,
+    accounts: undefined,
+    isUnlocked: undefined,
+  }
+
+  this._metamask = getExperimentalApi(this)
+
+  // public state
+  this.selectedAddress = null
+  this.networkVersion = undefined
+  this.chainId = undefined
+
+  // setup connectionStream multiplexing
+  const mux = this.mux = new ObjectMultiplex()
+  pump(
+    connectionStream,
+    mux,
+    connectionStream,
+    this._handleDisconnect.bind(this, 'MetaMask'),
+  )
+
+  // subscribe to metamask public config (one-way)
+  this._publicConfigStore = new ObservableStore({ storageKey: 'MetaMask-Config' })
+
+  // handle isUnlocked changes, and chainChanged and networkChanged events
+  this._publicConfigStore.subscribe(state => {
+
+    if ('isUnlocked' in state && state.isUnlocked !== this._state.isUnlocked) {
+      this._state.isUnlocked = state.isUnlocked
+      this.emit('wallet_isUnlocked', this._state.isUnlocked)
+      if (!this._state.isUnlocked) {
+        // accounts are never exposed when the extension is locked
+        this._handleAccountsChanged([])
+      } else {
+        // this will get the exposed accounts, if any
+        try {
+          this._sendAsync(
+            { method: 'eth_accounts', params: [] },
+            () => {},
+          )
+        } catch (_) {}
+      }
+    }
+
+    // Emit chainChanged event on chain change
+    if ('chainId' in state && state.chainId !== this.chainId) {
+      this.chainId = state.chainId
+      this.emit('chainChanged', this.chainId)
+      this.emit('chainIdChanged', this.chainId) // TODO:deprecate:2020-Q1
+    }
+
+    // Emit networkChanged event on network change
+    if ('networkVersion' in state && state.networkVersion !== this.networkVersion) {
+      this.networkVersion = state.networkVersion
+      this.emit('networkChanged', this.networkVersion)
+    }
+  })
+
+  pump(
+    mux.createStream('publicConfig'),
+    asStream(this._publicConfigStore),
+    // RPC requests should still work if only this stream fails
+    logStreamDisconnectWarning.bind(this, 'MetaMask PublicConfigStore'),
+  )
+
+  // ignore phishing warning message (handled elsewhere)
+  mux.ignoreStream('phishing')
+
+  // setup own event listeners
+
+  // EIP-1193 connect
+  this.on('connect', () => {
+    this._state.isConnected = true
+  })
+
+  // connect to async provider
+
+  const jsonRpcConnection = createJsonRpcStream()
+  pump(
+    jsonRpcConnection.stream,
+    mux.createStream('provider'),
+    jsonRpcConnection.stream,
+    this._handleDisconnect.bind(this, 'MetaMask RpcProvider'),
+  )
+
+  // handle RPC requests via dapp-side rpc engine
+  const rpcEngine = new RpcEngine()
+  rpcEngine.push(createIdRemapMiddleware())
+  rpcEngine.push(createErrorMiddleware())
+  rpcEngine.push(jsonRpcConnection.middleware)
+  this._rpcEngine = rpcEngine
+
+  // json rpc notification listener
+  jsonRpcConnection.events.on('notification', payload => {
+    if (payload.method === 'wallet_accountsChanged') {
+      this._handleAccountsChanged(payload.result)
+    } else if (payload.method === 'eth_subscription') {
+      // EIP 1193 subscriptions, per eth-json-rpc-filters/subscriptionManager
+      this.emit('notification', payload.params.result)
+    }
+  })
+
+  // send website metadata
+  const domContentLoadedHandler = () => {
+    sendSiteMetadata(this._rpcEngine)
+    window.removeEventListener('DOMContentLoaded', domContentLoadedHandler)
+  }
+  window.addEventListener('DOMContentLoaded', domContentLoadedHandler)
+
+  // indicate that we've connected, for EIP-1193 compliance
+  setTimeout(() => this.emit('connect'))
+
+  // TODO:deprecate:2020-Q1
+  // wait a second to attempt to send this, so that the warning can be silenced
+  // moved this here because there's another warning in .enable() discouraging
+  // the use thereof per EIP 1102
+  setTimeout(() => {
+    if (this.autoRefreshOnNetworkChange && !this._state.sentWarnings.autoReload) {
+      log.warn(messages.warnings.autoReloadDeprecation)
+      this._state.sentWarnings.autoReload = true
+    }
+  }, 1000)
+}
+
+// TODO:deprecate:2020-Q1
+MetamaskInpageProvider.prototype._web3Ref = undefined
+
+// TODO:deprecate:2020-Q1
+// give the dapps control of a refresh they can toggle this off on the window.ethereum
+// this will be default true so it does not break any old apps.
+MetamaskInpageProvider.prototype.autoRefreshOnNetworkChange = true
+
+MetamaskInpageProvider.prototype.isMetaMask = true
+
+/**
+ * Deprecated.
+ * Returns whether the inpage provider is connected to MetaMask.
+ */
+MetamaskInpageProvider.prototype.isConnected = function () {
+
+  if (!this._state.sentWarnings.isConnected) {
+    log.warn(messages.warnings.isConnectedDeprecation)
+    this._state.sentWarnings.isConnected = true
+  }
+  return this._state.isConnected
+}
+
+/**
+ * Sends an RPC request to MetaMask. Resolves to the result of the method call.
+ * May reject with an error that must be caught by the caller.
+ *
+ * @param {(string|Object)} methodOrPayload - The method name, or the RPC request object.
+ * @param {Array<any>} [params] - If given a method name, the method's parameters.
+ * @returns {Promise<any>} - A promise resolving to the result of the method call.
+ */
+MetamaskInpageProvider.prototype.send = function (methodOrPayload, params) {
+
+  // preserve original params for later error if necessary
+  const _params = params
+
+  // construct payload object
+  let payload
+  if (
+    typeof methodOrPayload === 'object' &&
+    !Array.isArray(methodOrPayload)
+  ) {
+
+    // TODO:deprecate:2020-Q1
+    // handle send(object, callback), an alias for sendAsync(object, callback)
+    if (typeof params === 'function') {
+      return this._sendAsync(methodOrPayload, params)
+    }
+
+    payload = methodOrPayload
+
+    // TODO:deprecate:2020-Q1
+    // backwards compatibility: "synchronous" methods
+    if (!params && [
+      'eth_accounts',
+      'eth_coinbase',
+      'eth_uninstallFilter',
+      'net_version',
+    ].includes(payload.method)) {
+      return this._sendSync(payload)
+    }
+  } else if (
+    typeof methodOrPayload === 'string' &&
+    typeof params !== 'function'
+  ) {
+
+    // wrap params in array out of kindness
+    if (params === undefined) {
+      params = []
+    } else if (!Array.isArray(params)) {
+      params = [params]
+    }
+
+    payload = {
+      method: methodOrPayload,
+      params,
+    }
+  }
+
+  // typecheck payload and payload.method
+  if (
+    Array.isArray(payload) ||
+    typeof params === 'function' ||
+    typeof payload !== 'object' ||
+    typeof payload.method !== 'string'
+  ) {
+    throw ethErrors.rpc.invalidRequest({
+      message: messages.errors.invalidParams(),
+      data: [methodOrPayload, _params],
+    })
+  }
+
+  return new Promise((resolve, reject) => {
+    try {
+      this._sendAsync(
+        payload,
+        getRpcPromiseCallback(resolve, reject),
+      )
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
+
+/**
+ * Deprecated.
+ * Equivalent to: ethereum.send('eth_requestAccounts')
+ *
+ * @returns {Promise<Array<string>>} - A promise that resolves to an array of addresses.
+ */
+MetamaskInpageProvider.prototype.enable = function () {
+
+  if (!this._state.sentWarnings.enable) {
+    log.warn(messages.warnings.enableDeprecation)
+    this._state.sentWarnings.enable = true
+  }
+  return new Promise((resolve, reject) => {
+    try {
+      this._sendAsync(
+        { method: 'eth_requestAccounts', params: [] },
+        getRpcPromiseCallback(resolve, reject),
+      )
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
+
+/**
+ * Deprecated.
+ * Backwards compatibility. ethereum.send() with callback.
+ *
+ * @param {Object} payload - The RPC request object.
+ * @param {Function} callback - The callback function.
+ */
+MetamaskInpageProvider.prototype.sendAsync = function (payload, cb) {
+
+  if (!this._state.sentWarnings.sendAsync) {
+    log.warn(messages.warnings.sendAsyncDeprecation)
+    this._state.sentWarnings.sendAsync = true
+  }
+  this._sendAsync(payload, cb)
+}
+
+/**
+ * TODO:deprecate:2020-Q1
+ * Internal backwards compatibility method.
+ */
+MetamaskInpageProvider.prototype._sendSync = function (payload) {
+
+  if (!this._state.sentWarnings.sendSync) {
+    log.warn(messages.warnings.sendSyncDeprecation)
+    this._state.sentWarnings.sendSync = true
+  }
+
+  let result
+  switch (payload.method) {
+
+    case 'eth_accounts':
+      result = this.selectedAddress ? [this.selectedAddress] : []
+      break
+
+    case 'eth_coinbase':
+      result = this.selectedAddress || null
+      break
+
+    case 'eth_uninstallFilter':
+      this._sendAsync(payload, () => {})
+      result = true
+      break
+
+    case 'net_version':
+      result = this.networkVersion || null
+      break
+
+    default:
+      throw new Error(messages.errors.unsupportedSync(payload.method))
+  }
+
+  // looks like a plain object, but behaves like a Promise if someone calls .then on it :evil_laugh:
+  return makeThenable({
+    id: payload.id,
+    jsonrpc: payload.jsonrpc,
+    result,
+  }, 'result')
+}
+
+/**
+ * Internal RPC method. Forwards requests to background via the RPC engine.
+ * Also remap ids inbound and outbound.
+ */
+MetamaskInpageProvider.prototype._sendAsync = function (payload, userCallback) {
+
+  let cb = userCallback
+
+  if (!Array.isArray(payload)) {
+
+    if (!payload.jsonrpc) {
+      payload.jsonrpc = '2.0'
+    }
+
+    if (
+      payload.method === 'eth_accounts' ||
+      payload.method === 'eth_requestAccounts'
+    ) {
+
+      // handle accounts changing
+      cb = (err, res) => {
+        this._handleAccountsChanged(
+          res.result || [],
+          payload.method === 'eth_accounts',
+        )
+        userCallback(err, res)
+      }
+    }
+  }
+
+  this._rpcEngine.handle(payload, cb)
+}
+
+/**
+ * Called when connection is lost to critical streams.
+ */
+MetamaskInpageProvider.prototype._handleDisconnect = function (streamName, err) {
+
+  logStreamDisconnectWarning.bind(this)(streamName, err)
+  if (this._state.isConnected) {
+    this.emit('close', {
+      code: 1011,
+      reason: 'MetaMask background communication error.',
+    })
+  }
+  this._state.isConnected = false
+}
+
+/**
+ * Called when accounts may have changed.
+ */
+MetamaskInpageProvider.prototype._handleAccountsChanged = function (accounts, isEthAccounts = false) {
+
+  // defensive programming
+  if (!Array.isArray(accounts)) {
+    log.error(
+      'MetaMask: Received non-array accounts parameter. Please report this bug.',
+      accounts,
+    )
+    accounts = []
+  }
+
+  // emit accountsChanged if anything about the accounts array has changed
+  if (!dequal(this._state.accounts, accounts)) {
+
+    // we should always have the correct accounts even before eth_accounts
+    // returns, except if the method is called before we're fully initialized
+    if (isEthAccounts && this._state.accounts !== undefined) {
+      log.warn(
+        `MetaMask: 'eth_accounts' updated accounts. Please report this bug.`,
+        accounts,
+      )
+    }
+
+    this.emit('accountsChanged', accounts)
+    this._state.accounts = accounts
+  }
+
+  // handle selectedAddress
+  if (this.selectedAddress !== accounts[0]) {
+    this.selectedAddress = accounts[0] || null
+  }
+
+  // TODO:deprecate:2020-Q1
+  // handle web3
+  if (this._web3Ref) {
+    this._web3Ref.defaultAccount = this.selectedAddress
+  } else if (window.web3 && typeof window.web3.eth === 'object') {
+    window.web3.eth.defaultAccount = this.selectedAddress
+  }
+}
+
+/**
+ * Gets experimental _metamask API as Proxy.
+ */
+function getExperimentalApi (instance) {
+  return new Proxy(
+    {
+
+      /**
+       * Determines if MetaMask is unlocked by the user.
+       *
+       * @returns {Promise<boolean>} - Promise resolving to true if MetaMask is currently unlocked
+       */
+      isUnlocked: async () => {
+        if (instance._state.isUnlocked === undefined) {
+          await new Promise(
+            (resolve) => instance._publicConfigStore.once('update', () => resolve()),
+          )
+        }
+        return instance._state.isUnlocked
+      },
+
+      /**
+       * Make a batch request.
+       */
+      sendBatch: async (requests) => {
+
+        // basic input validation
+        if (!Array.isArray(requests)) {
+          throw ethErrors.rpc.invalidRequest({
+            message: 'Batch requests must be made with an array of request objects.',
+            data: requests,
+          })
+        }
+
+        return new Promise((resolve, reject) => {
+          try {
+            instance._sendAsync(
+              requests,
+              getRpcPromiseCallback(resolve, reject),
+            )
+          } catch (error) {
+            reject(error)
+          }
+        })
+      },
+
+      // TODO:deprecate:2020-Q1 isEnabled, isApproved
+      /**
+       * Deprecated. Will be removed in Q1 2020.
+       * Synchronously determines if this domain is currently enabled, with a potential false negative if called to soon
+       *
+       * @returns {boolean} - returns true if this domain is currently enabled
+       */
+      isEnabled: () => {
+        return Array.isArray(instance._state.accounts) && instance._state.accounts.length > 0
+      },
+
+      /**
+       * Deprecated. Will be removed in Q1 2020.
+       * Asynchronously determines if this domain is currently enabled
+       *
+       * @returns {Promise<boolean>} - Promise resolving to true if this domain is currently enabled
+       */
+      isApproved: async () => {
+        if (instance._state.accounts === undefined) {
+          await new Promise(
+            (resolve) => instance.once('accountsChanged', () => resolve()),
+          )
+        }
+        return Array.isArray(instance._state.accounts) && instance._state.accounts.length > 0
+      },
+    },
+    {
+
+      get: (obj, prop) => {
+
+        if (!instance._state.sentWarnings.experimentalMethods) {
+          log.warn(messages.warnings.experimentalMethods)
+          instance._state.sentWarnings.experimentalMethods = true
+        }
+        return obj[prop]
+      },
+    },
+  )
+}
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title id="nonce-tracker"><![CDATA[<div style="color:blue;font-size:1.625em;">nonce-tracker</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="margin-bottom:.425em;font-size:1.225em;">
+  How metamask calculates nonces
+</div>
+<div style="margin-bottom:.425em;font-size:1.425em;">
+  https://github.com/MetaMask/nonce-tracker
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="使用" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+const NonceTracker = require('nonce-tracker')
+
+const nonceTracker = new NonceTracker(config)
+
+nonceLock = nonceTracker.getNonceLock('0xselectedEthereumAddress')
+
+nonce = nonceLock.nextNonce
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div style="margin-bottom:.425em;font-size:1.225em;">
+  主要是得到 address 账户下一个交易的 nonce 值，核心就是下面三个值取最大的：
+</div>
+<ul style="margin-bottom:.425em;margin-top:.325em;list-style: disc;margin-left: 1.5em;font-size:1.225em;">
+      <li>_getNetworkNextNonce(address)</li>
+      <li>_getHighestLocallyConfirmed(address)</li>
+      <li>localNonceResult.nonce</li>
+    </ul>
+<div style="margin-bottom:.425em;font-size:1.225em;">
+  因为取值过程中涉及到 nonce++，所以使用了 await-semaphore 控制，防止多次执行。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="await-semaphore" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.825em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div style="margin-bottom:.425em;font-size:1.225em;">
+  信号量控制实现，主要是为了保护共享资源，使得资源在一个时刻只有一个进程（线程）所拥有。
+</div>
+<div style="margin-bottom:.425em;font-size:1.225em;">
+使用 Seamphore，创建了多少线程，实际就会有多少线程进行执行，只是可同时执行的线程数量会受到限制。但使用线程池，不管你创建多少线程，实际可执行的线程数是一定的。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+var semaphore = new Semaphore(10);
+
+async function niceFetch(url) {
+    var release = await semaphore.acquire();
+    var result = await fetch(url);
+    release();
+    return result;
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="核心代码" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;color:green;font-size:1em;background-color:white;font-size:1.2em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+const EthQuery = require('ethjs-query')
+const assert = require('assert')
+const Mutex = require('await-semaphore').Mutex
+/**
+  @param opts {Object}
+    @param {Object} opts.provider a ethereum provider
+    @param {Function} opts.getPendingTransactions a function that returns an array of txMeta
+    whosee status is `submitted`
+    @param {Function} opts.getConfirmedTransactions a function that returns an array of txMeta
+    whose status is `confirmed`
+  @class
+*/
+class NonceTracker {
+
+  constructor ({ provider, blockTracker, getPendingTransactions, getConfirmedTransactions }) {
+    this.provider = provider
+    this.blockTracker = blockTracker
+    this.ethQuery = new EthQuery(provider)
+    this.getPendingTransactions = getPendingTransactions
+    this.getConfirmedTransactions = getConfirmedTransactions
+    this.lockMap = {}
+  }
+
+  /**
+    @returns {Promise<Object>} with the key releaseLock (the gloabl mutex)
+  */
+  async getGlobalLock () {
+    const globalMutex = this._lookupMutex('global')
+    // await global mutex free
+    const releaseLock = await globalMutex.acquire()
+    return { releaseLock }
+  }
+
+  /**
+   * @typedef NonceDetails
+   * @property {number} highestLocallyConfirmed - A hex string of the highest nonce on a confirmed transaction.
+   * @property {number} nextNetworkNonce - The next nonce suggested by the eth_getTransactionCount method.
+   * @property {number} highestSuggested - The maximum between the other two, the number returned.
+   */
+
+  /**
+  this will return an object with the `nextNonce` `nonceDetails`, and the releaseLock
+  Note: releaseLock must be called after adding a signed tx to pending transactions (or discarding).
+
+  @param address {string} the hex string for the address whose nonce we are calculating
+  @returns {Promise<NonceDetails>}
+  */
+  async getNonceLock (address) {
+    // await global mutex free
+    await this._globalMutexFree()
+    // await lock free, then take lock
+    const releaseLock = await this._takeMutex(address)
+    try {
+      // evaluate multiple nextNonce strategies
+      const nonceDetails = {}
+      const networkNonceResult = await this._getNetworkNextNonce(address)
+      const highestLocallyConfirmed = this._getHighestLocallyConfirmed(address)
+      const nextNetworkNonce = networkNonceResult.nonce
+      const highestSuggested = Math.max(nextNetworkNonce, highestLocallyConfirmed)
+
+      const pendingTxs = this.getPendingTransactions(address)
+      const localNonceResult = this._getHighestContinuousFrom(pendingTxs, highestSuggested) || 0
+
+      nonceDetails.params = {
+        highestLocallyConfirmed,
+        highestSuggested,
+        nextNetworkNonce,
+      }
+      nonceDetails.local = localNonceResult
+      nonceDetails.network = networkNonceResult
+
+      const nextNonce = Math.max(networkNonceResult.nonce, localNonceResult.nonce)
+      assert(Number.isInteger(nextNonce), `nonce-tracker - nextNonce is not an integer - got: (${typeof nextNonce}) "${nextNonce}"`)
+
+      // return nonce and release cb
+      return { nextNonce, nonceDetails, releaseLock }
+    } catch (err) {
+      // release lock if we encounter an error
+      releaseLock()
+      throw err
+    }
+  }
+
+  async _globalMutexFree () {
+    const globalMutex = this._lookupMutex('global')
+    const releaseLock = await globalMutex.acquire()
+    releaseLock()
+  }
+
+  async _takeMutex (lockId) {
+    const mutex = this._lookupMutex(lockId)
+    const releaseLock = await mutex.acquire()
+    return releaseLock
+  }
+
+  _lookupMutex (lockId) {
+    let mutex = this.lockMap[lockId]
+    if (!mutex) {
+      mutex = new Mutex()
+      this.lockMap[lockId] = mutex
+    }
+    return mutex
+  }
+
+  async _getNetworkNextNonce (address) {
+    // calculate next nonce
+    // we need to make sure our base count
+    // and pending count are from the same block
+    const blockNumber = await this.blockTracker.getLatestBlock()
+    const baseCountBN = await this.ethQuery.getTransactionCount(address, blockNumber)
+    const baseCount = baseCountBN.toNumber()
+    assert(Number.isInteger(baseCount), `nonce-tracker - baseCount is not an integer - got: (${typeof baseCount}) "${baseCount}"`)
+    const nonceDetails = { blockNumber, baseCount }
+    return { name: 'network', nonce: baseCount, details: nonceDetails }
+  }
+
+  _getHighestLocallyConfirmed (address) {
+    const confirmedTransactions = this.getConfirmedTransactions(address)
+    const highest = this._getHighestNonce(confirmedTransactions)
+    return Number.isInteger(highest) ? highest + 1 : 0
+  }
+
+  _getHighestNonce (txList) {
+    const nonces = txList.map((txMeta) => {
+      const nonce = txMeta.txParams.nonce
+      assert(typeof nonce, 'string', 'nonces should be hex strings')
+      return parseInt(nonce, 16)
+    })
+    const highestNonce = Math.max.apply(null, nonces)
+    return highestNonce
+  }
+
+  /**
+    @typedef {object} highestContinuousFrom
+    @property {string} - name the name for how the nonce was calculated based on the data used
+    @property {number} - nonce the next suggested nonce
+    @property {object} - details the provided starting nonce that was used (for debugging)
+  */
+  /**
+    @param txList {array} - list of txMeta's
+    @param startPoint {number} - the highest known locally confirmed nonce
+    @returns {highestContinuousFrom}
+  */
+  _getHighestContinuousFrom (txList, startPoint) {
+    const nonces = txList.map((txMeta) => {
+      const nonce = txMeta.txParams.nonce
+      assert(typeof nonce, 'string', 'nonces should be hex strings')
+      return parseInt(nonce, 16)
+    })
+
+    let highest = startPoint
+    while (nonces.includes(highest)) {
+      highest++
+    }
+
+    return { name: 'local', nonce: highest, details: { startPoint, highest } }
+  }
+
+}
+
+module.exports = NonceTracker
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title id="obs-store"><![CDATA[<div style="color:blue;font-size:1.625em;">obs-store</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="margin-bottom:.425em;font-size:1.225em;">
+  ObservableStore is a synchronous in-memory store for a single value, that you can subscribe to updates on.
+</div>
+<div style="margin-bottom:.425em;font-size:1.425em;">
+  https://github.com/MetaMask/obs-store
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+const store = new ObservableStore(initState)
+store.subscribe(function showValue(value) {
+  console.log('saw value:', value)
+})
+
+store.putState(5) // "saw value: 5"
+store.putState(true) // "saw value: true"
+store.putState({ hello: 'world' }) // "saw value: { hello: 'world' }"
+
+console.log(store.getState().hello) // "world"
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="streams" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;color:green;font-size:1em;background-color:white;font-size:1.2em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.425em;font-size:1.225em;">
+  Each ObservableStore can be turned into an ObservableStoreStream. An ObservableStoreStream is a duplex stream that you can pipe new values into it or pipe its updated values out of it
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.825em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+// Special behavior: Doesnt buffer outgoing updates, writes latest state to dest on pipe.
+const pipe = require('pump')
+const asStream = require('obs-store/lib/asStream')
+
+const storeOne = new ObservableStore(initState)
+const storeTwo = new ObservableStore()
+
+pipe(
+  asStream(storeOne),
+  transformStream,
+  asStream(storeTwo)
+)
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title id="post-message-stream"><![CDATA[<div style="color:blue;font-size:1.625em;">post-message-stream</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="margin-bottom:.425em;font-size:1.225em;">
+  Sets up a duplex object stream over window.postMessage
+</div>
+<div style="margin-bottom:.425em;font-size:1.425em;">
+  https://github.com/kumavis/post-message-stream
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+var streamA = new PostMessageStream({
+  name: 'thing one',
+  target: 'thing two',
+})
+
+var streamB = new PostMessageStream({
+  name: 'thing two',
+  target: 'thing one',
+})
+
+streamB.on('data', (data) => console.log(data))
+streamA.write(chunk)
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="constructor arguments" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;color:green;font-size:1em;background-color:white;font-size:1.2em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+var messageStream = new PostMessageStream({
+
+  // required
+
+  // name of stream, used to differentiate
+  // when multiple streams are on the same window 
+  name: 'source',
+
+  // name of target stream 
+  target: 'sink',
+
+  // optional
+
+  // window to send the message to
+  // default is `window`
+  window: iframe.contentWindow,
+  
+})
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="window.postMessage" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;color:green;font-size:1em;background-color:white;font-size:1.2em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.825em;font-family:monospace;">
+      <![CDATA[
+// https://developer.mozilla.org/zh-CN/docs/Web/API/Window/postMessage
+// window.postMessage() 方法可以安全地实现跨源通信。
+
+// otherWindow 其他窗口的一个引用
+// message 将要发送到其他 window的数据
+// targetOrigin 通过窗口的origin属性来指定哪些窗口能接收到消息事件
+                其值可以是字符串"*"（表示无限制）或者一个URI。
+// transfer 是一串和message 同时传递的 Transferable 对象
+otherWindow.postMessage(message, targetOrigin, [transfer]);
+
+// 执行如下代码, 其他window可以监听分发的message:
+window.addEventListener("message", receiveMessage, false);
+
+// event
+// data 从其他 window 中传递过来的对象
+// origin 调用 postMessage  时消息发送方窗口的 origin
+// source 对发送消息的窗口对象的引用
+function receiveMessage(event) {
+  var origin = event.origin || event.originalEvent.origin; 
+  if (origin !== "http://example.org:8080")
+    return;
+
+  // ...
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.825em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li>如果您不希望从其他网站接收 message，请不要为 message 事件添加任何事件侦听器。 </li>
+  <li>如果您确实希望从其他网站接收 message，请始终使用 origin 和 source 属性验证发件人的身份。</li>
+  <li>当您使用 postMessage 将数据发送到其他窗口时，始终指定精确的目标 origin，而不是*。</li>
+</ul>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="核心源码" id="sourceContent1"
+                     titleStyle="padding-left:0;padding-bottom: 0;color:green;font-size:1em;background-color:white;font-size:1.2em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.825em;font-family:monospace;">
+      <![CDATA[
+// https://github.com/kumavis/post-message-stream/blob/master/index.js
+const DuplexStream = require('readable-stream').Duplex
+const inherits = require('util').inherits
+
+module.exports = PostMessageStream
+
+inherits(PostMessageStream, DuplexStream)
+
+function PostMessageStream (opts) {
+  DuplexStream.call(this, {
+    objectMode: true,
+  })
+
+  this._name = opts.name
+  this._target = opts.target
+  this._targetWindow = opts.targetWindow || window
+  this._origin = (opts.targetWindow ? '*' : location.origin)
+
+  // initialization flags
+  this._init = false
+  this._haveSyn = false
+
+  window.addEventListener('message', this._onMessage.bind(this), false)
+  // send syncorization message
+  this._write('SYN', null, noop)
+  // 调用 writable.cork() 方法将强制所有写入数据都内存中的缓冲区里。
+  // 直到调用 stream.uncork() 或 stream.end() 方法时，缓冲区里的数据才会被输出。
+  this.cork()
+}
+
+// private
+PostMessageStream.prototype._onMessage = function (event) {
+  var msg = event.data
+
+  // validate message
+  if (this._origin !== '*' && event.origin !== this._origin) return
+  if (event.source !== this._targetWindow) return
+  if (typeof msg !== 'object') return
+  if (msg.target !== this._name) return
+  if (!msg.data) return
+
+  if (!this._init) {
+    // listen for handshake 模拟三次握手，再消费消息
+    if (msg.data === 'SYN') {
+      this._haveSyn = true
+      this._write('ACK', null, noop)
+    } else if (msg.data === 'ACK') {
+      this._init = true
+      if (!this._haveSyn) {
+        this._write('ACK', null, noop)
+      }
+      // writable.uncork() 将输出在 stream.cork() 方法被调用之后缓冲在内存中的所有数据。
+      // 如果一个流多次调用了 writable.cork() 方法，
+      //   那么也必须调用同样次数的 writable.uncork() 方法以输出缓冲区数据。
+      this.uncork()
+    }
+  } else {
+    // forward message
+    try {
+      this.push(msg.data)
+    } catch (err) {
+      this.emit('error', err)
+    }
+  }
+}
+
+// stream plumbing
+PostMessageStream.prototype._read = noop
+
+PostMessageStream.prototype._write = function (data, encoding, cb) {
+  var message = {
+    target: this._target,
+    data: data,
+  }
+  this._targetWindow.postMessage(message, this._origin)
+  cb()
+}
+
+// util
+
+function noop () {}
    ]]>
     </c:sourceContent>
     <c:comment>
