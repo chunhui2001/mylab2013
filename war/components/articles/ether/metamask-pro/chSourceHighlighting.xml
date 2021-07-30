@@ -9,7 +9,7 @@ metamask 源码分析系列文章，基于 7.4.0 版本
 <h1>GitHub: <a href="https://github.com/MetaMask/metamask-extension">https://github.com/MetaMask/metamask-extension</a></h1>
 </div>
 <ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
-  <li style="margin: .325em 0;"><p>metamask 架构</p></li>
+  <li style="margin: .325em 0;"><p><a href="#metamask-structrues" style="color:firebrick;text-decoration: underline;">metamask 架构</a></p></li>
   <li style="margin: .325em 0;"><p>metamask 开发</p></li>
   <li style="margin: .325em 0;">
     <p>参考资料</p>
@@ -94,6 +94,454 @@ metamask 源码分析系列文章，基于 7.4.0 版本
 ]]>
   </c:abstract>
   
+
+  <c:entry style="margin-top:1em;">
+    <c:title id="metamask-structrues"><![CDATA[<div style="color:blue;font-size:1.625em;">metamask 架构</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="margin-bottom:.425em;font-size:1.225em;">
+  metamask 既是钱包，也是和以太网交互的途径。
+</div>
+<div>
+  <img style="width:550px;" src="/images/ether/1576481371539-60166627-5cd7-4717-b69d-151c289e2029.png" />
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.425em;">
+  通过架构图，可以知道，作为用户，要么可以在 metamask UI界面里面直接玩，要么可以在玩耍 dApp 的时候，调用 metamask，不管怎么样，都是通过 metamask-background ，最终调用 eth 的 rpc。
+</div>
+<div style="margin-bottom:.425em;">
+  源码的类、对象等的详细解释: <br />
+  <a href="https://metamask.github.io/metamask-extension/index.html">https://metamask.github.io/metamask-extension/index.html</a> 
+</div>
+<div style="margin-bottom:.425em;">
+  Guide to Porting MetaMask to a New Environment 这篇文章大概梳理了一下流程: <br />
+  <a href="https://github.com/MetaMask/metamask-extension/blob/develop/docs/porting_to_new_environment.md">https://github.com/MetaMask/metamask-extension/blob/develop/docs/porting_to_new_environment.md</a>
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="metamask-background" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.425em;">
+  <a href="https://github.com/MetaMask/metamask-extension/blob/develop/app/scripts/background.js">https://github.com/MetaMask/metamask-extension/blob/develop/app/scripts/background.js</a>
+</div>
+<div style="margin-bottom:.425em;">
+<a href="https://www.yuque.com/jnoodle/ox47v8/pn8ynl">background.js</a> 里面实例化了 MetaMask Controller，MetaMask Controller 主要用于用户账户、和链的连接还有和 dapp 的交互。
+</div>
+<div style="margin-bottom:.425em;">
+每当访问一个新站点，插件都会创建一个 ContentScript 在页面中：
+</div>
+<div style="margin-bottom:.425em;">
+<a href="https://github.com/MetaMask/metamask-extension/blob/develop/app/scripts/contentscript.js">https://github.com/MetaMask/metamask-extension/blob/develop/app/scripts/contentscript.js</a> <br />
+<a href="https://www.yuque.com/jnoodle/ox47v8/anceie">https://www.yuque.com/jnoodle/ox47v8/anceie</a>
+</div>
+<div style="margin-bottom:.425em;">
+ContentScript 在每个页面里都注入了 web3 api，通过 Port API （使用 <a href="https://github.com/jabez128/stream-handbook">stream</a> 抽象包裹） 连接到 background，在页面加载之间注入 DOM。
+</div>
+<div style="margin-bottom:.425em;">
+<a href="https://github.com/MetaMask/metamask-inpage-provider">https://github.com/MetaMask/metamask-inpage-provider</a> 就是一个 eth provider，MetaMask 把 metamask-inpage-provider 注入到页面中，我们自己也可以构造一个 provider：
+</div>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;">
+const providerFromEngine = require('eth-json-rpc-middleware/providerFromEngine')
+
+/**
+ * returns a provider restricted to the requesting domain
+ **/
+function incomingConnection (domain) {
+  const engine = metamaskController.setupProviderEngine(domain)
+  const provider = providerFromEngine(engine)
+  return provider
+} 
+</pre>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="使用 Streams Interface" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.425em;">
+  可以看一下 MetaMask 如何在 <a href="https://github.com/MetaMask/metamask-extension/blob/develop/app/scripts/inpage.js">inpage.js</a> 中来创建 <a href="https://github.com/MetaMask/metamask-inpage-provider/blob/master/index.js">MetamaskInpageProvider</a>。其实 MetaMask 在 <a href="https://developer.chrome.com/extensions/runtime#property-Port-postMessage">Port postMessage API</a> 基础上做了一层封装。
+</div>
+<div style="margin-bottom:.425em;">
+  通过 setupUntrustedCommunication(stream, domain)，可以和 MetaMaskController 通信。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="MetaMask Controller" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.425em;">
+<a href="https://github.com/MetaMask/metamask-extension/blob/master/app/scripts/metamask-controller.js">https://github.com/MetaMask/metamask-extension/blob/master/app/scripts/metamask-controller.js</a> <br />
+<a href="https://www.yuque.com/jnoodle/ox47v8/xot5gg">https://www.yuque.com/jnoodle/ox47v8/xot5gg</a>
+</div>
+
+<div style="margin-bottom:.425em;">
+MetaMask 的核心功能都在 MetaMask Controller 里面。创建 MetaMask Controller 的目标是让他可以导入到任何 JS 上下文中，可以管理 app 和 Ethereum 之间的关系。
+</div>
+
+<h1 style="padding-bottom:0;">Contructor</h1>
+<h2>&#x02713; new MetaMask(opts)</h2>
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;font-size: 1em;line-height: 1.625em;">
+  <li><b>initState:</b> The last emitted state, used for restoring persistent state between sessions. 最后发出的状态，用于在会话之间恢复持久状态</li>
+  <li>
+    <p><b>platform:</b> The platform object defines a variety of platform-specific functions, including opening the confirmation view, and opening websites. 平台对象定义了各种特定于平台的功能，包括打开确认视图和打开web站点。</p>
+    <ul style="margin-top:.325em;list-style: none;font-size: 1em;line-height: 1.625em;">
+      <li><b>&#x02ABC; reload (function)</b> - Will be called when MetaMask would like to reload its own context. 将在MetaMask想要重新加载其自己的上下文时调用</li>
+      <li><b>&#x02ABC; openWindow ({ url })</b> - Will be called when MetaMask would like to open a web page. It will be passed a single options object with a url key, with a string value. 在MetaMask想要打开web页面时调用。它将传递一个带有url键和字符串值的单一选项对象</li>
+      <li><b>&#x02ABC; getVersion()</b> - Should return the current MetaMask version, as described in the current CHANGELOG.md or app/manifest.json. 应该返回当前MetaMask的版本，即在当前的 CHANGELOG.md或app/manifest.json中所述的版本号</li>
+    </ul>
+  </li>
+  <li>
+    <p><b>encryptor</b> - An object that provides access to the desired encryption methods. 供对所需加密方法的访问的对象，提供两种可以以你喜欢的任何格式进行加密的简单方法的对象。这个参数是可选的，默认为浏览器本地的WebCrypto API。</p>
+    <ul style="margin-top:.325em;list-style: none;font-size: 1em;line-height: 1.625em;">
+      <li><b>&#x02ABC; encrypt(password, object)</b> - returns a Promise of a string that is ready for storage.</li>
+      <li><b>&#x02ABC; decrypt(password, encryptedString)</b> - Accepts the encrypted output of encrypt and returns a Promise of a restored object as it was encrypted.</li>
+    </ul>
+  </li>
+</ul>
+
+<h2>&#x02713; metamask.getState()</h2>
+<div style="margin-bottom:.425em;">
+该方法返回一个 javascript 对象，表示当前的 MetaMask state。这包括已知的帐户、发送的交易、当前汇率等等。控制器也是一个事件发射器，所以你可以通过 metamask.on('update', handleStateUpdate) 来订阅状态更新。<a href="https://github.com/MetaMask/metamask-extension/tree/master/development/states">状态示例</a> 即一系列json文件，即 "metamask" 键下的值的信息。
+</div>
+
+<h2>&#x02713; metamask.getApi()</h2>
+<div style="margin-bottom:.425em;">
+返回一个JavaScript对象，该对象中包含回调函数，表示用户界面执行的每个操作。通过这些API方法提供了从创建新帐户、更改当前网络到发送交易的所有内容。我们在对象上导出这个外部API，因为它允许我们使用 dnode 在端口上轻松地公开这个API，这就是 WebExtension UI 的工作方式!
+</div>
+
+
+<h1 style="padding-bottom:0;">UI</h1>
+<div style="margin-bottom:.425em;">
+MetaMask UI本质上只是一个网站，可以通过从上面传递API和状态订阅来配置它。任何人都可以创建一个使用这些的UI，有效地重新设计MetaMask
+</div>
+<div style="margin-bottom:.425em;">
+UI 的实现：<br />
+<a href="https://github.com/MetaMask/metamask-extension/blob/master/ui/index.js">https://github.com/MetaMask/metamask-extension/blob/master/ui/index.js</a>
+<a href="https://www.yuque.com/jnoodle/ox47v8/tkc19z">https://www.yuque.com/jnoodle/ox47v8/tkc19z</a>
+</div>
+<div style="margin-bottom:.425em;">
+backgroundConnection 会被传到 UI 里，backgroundConnection 对于 MetaMask Controller 非常重要，通过访问它，UI能够初始化整个依赖于该API实现其帐户/区块链相关/持久状态的React/Redux应用程序。
+</div>
+<h2>&#x02713; Putting it Together</h2>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;">
+// manifest.json
+...
+  "background": {
+    "scripts": [
+      "chromereload.js",
+      "bg-libs.js",
+      "background.js"
+    ],
+    "persistent": true
+  },
+...
+</pre>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;">
+const controller = new MetamaskController({
+    // User confirmation callbacks:
+    showUnconfirmedMessage: triggerUi,
+    showUnapprovedTx: triggerUi,
+    // initial state
+    initState,
+    // platform specific api
+    platform,
+})
+</pre>
+<div style="margin-bottom:.425em;margin-top:1em;">
+background.js 完成的事情：
+</div>
+<ul style="margin-top:.325em;list-style: none;font-size: 1em;line-height: 1.825em;">
+  <li>&starf; Defining how to open the UI for new messages, transactions, and even requests to unlock (reveal to the site) their account. 定义如何为新消息、事务、甚至为解锁(向站点显示)其帐户的请求打开UI</li>
+  <li>&starf; Provide the instance's initial state, leaving MetaMask persistence to the platform. 提供实例的初始状态，将MetaMask持久化保留到平台</li>
+  <li>&starf; Providing a platform object. This is becoming our catch-all adapter for platforms to define a few other platform-variant features we require, like opening a web link. (Soon we will be moving encryption out here too, since our browser-encryption isn't portable enough!) 提供平台对象。这将成为平台的通用适配器，用于定义我们需要的其他一些平台变体特性，比如打开web链接。(不久我们也将把加密技术移到这里，因为我们的浏览器加密还不够便携!)</li>
+</ul>
+
+
+<h1>Ports, streams, and Web3!</h1>
+<div style="margin-bottom:.425em;">
+到目前为止，在几乎所有运行JS的平台上都可以创建一个MetaMask wallet，但MetaMask最独特的功能不是钱包，而是为网站提供了一个Ethereum-enabled的JavaScript环境。
+</div>
+<div style="margin-bottom:.425em;">
+MetaMask 暴露了两种 <a href="https://github.com/substack/stream-handbook#duplex">duplex stream APIs</a>
+</div>
+<ul style="margin-top:.325em;list-style: none;font-size: 1em;line-height: 1.825em;">
+  <li>&starf; <b>metamask.setupTrustedCommunication(connectionStream, originDomain)</b> - This stream is used to connect the user interface over a remote port, and may not be necessary for contexts where the interface and the metamask-controller share a process.  此流用于通过远程端口连接用户界面，对于接口和metamask控制器共享进程的上下文可能不需要此流</li>
+  <li>&starf; <b>metamask.setupUntrustedCommunication(connectionStream, originDomain)</b> - This method is used to connect a new web site's web3 API to MetaMask's blockchain connection. Additionally, the originDomain is used to block detected phishing sites. 此方法用于将新web站点的web3 API连接到MetaMask的区块链连接。另外，originDomain可以用来阻止检测到的钓鱼网站</li>
+</ul>
+
+
+<h1>Web3 as a Stream</h1>
+<div style="margin-bottom:.425em;">
+如果正在为一个新平台开发一个基于 MetaMask-powered 的浏览器，那么最棘手的任务之一就是将 Web3 API 注入到访问的网站中。在 WebExtensions，我们实际上需要通过总共三个JS上下文来传输数据，只是为了让站点与我们的后台进程对话 (site -> contentscript -> background)
+</div>
+<div style="margin-bottom:.425em;">
+可以看一下 <a href="https://github.com/MetaMask/metamask-extension/blob/master/app/scripts/inpage.js">https://github.com/MetaMask/metamask-extension/blob/master/app/scripts/inpage.js</a> 来了解是怎么往网站里面注入的。创建了一个到后台的多路复用的 stream，并使用它来初始化 <a href="https://github.com/MetaMask/metamask-inpage-provider/blob/master/index.js">MetamaskInpageProvider</a>，可以看到 inpage-provider 的一些方法输出了stubs（存根），但它的大多数方法只是通过它传递的流来传递对sendAsync的调用! 一旦你有了一个可用的 MetaMask 流，以上就是在远程上下文中创建类似 web3 的API所需要的所有操作。
+</div>
+<div style="margin-bottom:.425em;">
+在 inpage.js 你可以看到我们创建了一个我们用来将 WebExtension 端口包装成流的 <a href="https://github.com/MetaMask/metamask-extension/blob/develop/app/scripts/inpage.js#L52">PortMessage Stream</a>，因此我们可以在 WebExtension 的更加不规则的API表面上重用我们喜欢的流抽象。在新的平台中，您可能需要以不同的方式构造这个流。关键是您需要构建一个从站点上下文到后台的流。一旦你设置好了，它就会像魔术一样运作!
+</div>
+<div style="margin-bottom:.425em;">
+学习 stream：<br />
+<a href="https://github.com/substack/stream-handbook">https://github.com/substack/stream-handbook</a>（中文：<a href="https://github.com/jabez128/stream-handbook">https://github.com/jabez128/stream-handbook</a>）
+<a href="https://github.com/workshopper/stream-adventure">https://github.com/workshopper/stream-adventure</a>
+</div>
+
+
+<h1>MetaMask 实现了 RPC 接管</h1>
+<div style="margin-bottom:.425em;">
+chrome 扩展程序基本结构：
+</div>
+<ul style="margin-top:.325em;list-style: none;font-size: 1em;line-height: 1.825em;">
+  <li>&starf; contentscripts.js：插件中唯一拥有操作当前活动标签页面dom权限的js</li>
+  <li>&starf; background.js：全局运行的js(类似于`插件后台`)</li>
+  <li>&starf; propub.html：插件界面UI</li>
+</ul>
+<div style="margin-bottom:.425em;margin-top:1em;">
+插件中的 js 之间可以通过 postMessage 接口通信
+</div>
+<div style="margin-bottom:.425em;">
+Metamask 在 contentscripts.js 中 injects inpage.js。
+</div>
+<div style="margin-bottom:.425em;">
+inpage.js 中注册 MetamaskInpageProvider（metamask-inpage-provider库）为 web3。
+</div>
+<div style="margin-bottom:.425em;">
+MetamaskInpageProvider 实现了 web3 的方法。
+</div>
+
+
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title id="metamask-developer"><![CDATA[<div style="color:blue;font-size:1.625em;">metamask 开发</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="margin-bottom:.425em;font-size:1.225em;line-height:1.625em;">
+MetaMask 主要是用来在浏览器中直接连接 ETH 网络的插件，本身带有钱包功能。
+</div>
+<div style="margin-bottom:.425em;font-size:1.225em;line-height:1.625em;">
+大部分 Dapp 是运行在浏览器里的，这样通过浏览器插件来使用 ETH 上面的合约很方便。这里说的开发主要是 dapp 调用 MetaMask 来进行一些链操作。
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.425em;">
+metamask 提供了 window.ethereum 与用户应用交互。
+</div>
+<div style="margin-bottom:.425em;">
+用 ethereum.isMetaMask 检测 metamask。
+</div>
+<div style="margin-bottom:.425em;">
+What is the current network?  ethereum.networkVersion<br />
+What is the current account?  ethereum.selectedAddress
+</div>
+<div style="margin-bottom:.425em;">
+连接 metamask，不要在页面载入后自动连接，而是要通过用户事件触发，比如点击 “连接 MetaMask” 按钮。
+</div>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;">
+const accounts = await ethereum.enable()
+const account = accounts[0] // We currently only ever provide a single account,
+                            // but the array gives us some room to grow.
+</pre>
+
+<h1 style="padding-bottom:0;">术语</h1>
+<ul style="margin-top:.325em;list-style: none;font-size: 1em;line-height: 1.825em;">
+  <li>&starf; <b>Wallet：</b>钱包是用来管理账户的 interface / client / wrapper / holder</li>
+  <li>&starf; <b>Account：</b>A public & private keypair that "holds" your funds.</li>
+  <li>&starf; <b>Address (“Public Key”) ：</b>You use this to send funds to an account. 0x + 40 hexadecimal characters </li>
+  <li>&starf; <b>Public Key：</b>You can derive a public key from a private key. </li>
+  <li>&starf; <b>Private Key：</b>You use this to send funds from an account. A string of 64 hexadecimal characters. 一般不用明文保存，而是加密下保存，比如 the Keystore File / Mnemonic Phrase</li>
+  <li>&starf; <b>Keystore File：</b>Encrypted version of your private key in JSON format</li>
+  <li>&starf; <b>Mnemonic Phrase / Seed Phrase / Seed Words：</b>助记词 A (typically) 12 or 24 word phrase that allows you to access infinite number of accounts.</li>
+  <li>&starf; <b>Hardware Wallet：</b>注意离线备份助记词</li>
+  <li>&starf; <b>Identicon / AddressIdenticon / AddressIcon：</b>通过图标快速区分地址</li>
+  <li>&starf; <b>Hexadecimal：</b>十六进制</li>
+  <li>&starf; <b>Seed：</b>随机产生私钥</li>
+  <li>&starf; <b>Brain Wallet：</b>An account generated from a seed or password or passphrase of your choosing. Don't use brain wallets.</li>
+  <li>&starf; <b>Entropy：</b>熵 Also known as "randomness". The more random something is, the more entropy it has, and the more secure it is.</li>
+  <li>&starf; <b>Derive / Derivation：</b>To derive something is to obtain it from an original source.</li>
+  <li>&starf; <b>Encryption：</b>加密</li>
+  <li>&starf; <b>Encrypted vs Unencrypted Keys：</li>
+  <li>&starf; <b>Decentralize / Decentralization：</b>分散集权</li>
+  <li>&starf; <b>Trustless：</b>A distributed trustless consensus which the blockchain is responsible for. </li>
+  <li>&starf; <b>Smart Contracts：</b>A piece of code (or program) that is stored on the blockchain network.</li>
+  <li>&starf; <b>Blockchain：</b>A decentralized publicly owned ledger.</li>
+</ul>
+
+<h1 style="padding-bottom:0;">Dapps</h1>
+<div style="margin-bottom:.425em;margin-top:.325em;">
+一些 dapp 可以识别用户当前网络，自动切换合约地址。
+</div>
+<div style="margin-bottom:.425em;">
+智能合约都要有个地址 Contract Address。
+</div>
+<div style="margin-bottom:.425em;">
+Contract ABI：类比 API
+</div>
+<div style="margin-bottom:.425em;">
+Contract Bytecode：字节码用来发布，没有 ABI，只有字节码，也没法交互。
+</div>
+
+<h1 style="padding-bottom:0;">访问账户</h1>
+<div style="margin-bottom:.425em;margin-top:.325em;">
+ethereum.selectedAddress  订阅账户变化：
+</div>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;">
+ethereum.on('accountsChanged', function (accounts) {
+  // Time to reload your interface with accounts[0]!
+})
+</pre>
+<div style="margin-bottom:.425em;margin-top:.625em;">
+下面调用钱包的方法都需要用户账户参数：
+</div>
+<ul style="margin-top:.325em;list-style: none;font-size: 1em;line-height: 1.825em;">
+  <li>&starf; eth_sendTransaction</li>
+  <li>&starf; eth_sign (insecure and unadvised to use)</li>
+  <li>&starf; eth_personalSign</li>
+  <li>&starf; eth_signTypedData</li>
+</ul>
+
+<h1 style="padding-bottom:0;">发送交易</h1>
+<div style="margin-bottom:.425em;margin-top:.325em;">
+在 Metamask 里使用 ethereum.sendAsync 发送交易，背后调用 eth_sendTransaction  方法
+</div>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;">
+const transactionParameters = {
+  
+  // ignored by MetaMask, MetaMask 自动管理
+  nonce: '0x00',
+  
+  // customizable by user during MetaMask confirmation. 
+  // 一般自己不用管
+  // MetaMask 通过 API 请求 MyCrypto，获取 “slow,” “medium,” and “fast” 的 gas price
+  gasPrice: '0x09184e72a000', 
+  
+  // customizable by user during MetaMask confirmation.
+  // 一般也不用管
+  gas: '0x2710',  
+  
+  // Required except during contract publications.
+  // 一般不是创建合约的话，都需要
+  to: '0x0000000000000000000000000000000000000000', 
+  
+  // must match user's active address.
+  from: web3.eth.accounts[0], 
+  
+  // Only required to send ether to the recipient from the initiating external account.
+  // 单位 wei 1e-18 
+  // 尽量使用 BN.js 处理
+  value: '0x00', 
+  
+  // Optional, but used for defining smart contract creation and interaction.
+  // 一般创建智能合约需要
+  data: '0x7f7465737432000000000000000000000000000000000000000000000000000000600057', 
+  
+  // Used to prevent transaction reuse across blockchains. Auto-filled by MetaMask.
+  // 现在直接用 ethereum.networkVersion，未来可能需要传
+  chainId: 3 
+  
+}
+
+ethereum.sendAsync({
+  method: 'eth_sendTransaction',
+  params: [transactionParameters],
+  from: ethereum.selectedAddress,
+}, callback)
+</pre>
+
+<h1 style="padding-bottom:0;">接入到一个自定义的网络</h1>
+<div>
+  <img style="width:330px;" src="/images/ether/1577242873553-3e536465-f9be-430d-b349-e5c687d89b77.png" />
+</div>
+<div style="margin-top:1em;">
+  修改下面的文件：
+</div>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;">
+app/scripts/config.js
+app/scripts/lib/buy-eth-url.js
+ui/app/index.js
+ui/app/components/buy-button-subview.js
+ui/app/components/drop-menu-item.js
+ui/app/components/network.js
+ui/app/components/transaction-list-item.js
+ui/app/config.js
+ui/app/css/lib.css
+ui/lib/account-link.js
+ui/lib/explorer-link.js
+</pre>
+<div style="margin-top:1em;">
+  需要:
+</div>
+<ul style="margin-top:.325em;list-style: none;font-size: 1em;line-height: 1.825em;">
+  <li>&starf; The network ID</li>
+  <li>&starf; An RPC Endpoint url</li>
+  <li>&starf; An explorer link</li>
+  <li>&starf; CSS for the display icon</li>
+</ul>
+
+<h1 style="padding-bottom:0;">接口</h1>
+<div>
+  metamask 主要是把 web3 注入到了所有页面的 js 上下文中，如果这个页面是个 dapp，就可以直接和 eth 链交互了。
+</div>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;">
+if (typeof window.ethereum !== 'undefined') {
+  // Ethereum user detected. You can now use the provider.
+  const provider = window['ethereum']
+}
+</pre>
+<div style="margin-top:1em;">
+  MetaMask 的接口总体比较简单。
+</div>
+
+<h1 style="padding-bottom:0;">属性</h1>
+<div>
+  &sdotb; ethereum.networkVersion 当前网络ID，未来会删除
+</div>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;">
+'1': Ethereum Main Network
+'2': Morden Test network
+'3': Ropsten Test Network
+'4': Rinkeby Test Network
+'5': Goerli Test Network
+'42': Kovan Test Network
+</pre>
+<div>
+  &sdotb; ethereum.selectedAddress 当前用户地址，未来会删除
+</div>
+<div>
+  &sdotb; ethereum.isMetaMask 是否安装了 MetaMask
+</div>
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
   <c:entry style="margin-top:1em;">
     <c:title id="metamask-dependencies"><![CDATA[<div style="color:blue;font-size:1.2em;">metamask 依赖分析</div>]]></c:title>
     <c:desc>
