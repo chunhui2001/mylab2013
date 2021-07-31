@@ -42,6 +42,7 @@
         <meta property="countryCode" content="{$countryCode}" />
       </xsl:if>
 
+      <link href="//cdn.microee.com/gfont/font.css" rel="stylesheet" crossorigin="" />
       <link rel="stylesheet" type="text/css" href="/RenderingAssets/lib/bootstrap/bootstrap.min.css" />
 	  	<link rel="stylesheet" type="text/css" href="/RenderingAssets/css/reset.css" />
 	  	<link rel="stylesheet" type="text/css" href="/RenderingAssets/css/global.css" />

@@ -319,8 +319,236 @@ Compound 允许用户使用 cTokens 作为抵押，然后从协议中借出任�
 <ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
   <li>在 DApp 里，可以通过代币购买各种各样的东西，不需要跑到链下交易，也不需要苦苦等待订单完成。</li>
   <li>交易员可以用手头的任何投资作为抵押品，换取 ETH，给自己的项目融资。</li>
-  <li>我们可以做空币了：比如可以把要做空的币从 Compound 里借出来，放到交易所里下跌的时候卖掉，从贬值中获利。</li>
+  <li>我们可以做空币了：<b>比如可以把要做空的币从 Compound 里借出来，放到交易所里下跌的时候卖掉，从贬值中获利。</b></li>
 </ul>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="利率模型" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.625em;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.425em;">
+根据我们朴素的经济学理论，很容易知道：利率（Interest Rate）应该随着需求的变化而变化，需求减少，利率降低，需求增加，利率升高。
+</div>
+<div style="margin-top:.625em;">
+对于某个市场 a 的利用率 U 来说，可以用这样一个公式来表达，也就是整个池子里有多少钱借出去了，当然，钱借出去的越多，说明利用率越高：
+</div>
+<div style="margin-top:.625em;">
+  <h1 style="font-family: 'Comfortaa', cursive;font-weight: bold;font-style: italic;">U<sub>a</sub> = Borrows<sub>a</sub> / (Cash<sub>a</sub> + Borrows<sub>a</sub>)</h1>
+</div>
+<div style="margin-top:.625em;">
+贷款利率（Borrowing Interest Rate）和市场利用率相关，比如，某个市场的贷款利率可能是用下面这个公式来表示：
+</div>
+<div style="margin-top:.625em;">
+  <h1 style="font-family: 'Comfortaa', cursive;font-weight: bold;font-style: italic;">Borrowing Interest Rate<sub>a</sub> = 2.5% + U<sub>a</sub> * 20%</h1>
+</div>
+<div style="margin-top:.625em;">
+出借利率可以通过贷款利率算出来，出借利率 = 贷款利率 * 利用率。
+</div>
+<div style="margin-top:.625em;">
+这个模型可以用来<b>激励流动性</b>，比如某个资产，需求特别火爆，那么利用率就很高，资金池里的钱都被贷出去了，没钱可贷了，流动性就会降低。这时候，利率就会上升了，那么供应的人也会逐渐地增多，而贷款的人一看擦，利率这么高，我不贷了，那么需求也会降低，慢慢的，流动性就会升高了。
+</div>
+<div style="margin-top:.625em;">
+这就是神奇的市场调节，是不是想起了课本里学的。需求不变，供给侧S线条上移(供给减少)，利率上升。供给不变，需求侧D线条上移(需求增加)，利率上升。
+</div>
+<div style="margin-top:.625em;">
+  <img style="width:300px;float:left;" src="/images/ether/1592986222070-20e1ce50-a75f-45ef-9fad-2b0aad17207a.png" />
+  <img style="width:300px;float:left;" src="/images/ether/1592986230559-cf118441-45a9-419b-b298-2f81d543d267.png" />
+  <div style="float:none;clear:both;"></div>
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="具体实现" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.625em;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.425em;">
+Compound 协议其实是一堆智能合约，它是开源的，完全免费。
+</div>
+<div style="margin-top:.625em;">
+源代码在这里：<a href="https://github.com/compound-finance/compound-protocol">https://github.com/compound-finance/compound-protocol</a>
+</div>
+<div style="margin-top:.625em;">
+每个货币市场都是一个智能合约，实现了 ERC-20 规范。用户的余额表示为 cToken 余额。用户可以通过向市场提供资产来铸造 cToken，或者赎回相关资产的 cToken。cToken 与相关资产之间的价格（汇率）随着时间的推移而上升，因为该资产的借款人累计了利息。用公式表示就是（别怕，很简单的一个初中数学公式）：
+</div>
+<div style="margin-top:.625em;">
+  <h2 style="font-family: 'Comfortaa', cursive;font-weight: bold;font-size: 20px;">
+    exchangeRate = (underlyingBalance + totalBorrowBalance<sub>a</sub> - reserves<sub>a</sub>) / cTokenSupply<sub>a</sub>
+  </h2>
+</div>
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li>exchangeRate 代表汇率，也就是兑换率，cToken 兑换对应的资产的兑换率，比如 cETH 兑换 ETH。</li>
+  <li>underlyingBalance 代表出借人存到智能合约里面，但是还没有被借走的资产数量。</li>
+  <li>totalBorrowBalance 代表已经借出去的资产数量。</li>
+  <li>reserves 代表平台的储备金总数量，这里的储备金就是借款人累计的利息。</li>
+  <li>cTokenSupply 就是所有 cToken 的总数量，也就是所有出借人获得的 cToken 的总量。</li>
+</ul>
+<div style="margin-top:.625em;">
+对于每个货币市场，每个利率的历史记录都由一个利率指数（Interest Rate Index）来捕获，该利率指数会在用户更改，赎回，借入，偿还或清算资产而产生的每次利率变化时来计算。这个计算是按复利计算的，也就是：
+</div>
+<div style="margin-top:.625em;">
+  <h1 style="font-family: 'Comfortaa', cursive;font-weight: bold;">
+    Index<sub>a,n</sub> = Index<sub>a,(n-1)</sub> * (1+r*t)
+  </h1>
+</div>
+<div style="margin-top:.625em;">
+我们平时在银行存钱，利率计算的话，一般都是按年、按月或者按天，Compound 的话不太一样，他的利率一直在变，随时都在计算。你的钱也一直在复利滚存，开心吧。
+</div>
+<div style="margin-top:.625em;">
+你可能想问，Compound 协议怎么知道 ETH 值多少钱，USDT 值多少钱之类的？Compound 有一个<b>价格预言机(Price Oracle)</b>，它用来维护每种支持资产的当前汇率；它会从前十大交易所中汇总价格。
+</div>
+<div style="margin-top:.625em;">
+白皮书就解读完了，别被公式恶心到，知道个大意就行。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="理解 Compound 的原理" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.625em;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.425em;">
+Compound 本质上是一个拥有一种资产的人可以借入另一种资产的市场。Compound 并不是点对点的市场，而是流动性的资金池市场，所以有个 “pooled liquidity(流动性池，或者资金池)” 的概念(Uniswap 和 Bancor 也采用了这种概念)，这也更接近于传统银行的借贷模式。
+</div>
+<div style="margin-top:.625em;">
+Compound 的运作是基于智能合约来完成的，这让它具备了实时性、不可篡改性以及市场决定利率的特性。
+</div>
+<div style="margin-top:.625em;">
+再来用个例子帮你捋一捋 Compound 的原理。
+</div>
+<div style="margin-top:.625em;">
+一个人想要买房子，所以向银行借钱。
+</div>
+<div style="margin-top:.625em;">
+  <img style="width:400px;" src="/images/ether/1592904799513-ef933325-d373-4ce2-a304-c131f17d2131.png" />
+</div>
+<div style="margin-bottom:.425em;">
+房子价值 10万美元。银行可能会借给他 80% 的房屋价值，也就是 8万美元。银行获得该房子的抵押，那个人则得到8万美元。只要那个人按时支付利息，那么他就能保住房子。如果他不能，银行有权利出售该房子。出售产生的任何收益（包括超额收益）都会归到出借人。
+</div>
+<div style="margin-top:.625em;">
+问题在于银行的钱从哪里来。它来自于储户。那些有多余资金的人将钱存入银行，让银行保管。这些钱形成了资金池，可以汇集一起，以进行任何放贷。这里并不是将某个特定投资者的钱分配到某个特定贷款中。而是先将资金全部汇集一起，然后当收到借款需求时再进行借贷分配。其中一部分利息（扣除应付给银行的任何营业费用）会返回给储户。
+</div>
+<div style="margin-top:.625em;">
+  <img style="width:400px;" src="/images/ether/1592905157124-11e1816f-9fe7-4ff0-92f7-84730582f76f.png" />
+</div>
+<div style="margin-bottom:.425em;">
+由于资金是汇集在一起的，所以，特定储户的钱并没有锁定在某个特定的贷款中。这意味着，储户如有需要，可以取出其资金。但是，这只有在所有储户存储的钱并没有都借贷出去的情况下才可能。必须有一定量的存款才能满足提款的要求。
+</div>
+<div style="margin-bottom:.425em;">
+这里就需要流动性储备了。
+</div>
+<div style="margin-bottom:.425em;">
+我们来理解一下利率是如何确定的。在现实世界中，利率和流动性储备是由国家法规决定的。然而在理想世界中，利率将由市场决定，比如通过贷款需求和货币供应之间的一个平衡函数决定。这样可以平衡贷款需求和货币供应。贷款的需求越大，利率就越高。反之亦然。
+</div>
+<div style="margin-bottom:.425em;">
+通常情况下，并非所有存入资金池中的货币都会被分配到贷款中，被用于贷款的部分称为“utilization ratio（利用率）”。你所获得的利息就是来自于你供应资金的这一部分。也就是说，利用率越高，你的回报就越大。但这也意味着较低的流动性。
+</div>
+<div style="margin-bottom:.425em;">
+在理想的情况下，贷款需求增加会推高利率，导致货币供应增加，从而使利率回到平衡状态。
+</div>
+<div style="margin-bottom:.425em;">
+这个系统的作用就像是一个天平，其中一侧的更大需求最终会导致另一侧的时间成本（利息）增加。
+</div>
+<div style="margin-bottom:.425em;">
+现在：在需求侧，让我们用 ERC20 代币来代替资产（如房子）。在供给侧，让我们用 DAI 代替美元。银行的存储金库用 Compound 的智能合约来代替，它能以自动化方式管理整个事情。
+</div>
+<div style="margin-top:.625em;">
+  <img style="width:400px;" src="/images/ether/1592906187483-01cc0d0f-9695-4fbe-9a4e-e23007960e21.png" />
+</div>
+<div style="margin-bottom:.425em;">
+当你在银行存款时，你可以通过银行账户来访问自己的钱。但在 DeFi 的世界里，没有银行或银行账户。当你存入 DAI 时，你得到的是 cDAI，它实际上代表了你在资金池中的份额。
+</div>
+<div style="margin-top:.625em;">
+  <img style="width:400px;" src="/images/ether/1592906439038-5b118315-0fff-45b8-b634-d17b2f7a7e4b.png" />
+</div>
+<div style="margin-bottom:.425em;">
+利息一直由借款人支付，但不会自动支付给储户。 取而代之的是，它们以储备的形式保留在 Compound 内。
+</div>
+<div style="margin-top:.625em;">
+  <img style="width:400px;" src="/images/ether/1592906549158-ec3751c4-7303-4818-bb0e-5ec16870135d.png" />
+</div>
+<div style="margin-bottom:.425em;">
+每当有人试图提款(cDAI 到 DAI)时，他们会得到 “其原始存款(也就是本金)+利息”，这些利息是从储备中累计的。
+</div>
+<div style="margin-top:.625em;">
+  <img style="width:400px;" src="/images/ether/1592906620822-23877d33-6539-4a50-acb6-5a1f6f4836c8.png" />
+</div>
+<div style="margin-bottom:.425em;">
+如果你不提款，那么，你会持续赚取利息，这些利息会在储备中持续累积。
+</div>
+<div style="margin-bottom:.425em;">
+由于 cDAI 代表了原始存款 + 应计利息，所以其价值将持续稳定增长。
+</div>
+<div style="margin-bottom:.425em;">
+这里的增长率是在任何给定时间点的贷款需求的函数，也就是利率。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="如何使用" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.625em;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.425em;">
+进到 <a href="https://compound.finance/markets">https://compound.finance/markets</a> 里面。点击右上角的 App。
+</div>
+<div style="margin-bottom:.425em;">
+会提示连接钱包，这里我选择 Metamask。点击 Connect。
+</div>
+<div style="margin-bottom:.625em;">
+  <img style="width:400px;" src="/images/ether/1592990389658-0e710fbe-a18c-4b6d-8bcf-57381a27161f.png" />
+</div>
+<div style="margin-bottom:.425em;">
+连接成功后，可以看到自己的钱包和各种资产，显而易见，我好穷，只有 0.0684个 ETH，不知道够不够接下来的手续费。
+</div>
+<div style="margin-bottom:.625em;">
+  <img style="width:400px;" src="/images/ether/1592990459048-d9bc53bf-c6d0-4fde-9d6d-4fe46cc0338f.png" />
+</div>
+<div style="margin-bottom:.425em;">
+我们先作为出借人，来试试 Supply，点击一下。
+</div>
+<div style="margin-bottom:.625em;">
+  <img style="width:400px;" src="/images/ether/1592990536625-cf31e168-37c1-45a6-aac5-dbb6fda82d3a.png" />
+</div>
+<div style="margin-bottom:.425em;">
+提供 0.06 的ETH，要付出 0.005 ETH 手续费，好贵呀！
+</div>
+<div style="margin-bottom:.625em;">
+  <img style="width:400px;" src="/images/ether/1592990798152-39520948-a38a-43ad-8e63-ebf3138530b2.png" />
+</div>
+<div style="margin-bottom:.425em;">
+点击 Supply 之后，弹出交易确认，发现 0.005 ETH 手续费是我乐观了，其实是 0.009 ETH。
+</div>
+<div style="margin-bottom:.425em;">
+显而易见，降低一下金额，应该可以成功，我就不往下走了，借个 USDT 的图，假装成功。
+</div>
+<div style="margin-bottom:.625em;">
+  <img style="width:400px;" src="/images/ether/1592991428194-fdde6ecb-71d4-47ba-a07e-0e0ff1ca2b2f.png" />
+</div>
+<div style="margin-bottom:.625em;">
+  <img style="width:400px;" src="/images/ether/1592991435905-2a6530b4-15a2-4087-bc63-65b3f8562d52.png" />
+</div>
+<div style="margin-bottom:.425em;">
+借款的操作也是类似的：
+</div>
+<div style="margin-bottom:.625em;">
+  <img style="width:400px;" src="/images/ether/1592991267497-6f375207-64a0-44ec-8348-b1e42ab5020e.png" />
+</div>
+<div style="margin-bottom:.425em;">
+其实 Compound 只是个协议，这里的操作是建立在 Compound 协议上的一个 DApp 而已，还有非常多的这种 DApp，官网首页就列了不少：
+</div>
+<div style="margin-bottom:.625em;">
+  <img style="width:400px;" src="/images/ether/1592991923645-c7afba59-6538-4113-944f-8ca32c914a0b.png" />
+</div>
+<div style="margin-bottom:.425em;">
+比如：Dharma，就是基于 Compound 搞了一个可以一直赚利息的钱包。
+</div>
+<div style="margin-bottom:.625em;">
+  <img style="width:400px;" src="/images/ether/1592992219736-10b056c5-0106-4539-8b24-c12435390787.png" />
+</div>
+<div style="margin-bottom:.625em;">
+<h3>参考链接:</h3>
+<a href="https://compound.finance/">https://compound.finance/</a><br />
+<a href="https://medium.com/compound-finance/setting-up-an-ethereum-development-environment-7c387664c5fe">https://medium.com/compound-finance/setting-up-an-ethereum-development-environment-7c387664c5fe</a>
+</div>
    ]]>
     </c:sourceContent>
     <c:comment>
