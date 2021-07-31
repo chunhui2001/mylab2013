@@ -287,6 +287,279 @@ content-script 有一个很大的“缺陷”，也就是无法访问页面中�
   <li>书签：浏览器的书签，或者直接输入 chrome://bookmarks</li>
 </ul>
 
+<h2>&#x02713; devtools(开发者工具)</h2>
+<div>
+Chrome允许插件在开发者工具(devtools)上动手脚，主要表现在：
+</div>
+<ul style="margin-top:.325em;list-style: none;font-size: 1em;line-height: 1.625em;">
+  <li><b>&#x02ABC; 自定义一个和多个和Elements、Console、Sources等同级别的面板；</li>
+  <li><b>&#x02ABC; 自定义侧边栏(sidebar)，目前只能自定义Elements面板的侧边栏；</li>
+</ul>
+<div>
+  <img style="width:auto;" src="/images/ether/1577419557354-f6a8fc7a-0a4f-44d2-a6d1-acdd55ce3f90.png" />
+</div>
+
+<h2>&#x02713; option(选项页)</h2>
+<div>
+所谓 options 页，就是插件的设置页面，有2个入口，一个是右键图标有一个 “选项” 菜单，还有一个在插件管理页面：
+</div>
+<div>
+  <img style="width:auto;" src="/images/ether/1577427044275-68e54dca-fc11-4211-be67-4d6a7c02e93f.png" />
+</div>
+
+<h2>&#x02713; omnibox</h2>
+<div>
+omnibox 是向用户提供搜索建议的一种方式。
+</div>
+<div>
+  <img style="width:auto;" src="/images/ether/1577427106075-c8019fb6-fb7d-4b9f-8113-72f7a7590b97.gif" />
+</div>
+
+<h2>&#x02713; 桌面通知</h2>
+<div>
+Chrome 提供了一个 chrome.notificationsAPI 以便插件推送桌面通知。在后台JS中，无论是使用 chrome.notifications 还是 Notification 都不需要申请权限（HTML5方式需要申请权限），直接使用即可。
+</div>
+<div>
+  <img style="width:auto;" src="/images/ether/1577427162579-e5d32482-e702-4e1f-8df3-1ec03a9d90c7.png" />
+</div>
+
+<h2>&#x02713; 消息通信</h2>
+<table style="width:100%;font-size: .8em;">
+  <thead>
+    <tr>
+      <th style="border: dashed 1px;padding: 5px 10px;">&nbsp;</th>
+      <th style="border: dashed 1px;padding: 5px 10px;">injected-script</th>
+      <th style="border: dashed 1px;padding: 5px 10px;">content-script</th>
+      <th style="border: dashed 1px;padding: 5px 10px;width: 225px;">popup-js</th>
+      <th style="border: dashed 1px;padding: 5px 10px;">background-js</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">injected-script</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">-</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;word-break: break-all;">window.postMessage</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">-</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">-</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">content-script</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">window.postMessage</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">-</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;word-break: break-all;">chrome.runtime.sendMessage <br /> chrome.runtime.connect</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;word-break: break-all;">chrome.runtime.sendMessage <br /> chrome.runtime.connect</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">popup-js</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">-</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;word-break: break-all;">chrome.tabs.sendMessage <br /> chrome.tabs.connect</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">-</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;word-break: break-all;">chrome.extension.getBackgroundPage()</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">background-js</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">-</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;word-break: break-all;">chrome.tabs.sendMessage chrome.tabs.connect</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">chrome.extension.getViews</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;word-break: break-all;">-</td>
+    </tr>
+    <tr>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">devtools-js</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">chrome.devtools. inspectedWindow.eval</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;word-break: break-all;">-</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;">chrome.runtime.sendMessage</td>
+      <td style="border: dashed 1px darkgray;padding: 5px 5px;word-break: break-all;">chrome.runtime.sendMessage</td>
+    </tr>
+  </tbody>
+</table>
+<div>
+  <img style="width:auto;" src="/images/ether/1577432410206-e7d22a9c-1c60-4a95-bd0f-84a9a598e978.png" />
+</div>
+<div>
+Chrome插件中有2种通信方式，一个是短连接（chrome.tabs.sendMessage和chrome.runtime.sendMessage），一个是长连接（chrome.tabs.connect和chrome.runtime.connect）。
+</div>
+<div style="margin-top:.625em;">
+短连接的话就是挤牙膏一样，我发送一下，你收到了再回复一下，如果对方不回复，你只能重新发，而长连接类似WebSocket会一直建立连接，双方可以随时互发消息。
+</div>
+
+<h1 style="padding-bottom:0;">content script与 background 的通信</h1>
+<h2>&#x02713; content-script 向 background 发送消息</h2>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;">
+// 在 content-script 端：
+chrome.runtime.sendMessege(
+    message,
+    function(response) {…}
+)
+</pre>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;">
+// 在 background 端：
+chrome.runtime.onMessege.addListener(
+    // request 发来的消息
+    // sendResponse 一个函数，用于对发来的消息进行回应，如 
+    // sendResponse('我已收到你的消息：'+JSON.stringify(request));
+    function(request, sender, sendResponse) {…}
+)
+</pre>
+<div style="margin-top:.625em;">
+由于 background 监听所有页面上的 content script 上发来的消息，如果多个页面同时发送同种消息，background 的 onMessage 只会处理最先收到的那个，其他的不了了之了。
+</div>
+
+<h2>&#x02713; background 向 content-script 发送消息</h2>
+<div>
+一个插件里只有一个 background 环境，而 content-script 有多个（一个页面一个），那么 background 怎么向特定的 content-script 发送消息？
+</div>
+<div style="margin-top:.625em;">
+在 background 端
+</div>
+<div style="margin-top:.625em;">
+首先我们需要知道要向哪个 content scripts 发送消息，一般一个页面一份 content scripts，而一个页面对应一个浏览器 tab，每个 tab 都有自己的 tabId，因此首先要获取要发送消息的 tab 对应的 tabId。
+</div>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;">
+/**
+ * 获取当前选项卡id
+ * @param callback - 获取到id后要执行的回调函数
+ */
+function getCurrentTabId(callback) {
+    chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
+        if (callback) {
+            callback(tabs.length ? tabs[0].id: null);
+        }
+    });
+}
+</pre>
+<div style="margin-top:.625em;">
+当知道了 tabId 后，就使用该 api 进行发送消息
+</div>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;">
+chrome.tabs.sendMessage(tabId, message, function(response) {...});
+</pre>
+<div style="margin-top:.625em;">
+在 content scripts 端
+</div>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;">
+chrome.runtime.onMessege.addListener(function(request, sender, sendResponse) {…})
+</pre>
+
+<h1 style="padding-bottom:0;">popup 与 background 的通信</h1>
+<div style="margin-top:.625em;">
+一般地，popup 与 background 的交流，常见于 popup 要获取 background 里的某些 “东西”
+</div>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;">
+var bg = chrome.extension.getBackgroundPage();
+bg.someMethod();    //someMethod()是background中的一个方法
+</pre>
+
+<h1 style="padding-bottom:0;">popup 与 content script 的通信</h1>
+<div style="margin-top:.625em;">
+这里的通信，实际上跟 background 与 content script 的方式是一样的
+</div>
+
+<h1 style="padding-bottom:0;">插件 iframe 网站与插入网页的通信</h1>
+<div style="margin-top:.625em;">
+同域的情况下，可以通过 DOM 操作达到通信的目的，如获取 dom 元素，获取值赋值之类的。<br />
+在父窗体里，用 window.contentWindow 获取到 iframe 的 window 对象 <br />
+在 iframe 里，用 window.parent 获取到父窗体的 window 对象 <br />
+在跨域下，使用 window 对象的 postMessage() 和 onmessage。
+</div>
+
+<h1 style="padding-bottom:0;">iframe 向父窗体发送消息</h1>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;">
+window.parent.postMessage(message, '*');
+</pre>
+
+<h1 style="padding-bottom:0;">在父窗体端</h1>
+<div style="margin-top:.625em;">
+由于一个页面，可能有来自页面本身的 postMessage 来的消息，也有可能来自该页面其他 chrome extension 发送来的消息，因此用 onmessage 来监听，要做好区分来源，这里使用以下方法:
+</div>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;">
+window.addEventListener('message', function (event, a, b) {
+    // 如果没消息就退出
+    if (!event.data) {
+        return;
+    }
+    var iframes = document.getElementsByClassName('extension-iframe');
+    var extensionIframe = null; // 存插件iframe节点对象
+    var correctSource = false;  // 是否来源正确
+    // 找出真正的插件生成的iframe
+    for (var i = 0; i < iframes.length; i++) {
+        if (iframes[i].contentWindow && (event.source === iframes[i].contentWindow)) {
+            correctSource = true;
+            extensionIframe = iframes[i];
+            break;
+        }
+    }
+    // 如果来源不是来自插件的，就退出
+    if (!correctSource) {
+        return;
+    }
+}, false);
+</pre>
+
+<h1 style="padding-bottom:0;">父窗体向iframe发送消息</h1>
+<div style="margin-top:.625em;">
+在父窗体端
+</div>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;">
+extensionIframe.contentWindow.postMessage(message, '*');
+// message: {from: 'content-script', other: xxx}
+</pre>
+<div style="margin-top:.625em;">
+在 iframe 端
+</div>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;">
+window.addEventListener('message', function (event, a, b) {
+    let result = event.data;
+    if (result && (result.from === 'content-script') 
+        && (event.source === window.parent)) {...}
+});
+</pre>
+
+<h1 style="padding-bottom:0;">本地存储</h1>
+<div style="margin-top:.625em;">
+本地存储建议用 chrome.storage 而不是普通的 localStorage
+</div>
+<div style="margin-top:.625em;">
+chrome.storage 是针对插件全局的，即使你在 background 中保存的数据，在 content-script 也能获取到；
+chrome.storage.sync 可以跟随当前登录用户自动同步，这台电脑修改的设置会自动同步到其它电脑，很方便，如果没有登录或者未联网则先保存到本地，等登录了再同步至网络；
+</div>
+
+<h1 style="padding-bottom:0;">webRequest</h1>
+<div style="margin-top:.625em;">
+通过 webRequest 系列API可以对HTTP请求进行任性地修改、定制。插件要实现一些 ajax 请求，尽量搬到 background 里实现，可以跨域。
+</div>
+<pre style="background-color:darkblue;color:cadetblue;padding:.625em 1em;margin-top:.325em;">
+iframe -> content script -> background -> content script -> iframe
+</pre>
+
+<h1 style="padding-bottom:0;">国际化</h1>
+<div style="margin-top:.625em;">
+插件根目录新建一个名为 _locales 的文件夹，再在下面新建一些语言的文件夹，如en、zh_CN、zh_TW，然后再在每个文件夹放入一个 messages.json，同时必须在清单文件中设置 default_locale。
+</div>
+<div style="margin-top:.625em;">
+JS中则直接 chrome.i18n.getMessage("helloWorld")。
+</div>
+<div style="margin-top:.625em;">
+测试时，通过给 chrome 建立一个不同的快捷方式 chrome.exe --lang=en 来切换语言。
+</div>
+
+<h1 style="padding-bottom:0;">注意事项</h1>
+<h2>&#x02713; 特别注意background的报错</h2>
+<div>
+很多时候你发现你的代码会莫名其妙的失效，找来找去又找不到原因，这时打开 background 的控制台才发现原来某个地方写错了导致代码没生效，正式由于 background 报错的隐蔽性(需要主动打开对应的控制台才能看到错误)，所以特别注意这点。
+</div>
+<h2>&#x02713; 如何让 popup 页面不关闭</h2>
+<div>
+在对 popup 页面审查元素的时候 popup 会被强制打开无法关闭，只有控制台关闭了才可以关闭 popup，原因很简单：如果 popup 关闭了控制台就没用了。这种方法在某些情况下很实用！
+</div>
+<h2>&#x02713; 不支持内联JavaScript的执行</h2>
+<div>
+不支持将js直接写在html中。
+</div>
+<h2>&#x02713; 注入CSS的时候必须小心</h2>
+<div>
+由于通过 content_scripts 注入的CSS优先级非常高，几乎仅次于浏览器默认样式，稍不注意可能就会影响一些网站的展示效果，所以尽量不要写一些影响全局的样式。
+</div>
+
 TODOTODO
    ]]>
     </c:sourceContent>
