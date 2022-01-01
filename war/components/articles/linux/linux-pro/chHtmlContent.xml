@@ -3,6 +3,31 @@
 
   <c:content>
     <![CDATA[
+    <b>h2load for REST API benchmarking<br />
+    <div style="padding: .6em;background-color: #EFEFEF;border-radius: 5px;border: solid 1px #CACACA;">
+      $ brew install nghttp2            ## for mac os <br />
+      $ sudo apt install nghttp2-client ## for ubuntu
+    </div>
+    <br />
+    <pre style="padding: .6em;background-color: #EFEFEF;border-radius: 5px;border: solid 1px #CACACA;font-size:12px;">
+## Benchmarking HTTP/1.1 GET endpoint using h2load
+$ h2load -n10000 -c100 -m10 --h1 "http://localhost:8080/health.json". 
+
+## HTTP POST endpoint benchmarking
+$ h2load -v http://localhost:8575 -d testpayload.json --h1 --header 'Content-Type: application/json' -n 5000 -t 4 -c 4 -T 10 -m 1
+
+## Usage
+-n  # the total number of requests. Default: 1
+-c  # the number of concurrent clients. Default: 1
+-m  # The max concurrent streams to issue per client. Default: 1
+-t  # the number of native threads. Defaults: 1.
+--header # Add/Override a header to the request.
+-v  # Output debug information.
+-h  # displays help information.
+-p  # can be used to specify protocol, by default HTTP/2 is used. Available protocols are: h2c and http/1.1, default is h2c. Alternatively, you can always use --h1 option to force HTTP/1.1 for both cleartext and SSL/TLS.
+-T  # timeout/seconds</pre>
+
+    <br />
     <b>自定义PS1<br />
     <div style="padding: .6em;background-color: #EFEFEF;border-radius: 5px;border: solid 1px #CACACA;">
       export PS1='\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ ‘
