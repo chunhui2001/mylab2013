@@ -275,7 +275,7 @@ select，poll，epoll 都是IO多路复用中的模型。同其他IO的不同的
   <b style="color:green;">内核/用户数据拷贝频繁，操作复杂。</b>select 在调用之前，需要手动在应用程序里将要监控的文件描述符添加到 fed_set 集合中。然后加载到内核进行监控。用户为了检测时间是否发生，还需要在用户程序手动维护一个数组，存储监控文件描述符。当内核事件发生，在将 fed_set 集合中没有发生的文件描述符清空，然后拷贝到用户区，和数组中的文件描述符进行比对。再调用 selecct 也是如此。每次调用，都需要来回拷贝。
 </div>
 <div style="margin-top:.625em;">
-  <b style="color:green;">轮询时间效率低。</b>select返回的是整个数组的句柄。应用程序需要遍历整个数组才知道谁发生了变化。轮询代价大。
+  <b style="color:green;">轮询时间效率低。</b>select 返回的是整个数组的句柄。应用程序需要遍历整个数组才知道谁发生了变化。轮询代价大。
 </div>
 <div style="margin-top:.625em;">
   <b style="color:green;">select 是水平触发。</b>应用程序如果没有完成对一个已经就绪的文件描述符进行IO操作。那么之后select调用还是会将这些文件描述符返回，通知进程。
@@ -291,7 +291,7 @@ select，poll，epoll 都是IO多路复用中的模型。同其他IO的不同的
   poll 操作比 select 稍微简单点。select 采用三个位图来表示 fd_set，poll 使用 pollfd 的指针. pollfd 结构包含了要监视的 event 和发生的 event，不再使用 select 传值的方法。更方便~
 </div>
 <div style="margin-top:.625em;">
-  <b style="color:green;">select的缺点依然存在。</b>拿select为例，加入我们的服务器需要支持100万的并发连接。则在FD_SETSIZE为1024的情况下，我们需要开辟100个并发的进程才能实现并发连接。除了进程上下调度的时间消耗外。从内核到用户空间的无脑拷贝，数组轮询等，也是系统难以接受的。因此，基于select实现一个百万级别的并发访问是很难实现的。
+  <b style="color:green;">select 的缺点依然存在。</b>拿 select 为例，加入我们的服务器需要支持100万的并发连接。则在 FD_SETSIZE 为1024的情况下，我们需要开辟100个并发的进程才能实现并发连接。除了进程上下调度的时间消耗外。从内核到用户空间的无脑拷贝，数组轮询等，也是系统难以接受的。因此，基于 select 实现一个百万级别的并发访问是很难实现的。
 </div>
 ]]>
     </c:sourceContent>
