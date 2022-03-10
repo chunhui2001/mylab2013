@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<div>
+处理器的运算速度一般要比外部硬件快很多。以读取硬盘为例，如果是简单的顺序执行，CPU 必须等待很长时间，不停地轮询硬盘是否读取完毕，这会浪费很多 CPU 时间。中断提供了这样一种机制，使得读取硬盘这样的操作可以交给硬件来完成，CPU 挂起当前进程，将控制权转交给其他进程，待硬件处理完毕后通知 CPU，操作系统把当前进程设为活动的，从而允许该进程继续执行，处理读取硬盘的结果。
+</div>
+<div style="margin-top:.325em;">
+另一方面，有些事件不是程序本身可预见的，需要硬件以某种方式告诉进程。例如时钟中断为定时器提供了基础，如果没有时钟中断，程序只能每执行几条指令就检查一下当前系统时间，这在效率上是不可接受的。
+</div>
+<div style="margin-top:1.625em;">
+从广义上说，中断是改变 CPU 处理指令顺序的硬件信号。分为两类：
+</div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+    <li>异步的：在程序执行的任何时刻都可能产生，如时钟中断</li>
+    <li>同步的：在特殊或错误指令执行时由 CPU 控制单元产生，称为异常</li>
+</ul>
+]]>
+  </c:abstract>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[中断的处理原则]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.425em;font-family:monospace;">
+                     <![CDATA[
+<div>
+中断处理的基本原则就是“快”。如果反应慢了，数据可能丢失或被覆盖。例如键盘按键中断，所按下的键的 keycode 放在 KBDR 寄存器中，如果在中断被处理之前用户又按了一个键，则 KBDR 的值被新按下的键的 keycode 覆盖，早先按下的键对应的数据就丢失了。
+</div>
+<div style="margin-top:.625em;">
+当一个中断信号到达时，CPU 必须停止当前所做的事，转而处理中断信号。为了尽快处理中断并为接收下一个中断做好准备，内核应尽快处理完一个中断，将更多的处理向后推迟。
+</div>
+<div style="margin-top:.625em;">
+为达到“快”这一目标，内核允许不同类型的中断嵌套发生，即在中断处理的临界区之外可以接受新的中断。这样，更多的 I/O 设备将处于忙状态。
+</div>
+]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
+        ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title><![CDATA[Linux 中断机制]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="中断控制器" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.425em;font-family:monospace;">
+                     <![CDATA[
+<div>
+中断控制器是连接设备和 CPU 的桥梁，一个设备产生中断后，需要经过中断控制器的转发，才能最终到达 CPU。时代发展至今，中断控制器经历了两个阶段
+</div>
+
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+    <li>PIC(Programmable Interrupt Controller，可编程中断控制器)。</li>
+    <li>APIC (Advanced Programmable Interrupt Controller，高级可编程中断控制器)。</li>
+</ul>
+<div style="margin-top:.625em;">
+ 前者在 UP(Uni-processor,单处理器) 上威震四方，随着 SMP (Symmetric Multiple Processor,对称多处理器) 的流行，APIC 已广为流行并将最终取代 PIC。
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="8259A (PIC) 中断控制器" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.425em;font-family:monospace;">
+                     <![CDATA[
+<div>
+<img src="/images/stmp32/3_2.png" style="float:left; margin-right:2em;" />
+<img src="/images/stmp32/7e3e6709c93d70cf83dc9850f8dcd100baa12b4c.jpeg" />
+</div>
+<div style="margin-top:.625em;">
+上图中的管脚说明：
+</div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+    <li>IR0~IR7 (Interrupt Request0~7，用于连接设备)</li>
+    <li>INT (连接 CPU，当有中断请求时，拉高该管脚以通知 CPU 中断的到来)</li>
+    <li>INTA (连接 CPU，CPU 通过该管脚应答中断请求，并通知 PIC 提交中断的 vector 到数据线)</li>
+    <li>CS (片选，用于将两个 8259A 串联成可连接 15 个设备的 PIC)</li>
+</ul>
+<div style="margin-top:.625em;">
+ 8259A 中的寄存器：
+</div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+    <li>ICW: Initialization Command Word,初始化命令寄存器,用于初始化 8259A</li>
+    <li>OCW: Operation Command Word,操作命令字,用于控制 8259A</li>
+    <li>IRR: Interrupt Request Register,中断请求寄存器,共 8bit,对应 IR0~IR7 八个中断管脚。当某个管脚的中断请求到来后,若该管脚没有被屏蔽,IRR 中对应的 bit 被置1。表示 PIC 已经收到设备的中断请求,但还未提交给 CPU。</li>
+    <li>ISR: In Service Register,服务中寄存器,共 8bit,每 bit 意义同上。当 IRR 中的某个中断请求被发送给 CPU 后,ISR 中对应的 bit 被置1。表示中断已发送给 CPU,但 CPU 还未处理完。</li>
+    <li>IMR: Interrupt Mask Register,中断屏蔽寄存器,共 8bit,每 bit 意义同上。用于屏蔽中断。当某 bit 置1时,对应的中断管脚被屏蔽。
+arch/x86/kernel/i8259_32.c 中通过位运算来开启和关闭中断。</li>
+</ul>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.425em;font-family:monospace;">
+                     <![CDATA[
+63 void disable_8259A_irq(unsigned int irq)
+64 {
+65         unsigned int mask = 1 << irq;
+66         unsigned long flags;
+67 
+68         spin_lock_irqsave(&i8259A_lock, flags);   // 用 spinlock 锁住
+69         cached_irq_mask |= mask;        // 将 IRQ 的相应位置1，屏蔽中断
+70         if (irq & 8)
+71                 outb(cached_slave_mask, PIC_SLAVE_IMR); // IR2 管脚负责 8259A 的级联（见下图），为0时使用主片，为1时使用从片
+72         else
+73                 outb(cached_master_mask, PIC_MASTER_IMR);
+74         spin_unlock_irqrestore(&i8259A_lock, flags);  // 解开自旋锁
+75 }
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.425em;font-family:monospace;">
+                     <![CDATA[
+77 void enable_8259A_irq(unsigned int irq)
+78 {
+79         unsigned int mask = ~(1 << irq);
+80         unsigned long flags;
+81 
+82         spin_lock_irqsave(&i8259A_lock, flags);   // 用 spinlock 锁住
+83         cached_irq_mask &= mask;        // 将 IRQ 的相应位置0，开启中断
+84         if (irq & 8)
+85                 outb(cached_slave_mask, PIC_SLAVE_IMR); // IR2 管脚负责 8259A 的级联（见下图），为0时使用主片，为1时使用从片
+86         else
+87                 outb(cached_master_mask, PIC_MASTER_IMR);
+88         spin_unlock_irqrestore(&i8259A_lock, flags);  // 解开自旋锁
+89 }
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+                     <![CDATA[
+<div>
+PIC 的每个管脚具有优先级，连接号码较小的设备具有较高的中断优先级。<br /> 在 PIC 默认的 Full Nested 模式下，通过 PIC 发起中断的流程如下：
+</div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+    <li>一个或多个 IR 管脚上产生电平信号, 若对应的中断没有被屏蔽, IRR 中相应的 bit 被置1。</li>
+    <li>PIC 拉高 INT 管脚通知 CPU 中断发生。</li>
+    <li>CPU 通过 INTA 管脚应答 PIC, 表示中断请求收到。</li>
+    <li>PIC 收到 INTA 应答后, 将 IRR 中具有最高优先级的 bit 清零, 并设置 ISR 中对应的 bit。</li>
+    <li>CPU 通过 INTA 管脚第二次发出脉冲, PIC 收到后计算最高优先级中断的 vector, 并将它提交到数据线上。</li>
+    <li>等待 CPU 写 EOI (End of Interrupt)。收到 EOI 后, ISR 中最高优先级的 bit 被清零。如果 PIC 处于 AEOI 模式, 当第二个 INTA 脉冲收到后, ISR 中最高优先级的 bit 自动清零。</li>
+</ul>
+<div style="margin-top:.625em;">
+ PIC 还有优先级轮转模式，即 PIC 在服务完一个管脚之后将其优先级临时降低，并升高未服务管脚的优先级，以实现类似轮询的模式，避免一个管脚持续发出中断导致其他设备“饿死”。
+</div>
+<div style="margin-top:.625em;">
+ 下图是一个典型的 PIC 中断分配，管脚基本上都被古董级设备占据了。PIC 能接的设备数量实在太少了，而且不支持多处理器。
+</div>
+<div style="margin-top:.625em;">
+<img src="/images/stmp32/3_1.png" />
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="arch/x86/kernel/i8259_32.c 中 8259A 引脚的分配（function init_8259A）" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.425em;font-family:monospace;">
+                     <![CDATA[
+292 outb_pic(0x11, PIC_MASTER_CMD); /* ICW1: select 8259A-1 init */
+293 outb_pic(0x20 + 0, PIC_MASTER_IMR);     /* ICW2: 8259A-1 IR0-7 mapped to 0x20-0x27 */
+294 outb_pic(1U << PIC_CASCADE_IR, PIC_MASTER_IMR); /* 8259A-1 (the master) has a slave on IR2 */
+295 if (auto_eoi)   /* master does Auto EOI */
+296         outb_pic(MASTER_ICW4_DEFAULT | PIC_ICW4_AEOI, PIC_MASTER_IMR);
+297 else            /* master expects normal EOI */
+298         outb_pic(MASTER_ICW4_DEFAULT, PIC_MASTER_IMR);
+299 
+300 outb_pic(0x11, PIC_SLAVE_CMD);  /* ICW1: select 8259A-2 init */
+301 outb_pic(0x20 + 8, PIC_SLAVE_IMR);      /* ICW2: 8259A-2 IR0-7 mapped to 0x28-0x2f */
+302 outb_pic(PIC_CASCADE_IR, PIC_SLAVE_IMR);        /* 8259A-2 is a slave on master's IR2 */
+303 outb_pic(SLAVE_ICW4_DEFAULT, PIC_SLAVE_IMR); /* (slave's support for AEOI in flat mode is to be investigated) */
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.425em;font-family:monospace;margin-top:1em;">
+                     <![CDATA[
+<div>
+为了使用 8259A 级联连接较多的设备，可以采用两种方式：
+</div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+    <li>
+        <div>IRQ 共享：中断处理程序执行多个中断服务程序（ISR），每个 ISR 是一个与共享 IRQ 线相关的函数。</div>
+        <div>IRQ 共享需要满足两个条件：</div>
+        <ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .3em;">
+            <li>每个 ISR 都愿意共享 IRQ，即 request_irq() 时指定了 IRQF_SHARED</li>
+            <li>所有 ISR 具有相同的触发条件（电平触发或边沿触发、高低电平或上下边沿）</li>
+        </ul>
+    </li>
+    <li style="margin-top: .3em;">IRQ 动态分配：在可能的最后时刻，才把 IRQ 线分配给一个设备。</li>
+</ul>
+]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[
+        ]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+</c:component>
