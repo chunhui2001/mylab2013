@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract style="font-size:1em;line-height:1.6em;">
+    <![CDATA[
+
+<div>
+By default, Docker stores most of its data inside the <b>/var/lib/docker</b> directory on Linux systems. There may come a time when you want to move this storage space to a new location. For example, the most obvious reason might be that you’re running out of disk space.
+</div>
+<div style="margin-top:.625em;">
+In this tutorial, we’ll show you how to change the storage directory for Docker to some other location on your Linux system. Most of the configuration that will need done is with systemd, and then moving the directory to a new location. Follow the step by step instructions below to get started.
+</div>
+
+<div style="margin-top:.625em;">
+<img style="width:100%;" src="/images/docker/C6D25756-E485-4C1C-97DD-8ACE2911CA0D.png" />
+</div>
+]]>
+  </c:abstract>
+  
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">Change Docker root directory /var/lib/docker to another location</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.425em;background-color:white;margin-top:.25em;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.15em;line-height:1.25em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<div style="margin-bottom:.425em;">
+  Be sure to follow these steps in their exact order, otherwise you may encounter strange errors that will be a little headache to recover from. These instructions have been performed on an Ubuntu system, but should work for any other Linux distro as long as it uses systemd.
+</div>
+<div style="">
+The first thing we want to do is stop Docker from running. Making these changes while Docker is still running is certain to cause some errors. Use the following systemd command to stop Docker.
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.625em;line-height:1em;font-family:monospace;">
+      <![CDATA[
+$ sudo systemctl stop docker.service
+$ sudo systemctl stop docker.socket
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.425em;background-color:white;margin-top:.25em;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.15em;line-height:1.25em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Next, we need to edit the <b>/lib/systemd/system/docker.service</b> file. This is the systemd file that relates to Docker, and we need to enter the new location inside this file. Use nano or your preferred text editor to open it.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.625em;line-height:1em;font-family:monospace;">
+      <![CDATA[
+$ sudo nano /lib/systemd/system/docker.service
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.425em;background-color:white;margin-top:.25em;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.15em;line-height:1.25em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+The line we need to edit looks like this:
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.625em;line-height:1em;font-family:monospace;">
+      <![CDATA[
+ExecStart=/usr/bin/dockerd -H fd://
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.425em;background-color:white;margin-top:.25em;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.15em;line-height:1.25em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Edit the line by putting a <b>-g</b> and the new desired location of your Docker directory. When you’re done making this change, you can save and exit the file.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.625em;line-height:1em;font-family:monospace;">
+      <![CDATA[
+ExecStart=/usr/bin/dockerd -g /new/path/docker -H fd://
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.425em;background-color:white;margin-top:.25em;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.15em;line-height:1.25em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+If you haven’t already, create the new directory where you plan to move your Docker files to.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.625em;line-height:1em;font-family:monospace;">
+      <![CDATA[
+ sudo mkdir -p /new/path/docker
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.425em;background-color:white;margin-top:.25em;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.15em;line-height:1.25em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Afterwards, you can copy the content from /var/lib/docker to the new directory. A good way to do that would be with the following rsync command.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.625em;line-height:1em;font-family:monospace;">
+      <![CDATA[
+$ sudo rsync -aqxP /var/lib/docker/ /new/path/docker
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.425em;background-color:white;margin-top:.25em;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.15em;line-height:1.25em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Next, reload the systemd configuration for Docker, since we made changes earlier. Then, we can start Docker.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.625em;line-height:1em;font-family:monospace;">
+      <![CDATA[
+$ sudo systemctl daemon-reload
+$ sudo systemctl start docker
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.425em;background-color:white;margin-top:.25em;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.15em;line-height:1.25em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Just to make sure that it worked, run the ps command to make sure that the Docker service is utilizing the new directory location.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.625em;line-height:1em;font-family:monospace;">
+      <![CDATA[
+$ ps aux | grep -i docker | grep -v grep
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.425em;background-color:white;margin-top:.25em;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.15em;line-height:1.25em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<img style="width:100%;" src="/images/docker/E229F4C2-6528-4354-BF25-67771703CB1C.png" />
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.425em;background-color:white;margin-top:.25em;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.15em;line-height:1.25em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+The output from ps shows that Docker is using the new directory we configured
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">其他</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1.425em;background-color:white;margin-top:.25em;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.15em;line-height:1.25em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+### 停止docker服务 
+$ service docker stop 
+
+### 用ip命令使docker0网卡down掉 
+$ ip link set dev docker0 down 
+
+### 删除网卡 
+$ brctl delbr docker0 
+
+
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+</c:component>
