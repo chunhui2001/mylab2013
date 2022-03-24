@@ -1428,4 +1428,195 @@ public static Object invokeMethod(Object target, Method method, Object[] argsArr
     </c:comment>
   </c:entry>
 
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>InnoDB database deadlock problem handling</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+       <a style="font-size:1.125em;" href="https://ofstack.com/MySQL/30870/innodb-database-deadlock-problem-handling.html">https://ofstack.com/MySQL/30870/innodb-database-deadlock-problem-handling.html</a>
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Scene description" id="sourceContent1"
+                     titleStyle="color:black;font-size:1.2em;background-color:white;padding:0;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.325em;font-family:monospace;">
+      <![CDATA[
+The DeadlockLoserDataAccessException anomaly occurs in the update table (Deadlock found when trying to get lock; try restarting transaction...) .
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Problem analysis" id="sourceContent1"
+                     titleStyle="color:black;font-size:1.2em;background-color:white;padding:0;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.325em;font-family:monospace;">
+      <![CDATA[
+This exception does not affect user usage because the database automatically rolls back and retries when it encounters a deadlock. The user's perception is that the operation is slightly delayed. However, the monitor is always reporting exceptions, so it needs to be solved 1 time.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="The solution" id="sourceContent1"
+                     titleStyle="color:black;font-size:1.2em;background-color:white;padding:0;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+Use ES24en-ES25en where update is in your application.
+I encapsulate 1 function myself, as follows.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;padding:0;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+/**
+   * 2016-03-15
+   * linxuan
+   * handle deadlock while update table
+   */
+  private void updateWithDeadLock(TestMapper mapper, Test record) throws InterruptedException {
+    boolean oops;
+    int retries = 5;
+    do{
+      oops = false;
+      try{
+        mapper.updateByPrimaryKeySelective(record);
+      }
+      catch (DeadlockLoserDataAccessException dlEx){
+        oops = true;
+        Thread.sleep((long) (Math.random() * 500));
+      }
+      finally {
+      }
+    } while(oops == true && retries-- >0);
+  }
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="The solution" id="sourceContent1"
+                     titleStyle="color:black;font-size:1.2em;background-color:white;padding:0;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.325em;font-family:monospace;">
+      <![CDATA[
+<div>
+I'm using mybatis, so I'll just pass mapper into the function, but if I don't use mybatis, I'll have to create and close the database connection myself.
+</div>
+<div style="margin-top:.325em;">
+Extension: Database deadlock
+</div>
+<div style="margin-top:.325em;">
+Database deadlocks are a common problem for transactional databases such as SQL Server, MySql, etc. Unless the database deadlock problem occurs frequently and the user is unable to operate, the database deadlock problem is generally not serious. Just do ES41en-ES42en in your application. So how do data deadlocks occur?
+</div>
+<div style="margin-top:.325em;">
+InnoDB implements row locks (row level lock), divided into shared locks (S) and mutex locks (X).
+</div>
+<div style="margin-top:.325em;">
+1. The shared lock is used for transaction read1 rows.
+</div>
+<div style="margin-top:.325em;">
+2. The mutex is used for transaction update or delete1 lines.
+</div>
+<div style="margin-top:.325em;">
+When client A holds the shared lock S and requests the mutex X; At the same time, client B holds the mutex X and requests the shared lock S. In this case, a database deadlock can occur. If that's not clear enough, here's an example.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Database deadlock example" id="sourceContent1"
+                     titleStyle="color:black;font-size:1.2em;background-color:white;padding:0;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.325em;font-family:monospace;">
+      <![CDATA[
+First, client A creates a table T and inserts a piece of data into T. Client A starts an select transaction, so hold the shared lock S.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;padding:0;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+mysql> CREATE TABLE t (i INT) ENGINE = InnoDB;
+Query OK, 0 rows affected (1.07 sec)
+
+mysql> INSERT INTO t (i) VALUES(1);
+Query OK, 1 row affected (0.09 sec)
+
+mysql> START TRANSACTION;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SELECT * FROM t WHERE i = 1 LOCK IN SHARE MODE;
++------+
+| i  |
++------+
+|  1 |
++------+
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="color:black;font-size:1.2em;background-color:white;padding:0;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.325em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Client B then starts a new transaction, which is the only 11 pieces of data in delete table T.    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;padding:0;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+
+mysql> START TRANSACTION;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> DELETE FROM t WHERE i = 1;
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="color:black;font-size:1.2em;background-color:white;padding:0;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.325em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<div>
+The delete operation requires a mutex (X), but the mutex X and the shared lock S are incompatible. So the delete transaction is placed in the lock request queue and client B blocks.
+</div>
+<div style="margin-top:.325em;">
+Finally, customer A also wants to delete that data in table T:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;padding:0;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+
+mysql> DELETE FROM t WHERE i = 1;
+ERROR 1213 (40001): Deadlock found when trying to get lock;
+try restarting transaction
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="color:black;font-size:1.2em;background-color:white;padding:0;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.325em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<div>
+Deadlocks are created! Because client A needs to lock X to delete rows, client B holds the lock X and is waiting for client A to release the lock S. Check the status of client A and B:
+</div>
+<div style="margin-top:.325em;">
+Client A: Hold the lock S and wait for client B to release the lock X.
+</div>
+<div style="margin-top:.325em;">
+Client B: Holding the lock X, waiting for client A to release the lock S.
+</div>
+<div style="margin-top:.325em;">
+When a deadlock occurs, InnoDB generates an error message for one customer and releases the lock. Information returned to the customer:
+</div>
+<div style="margin-top:.325em;">
+ERROR 1213 (40001): Deadlock found when trying to get lock;
+</div>
+<div style="margin-top:.325em;">
+try restarting transaction
+</div>
+<div style="margin-top:.325em;">
+Therefore, the other customer can perform the task normally. Deadlock over.
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
 </c:component>
