@@ -1169,4 +1169,263 @@ MVCC只在REPEATABLE READ和READ COMMITTED两个隔离级别下工作。其他�
     </c:comment>
   </c:entry>
 
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>MyBatis 3.2.x版本在并发情况下可能出现的bug及解决办法</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="我们基于Spring的Web项目使用的MyBatis版本是3.2.3，有一天忽然发现出现了很神奇的异常，如下：" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+org.mybatis.spring.MyBatisSystemException: nested exception is org.apache.ibatis.builder.BuilderException: Error evaluating expression 'searchParam.numbers != null and searchParam.numbers.size() > 0'. Cause: org.apache.ibatis.ognl.MethodFailedException: Method "size" failed for object [111] [java.lang.IllegalAccessException: Class org.apache.ibatis.ognl.OgnlRuntime can not access a member of class java.util.Collections$SingletonList with modifiers "public"]
+        at org.mybatis.spring.MyBatisExceptionTranslator.translateExceptionIfPossible(MyBatisExceptionTranslator.java:75) ~[mybatis-spring-1.2.1.jar:1.2.1]
+        at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:368) ~[mybatis-spring-1.2.1.jar:1.2.1]
+        at com.sun.proxy.$Proxy26.selectList(Unknown Source) ~[na:na]
+        at org.mybatis.spring.SqlSessionTemplate.selectList(SqlSessionTemplate.java:198) ~[mybatis-spring-1.2.1.jar:1.2.1]
+        at org.apache.ibatis.binding.MapperMethod.executeForMany(MapperMethod.java:114) ~[mybatis-3.2.3.jar:3.2.3]
+        at org.apache.ibatis.binding.MapperMethod.execute(MapperMethod.java:58) ~[mybatis-3.2.3.jar:3.2.3]
+        at org.apache.ibatis.binding.MapperProxy.invoke(MapperProxy.java:43) ~[mybatis-3.2.3.jar:3.2.3]
+        at com.sun.proxy.$Proxy55.query(Unknown Source) ~[na:na]
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+觉得很奇怪，因为这个size方法是public的，怎么就没法调用呢？而且并不是每次都出现，推断不是写法的问题。那问题到底出现在哪里呢？发现当处理比较频繁的时候，出现问题的概率较大（但也就每天几个十几个，平时是几天一次）。
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="3.2.3版本使用的OGNL版本是2.6.9，该版本在并发时存在bug，如下面的测试程序：" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+import org.apache.ibatis.scripting.xmltags.ExpressionEvaluator;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+ 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
+ 
+@RunWith(JUnit4.class)
+public class OgnlConcurrentTest {
+ 
+    private ExpressionEvaluator evaluator = new ExpressionEvaluator();
+ 
+    @Test
+    public void testConcurrent() throws InterruptedException {
+        final CountDownLatch start = new CountDownLatch(1);
+        final CountDownLatch count = new CountDownLatch(100);
+ 
+        final AtomicInteger errorCount = new AtomicInteger();
+ 
+        final List<String> list = new ArrayList<>();
+        list.add("one");
+        list.add("two");
+ 
+        for (int i = 0; i < 100; i++) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        start.await();
+                    } catch (Exception ignored) {
+                    }
+ 
+                    for (int j = 0; j < 100; j++) {
+                        try {
+                            evaluator.evaluateBoolean("size() > 0", Collections.unmodifiableList(list));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            errorCount.incrementAndGet();
+                        }
+                    }
+ 
+                    count.countDown();
+                }
+            }).start();
+        }
+ 
+        start.countDown();
+        count.await();
+ 
+        Assert.assertEquals(0, errorCount.get());
+    }
+}
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="程序每次运行结果不同，但基本都会报错，输出截取部分如下：" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+org.apache.ibatis.builder.BuilderException: Error evaluating expression 'size() > 0'. Cause: org.apache.ibatis.ognl.MethodFailedException: Method "size" failed for object [one, two] [java.lang.IllegalAccessException: Class org.apache.ibatis.ognl.OgnlRuntime can not access a member of class java.util.Collections$UnmodifiableCollection with modifiers "public"]
+  at org.apache.ibatis.scripting.xmltags.OgnlCache.getValue(OgnlCache.java:47)
+  at org.apache.ibatis.scripting.xmltags.ExpressionEvaluator.evaluateBoolean(ExpressionEvaluator.java:29)
+  at OgnlConcurrentTest$1.run(OgnlConcurrentTest.java:51)
+  at java.lang.Thread.run(Thread.java:745)
+Caused by: org.apache.ibatis.ognl.MethodFailedException: Method "size" failed for object [one, two] [java.lang.IllegalAccessException: Class org.apache.ibatis.ognl.OgnlRuntime can not access a member of class java.util.Collections$UnmodifiableCollection with modifiers "public"]
+  at org.apache.ibatis.ognl.OgnlRuntime.callAppropriateMethod(OgnlRuntime.java:837)
+  at org.apache.ibatis.ognl.ObjectMethodAccessor.callMethod(ObjectMethodAccessor.java:61)
+  at org.apache.ibatis.ognl.OgnlRuntime.callMethod(OgnlRuntime.java:860)
+  at org.apache.ibatis.ognl.ASTMethod.getValueBody(ASTMethod.java:73)
+  at org.apache.ibatis.ognl.SimpleNode.evaluateGetValueBody(SimpleNode.java:170)
+  at org.apache.ibatis.ognl.SimpleNode.getValue(SimpleNode.java:210)
+  at org.apache.ibatis.ognl.ASTGreater.getValueBody(ASTGreater.java:49)
+  at org.apache.ibatis.ognl.SimpleNode.evaluateGetValueBody(SimpleNode.java:170)
+  at org.apache.ibatis.ognl.SimpleNode.getValue(SimpleNode.java:210)
+  at org.apache.ibatis.ognl.Ognl.getValue(Ognl.java:333)
+  at org.apache.ibatis.ognl.Ognl.getValue(Ognl.java:413)
+  at org.apache.ibatis.ognl.Ognl.getValue(Ognl.java:395)
+  at org.apache.ibatis.scripting.xmltags.OgnlCache.getValue(OgnlCache.java:45)
+  ... 3 more
+
+java.lang.AssertionError: 
+Expected :0
+Actual   :42
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="问题出现在OgnlRuntime.invokeMethod方法的实现上，该方法如下：" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+public static Object invokeMethod(Object target, Method method, Object[] argsArray) 
+            throws InvocationTargetException, IllegalAccessException {
+  boolean wasAccessible = true;
+  if(securityManager != null) {
+    try {
+      securityManager.checkPermission(getPermission(method));
+    } catch (SecurityException var6) {
+      throw new IllegalAccessException("Method [" + method + "] cannot be accessed.");
+    }
+  }
+ 
+  if(
+    (!Modifier.isPublic(method.getModifiers()) || !Modifier.isPublic(method.getDeclaringClass().getModifiers())) 
+    && !(wasAccessible = method.isAccessible())
+  ) {
+    method.setAccessible(true); // 第13行
+  }
+ 
+  Object result = method.invoke(target, argsArray); // 第15行
+  if(!wasAccessible) {
+    method.setAccessible(false); // 第17行
+  }
+ 
+  return result;
+}
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.325em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<div>
+上面出问题的两种 List 都是 Collections 类里面的内部类，访问修饰符都不是 public（一个是private，另一个是默认），这样 method.isAccessible() 的结果就是 false。
+</div>
+<div style="margin-top:.625em;">
+假设有两个线程 t1 和 t2，t2 执行到第 13 行的时候，t1 正好执行了第17行，此时 t2 再执行第15行的时候，就会报错了。
+</div>
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="OGNL在2.7版本修复了这个问题（MyBatis在3.3.x版本升级了OGNL），对这部分加上了同步，最新实现（ognl-3.1.8）如下：" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+public static Object invokeMethod(Object target, Method method, Object[] argsArray) throws InvocationTargetException, IllegalAccessException {
+  boolean syncInvoke = false;
+  boolean checkPermission = false;
+  synchronized(method) {
+    if(_methodAccessCache.get(method) == null || _methodAccessCache.get(method) == Boolean.TRUE) {
+      syncInvoke = true;
+    }
+ 
+    if(_securityManager != null && _methodPermCache.get(method) == null || _methodPermCache.get(method) == Boolean.FALSE) {
+      checkPermission = true;
+    }
+  }
+ 
+  boolean wasAccessible = true;
+  Object result;
+  if(syncInvoke) {
+    synchronized(method) {
+      if(checkPermission) {
+        try {
+          _securityManager.checkPermission(getPermission(method));
+          _methodPermCache.put(method, Boolean.TRUE);
+        } catch (SecurityException var11) {
+          _methodPermCache.put(method, Boolean.FALSE);
+          throw new IllegalAccessException("Method [" + method + "] cannot be accessed.");
+        }
+      }
+ 
+      if(Modifier.isPublic(method.getModifiers()) && Modifier.isPublic(method.getDeclaringClass().getModifiers())) {
+        _methodAccessCache.put(method, Boolean.FALSE);
+      } else if(!(wasAccessible = method.isAccessible())) {
+        method.setAccessible(true);
+        _methodAccessCache.put(method, Boolean.TRUE);
+      } else {
+        _methodAccessCache.put(method, Boolean.FALSE);
+      }
+ 
+      result = method.invoke(target, argsArray);
+      if(!wasAccessible) {
+        method.setAccessible(false);
+      }
+    }
+  } else {
+    if(checkPermission) {
+      try {
+        _securityManager.checkPermission(getPermission(method));
+        _methodPermCache.put(method, Boolean.TRUE);
+      } catch (SecurityException var10) {
+        _methodPermCache.put(method, Boolean.FALSE);
+        throw new IllegalAccessException("Method [" + method + "] cannot be accessed.");
+      }
+    }
+ 
+    result = method.invoke(target, argsArray);
+  }
+ 
+  return result;
+}
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<div>
+代码有些长，不过主要思想就是加上了同步，剩下的就是考虑只在需要同步的时候才同步，避免影响性能。
+</div>
+<div style="margin-top:.625em;">
+全局有一个_methodAccessCache，保存了方法与访问权限的映射关系。当_methodAccessCache.get(method) == null时，表示是第一次遇到这个方法，此时需要同步校验；当_methodAccessCache.get(method) == Boolean.TRUE表示之前遇到过，且并不是可访问的（需要人工设置可访问，访问后再还原），此时需要同步校验；除了上面这两种情况，就不需要同步了。
+</div>
+<div style="margin-top:.625em;">
+最终我们是通过升级MyBatis解决的这个问题，我们将MyBatis升级到最新的3.4.1版本，同时也需要将mybatis-spring升级到1.3.0版本。
+</div>
+]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
 </c:component>
