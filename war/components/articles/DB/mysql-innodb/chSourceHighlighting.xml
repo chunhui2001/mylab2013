@@ -466,7 +466,7 @@ B-Tree中的每个节点根据实际情况可以包含大量的关键字信息�
 </div>
 
 <div style="margin-top:.325em;">
-  <img width="680px" src="/images/mysql/innodb-btree.jpg" />
+  <img width="100%" src="/images/mysql/innodb-btree.jpg" />
 </div>
 
 
@@ -510,7 +510,7 @@ B+Tree是在B-Tree基础上的一种优化，使其更适合实现外存储索�
 </div>
 
 <div style="margin-top:.325em;">
-  <img width="680px" src="/images/mysql/innodb-b+tree.png" />
+  <img width="100%" src="/images/mysql/innodb-b+tree.png" />
 </div>
 
 <div style="margin-top:.625em;">
@@ -962,9 +962,9 @@ select * from users where id=1 for update;
             <td style="padding: 0;margin: 0;text-align: center;font-weight: normal;">
             &nbsp;
             </td>
-            <td style="padding: 0;margin: 0;text-align:right;padding:.5em 0;">Dirty <br />Read</td>
-            <td style="padding: 0;margin: 0;text-align: center;padding:.5em 0;">Non-Repeatable <br />Read</td>
-            <td style="padding: 0;margin: 0;text-align: center;padding:.5em 0;">Phantom <br />Read</td>
+            <td style="padding: 0;margin: 0;text-align: center;padding:.5em 0;width:120px;">Dirty Read <br /> (脏读)</td>
+            <td style="padding: 0;margin: 0;text-align: center;padding:.5em 0;width:240px;">Non-Repeatable Read <br /> (不可重复读)</td>
+            <td style="padding: 0;margin: 0;text-align: center;padding:.5em 0;width:120px;">Phantom Read <br /> (幻读)</td>
             <td style="padding: 0;margin: 0;text-align: center;width:520px;padding:.5em 0;">&nbsp;</td>
         </tr>
         <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;">
@@ -1619,4 +1619,243 @@ Therefore, the other customer can perform the task normally. Deadlock over.
     </c:comment>
   </c:entry>
 
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>隔离级别、幻读、Gap Lock、Next-Key Lock</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+       <a style="font-size:1.125em;" href="https://wjrsbu.smartapps.cn/zhihu/article?id=402591869&isShared=1&_swebfr=1&_swebFromHost=heytapbrowserstack.com/MySQL/30870/innodb-database-deadlock-problem-handling.html">https://wjrsbu.smartapps.cn/zhihu/article?id=402591869&isShared=1&_swebfr=1&_swebFromHost=heytapbrowser</a>
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="锁" id="sourceContent1"
+                     titleStyle="color:black;font-size:1.2em;background-color:white;padding:0;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.325em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<div>
+首先，对于Mysql来说实现了两种行级锁：
+</div>
+<div style="margin-top:.325em;">
+共享锁：允许事务读一行数据，一般记为S，也称为读锁
+</div>
+<div style="margin-top:.325em;">
+排他锁：允许事务删除或者更新一行数据，一般记为X，也称为写锁
+</div>
+<div style="margin-top:.325em;">
+关于读写锁的互斥性，应该都很清楚，读锁只能和读锁兼容，其他场景都无法兼容。
+</div>
+<div style="margin-top:.325em;">
+<img width="430px" src="/images/mysql/mysql-lock.jpeg" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="隔离级别" id="sourceContent1"
+                     titleStyle="color:black;font-size:1.2em;background-color:white;padding:0;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.325em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<div>
+继续回顾下关于Mysql的4个隔离级别：
+</div>
+<div style="margin-top:.325em;">
+<b>读未提交 Read Uncommitted: </b>能读到其他事务还没有提交的数据，这种现象叫做脏读。
+</div>
+<div style="margin-top:.325em;">
+<b>读已提交 Read Committed: </b> 只会读取其他事务已经提交的数据，所以不会产生RC的脏读问题。所以又带来一个问题叫做不可重复读，一个事务中两次一样的SQL查询可能查到的结果不一样。
+</div>
+<div style="margin-top:.325em;">
+<b>可重复读 Repeatable Read: </b>RR是Mysql的默认隔离级别，一个事务中两次SQL查询总是会查到一样的结果，不存在不可重复读的问题，但是还是会有幻读的问题。
+</div>
+<div style="margin-top:.325em;">
+<b>串行 Serializable: </b> 串行场景没有任何问题，完全串行化的操作，读加读锁，写加写锁。
+</div>
+<div style="margin-top:.325em;">
+<img width="430px" src="/images/mysql/mysql-lock-2.jpeg" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="幻读、Next-Key Lock、MVCC" id="sourceContent1"
+                     titleStyle="color:black;font-size:1.2em;background-color:white;padding:0;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.325em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<div>
+简单的回顾完了基础，那么我们看看RR级别下还会存在的幻读到底是什么问题，Mysql官方文档这样描述的：
+</div>
+<div style="margin-top:.325em;">
+The so-called phantom problem occurs within a transaction when the same query produces different sets of rows at different times. For example, if a SELECT is executed twice, but returns a row the second time that was not returned the first time, the row is a “phantom” row.
+</div>
+<div style="margin-top:.325em;">
+翻译过来就是，幻读指的是同一事务下，不同的时间点，同样的查询，得到不同的行记录的集合。
+</div>
+<div style="margin-top:.325em;">
+如果说一个select执行了两次，但是第二次比第一次多出来行记录，这就是幻读。
+</div>
+<div style="margin-top:.325em;">
+所以，对于幻读来说那一定是新增插入的数据！
+</div>
+<div style="margin-top:.325em;">
+比如说在一个事务内，先查询 select * from user where age=10 for update，得到的结果是id为[1,2,3]的记录，再次执行查询，得到了结果为[1,2,3,4]的记录，这是幻读。
+</div>
+<div style="margin-top:.325em;">
+那怎么解决幻读的问题？以前我在文章里说解决幻读的原理是MVCC（MVCC原理看这里）很多网上的文章也有这么写的，其实不能说错，但是肯定也是不太对的，准确地来说应该是通过MVCC+Next-Key Lock的方式才解决了幻读的问题。
+</div>
+<div style="margin-top:.325em;">
+对于 MVCC 中的读可以分为两种，分别叫做快照读和当前读(这个当前读的说法我在书里翻了半天也没有找到，但是看网上一堆资料和大佬都叫当前读，那么我们就叫当前读吧，你知道的话可以告诉我哪本书有这个称呼，Mysql 我只看见 Lock reading 或者锁定读的叫法，有的也说锁定读就是当前读，但是并没有找到当前读这种称呼的出处在哪儿)。
+</div>
+<div style="margin-top:.325em;">
+快照读就是简单的 select 查询，查询的都是快照版本，这个场景下因为都是基于MVCC来查询快照的某个版本，所以不会存在幻读的问题，也可以认为是解决了幻读的方案之一，对于 RC 级别来说，因为每次查询都重新生成一个 read view， 也就是查询的都是最新的快照数据，所以会可能每次查询到不一样的数据，造成不可重复读，而对于RR级别来说只有第一次的时候生成 read view， 查询的是事务开始的时候的快照数据，所以就不存在不可重复读的问题，当然就更不可能有幻读的问题了。
+</div>
+<div style="margin-top:.325em;">
+所以，现在我们说幻读，其实不是指快照读的场景，而是指的是当前读的场景。
+</div>
+<div style="margin-top:.325em;">
+当前读指的是 lock in share mode、for update 、insert、update、delete 这些需要加锁的操作。对于MVCC来说就是解决的快照读的场景，而对于当前读那么就是 Next-Key Lock 要解决的事情。
+</div>
+<div style="margin-top:.325em;">
+那么 Next-Key Lock 是什么？怎么解决的幻读？
+</div>
+<div style="margin-top:.325em;">
+行锁有写锁X和读锁S两种，实际上行锁有3种实现算法，Next-Key Lock 是其中之一。
+</div>
+<div style="margin-top:.325em;">
+第一种叫做 Record Lock，字面意思，行记录的锁，实际上指的是对索引记录的锁定。
+</div>
+<div style="margin-top:.325em;">
+比如执行语句 select * from user where age=10 for update，将会锁住 user 表所有 age=10 的行记录，所有对 age=10 的记录的操作都会被阻塞。
+</div>
+<div style="margin-top:.325em;">
+第二种都比较熟悉，叫做 Gap Lock，也就是间隙锁，它用于锁定的索引之间的间隙，但是不会包含记录本身。
+</div>
+<div style="margin-top:.325em;">
+比如语句 select * from user where age>1 and age<10 for update，将会锁住 age 在(1,10)的范围区间，此时其他事务对该区间的操作都会被阻塞。
+</div>
+<div style="margin-top:.325em;">
+间隙锁是可重复读 RR 隔离级别下特有的，另外还有几种场景也会不使用间隙锁。
+</div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .625em;">
+    <li style="margin-top:.325em;">事务隔离级别设置为不可重复读RC ，这样肯定没有间隙锁了。</li>
+    <li style="margin-top:.325em;">Innodb_locks_unsafe_for_binlog 设置为 1</li>
+    <li style="margin-top:.325em;">另外一种情况适用于主键索引或者唯一索引的等值查询条件，比如 select * from user where id=1，id 是主键索引，这样只使用 Record Lock 就可以了，因为能唯一锁定一条记录，所以没有必要再加间隙锁了，这是锁降级的过程。</li>
+</ul>
+<div style="margin-top:.325em;">
+而第三种 Next-Key Lock 实际上就是相当于 Record Lock+Gap Lock 的组合。比如索引有10，20，30几个值，那么被锁住的区间可能会是(-∞,10]，(10,20]，(20,30]，(30,+∞)。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="解决幻读" id="sourceContent1"
+                     titleStyle="color:black;font-size:1.2em;background-color:white;padding:0;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.325em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<div>
+上一篇关于更新 SQL 执行过程我们已经对这个基础有了一定的了解，在这里我们去掉和这里内容无关的一些日志的细节，把给数据加锁的流程加入进去，这样通过 SQL 执行可以更好地理解 Next-Key Lock 到底是如何解决幻读的，执行过程如下：
+</div>
+<div style="margin-top:.325em;">
+<img width="430px" src="/images/mysql/mysql-lock-3.jpeg" />
+</div>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top: .625em;">
+    <li style="margin-top:.325em;">首先第一步 Server 层会来查询数据</li>
+    <li style="margin-top:.325em;">存储引擎根据查询条件查到数据之后对数据进行加锁，Record Lock 或者间隙锁，然后返回数据</li>
+    <li style="margin-top:.325em;">Server 层拿到数据之后调用 API 去存储引擎更新数据</li>
+    <li style="margin-top:.325em;">最后存储引擎返回结果，流程结束</li>
+</ul>
+<div style="margin-top:.325em;">
+搞一张表说明一下，user 表有 4 个字段，id 是主键索引，name 是唯一索引，age 是普通索引，city 没有索引，然后插入一些测试数据，下面区分一下几种情况来说明是怎么加 Next-Key Lock 的，然后就知道为啥会没有幻读的问题了。
+</div>
+<div style="margin-top:.325em;">
+<img width="430px" src="/images/mysql/mysql-lock-4.jpeg" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="没有索引" id="sourceContent1"
+                     titleStyle="color:black;font-size:1.2em;background-color:white;padding:0;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.325em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<div>
+更新语句 update user set city='nanjing' where city='wuhan' 会发生什么？
+</div>
+<div style="margin-top:.325em;">
+因为 city 是没有索引的，所以存储引擎只能给所有的记录都加上锁，然后把数据都返回给 Server 层，然后 Server 层把 city 改成 nanjing，再更新数据。
+</div>
+<div style="margin-top:.325em;">
+因此，首先 Record Lock 会锁住现有的7条记录，间隙锁则会对主键索引的间隙全部加上间隙锁。
+</div>
+<div style="margin-top:.325em;">
+所以，更新的时候没有索引是非常可怕的一件事情，相当于把整个表都给锁了，那表都给锁了当然不存在幻读了。
+</div>
+<div style="margin-top:.325em;">
+<img width="430px" src="/images/mysql/mysql-lock-5.jpeg" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="普通索引" id="sourceContent1"
+                     titleStyle="color:black;font-size:1.2em;background-color:white;padding:0;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.325em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<div>
+我们再假设一个语句 select * from user where age=20 for update。
+</div>
+<div style="margin-top:.325em;">
+因为 age 是一个普通索引，存储引擎根据条件过滤查到所有匹配age=20的记录，给他们加上写锁，间隙锁会加在(10,20)，(20,30)的区间上，因此现在无论怎样都无法插入age=20的记录了
+</div>
+<div style="margin-top:.325em;">
+为什么要锁定这两个区间？如果不锁定这两个区间的话，那么还能插入比如id=11,age=20或者id=21,age=20的记录，这样就存在幻读了。
+</div>
+<div style="margin-top:.325em;">
+（那实际上写锁不光是在会加在age普通索引上，还会加在主键索引上，因为数据都是在主键索引下对吧，这个肯定也要加锁的，为了看起来简单点，就不画出来了）
+</div>
+<div style="margin-top:.325em;">
+<img width="430px" src="/images/mysql/mysql-lock-6.jpeg" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="唯一&amp;主键索引" id="sourceContent1"
+                     titleStyle="color:black;font-size:1.2em;background-color:white;padding:0;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.325em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<div>
+如果查询的是唯一索引又会发生什么呢？比如有查询语句 select * from user where name='b' for update。
+</div>
+<div style="margin-top:.325em;">
+上面我们提到过，如果是唯一索引或者主键索引的话，并且是等值查询，实际上会发生锁降级，降级为 Record Lock，就不会有间隙锁了。
+</div>
+<div style="margin-top:.325em;">
+因为主键或者唯一索引能保证值是唯一的，所以也就不需要再增加间隙锁了。
+</div>
+<div style="margin-top:.325em;">
+很显然，是无法插入name=b的的记录的，也不存在幻读问题。
+</div>
+<div style="margin-top:.325em;">
+如果是范围查询比如id>1 and id<11呢，实际上也是一样的锁定方式，不再赘述。
+</div>
+<div style="margin-top:.325em;">
+相比稍微有点不同的是上面也说过，唯一索引不光锁定唯一索引，还会锁定主键索引，主键索引的话只要索引主键索引就行了。
+</div>
+<div style="margin-top:.325em;">
+<img width="430px" src="/images/mysql/mysql-lock-7.jpeg" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="总结" id="sourceContent1"
+                     titleStyle="color:black;font-size:1.2em;background-color:white;padding:0;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.325em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<div>
+那最后说了这么多，RR级别下不是都已经解决了幻读的问题吗，怎么还说有幻读的问题呢？
+</div>
+<div style="margin-top:.325em;">
+关于这个问题，可以看看这个报出的 BUG https://bugs.mysql.com/bug.php?id=63870，回复说了这不是BUG，这是符合隔离规范的设计，有兴趣的自己看看吧。
+</div>
+<div style="margin-top:.325em;">
+<img width="630px" src="/images/mysql/mysql-lock-8.jpeg" />
+</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 </c:component>
