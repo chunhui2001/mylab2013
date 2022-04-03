@@ -240,6 +240,158 @@ Drizzle should be on your Ethereum tools list as it one of the few tools to help
   </c:entry>
 
 
+
+  
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">The complete Truffle suite on Docker (Truffle + Ganache + Drizzle)</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="font-size:1em;">
+<a href="https://github.com/lzhou1110/drizzle-truffle-ganache-docker-box">https://github.com/lzhou1110/drizzle-truffle-ganache-docker-box</a><br />
+<a href="https://www.trufflesuite.com/boxes/drizzle-truffle-ganache-docker-box">https://www.trufflesuite.com/boxes/drizzle-truffle-ganache-docker-box</a>
+</div>
+<div style="font-size:1.2em;margin-top:.625em;">
+Set up an Ethereum Smart Contract development environment in less than 1 min
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="TLDR" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.3em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+Step 1:
+</div>
+<div style="margin-top:.125em;">
+$ truffle unbox lzhou1110/drizzle-truffle-ganache-docker-box
+</div>
+<div style="margin-top:.225em;">
+Step 2:
+</div>
+<div style="margin-top:.125em;">
+$ ./dev_build.sh
+</div>
+<div style="margin-top:.225em;">
+Step 3:
+</div>
+<div style="margin-top:.125em;">
+$ ./dev_run.sh
+</div>
+<div style="margin-top:.625em;">
+Now you have everything ready to develop a sexy DApp. Happy coding :)
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="The Problem" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.3em;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+Recently I was hired as a casual worker for a DApp project. This was so exciting for me because the startup idea was pretty cool and I can write everything from scratch. After some discussion with the team members, we decided to use Truffle suite for this project.
+</div>
+<div style="margin-top:.325em;">
+I have previously used Truffle and Ganache in other projects and had a pretty good experience, especially for the development and testing process. Also, I have realised that the Truffle team released a new tool called Drizzle, which ‘is a collection of front-end libraries that make writing dapp frontends easier and more predictable’ (https://github.com/trufflesuite/drizzle). All sounds promising, right? I can’t wait to start coding!
+</div>
+<div style="margin-top:.325em;">
+Then several hours past, I was still stuck in getting the environments to work. I have tried multiple truffle boxes, none of them could start properly on my laptop. I had nvm installed and tried all the different versions of node, still no luck. I finally solved the problem by uninstalling Node, Anaconda and XCode Tools, and reinstalled everything.
+</div>
+<div style="margin-top:.325em;">
+This was definitely a process that I don’t want to go through ever again. I am pretty sure this won’t be the last time I use Truffle, so I have decided to create a Truffle box, which builds everything on top of Docker.
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="“Literature Survey”" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.3em;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+There are already some attempts on using Docker with the Truffle. Most of them focused on an individual component/task. What I wanted was the entire truffle suite develop environment on a docker-compose file.
+</div>
+
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li><a href="https://medium.com/@hcm007c/build-a-truffle-docker-container-22cff7a7583b">https://medium.com/@hcm007c/build-a-truffle-docker-container-22cff7a7583b</a></li>
+  <li><a href="https://medium.com/hara-engineering/testing-smart-contract-with-docker-e7fd3d501abe">https://medium.com/hara-engineering/testing-smart-contract-with-docker-e7fd3d501abe</a></li>
+  <li><a href="https://github.com/gjeanmart/truffle-docker">https://github.com/gjeanmart/truffle-docker</a></li>
+  <li><a href="https://github.com/LePetitBloc/truffle-docker">https://github.com/LePetitBloc/truffle-docker</a> (This was quite close to what I want, but missing the Drizzle.)</li>
+</ul>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Docker-compose file" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.3em;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+The compose file is pretty much self-explanatory. There are simply two services:
+</div>
+
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li><b>ganache-cli</b> — basically a virtual blockchain. Note that we built our own ganache-cli image on top of the official one. I will talk about the reason later.</li>
+  <li><b>truffle-suite</b> — the smart contract + ReactJS front end code. Note that after truffle has compiled the smart contract code, it will generate several JSON files (abi), which will be required by the front end. Ideally, I would build the front end into a separate docker image, but I kept it simple here.</li>
+</ul>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.3em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+version: '3'
+
+services:
+  # ganachecli: simulated test rpc on dev environment
+  ganache-cli:
+    container_name: ganache-cli
+    build:
+      context: ./ganache
+    ports:
+      - 8545:8545
+
+  # truffle-suite
+  # volumes are used here to enable hot editing :) Nice trick!
+  truffle-drizzle:
+    container_name: truffle-drizzle
+    build:
+      context: truffledrizzle
+    healthcheck:
+      test: curl -sf -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' localhost:8545
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    command: >
+      sh -c "truffle compile &&
+             truffle test &&
+             truffle migrate &&
+             cp -R output/contracts client/src/contracts/ &&
+             cd client &&
+             npm start"
+    ports:
+      - 3000:3000
+    tty: true
+    volumes:
+      - ./truffledrizzle/client/src:/client/src
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Live editing on the ReactJS App" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.3em;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+I still remember the first time I used live editing (on AngularJS I believe). I was so amazed. This is definitely a feature that I don’t want to lose.
+</div>
+<div style="margin-top:.325em;">
+In the docker-compose file, I have hooked the local volume to the truffle-drizzle service. Live editing just works!
+</div>
+<div style="margin-top:.325em;">
+<b>./truffledrizzle/client/src:/client/src</b>
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
   
   <c:entry style="margin-top:1em;">
     <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">快速入门 Truffle</div>]]></c:title>
