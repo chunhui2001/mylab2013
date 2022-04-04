@@ -1150,6 +1150,57 @@ module.exports = {
    ]]>
     </c:sourceContent>
 
+
+    <c:sourceContent type="" title="Deploy contract on live testnet using private key + truffle" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ npm install truffle-privatekey-provider
+
+const yargs = require('yargs');
+var provider, address;
+//const HDWalletProvider = require("truffle-hdwallet-provider-privkey");
+const privKeyrinkeby = "xxx"
+const PrivateKeyProvider = require("truffle-privatekey-provider");
+
+module.exports = {
+  networks: {
+    development: {
+      host: "localhost",
+      port: 8545,
+      gas: 6712388,
+      // gasPrice: 2000000000, // 1 gwei
+      network_id: "*"
+    },
+    rinkeby: {
+      //provider: () => new HDWalletProvider(privKeyrinkeby, "https://rinkeby.infura.io/" + process.env.INFURA_API_KEY),
+      provider: () => new PrivateKeyProvider(privKeyrinkeby, "https://rinkeby.infura.io/" + process.env.INFURA_API_KEY),
+      gasPrice: 50000000000, // 50 gwei,
+      network_id: 3,
+    },
+    mainnet: {
+      // gas: 5000000,
+      host: "localhost",
+      gasPrice: 1000000000, // 1 gwei
+      port: 8545,
+      // provider:provider,
+      // from: "0x4b3A4F3F42BA61141A4F7101F77dC141AE15c59A",
+      from: "0x4b3a4f3f42ba61141a4f7101f77dc141ae15c59a",
+      network_id: 1
+    }
+  },
+  mocha: {
+    reporter: 'eth-gas-reporter',
+    reporterOptions : {
+      currency: 'USD',
+      gasPrice: 1
+    }
+  }
+};
+
+   ]]>
+    </c:sourceContent>
+
     <c:sourceContent type="html" title="使用测试" id="sourceContent1"
                      titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;margin-top:1em;"
                      bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
