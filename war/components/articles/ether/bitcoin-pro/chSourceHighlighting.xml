@@ -2517,4 +2517,521 @@ Bitshare & EOS 采用的是DPoS，比特股( Bitshare)是一类采用DPoS机制�
     </c:comment>
   </c:entry>
 
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">Setting a multi-node private Ethereum blockchain with Proof of Authority (PoA)</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="margin-top:.425em;font-size:1.125em;line-height:1.425em;">
+Compared to proof-of-work, which relies on mining, or proof-of-stake, which requires users to hold their coins in a wallet, proof-of-authority is very different. It is an algorithm found within a few blockchain projects. It provides very fast transactions and a rather high transaction throughput.
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="PART 1: Initialize genesis with Clique" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+First, we create the folder where our blockchain will be stored.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ mkdir blkchain
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Next, create a geth account. This is necessarily a first step. Even before initializing a genesis block. We shall understand why soon.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ geth --datadir blkchain account new
+INFO [11–10|10:40:49.512] Maximum peer count ETH=25 LES=0 total=25
+Your new account is locked with a password. Please give a password. Do not forget this password.
+Passphrase:
+Repeat passphrase:
+Address: {1994caa35403d3ad71a7617926f1cfbc8cc7d47b}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<b>Puppeth</b> is a CLI wizard that aids in creating a new Ethereum network down to the genesis, bootnodes, signers, ethstats, faucet, dashboard and more, without the hassle that it would normally take to configure all these services one by one. With the 1.6.0 release, go-ethereum also features a <a href="https://godoc.org/github.com/ethereum/go-ethereum/consensus/clique">full implementation</a> of the Clique proof-of-authority (PoA) consensus engine. We will now configure a genesis using clique with puppeth.
+
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+Please specify a network name to administer (no spaces or hyphens, please)
+> sreerag
+Sweet, you can set this via — network=sreerag next time!
+INFO [11–10|10:41:16.058] Administering Ethereum network name=sreerag
+INFO [11–10|10:41:16.114] No remote machines to gather stats from
+What would you like to do? (default = stats)
+ 1. Show network stats
+ 2. Configure new genesis
+ 3. Track new remote server
+ 4. Deploy network components
+> 2
+Which consensus engine to use? (default = clique)
+ 1. Ethash - proof-of-work
+ 2. Clique - proof-of-authority
+> 2
+How many seconds should blocks take? (default = 15)
+> 3
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+We have now specified that we would like to use Clique PoA for our blockchain. The next step is an important one.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+Which accounts are allowed to seal? (mandatory at least one)
+> 0x1994caa35403d3ad71a7617926f1cfbc8cc7d47b 
+> 0x
+Which accounts should be pre-funded? (advisable at least one)
+> 0x1994caa35403d3ad71a7617926f1cfbc8cc7d47b 
+> 0x
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+This is the reason we started off by creating a geth account. Account allowed to “seal” means the account that will be performing “mining”. PoA has a selected group of miners. Pre-funding will let this account transfer ether to other accounts in future. There can be multiple sealer and/or pre-funded accounts. They need to be created in the same manner as our first account. There is some amount of gas associated with every transaction. We will not be able to use this account for non-zero cost transactions, such as deploying smart contracts or calling its functions.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Network-id cannot be random because we want to perform multi-node operations later. In a network, all nodes need to be in the same network id.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+Specify your chain/network ID if you want an explicit one (default = random)
+> 58343
+INFO [11–10|10:43:01.563] Configured new genesis block
+What would you like to do? (default = stats)
+1. Show network stats
+2. Manage existing genesis
+3. Track new remote server
+4. Deploy network components
+> 2
+1. Modify existing fork rules
+2. Export genesis configuration
+3. Remove genesis configuration
+> 2
+Which file to save the genesis into? (default = sreerag.json)
+> genesis.json
+INFO [11–10|10:43:19.547] Exported existing genesis block
+What would you like to do? (default = stats)
+1. Show network stats
+2. Manage existing genesis
+3. Track new remote server
+4. Deploy network components
+> ^C
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Notice that ‘genesis.json’ has been created in the current path directory. It allocates around 256 accounts in addition to our pre-existing sealer account. No new sealers can be added after the genesis has been created.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="PART 2: Setup Private Blockchain" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+Initialize the newly exported genesis.json .
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+geth --datadir blkchain init genesis.json
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Start geth console. We will setting several flags.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+geth --port 3000 --networkid 58343 --datadir=./blkchain --maxpeers=5  --rpc --rpcport 8543 --rpcaddr 127.0.0.1 --rpccorsdomain "*" --rpcapi "eth,net,web3,personal,miner" console 2>>eth.log
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+  <ul style="margin-top:.325em;list-style:disc;margin-left:2em;">
+    <li>port has to be different for different nodes. All nodes connect to the same networkid. maxpeers is 25 by default.</li>
+    <li>You can start the HTTP JSON-RPC with the --rpc flag.</li>
+    <li>You change the default port (8545) and listing address (localhost) with --rpcport and --rpcaddr respectively. Notice coinbase and clique.</li>
+    <li>If accessing the RPC from a browser, CORS (--rpccorsdomain) will need to be enabled with the appropriate domain set. Otherwise, JavaScript calls are limit by the same-origin policy and requests will fail. Here, we have set it to accept anything (“*”).</li>
+    <li>The web3-eth package allows you to interact with an Ethereum blockchain and Ethereum smart contracts. The web3-net package allows you to interact with the Ethereum nodes network properties. The web3-eth-personal package allows you to interact with the Ethereum node’s accounts. The miner api is used to start and stop the miner.</li>
+    <li>The ethereum CLI executable geth has a JavaScript console (a Read, Evaluate & Print Loop = REPL exposing the JSRE- Javascript Runtime Environment), which can be started with the console or attach subcommand. All logging is stored in eth.log .</li>
+  </ul>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+When the geth console starts, notice that the account (initially created) has been set as coinbase and clique (PoA) consensus is being used, not the default ethash (Proof of work).
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+Welcome to the Geth JavaScript console!
+instance: Geth/v1.8.17-stable-8bbe7207/linux-amd64/go1.10
+coinbase: 0x1994caa35403d3ad71a7617926f1cfbc8cc7d47b
+at block: 0 (Sat, 10 Nov 2018 10:41:31 IST)
+ datadir: /home/sreerag/blockchain/blkchainpoa2/blkchain
+ modules: admin:1.0 clique:1.0 debug:1.0 eth:1.0 miner:1.0 net:1.0 personal:1.0 rpc:1.0 txpool:1.0 web3:1.0
+>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+A coinbase account — which Ethereum also calls the etherbase — is by default the primary local account. You can check your coinbase from above or simply use eth.coinbase it should return the same account address used in the very first step.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+> eth.coinbase
+“0x1994caa35403d3ad71a7617926f1cfbc8cc7d47b”
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Unlock your account. This is important. Geth might require you to keep repeatedly unlocking after a certain time interval. Use the format below, where the aforementioned interval is the third parameter, and keep it as high as possible.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+> personal.unlockAccount(eth.coinbase,”yourpassword”,9999999)
+true
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Creating new accounts: Operations involving multiple users will use multiple accounts.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+> personal.newAccount(“yourpassword”)
+“0x7c02465168012418dd44589e76325a9126cb8516”
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Any action associated with an account requires it to be unlocked.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+> personal.unlockAccount(eth.accounts[1],”yourpassword”,9999999)
+true
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Similarly, the next account created can be accessed with eth.accounts[2], eth.accounts[3], and so on.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Check the balance of your accounts:
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+> eth.getBalance(eth.coinbase)
+9.04625697166532776746648320380374280103671755200316906558262375061821325312e+74
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+This is expected. We had specified it to be “prefunded” in the puppeth console.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+> eth.getBalance(eth.accounts[1])
+0
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+eth.accounts[1] has no balance. Now, this won’t do. So, let’s send it ether from our rich coinbase account.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+>web3.eth.sendTransaction({from:eth.coinbase,to:eth.accounts[1],value:web3.toWei(300,"ether")})
+"0x8e1919f22e87b59c6937868c7a17fc9556b9de2a85f33bd90a61b9113c9d1ab3"
+> eth.getBalance(eth.accounts[1])
+0
+> eth.getBalance(eth.accounts[1])
+0
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Still no balance? This is because the transaction above has not yet been mined. So we need to start the miner.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+> miner.start()
+null
+> eth.getBalance(eth.accounts[1])
+0
+> eth.getBalance(eth.accounts[1])
+300000000000000000000
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+It might take more time depending on the seconds we had specified in the puppeth console. Remember we had set 3(default 15).
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+You can check with eth.blockNumber
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+> eth.blockNumber
+183
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+New blocks will keep getting added periodically, irrespective of transactions. We had created the eth.log file for viewing logs. Let’s use tail to open this file in console. The tail command, as the name implies, print the last N (=10 default) number of data of the given input. -f option will cause tail will loop forever, checking for new data.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ tail -f eth.log
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+    <img style="width:100%;" 
+      src="/images/ether/1_xvS6TliiCyKAj4fDFkPbcQ.png" />
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Tah-Dah! You’re done creating your first node.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="PART 3: Connecting multiple nodes" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;margin-top:.625em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;">
+      <![CDATA[
+The other node is on another machine. Create a new geth account as mentioned before in the very first step.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ geth --datadir blkchain account new
+INFO [11–10|10:40:49.512] Maximum peer count ETH=25 LES=0 total=25
+Your new account is locked with a password. Please give a password. Do not forget this password.
+Passphrase:
+Repeat passphrase:
+Address: {0x169a966febb34ea6c41a3c824f5d6bc5abfad0d8}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+To connect to the node we have just made, any other node will have to use the same genesis config. Simple send genesis.json to the other machine. Initialize it (with init) as before.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ geth --datadir blkchain init genesis.json
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Start geth console on the other node. Ensure ports are different. We are using 3000 and 3002, for example.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+$ geth --port 3002 --networkid 58343 --datadir=./blkchain --maxpeers=5  --rpc --rpcport 8543 --rpcaddr 127.0.0.1 --rpccorsdomain "*" --rpcapi "eth,net,web3,personal,miner" console 2>>eth.log
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+The connecting node (node 2) needs to know enode of the node it is connecting to (node 1).
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+    <img style="width:100%;" 
+      src="/images/ether/1_f3FeB7lMhBjakjWHV1XVZQ.png" />
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Notice the IP address mentioned in enode. It may not be the same as the actual IP. View your connection information and change it accordingly.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+On node 2’s geth console, connect with admin.addPeer. Again, ensure you are using <b>Node 1’s actual IP</b>.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+> admin.addPeer(“enode://76fb6251733cc706f84e7f7cb8a0d382644572c64f4d6c2268e3783fcc0a31756f9a311c8d7e93e1990cb5be716c57303759ff510bb8a2bc375c0dc00be5c0ab@157.0.0.1:3000”)
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+You can check if the 2 nodes are connected with admin.peers.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+    <img style="width:100%;" 
+      src="/images/ether/1_MNBnZpGt7d3aiPf6MQUXSw.png" />
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+The account(s) on Node 2 will not have any balance(just like the multi-account situation described before), as they are not sealers (miners in PoW). We will again have to send ether from our only sealer, which is the first account we made in Node 1. You’ll have to hardcode the account address here.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+> web3.eth.sendTransaction({from:eth.coinbase,to:”0x169a966febb34ea6c41a3c824f5d6bc5abfad0d8",value:web3.toWei(300,”ether”)})
+“0x0fa409b083ef2b4d6e3c99f4ebf71c55a2b2bbf6e6a58ab792d85fd71ae85d6d”
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.125em;line-height:1.425em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+You should now have received balance on Node 2’s account. Both nodes are connected. You can now perform multi-node operations. For example, if node 1 changes the state of a smart contract, node 2, being in the same blockchain, will see the change.
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+    
 </c:component>
