@@ -660,4 +660,877 @@ You created your first private Ethereum blockchain and got some ether! Yes, this
 
 
 
+
+  
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">Running a Private Ethereum Blockchain using Docker</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="margin-top:.625em;font-size:1.2em;line-height:1.45em;">
+Ethereum network is a peer-to-peer network consists of multiple nodes running the Ethereum client such as <a href="https://geth.ethereum.org/">Geth</a> or <a href="https://github.com/openethereum/openethereum">OpenEthereum</a>.
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="In this post, we are setting up a private network with 3 nodes as follows:" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li><b>Bootnode</b> — the bootstrap node that is used for peer discovery purpose. It listens on port 30303, the other nodes joining the network connect to this bootnode first.</li>
+  <li><b>JSON-RPC endpoint</b> — this node exposes JSON-RPC API over HTTP endpoint on port 8545. We will publish the port 8545 of this node container to the host machine to allow external interaction with this private blockchain.</li>
+  <li><b>Miner</b> — this node is responsible for mining (the process of creating a new block in our blockchain). When the miner node successfully mines a new block, it receives the rewards into the configured account.</li>
+</ul>
+<div style="margin-top: .625em;text-align:center;">
+   <img style="margin: auto;" src="/images/ether/1_w11EC-gEOidmlRKRqh6liw.png" />
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="The genesis block" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;background-color:white;font-size:1.6em;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1.1em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-top:.325em;">
+To setup a private Ethereum blockchain, the Ethereum client requires some information for creating the first block which is called the genesis block.
+</div>
+<div style="margin-top:.325em;">
+Here is a simple custom genesis.json containing information to create the genesis block.
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.1em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+{
+  "config": {
+    "chainId": 4321,
+    "homesteadBlock": 0,
+    "eip150Block": 0,
+    "eip155Block": 0,
+    "eip158Block": 0,
+    "byzantiumBlock": 0,
+    "constantinopleBlock": 0,
+    "petersburgBlock": 0,
+    "ethash": {}
+  },
+  "difficulty": "0x1",
+  "gasLimit": "0xb71b00",
+  "alloc": {}
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<div>
+We will not go into detail of each parameter here but let’s consider these 2
+</div>
+
+<ul style="margin-top:.125em;list-style: disc;margin-left: 1.5em;">
+  <li><b>config.chainId</b> — this is the identifier to tell the nodes which blockchain they are on. The chainId was introduced in EIP-155 for replay protection. We set it to be 1214 to avoid conflicting with the public Ethereum networks.</li>
+  <li><b>config.ethash</b> — this indicates that our blockchain will be using <b>proof-of-work</b> as the consensus engine.</li>
+</ul>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Docker image for Ethereum client" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+For the Ethereum nodes in our private blockchain, we will use Go Ethereum (Geth) as the client. So let’s create a Dockerfile for building the image of our Ethereum client.
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+1. We use official Geth image from Docker Hub the base image.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+FROM ethereum/client-go:v1.10.1
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+2. Copy the genesis.json into the image and use it to initialize the genesis block
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+COPY genesis.json /tmp
+RUN geth init /tmp/genesis.json
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+3. Remove the nodekey file
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+RUN rm -f ~/.ethereum/geth/nodekey
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+The nodekey file is generated when Geth is initializing, it is created the file in the folder named geth under its data directory which (by default) is located at ~/.ethereum.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+The nodekey file is used to generate the Geth enode which is kind of the id of each node in Ethereum network.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+As we will use the same image built from the Dockerfile to run all the nodes in our Ethereum network, we have to delete the nodekey file created while initializing Geth. So the file will be recreated with different key when each node is starting, otherwise every node in our private network will have the same enode which will prevent the nodes to be connected and synced together.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+4. Generate a new account for our Ethereum blockchain. Then remove the password file from the image for security purpose.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+RUN echo ${ACCOUNT_PASSWORD} > /tmp/password \
+  && geth account new --password /tmp/password \
+  && rm -f /tmp/password
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<b>WARNING:</b> Do not forget and do not share the password, as it is used to access the created account.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+5. Combine things together for a full Dockerfile.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+FROM ethereum/client-go:v1.10.1
+
+ARG ACCOUNT_PASSWORD
+
+COPY genesis.json /tmp
+
+RUN geth init /tmp/genesis.json \
+    && rm -f ~/.ethereum/geth/nodekey \
+    && echo ${ACCOUNT_PASSWORD} > /tmp/password \
+    && geth account new --password /tmp/password \
+    && rm -f /tmp/password
+
+ENTRYPOINT ["geth"]
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<b>Note:</b> The ACCOUNT_PASSWORD will be provided as argument while building an image from the Dockerfile.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Configuring Ethereum nodes in Docker Compose" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+As described earlier, our private Ethereum network consists of 3 nodes connected together. In order to connect them, we will put all nodes in 172.16.254.0/28 subnet in a Docker’s bridge network.
+</div>
+<div style="margin-top: .625em;text-align:center;">
+   <img style="margin: auto;" src="/images/ether/1_RM8LsWI7KJA_C7nKcaz1LA.png" />
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+And here is the Docker Compose file to run the nodes in Docker environment.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+version: '3.7'
+
+services:
+  geth-bootnode:
+    hostname: geth-bootnode
+    env_file:
+      - .env
+    image: geth-client
+    build:
+      context: .
+      args:
+        - ACCOUNT_PASSWORD=${ACCOUNT_PASSWORD}
+    command:
+      --nodekeyhex="b0ac22adcad37213c7c565810a50f1772291e7b0ce53fb73e7ec2a3c75bc13b5"
+      --nodiscover
+      --ipcdisable
+      --networkid=${NETWORK_ID}
+      --netrestrict="172.16.254.0/28"
+    networks:
+      priv-eth-net:
+
+  geth-rpc-endpoint:
+    hostname: geth-rpc-endpoint
+    env_file:
+      - .env
+    image: geth-client
+    depends_on:
+      - geth-bootnode    
+    command:
+      --bootnodes="enode://af22c29c316ad069cf48a09a4ad5cf04a251b411e45098888d114c6dd7f489a13786620d5953738762afa13711d4ffb3b19aa5de772d8af72f851f7e9c5b164a@geth-bootnode:30303"
+      --allow-insecure-unlock
+      --http
+      --http.addr="0.0.0.0"
+      --http.api="eth,web3,net,admin,personal"
+      --http.corsdomain="*"
+      --networkid=${NETWORK_ID}
+      --netrestrict="172.16.254.0/28"
+    ports:
+      - "8545:8545"
+    networks:
+      priv-eth-net:
+
+  geth-miner:
+    hostname: geth-miner
+    env_file:
+      - .env
+    image: geth-client
+    depends_on:
+      - geth-bootnode
+    command:
+      --bootnodes="enode://af22c29c316ad069cf48a09a4ad5cf04a251b411e45098888d114c6dd7f489a13786620d5953738762afa13711d4ffb3b19aa5de772d8af72f851f7e9c5b164a@geth-bootnode:30303"
+      --mine
+      --miner.threads=1
+      --networkid=${NETWORK_ID}
+      --netrestrict="172.16.254.0/28"
+    networks:
+      priv-eth-net:
+
+networks:
+  priv-eth-net:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.16.254.0/28
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+As we want to have 3 nodes performing different roles in our private blockchain, therefore, each node will be configured with different set of parameters.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<h3>
+1. Bootnode command parameters
+</h3>
+<ul style="margin-top:.125em;list-style: disc;margin-left: 1.5em;">
+  <li><b>nodekeyhex</b> — we specify the nodekey for the bootnode in order to pre-define the enode (as it is generated from the nodekey) of this bootstrap node to use it for configuring other nodes.</li>
+  <li><b>nodiscover</b> — this node does not have to discover other nodes because the others will connect to it when joining the network.</li>
+  <li><b>ipcdisable</b> — to make the node more light-weight as it is only used as bootstrap node.</li>
+  <li><b>networkid</b> — specify the identifier of the network, every node in the same Ethereum network must have the same networkid. Avoid the values which conflict with the public Ethereum network.</li>
+  <li><b>netrestrict</b> — to only accept the connection from nodes within the CIDR range.</li>
+</ul>
+<h3>
+2. JSON-RPC endpoint node command parameters
+</h3>
+<ul style="margin-top:.125em;list-style: disc;margin-left: 1.5em;">
+  <li><b>bootnodes</b> — specify the list of nodes to connect to for peer discovery</li>
+  <li><b>allow-insecure-unlock</b> — to allow unlocking the account we created over the HTTP. This is unsafe if the endpoint is exposed to external, consider remove this parameter in the production environment.</li>
+  <li><b>http</b> — to enable JSON-RPC over HTTP protocol.</li>
+  <li><b>http.api</b> — the list of APIs to enable via HTTP-RPC interface. In production environment, specify only the ones which are required.</li>
+  <li><b>http.addr</b> — set to 0.0.0.0 to accept HTTP connection on all IPs of the node container.</li>
+  <li><b>http.corsdomain</b> — to allow connection from cross-origin web pages.</li>
+  <li><b>networkid</b> — specify the identifier of the network, every node in the same Ethereum network must have the same networkid. Avoid the values which conflict with the public Ethereum network.</li>
+  <li><b>netrestrict</b> — to only accept the connection from nodes within the CIDR range.</li>
+</ul>
+<h3>
+3. Miner node command parameters
+</h3>
+<ul style="margin-top:.125em;list-style: disc;margin-left: 1.5em;">
+  <li><b>bootnodes</b> specify the list of nodes to connect to for peer discovery</li>
+  <li><b>mine</b> — to enable the mining for this node</li>
+  <li><b>miner.threads</b> — specify the number of CPU thread to use for mining</li>
+  <li><b>miner.etherbase</b> — specify the address of the account to receive mining rewards. We do not specify it here, so the rewards go to the primary account we created by default.</li>
+  <li><b>networkid</b> — specify the identifier of the network, every node in the same Ethereum network must have the same networkid. Avoid the values which conflict with the public Ethereum network.</li>
+  <li><b>netrestrict</b> — to only accept the connection from nodes within the CIDR range.</li>
+</ul>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Running and interacting with the private Ethereum network" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+To run our private Ethereum network from the docker-compose.yaml file, we have to specify 2 environment variables in the .env file
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+# The ID of Ethereum Network
+NETWORK_ID=1214
+# The password to create and access the primary account
+ACCOUNT_PASSWORD=5uper53cr3t
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Then start the nodes with the command:
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ docker-compose up -d
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+After the containers are up and running, we can interacting with the blockchain via the Inter-process Communication (IPC) or the RPC endpoint.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+We can use a software wallet, such as MetaMask or MyCrypto, to connect to our private blockchain via the HTTP-RPC endpoint. However, this post will use curl to demonstrate how we interact with our private blockchain.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+As we map the HTTP-RPC port 8545 from the container to our host machine, we can then connect to it at localhost:8545.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<h4>
+1. First of all, let’s check the connectivity of the nodes.
+</h4>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ curl --location --request POST 'localhost:8545' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "admin_peers",
+    "params": []
+}'
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Since we are talking to the RPC endpoint node, we will see that the peer it is connecting to is the bootnode (recognized from the enode value is the same as we set as bootnodes parameters in the docker-compose.yml).
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": [
+    {
+      "enode": "enode://af22c29c316ad069cf48a09a4ad5cf04a251b411e45098888d114c6dd7f489a13786620d5953738762afa13711d4ffb3b19aa5de772d8af72f851f7e9c5b164a@172.16.254.2:30303",
+...
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<h4>
+2. Then, get the latest block number of the blockchain.
+</h4>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ curl --location --request POST 'localhost:8545' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "eth_blockNumber",
+    "params": []
+}'
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+After running the nodes for a while, we should see this number greater than 0x0, which means our miner node already created other blocks after the genesis block.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": "0x3"
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+Note: The miner node takes several minutes to initialize before it starts mining. However if the miner has already been running for some time but still get the 0x0 as the latest block number, we should go check the log of the miner node.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<h4>
+3. Next, we will get the address of our primary account created while the image is being built.
+</h4>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ curl --location --request POST 'localhost:8545' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "eth_accounts",
+    "params": []
+}'
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+The response will contain a list of the created accounts, in our case there should be only 1 account for now.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": [
+    "0x08d1f47128f5c04d7a4aee69e90642645059acd6"
+  ]
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<b>Note:</b> The address of the account will be different as it is generated while the image is being built.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<h4>
+4. Now, let’s see how rich we are 😁
+</h4>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ curl --location --request POST 'localhost:8545' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "jsonrpc": "2.0",
+    "id": 4,
+    "method": "eth_getBalance",
+    "params": [
+        "0x08d1f47128f5c04d7a4aee69e90642645059acd6",
+        "latest"
+    ]
+}'
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<b>Note:</b> We send the address of our created account as a parameter to check its balance.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+If the latest block number of our private blockchain is greater than 0x0, we should see non-zero balance in the account. As this first account we created is, by default, the one receives the mining rewards.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+{
+  "jsonrpc": "2.0",
+  "id": 4, 
+  "result": "0x19b21248a3ef280000" // 474000000000000000000L, 474L
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<b>Note:</b> The balance is in hexadecimal number and in <a href="https://ethdocs.org/en/latest/ether.html">wei</a> unit.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<h4>
+5. To test transferring some funds, we will create another account to be the recipient.
+</h4>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ curl --location --request POST 'http://localhost:8545' \
+--header 'Content-type: application/json' \
+--data-raw '{
+    "jsonrpc": "2.0",
+    "id": 5,
+    "method": "personal_newAccount",
+    "params": [
+        "5uper53cr3t"
+    ]
+}'
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<b>Note:</b> To create an account, we have to specify the password as the parameter. This password is required to access the account later. Keep it safe and secret.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+If success, we will get the address of the newly created account in return.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+{
+    "jsonrpc": "2.0",
+    "id": 5,
+    "result": "0x2bc05c71899ecff51c80952ba8ed444796499118"
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<h4>
+6. Before sending a transaction, we must make sure that the sender account is unlocked.
+</h4>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ curl --location --request POST 'http://localhost:8545' \
+--header 'Content-type: application/json' \
+--data-raw '{
+    "jsonrpc": "2.0",
+    "id": 6,
+    "method": "personal_unlockAccount",
+    "params": [
+        "0x08d1f47128f5c04d7a4aee69e90642645059acd6",
+        "5uper53cr3t"
+    ]
+}'
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<b>Note:</b> We will use our primary account as sender as it receives fund from mining rewards. The password used to unlock here must be the same as the one we use to create the account.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+If the account is unlocked successfully, it returns true.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+{
+    "jsonrpc": "2.0",
+    "id": 6,
+    "result": true
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<h4>
+7. Now we are ready to transfer some fund.
+</h4>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ curl --location --request POST 'localhost:8545' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "jsonrpc": "2.0",
+    "id": 7,
+    "method": "eth_sendTransaction",
+    "params": [
+        {
+            "from": "0x08d1f47128f5c04d7a4aee69e90642645059acd6",
+            "to": "0x2bc05c71899ecff51c80952ba8ed444796499118",
+            "value": "0xf4240"
+        }
+    ]
+}'
+
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<b>Note:</b> We are sending 0xf4240 wei (equal to 1 ether) from the account, address 0x08d1f47128f5c04d7a4aee69e90642645059acd6 to the account 0x2bc05c71899ecff51c80952ba8ed444796499118.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+If the transaction is successfully submitted, we will get the transaction hash in return.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+{
+    "jsonrpc": "2.0",
+    "id": 7,
+    "result": "0xa96de080dfcb9c5f908528b92d3df55a0e230cf4e48ae178bb220862c2a544c7"
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<h4>
+8. We can get the status of a transaction by its hash.
+</h4>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ curl --location --request POST 'localhost:8545' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "jsonrpc": "2.0",
+    "id": 8,
+    "method": "eth_getTransactionByHash",
+    "params": [        "0xa96de080dfcb9c5f908528b92d3df55a0e230cf4e48ae178bb220862c2a544c7"
+    ]
+}'
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+And the response will look like:
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+{
+    "jsonrpc": "2.0",
+    "id": 8,
+    "result": {
+        "blockHash": "0xf31b1a454f1cd35388476acead342fe93c02667ac99f136a36ef677c462ad04d",
+        "blockNumber": "0x16f2",
+        "from": "0x08d1f47128f5c04d7a4aee69e90642645059acd6",
+        "gas": "0x5208",
+        "gasPrice": "0x3b9aca00",
+        "hash": "0xa96de080dfcb9c5f908528b92d3df55a0e230cf4e48ae178bb220862c2a544c7",
+        "input": "0x",
+        "nonce": "0x0",
+        "to": "0x2bc05c71899ecff51c80952ba8ed444796499118",
+        "transactionIndex": "0x0",
+        "value": "0xf4240",
+        "type": "0x0",
+        "v": "0x99b",
+        "r": "0xc32053edadd067e93480d76e24fcd03e9879335739c06804916cd292c380cad1",
+        "s": "0x5f49f5b8c773babff4752abe6662d8f0a1b61e336b051954bd265bf13cd695e9"
+    }
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<h4>
+9. Lastly, verify if we get the fund in the recipient’s account.
+</h4>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ curl --location --request POST 'localhost:8545' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "jsonrpc": "2.0",
+    "id": 9,
+    "method": "eth_getBalance",
+    "params": [
+        "0x2bc05c71899ecff51c80952ba8ed444796499118",
+        "latest"
+    ]
+}'
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+We expect to see the same value (0xf4240) as we sent from the primary account as the result.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+{
+    "jsonrpc": "2.0",
+    "id": 9,
+    "result": "0xf4240"
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<b>Note:</b> Normally, the transaction submitted to the blockchain takes some time to be processed by miners. But for our private network, it should be quick. If we still do not receive the fund after a while, we can go back to recheck the transaction status again.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+✅ That’s it! We have the working private Ethereum blockchain ready for further experimental now.
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
 </c:component>
