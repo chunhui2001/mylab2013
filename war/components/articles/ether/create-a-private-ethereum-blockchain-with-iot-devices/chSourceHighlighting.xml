@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract style="font-size:1.15em;line-height:1.625em;">
+    <![CDATA[
+<div style="margin-bottom:.625em;">
+This series of tutorials will describe how to set up a private Ethereum blockchain that will be composed of a computer (miner) and one or several Raspberry PI 3 devices (nodes).
+</div>
+<div style="margin-bottom:.625em;">
+The objective is to build a development environment to learn about blockchain principles, to develop and test your own smart contracts before releasing them to the live chain (mainnet).
+</div>
+<div style="margin-bottom:.625em;">
+To make this project fun, we will integrate a RPi with a Smart Contract deployed on a private chain. The Smart Contract will be used to check if a user has enough tokens to use a service. The RPi will be used to visualize the status of the contract.
+</div>
+
+<div style="margin-bottom:.625em;">
+<b>NB:</b> It is important that what we mean by “private Ethereum blockchain” in this context has absolutely nothing to do with the “private blockchain” championed by <a href="https://www.hyperledger.org/">Hyperledger</a>, <a href="https://monax.io/">Eris/Monax</a>, or the recently announced <a href="http://entethalliance.org/">Enterprise Ethereum Alliance</a>. These are different codebases with different client applications, so they correspond to different implementations of a different set of concepts. They are private in the sense that they limit who has access to their chain. They are also called permissioned blockchains, and to be perfectly transparent, <a href="https://chainskills.com/2016/11/21/what-qualifies-as-a-blockchain/">we wish they were not even called blockchains at all</a>. In this series of articles, what we call “private blockchain” is a private instance of the Ethereum implementation. Same code base, same client application, different network identifier and genesis block. In other words, what we will come to create in this series is a chain with the same rules as the main chain, the same consensus algorithm too, but a different root block. This will become clearer in part 3. For more information about the 3-layer model and differences between concepts, implementations and instances, you can also watch <a href="https://www.youtube.com/watch?v=dQVxbPqlBkE">our Devoxx talk</a> and <a href="https://chainskills.com/2016/11/21/what-qualifies-as-a-blockchain/">read this article</a>.
+</div>
+]]>
+  </c:abstract>
+  
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;"></div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Conventions" id="sourceContent1"
+                     titleStyle="padding-left:0;font-size:1em;background-color:white;font-size:1.625em;font-family:fantasy;"
+                     bodyStyle="padding:0;font-size:1.15em;line-height:1.325em;font-family:monospace;">
+      <![CDATA[
+      We will use the following naming conventions to identify the devices on which the commands are entered:
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.2em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.625em;line-height:1em;font-family:monospace;">
+      <![CDATA[
+computer$ A computer requires to perform initial configuration
+
+pi$ Shell of the node running on the Raspberry PI device
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Disclaimer" id="sourceContent1"
+                     titleStyle="padding-left:0;font-size:1em;background-color:white;font-size:1.625em;font-family:fantasy;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.15em;line-height:1.325em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.625em;">
+This series of tutorials doesn’t pretend to be comprehensive neither to give you a full introduction to Ethereum.
+</div>
+<div style="margin-bottom:.625em;">
+There are many ways to set up a private Ethereum blockchain from the most simplistic to the most complicated.
+</div>
+<div style="margin-bottom:.625em;">
+Here are some other examples:
+</div>
+
+<ul style="margin-top:.325em;list-style: none;margin-left: .6em;">
+  <li style="margin-bottom:.325em;">&#x278A; Microsoft Azure and RPi <a href="https://azure.microsoft.com/en-us/solutions/blockchain/">(here)</a></li>
+  <li style="margin-bottom:.325em;">&#x278B; Docker image <a href="https://github.com/ethereum/go-ethereum/wiki/Running-in-Docker">(here)</a></li>
+  <li>&#x278C; Pre-defined images such with EthRaspian <a href="http://ethraspbian.com/">(here)</a></li>
+</ul>
+
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+    
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">Part 1: Install an Ethereum node on a Raspberry PI (RPi)</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;font-size:1em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1.15em;line-height:1.325em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.625em;">
+In this first part, we will describe the steps to transform your Raspberry PI 3 (RPi) into an Ethereum node.
+</div>
+<div style="margin-bottom:.625em;">
+The RPi is intended to act as a node connected to our private Ethereum blockchain. This means that it’s not required to install a full flesh operating system. A minimal image of Raspbian is good enough.
+</div>
+<div style="margin-bottom:.625em;">
+For information, there are pre-bundled RPi images that make it possible for you to transform your RPi into an Ethereum node.
+</div>
+<div style="margin-bottom:.625em;">
+One of these images is provided by the project <a href="http://www.ethraspbian.com/">EthRaspbian</a>.
+</div>
+<div style="margin-bottom:.625em;">
+Here, we chose to build our Ethereum node without these prepared images. The objective is to show you all the required steps to do it from scratch.
+</div>
+<div>
+Due to hardware limitations (CPU, memory), your RPi will not be able to mine ethers or to build new blocks of transactions.
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Step 1 – Check your configuration" id="sourceContent1"
+                     titleStyle="padding-left:0;font-size:1em;background-color:white;font-size:1.625em;font-family:fantasy;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.15em;line-height:1.325em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.625em;">
+We will use a Raspberry PI 3 with a microSD of 16 Gb and a computer to prepare the microSD card.
+</div>
+<div style="margin-bottom:.625em;">
+The setup of the RPi will require the following hardware:
+</div>
+
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li>A Raspberry Pi</li>
+  <li>An SD Card with at least 16Gb</li>
+  <li>A LAN cable</li>
+  <li>A keyboard</li>
+  <li>A display</li>
+</ul>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Step 2 – Format your SD Card" id="sourceContent1"
+                     titleStyle="padding-left:0;font-size:1em;background-color:white;font-size:1.625em;font-family:fantasy;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.15em;line-height:1.325em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-bottom:.625em;">
+Insert your SD card on your computer and format it as FAT32.
+</div>
+<div style="margin-bottom:.625em;">
+On macOS, use the format ExFat in Disk Utility:
+</div>
+<div style="margin-bottom:.625em;">
+  <img src="/images/ether/Screenshot-2017-02-19-14.52.34.jpeg" />
+</div>
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+</c:component>
