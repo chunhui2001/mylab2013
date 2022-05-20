@@ -1,0 +1,1863 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract style="font-size:1.2em;line-height:1.425em;">
+    <![CDATA[
+<div>
+   There are several good articles about upgradeable smart contracts or proxy pattern. But I can not find a step-by-step how-to guide to build, deploy proxy contract and interact with it.
+</div>
+<div style="margin-top:.825em;">
+In this tutorial, I list 7 details tasks you can follow to deploy proxy contract to local testnet as well as public testnet Ropsten. Each task has several sub-tasks. We will use <a href="https://docs.openzeppelin.com/contracts/4.x/api/proxy">OpenZeppelin proxy contracts</a> and <a href="https://docs.openzeppelin.com/upgrades">OpenZeppelin Upgrades plugin for Hardhat</a> (or Truffle) here.
+</div>
+
+<div style="margin-top:.825em;">
+Special thanks for two related guides in OpenZeppelin ecosystem: <a href="https://forum.openzeppelin.com/t/openzeppelin-upgrades-step-by-step-tutorial-for-hardhat/3580">OpenZeppelin Upgrades: Step by Step Tutorial for Hardhat and Gnosis Safe</a> by abcoathup, OpenZeppelin Defender guide <a href="https://docs.openzeppelin.com/defender/guide-upgrades">Upgrading a contract via a multisig and Defender</a>.
+</div>
+]]>
+  </c:abstract>
+  
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:black;font-size:1.425em;">How upgradeable smart contract works?</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<img style="width:100%" src="/images/ether/84bmjpjdb8d7rbc4szqc.jpeg" />
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;font-size:1em;background-color:white;font-size:1.6em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+   This illustration explains how upgradeable smart contract work. To be specific, this is transparent proxy pattern, and the other is UUPS proxy pattern(Universal Upgradeable Proxy Standard).
+</div>
+
+<div style="margin-top:1em;">
+Upgradeable smart contract are actually 3 contracts:
+</div>
+
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li><b>Proxy contract.</b> The smart contract which user interacts with. It will keep data/state which mean data is store in the context of this proxy contract account. This is an <a href="https://eips.ethereum.org/EIPS/eip-1967">EIP1967 standard</a> proxy contract.</li>
+  <li><b>Implementation contract.</b> The smart contract provides functionality and logic. Please note that the data is also defined in this contract. This is the smart contract you build.</li>
+  <li><b>ProxyAdmin contract.</b> The contract links Proxy and Implementation.</li>
+</ul>
+
+<div style="margin-top:1em;">
+ProxyAmdin explained in <a href="https://docs.openzeppelin.com/upgrades-plugins/1.x/faq#what-is-a-proxy-admin">OpenZeppelin docs</a>:
+</div>
+
+<div style="margin-top:.425em;border-left:solid 5px chocolate;background-color:antiquewhite;padding:.5em;padding-left:1em !important;">
+   <div><b>What is a proxy admin?</b></div>
+   <div>
+   A ProxyAdmin is a contract that acts as the owner of all your proxies. Only one per network gets deployed. When you start your project, the ProxyAdmin is owned by the deployer address, but you can transfer ownership of it by calling transferOwnership.
+   </div>
+</div>
+
+<div style="margin-top:1em;">
+When transferring ProxyAmin ownership to a multi-sig account, the authority to upgrade the Proxy contract (link proxy to new implementation) is transferred to it.
+</div>
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:black;font-size:1.425em;">How to deploy proxy? How to upgrade proxy?"</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:green;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+When we first deploy upgradeable contract using OpenZeppelin Upgrade plugin for Hardhat, we deploy three contracts:
+</div>
+
+<ul style="margin-top:.625em;list-style: decimal;margin-left: 2.5em;">
+  <li>deploy "Implementation contract"</li>
+  <li>deploy "ProxyAdmin contract"</li>
+  <li>deploy "Proxy contract"</li>
+</ul>
+
+<div style="margin-top:.625em;">
+In the ProxyAdmin contract, Implementation and Proxy is linked.
+</div>
+
+<div style="margin-top:.625em;">
+When a user calls the proxy contract, the call is delegated to the implementation contract <a href="https://docs.soliditylang.org/en/v0.8.12/introduction-to-smart-contracts.html?highlight=delegatecall#delegatecall-callcode-and-libraries">(delegate call)</a>.
+</div>
+
+<div style="margin-top:.625em;">
+When upgrading the contract, what we do is:
+</div>
+
+<ul style="margin-top:.625em;list-style: decimal;margin-left: 2.5em;">
+  <li>deploy a new "Implementation contract"</li>
+  <li>upgrade in "ProxyAdmin contract" by redirecting all call to proxy to the new Implementation contract.</li>
+</ul>
+
+<div style="margin-top:.625em;">
+OpenZeppelin Upgrades plugins for Hardhat/Truffle can help us to get these jobs done.
+</div>
+
+<div style="margin-top:.625em;">
+If you want to know about how to modify a contract to be upgradeable, you can refer to OpenZeppelin docs: <a href="https://docs.openzeppelin.com/upgrades-plugins/1.x/writing-upgradeable">link</a>.
+</div>
+
+<div style="margin-top:.625em;">
+Let's begin to write and deploy an upgradeable smart contract. You can find the repo at Github: <a href="https://github.com/fjun99/proxy-contract-example">https://github.com/fjun99/proxy-contract-example</a>
+</div>
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:black;font-size:1.425em;">Task 1: Write upgradable smart contract</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Init hardhat project" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+We will use Hardhat, Hardhat Network local testnet and OpenZeppelin Upgrades plugin.
+</div>
+
+<div style="margin-top:.625em;">
+STEP 1: install hardhat and init a project
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ mkdir solproxy && cd solproxy
+$ yarn init -y
+$ yarn add harthat
+
+$ yarn hardhat
+// choose option: sample typescript 
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<div>
+STEP 2: add plugin @openzeppelin/hardhat-upgrades
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn add @openzeppelin/hardhat-upgrades
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<div>
+Edit <b>hardhat.config.ts</b> to use Upgrades plugins.
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+// hardhat.config.ts
+import '@openzeppelin/hardhat-upgrades';
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<div>
+We will use three functions of hardhat upgrade plugin <a href="https://docs.openzeppelin.com/upgrades-plugins/1.x/api-hardhat-upgrades">(API reference link)</a>:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+deployProxy()
+upgradeProxy()
+prepareUpgrade()
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Write an upgradable smart contract" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+We use the Box.sol contract from <a href="https://docs.openzeppelin.com/learn/developing-smart-contracts#setting-up-a-solidity-project">OpenZeppelin learn guide</a>. We will build several versions of this contract:
+</div>
+
+<ul style="margin-top:.625em;list-style: decimal;margin-left: 2.5em;">
+  <li>Box.sol</li>
+  <li>BoxV2.sol</li>
+  <li>BoxV3.sol
+  <li>BoxV4.sol</li>
+</ul>
+
+<div style="margin-top:.625em;">
+The big difference between a normal contract and an upgradeable contract is that an upgradeable contract does not have a constructor(), <a href="https://docs.openzeppelin.com/upgrades-plugins/1.x/writing-upgradeable">doc link</a>.
+</div>
+
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+// contracts/Box.sol
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Box {
+    uint256 private value;
+
+    // Emitted when the stored value changes
+    event ValueChanged(uint256 newValue);
+
+    // Stores a new value in the contract
+    function store(uint256 newValue) public {
+        value = newValue;
+        emit ValueChanged(newValue);
+    }
+
+    // Reads the last stored value
+    function retrieve() public view returns (uint256) {
+        return value;
+    }
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:.625em;">
+      <![CDATA[
+<div>
+Explanation:
+</div>
+
+<div style="margin-top:.425em;">
+User can store() a value to this contract and retrieve() it later.
+</div>
+   ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:black;font-size:1.425em;">Task 2: Deploy upgradeable smart contract</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+When we write script to deploy a smart contract, we write:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+const Greeter = await ethers.getContractFactory("Greeter");
+const greeter = await Greeter.deploy("Hello, Hardhat!");
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+To deploy an upgradeable contract, will call <b>deployProxy()</b>, docs can be found at <a href="https://docs.openzeppelin.com/upgrades-plugins/1.x/api-hardhat-upgrades#deploy-proxy">link</a>:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+const Box = await ethers.getContractFactory("Box")
+const box = await upgrades.deployProxy(Box,[42], { initializer: 'store' })
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+In the second line, we use OpenZeppelin Upgrades plugin to deploy <b>Box</b> with an initial value <b>42</b> by calling <b>store()</b> as initializer.
+</div>
+<div style="margin-top:1em;">
+Edit <b>scripts/1.deploy_box.ts</b>
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+// scripts/1.deploy_box.ts
+import { ethers } from "hardhat"
+import { upgrades } from "hardhat"
+
+async function main() {
+
+  const Box = await ethers.getContractFactory("Box")
+  console.log("Deploying Box...")
+  const box = await upgrades.deployProxy(Box,[42], { initializer: 'store' })
+
+  console.log(box.address," box(proxy) address")
+  console.log(await upgrades.erc1967.getImplementationAddress(box.address)," getImplementationAddress")
+  console.log(await upgrades.erc1967.getAdminAddress(box.address)," getAdminAddress")    
+}
+
+main().catch((error) => {
+  console.error(error)
+  process.exitCode = 1
+})
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Explanation:
+</div>
+
+<ul style="margin-top:.425em;list-style: decimal;margin-left: 2.5em;">
+  <li>We deploy an upgradeable contract <b>Box.sol</b> using <b>upgrades.deployProxy()</b>.</li>
+  <li>Three contracts will be deployed: Implementation, ProxyAdmin, Proxy. We log their addresses.</li>
+</ul>
+
+
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="deploy the contract to local testnet" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's run the deploy script in local testnet.
+</div>
+
+<div style="margin-top:.625em;">
+STEP 1: run a stand-alone hardhat testnet in another terminal:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn hardhat node
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+STEP 2: run the deploy script
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn hardhat run scripts/1.deploy_box.ts --network localhost
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Results:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+Deploying Box...
+0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0  box(proxy) address
+0x5FbDB2315678afecb367f032d93F642f64180aa3  getImplementationAddress
+0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512  getAdminAddress
+✨  Done in 3.83s.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Users can interact with the box contract through box(proxy) address: <b>0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0</b>.
+</div>
+
+<div style="margin-top:.625em;">
+Note: if you run this deployment for several times, you can find that ProxyAdmin remains same: <b>0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512</b>
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="test whether Box.sol via proxy pattern work correctly" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+You may find that user interacts with the implementation contract through the box(proxy) contract.
+</div>
+
+<div style="margin-top:.625em;">
+To make sure that they work correctly, let's add unit test for this scenario. In the unit test, we deploy our contract using <b>upgrades.deployProxy()</b> and interact through the box(proxy) contract.
+</div>
+
+<div style="margin-top:.625em;">
+Edit <b>test/2.BoxProxy.test.ts</b>
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+// test/2.BoxProxy.test.ts
+import { expect } from "chai"
+import { ethers, upgrades } from "hardhat"
+import { Contract, BigNumber } from "ethers"
+
+describe("Box (proxy)", function () {
+  let box:Contract
+
+  beforeEach(async function () {
+    const Box = await ethers.getContractFactory("Box")
+    //initilize with 42
+    box = await upgrades.deployProxy(Box, [42], {initializer: 'store'})
+    })
+
+  it("should retrieve value previously stored", async function () {    
+    // console.log(box.address," box(proxy)")
+    // console.log(await upgrades.erc1967.getImplementationAddress(box.address)," getImplementationAddress")
+    // console.log(await upgrades.erc1967.getAdminAddress(box.address), " getAdminAddress")   
+
+    expect(await box.retrieve()).to.equal(BigNumber.from('42'))
+
+    await box.store(100)
+    expect(await box.retrieve()).to.equal(BigNumber.from('100'))
+  })
+
+})
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Run test:
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn hardhat test test/2.BoxProxy.test.ts
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Results:
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+  Box (proxy)
+    ✓ should retrieve value previously stored
+  1 passing (579ms)
+✨  Done in 3.12s.`
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Our box.sol works correctly now.
+</div>
+
+<div style="margin-top:.625em;">
+Later, we find that we need an <b>increment()</b> function. Instead of re-deploying this contract, migrate data to new contract and asking all users to access the new contract address. We can upgrade the contract easily.
+</div>
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:black;font-size:1.425em;">Task 3: Upgrade smart contract to BoxV2</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="write new implementation" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+We write a new version of Box <b>BoxV2.sol</b> by inherit <b>Box.sol</b>.
+</div>
+
+<div style="margin-top:.625em;">
+Edit <b>contracts/BoxV2.sol</b>
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+// contracts/BoxV2.sol
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "./Box.sol";
+
+contract BoxV2 is Box{
+    // Increments the stored value by 1
+    function increment() public {
+        store(retrieve()+1);
+    }
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="test script for normal deployment" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+We write unit test script to test BoxV2 when deployed locally.
+</div>
+
+<div style="margin-top:.625em;">
+Edit <b>test/3.BoxV2.test.ts</b>
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+// test/3.BoxV2.test.ts
+import { expect } from "chai"
+import { ethers } from "hardhat"
+import { Contract, BigNumber } from "ethers"
+
+describe("Box V2", function () {
+  let boxV2:Contract
+
+  beforeEach(async function () {
+    const BoxV2 = await ethers.getContractFactory("BoxV2")
+    boxV2 = await BoxV2.deploy()
+    await boxV2.deployed()
+  });
+
+  it("should retrievevalue previously stored", async function () {
+    await boxV2.store(42)
+    expect(await boxV2.retrieve()).to.equal(BigNumber.from('42'))
+
+    await boxV2.store(100)
+    expect(await boxV2.retrieve()).to.equal(BigNumber.from('100'))
+  });
+
+  it('should increment value correctly', async function () {
+    await boxV2.store(42)
+    await boxV2.increment()
+    expect(await boxV2.retrieve()).to.equal(BigNumber.from('43'))
+  })
+
+})
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Run test:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn hardhat test test/3.BoxV2.test.ts
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+results:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+Box V2
+    ✓ should retrievevalue previously stored
+    ✓ should increment value correctly
+  2 passing (579ms)
+✨  Done in 3.38s.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="test script for upgradeable deployment" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+We write unit test script for BoxV2 deployed in proxy patten:
+</div>
+
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li>first, we deploy the Box.sol</li>
+  <li>then we upgrade it to BoxV2.sol</li>
+  <li>test whether BoxV2 works correctly.</li>
+</ul>
+
+<div style="margin-top:.625em;">
+Edit <b>test/4.BoxProxyV2.test.ts:</b>
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+// test/4.BoxProxyV2.test.ts
+import { expect } from "chai"
+import { ethers, upgrades } from "hardhat"
+import { Contract, BigNumber } from "ethers"
+
+describe("Box (proxy) V2", function () {
+  let box:Contract
+  let boxV2:Contract
+
+  beforeEach(async function () {
+    const Box = await ethers.getContractFactory("Box")
+    const BoxV2 = await ethers.getContractFactory("BoxV2")
+
+    //initilize with 42
+    box = await upgrades.deployProxy(Box, [42], {initializer: 'store'})
+    // console.log(box.address," box/proxy")
+    // console.log(await upgrades.erc1967.getImplementationAddress(box.address)," getImplementationAddress")
+    // console.log(await upgrades.erc1967.getAdminAddress(box.address), " getAdminAddress")   
+
+    boxV2 = await upgrades.upgradeProxy(box.address, BoxV2)
+    // console.log(boxV2.address," box/proxy after upgrade")
+    // console.log(await upgrades.erc1967.getImplementationAddress(boxV2.address)," getImplementationAddress after upgrade")
+    // console.log(await upgrades.erc1967.getAdminAddress(boxV2.address)," getAdminAddress after upgrade")   
+  })
+
+  it("should retrieve value previously stored and increment correctly", async function () {
+    expect(await boxV2.retrieve()).to.equal(BigNumber.from('42'))
+
+    await boxV2.increment()
+    //result = 42 + 1 = 43
+    expect(await boxV2.retrieve()).to.equal(BigNumber.from('43'))
+
+    await boxV2.store(100)
+    expect(await boxV2.retrieve()).to.equal(BigNumber.from('100'))
+  })
+
+})
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="test script for upgradeable deployment" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+Run test:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn hardhat test test/4.BoxProxyV2.test.ts
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Results:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+Box (proxy) V2
+    ✓ should retrieve value previously stored and increment correctly
+
+
+  1 passing (617ms)
+
+✨  Done in 3.44s.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="write upgrade script" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+In sub-task 2.2, we deploy Box(proxy) to <b>0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0</b>.
+</div>
+
+<div style="margin-top:.625em;">
+In this sub-task, we will upgrade it to BoxV2 (deploy a new contract , and link proxy to new implementation contract in ProxyAdmin):
+</div>
+
+<div style="margin-top:.625em;">
+Edit:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+// scripts/2.upgradeV2.ts
+import { ethers } from "hardhat";
+import { upgrades } from "hardhat";
+
+const proxyAddress = '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0'
+
+async function main() {
+  console.log(proxyAddress," original Box(proxy) address")
+  const BoxV2 = await ethers.getContractFactory("BoxV2")
+  console.log("upgrade to BoxV2...")
+  const boxV2 = await upgrades.upgradeProxy(proxyAddress, BoxV2)
+  console.log(boxV2.address," BoxV2 address(should be the same)")
+
+  console.log(await upgrades.erc1967.getImplementationAddress(boxV2.address)," getImplementationAddress")
+  console.log(await upgrades.erc1967.getAdminAddress(boxV2.address), " getAdminAddress")    
+}
+
+main().catch((error) => {
+  console.error(error)
+  process.exitCode = 1
+})
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="run the upgrade script" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+We will start over from the beginning.
+</div>
+<div style="margin-top:.625em;">
+STEP 1: run a new local testnet in another terminal:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn hardhat node
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+STEP 2: deploy Box V1
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn hardhat run scripts/1.deploy_box.ts --network localhost
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The box(proxy) will deployed to: 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0.
+</div>
+<div style="margin-top:.625em;">
+STEP 3: upgrade to Box V2
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn hardhat run scripts/2.upgradeV2.ts --network localhost
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+results:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0  original Box(proxy) address
+upgrade to BoxV2...
+0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0  BoxV2 address(should be the same)
+0x5FC8d32690cc91D4c39d9d3abcBD16989F875707  getImplementationAddress
+0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512  getAdminAddress
+✨  Done in 3.64s.
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:black;font-size:1.425em;">Task 4: Play with contract in hardhat console</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="play with the proxy contract" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+Run hardhat console connecting to local testnet.
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn hardhat console --network localhost
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+In hardhat console:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+address = '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0'
+boxv2 = await ethers.getContractAt("BoxV2", address)
+await boxv2.retrieve()
+//BigNumber { value: "42" }
+
+await boxv2.increment()
+// tx response
+// {
+//  hash: '0x3e8c9dd8842d3315cadad2a80b592ac369e644edc5cec16f7a22c76d49e4b921',
+//  blockNumber: 6,
+
+await boxv2.retrieve()
+//BigNumber { value: "43" }
+
+await boxv2.store(100)
+// tx response ...
+await boxv2.retrieve()
+//BigNumber { value: "100" }
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="try to interact with the implementation contact" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's try to interact with the implementation contact to see what's happening.
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+addressimp = '0x5fc8d32690cc91d4c39d9d3abcbd16989f875707'
+boximp = await ethers.getContractAt("BoxV2", addressimp)
+
+await boximp.retrieve()
+//BigNumber { value: "0" }
+await boximp.increment()
+// tx response ...
+await boximp.retrieve()
+BigNumber { value: "1" }
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We will find that the original value in the implementation is <b>0</b>. This because the data is stored in the context of Proxy contract (<b>0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0</b>) under the hood, not in the context of Implementatoin contract(<b>0x5fc8d32690cc91d4c39d9d3abcbd16989f875707</b>).
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:black;font-size:1.425em;">Task 5: Build BoxV3 to add new state variable</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+We can add new state variables as long as you don't change the the layout of the state variables.
+</div>
+<div style="margin-top:.625em;">
+To put it simply, you can add a new one. We will add a state variable string public name.
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="write BoxV3.sol" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+   We write <b>BoxV3.sol</b> by inheriting <b>BoxV2</b>:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+// contracts/BoxV3.sol
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "./BoxV2.sol";
+
+contract BoxV3 is BoxV2{
+    string public name;
+
+    event NameChanged(string name);
+    function setName(string memory _name) public {
+        name = _name;
+        emit NameChanged(name);
+    }
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="write test for proxy deployment" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+   We skip local unit test here. We will test for proxy deployment only.
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+// test/5.BoxProxyV3.test.ts
+import { expect } from "chai"
+import { ethers, upgrades } from "hardhat"
+import { Contract, BigNumber } from "ethers"
+
+describe("Box (proxy) V3 with name", function () {
+  let box:Contract
+  let boxV2:Contract
+  let boxV3:Contract
+
+  beforeEach(async function () {
+    const Box = await ethers.getContractFactory("Box")
+    const BoxV2 = await ethers.getContractFactory("BoxV2")
+    const BoxV3 =  await ethers.getContractFactory("BoxV3")
+
+    //initilize with 42
+    box = await upgrades.deployProxy(Box, [42], {initializer: 'store'})
+    boxV2 = await upgrades.upgradeProxy(box.address, BoxV2)
+    boxV3 = await upgrades.upgradeProxy(box.address, BoxV3)
+  })
+
+  it("should retrieve value previously stored and increment correctly", async function () {
+    expect(await boxV2.retrieve()).to.equal(BigNumber.from('42'))
+    await boxV3.increment()
+    expect(await boxV2.retrieve()).to.equal(BigNumber.from('43'))
+
+    await boxV2.store(100)
+    expect(await boxV2.retrieve()).to.equal(BigNumber.from('100'))
+  })
+
+  it("should set name correctly in V3", async function () {
+    expect(await boxV3.name()).to.equal("")
+
+    const boxname="my Box V3"
+    await boxV3.setName(boxname)
+    expect(await boxV3.name()).to.equal(boxname)
+  })
+
+})
+
+// NOTE: should also add test for event: event NameChanged(string name)
+
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+   Run Test:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn hardhat test test/5.BoxProxyV3.test.ts
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+   Results:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+Box (proxy) V3 with name
+    ✓ should retrieve value previously stored and increment correctly
+    ✓ should set name correctly in V3
+  2 passing (748ms)
+✨  Done in 3.12s.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="write upgrade script" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+   Edit <b>scripts/3.upgradeV3.ts</b>:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+// scripts/3.upgradeV3.ts
+import { ethers } from "hardhat";
+import { upgrades } from "hardhat";
+
+const proxyAddress = '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0'
+// const proxyAddress = '0x1CD0c84b7C7C1350d203677Bb22037A92Cc7e268'
+async function main() {
+  console.log(proxyAddress," original Box(proxy) address")
+  const BoxV3 = await ethers.getContractFactory("BoxV3")
+  console.log("upgrade to BoxV3...")
+  const boxV3 = await upgrades.upgradeProxy(proxyAddress, BoxV3)
+  console.log(boxV3.address," BoxV3 address(should be the same)")
+
+  console.log(await upgrades.erc1967.getImplementationAddress(boxV3.address)," getImplementationAddress")
+  console.log(await upgrades.erc1967.getAdminAddress(boxV3.address), " getAdminAddress")    
+}
+
+main().catch((error) => {
+  console.error(error)
+  process.exitCode = 1
+})
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="deploy and interact with BoxV3" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+   STEP 1: upgrade to BoxV3
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn hardhat run scripts/3.upgradeV3.ts --network localhost
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+results:
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0  original Box(proxy) address
+upgrade to BoxV3...
+0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0  BoxV3 address(should be the same)
+0xa513E6E4b8f2a923D98304ec87F64353C4D5C853  getImplementationAddress
+0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512  getAdminAddress
+✨  Done in 3.52s.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+   STEP 2: play with V3 in hardhat console
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn hardhat console --network localhost
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+address = '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0'
+boxv3 = await ethers.getContractAt("BoxV3", address)
+await boxv3.retrieve()
+//BigNumber { value: "42" }
+
+await boxv3.setName("mybox")
+// tx response
+await boxv3.name()
+//'mybox'
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+   STEP 3: try to play with the implementation contract directly again
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+addressimp = '0xa513E6E4b8f2a923D98304ec87F64353C4D5C853'
+boximp = await ethers.getContractAt("BoxV3", addressimp)
+await boximp.retrieve()
+//BigNumber { value: "0" }
+await boximp.name()
+//''
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+   You can find explanations about data change in openzeppelin docs <a href="https://docs.openzeppelin.com/learn/upgrading-smart-contracts#upgrading">openzeppelin docs</a>:
+</div>
+
+<div style="margin-top:.425em;border-left:solid 5px chocolate;background-color:antiquewhite;padding:.5em;padding-left:1em !important;">
+   <div>
+      Due to technical limitations, when you upgrade a contract to a new version you cannot change the storage layout of that contract.
+   </div>
+   <div style="margin-top:.625em;">
+   This means that, if you have already declared a state variable in your contract, <b style="color: crimson;text-decoration: underline;">you cannot remove it</b>, <b style="color: crimson;text-decoration: underline;">change its type</b>, or <b style="color: crimson;text-decoration: underline;">declare another variable before it</b>. In our Box example, it means that <b style="color: crimson;text-decoration: underline;">we can only add new state variables after value</b>.
+   </div>
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:black;font-size:1.425em;">Task 6: Write BoxV4 with prepareUpgrade script</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+We write BoxV4 and prepare upgrade script for Task 7 in which we will deploy and upgrade these versions of Box to public testnet Ropsten manualy call <b>ProxyAdmin.upgrade()</b>.
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+   Let's write BoxV4.sol, unit test and upgrade script.
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="write BoxV4.sol" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+
+<div>
+   We write a BoxV4 which change how we interact with name variable:
+</div>
+
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li>We change state variable name from public to private.</li>
+  <li>When user getName(), a prefix is added.</li>
+</ul>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+// contracts/BoxV4.sol
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "./BoxV2.sol";
+
+contract BoxV4 is BoxV2{
+    string private name;
+
+    event NameChanged(string name);
+    function setName(string memory _name) public {
+        name = _name;
+        emit NameChanged(name);
+    }
+
+   function getName() public view returns(string memory){
+      return string(abi.encodePacked("Name: ",name));
+    }
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="write test for proxy deployment" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+   Edit <b>test/6.BoxProxyV4.test.ts</b>:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+// test/6.BoxProxyV4.test.ts
+import { expect } from "chai"
+import { ethers, upgrades } from "hardhat"
+import { Contract, BigNumber } from "ethers"
+
+describe("Box (proxy) V4 with getName", function () {
+  let box:Contract
+  let boxV2:Contract
+  let boxV3:Contract
+  let boxV4:Contract
+
+  beforeEach(async function () {
+    const Box = await ethers.getContractFactory("Box")
+    const BoxV2 = await ethers.getContractFactory("BoxV2") // 加了一个函数
+    const BoxV3 =  await ethers.getContractFactory("BoxV3") // 加个一个变量
+    const BoxV4 =  await ethers.getContractFactory("BoxV4") // 改了变量可见性
+
+    //initilize with 42
+    box = await upgrades.deployProxy(Box, [42], {initializer: 'store'})
+    boxV2 = await upgrades.upgradeProxy(box.address, BoxV2)
+    boxV3 = await upgrades.upgradeProxy(box.address, BoxV3)
+    boxV4 = await upgrades.upgradeProxy(box.address, BoxV4)
+  })
+
+  it("should retrieve value previously stored and increment correctly", async function () {
+    expect(await boxV4.retrieve()).to.equal(BigNumber.from('42'))
+    await boxV4.increment()
+    expect(await boxV4.retrieve()).to.equal(BigNumber.from('43'))
+
+    await boxV2.store(100)
+    expect(await boxV2.retrieve()).to.equal(BigNumber.from('100'))
+  })
+
+  it("should setName and getName correctly in V4", async function () {
+    //name() removed, getName() now
+    // expect(boxV4).to.not.have.own.property("name")
+    expect(boxV4.name).to.be.undefined
+    expect(await boxV4.getName()).to.equal("Name: ")
+
+    const boxname="my Box V4"
+    await boxV4.setName(boxname)
+    expect(await boxV4.getName()).to.equal("Name: "+boxname)
+  })
+
+})
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+   Run Test:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn hardhat test test/6.BoxProxyV4.test.ts
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+   Results:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+Box (proxy) V4 with getName
+    ✓ should retrieve value previously stored and increment correctly
+    ✓ should setName and getName correctly in V4
+  2 passing (771ms)
+✨  Done in 2.46s.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="write script to prepare upgrade" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+   We will write this script using upgrades.prepareUpgrade.
+</div>
+<div style="margin-top:.625em;">
+When calling upgrades.upgradeProxy(), two jobs are done:
+</div>
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li>an implementation contract is deployed</li>
+  <li>ProxyAdmin upgrade() is called to link Proxy and implementation contract.</li>
+</ul>
+<div style="margin-top:.625em;">
+Edit <b>scripts/4.prepareV4.ts</b>
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+// scripts/4.prepareV4.ts
+import { ethers } from "hardhat";
+import { upgrades } from "hardhat";
+
+const proxyAddress = '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0'
+// const proxyAddress = '0x1CD0c84b7C7C1350d203677Bb22037A92Cc7e268'
+async function main() {
+  console.log(proxyAddress," original Box(proxy) address")
+  const BoxV4 = await ethers.getContractFactory("BoxV4")
+  console.log("Preparing upgrade to BoxV4...");
+  const boxV4Address = await upgrades.prepareUpgrade(proxyAddress, BoxV4);
+  console.log(boxV4Address, " BoxV4 implementation contract address")
+}
+
+main().catch((error) => {
+  console.error(error)
+  process.exitCode = 1
+})
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Run deployment:
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn hardhat run scripts/4.prepareV4.ts --network localhost
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Results:
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0  original Box(proxy) address
+Preparing upgrade to BoxV4...
+0x610178dA211FEF7D417bC0e6FeD39F05609AD788  BoxV4 implementation contract address
+✨  Done in 3.90s.
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+You can interact with proxy contract (<b>0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0</b>) in hardhat console by running <b>$ yarn hardhat console --network localhost</b>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+address = '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0'
+boxv4 = await ethers.getContractAt("BoxV4", address)
+
+await boxv4.getName()
+//We will get error:
+//ProviderError: Error: Transaction reverted: function selector was not recognized
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:black;font-size:1.425em;">Task 7: Deploy Box to public testnet Ropsten</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="preparations to deploy to Ropsten" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+We can deploy smart contract to Ropsten directly using Hardhat.
+</div>
+<div style="margin-top:.625em;">
+   STEP 1: Edit Alchemy/Infura endpoint in <b>.env</b>
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+ROPSTEN_URL=https://eth-ropsten.alchemyapi.io/v2/{YOURS}
+PRIVATE_KEY={YOURS HERE}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+STEP 2: Make sure you have Ropsten set in <b>hardhat.config.ts</b>:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+networks: {
+   ropsten: {
+      url: process.env.ROPSTEN_URL || "",
+      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+   },
+},
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="deploy Box V1 to Ropsten network" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+Run deploy script:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn hardhat run scripts/1.deploy_box.ts --network ropsten
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<img style="width:100%;" src="/images/ether/yz5yp9d7yfyrw9dyd0dv.png" />
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+   Three contract are deployed:
+</div>
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li><b>0x7fcb5f0898ee1394c6cb44e3a62b9e9fc19d0e1c</b>, implementation contract</li>
+  <li><b>0x9ce0fdc88df321c804ed0ad9cefe87d97a30479e</b>, ProxyAmin contract</li>
+  <li><b>0x1CD0c84b7C7C1350d203677Bb22037A92Cc7e268</b>, proxy contract</li>
+</ul>
+<div style="margin-top:.625em;">
+We can interact with the proxy contract from hardhat console by running <br /> <b>$ yarn hardhat console --network ropsten</b>
+</div>
+<div style="margin-top:.625em;">
+In console:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+address = '0x1CD0c84b7C7C1350d203677Bb22037A92Cc7e268'
+box = await ethers.getContractAt("Box", address)
+await box.retrieve()
+//BigNumber { value: "43" }
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="upgrade to Box V2" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+Run upgrade script:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn hardhat run scripts/2.upgradeV2.ts --network ropsten
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+   The script does two jobs:
+</div>
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li>deploy new implementation contract</li>
+  <li>call ProxyAmdin.upgrade()</li>
+</ul>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<img style="width:100%;" src="/images/ether/r7wqohz4tbkfpry9h05j.png" />
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's interact with the Box(proxy) in console:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+address = '0x1CD0c84b7C7C1350d203677Bb22037A92Cc7e268'
+box = await ethers.getContractAt("BoxV2", address)
+
+await box.increment()
+//wait for tx to be mined in a new block...
+
+await box.retrieve()
+//BigNumber { value: "44" }
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="upgrade to Box V3" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+Run upgrade script:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn hardhat run scripts/3.upgradeV3.ts --network ropsten
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Let's interact with the Box(proxy) with BoxV3 in console:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+address = '0x1CD0c84b7C7C1350d203677Bb22037A92Cc7e268'
+box = await ethers.getContractAt("BoxV3", address)
+
+box = await ethers.getContractAt("BoxV3", address)
+await box.setName("mybox")
+//wait for tx to be mined in a new block...
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<img style="width:100%;" src="/images/ether/tf2syipy44sjq0jixuge.png" />
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="prepare upgrade to Box V4" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+Run the prepare upgrade script:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn hardhat run scripts/4.prepareV4.ts --network ropsten
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+   This script will deploy a BoxV4 contract at <b>0xA0726E6e045f84dEe8D7cA4CdD427A68dd336458</b>.
+</div>
+<div style="margin-top:.625em;">
+We will upgrade in block explorer <b>https://ropsten.etherscan.io</b> manually.
+</div>
+<div style="margin-top:.625em;">
+ProxyAdmin is already verified on Etherscan block explorer. In ProxyAmdin contract write page, connect to wallet and run <b>upgrade()</b> like in the screenshot.
+</div>
+<div style="margin-top:.625em;">
+<img style="width:100%;" src="/images/ether/zans8cz2y6wt3zgn63s9.png" />
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+address = '0x1CD0c84b7C7C1350d203677Bb22037A92Cc7e268'
+box = await ethers.getContractAt("BoxV4", address)
+
+box = await ethers.getContractAt("BoxV4", address)
+await box.getName()
+//'Name: mynewbox'
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="read ProxyAdmin contract" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+<div>
+You can also read ProxyAdmin contract to get some information about the Box(proxy) contract:
+</div>
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li>getProxyAdmin</li>
+  <li>getProxyImplementation</li>
+  <li>owner</li>
+</ul>
+<div style="margin-top:.625em;">
+<img style="width:100%;" src="/images/ether/0bsn4dnef869qxoriv94.png" />
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+   If you would like to verify Box, BoxV2, BoxV3, BoxV4 contract in Etherscan, you can use hardhat plugin <b>hardhat-etherscan</b>.
+</div>
+<div style="margin-top:.625em;">
+Install plugin:
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn add @nomiclabs/hardhat-etherscan
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Verify BoxV4:
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;">
+      <![CDATA[
+$ yarn hardhat verify 0xA0726E6e045f84dEe8D7cA4CdD427A68dd336458 --network ropsten
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:darkseagreen;background-color:white;font-size:1.6em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.45em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+You have built and deploy proxy contract in local testnet and public testnet Ropsten in 7 tasks. You can continue to do more:
+</div>
+<ul style="margin-top:.325em;list-style: disc;margin-left: 1.5em;">
+  <li>Use OpenZeppelin Defender to manage upgrading.</li>
+  <li>Transfer ProxyAdmin owner to a multisig address such as Gnosis Safe multisig wallet.</li>
+</ul>
+   ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+</c:component>
