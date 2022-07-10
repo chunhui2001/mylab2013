@@ -1611,10 +1611,248 @@ func main()  {
                      titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;font-weight:normal;padding-bottom:0;"
                      bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:1em;">
       <![CDATA[
-我们看到这些显示数据，直接对应我们刚刚的所有操作。也只有合约账户才有 storage 和 code。而外部账户的codeHash和root值相同，是一个默认值。
+我们看到这些显示数据，直接对应我们刚刚的所有操作。也只有合约账户才有 storage 和 code。而外部账户的 codeHash 和 root 值相同，是一个默认值。
    ]]>
     </c:sourceContent>
 
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<div style="color:blue;font-size:1.2em;">以太坊交易-TRANSACTION</div>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="margin-top:.625em;">
+交易(Transaction)是指由一个外部账户转移一定资产给某个账户， 或者发出一个消息指令到某个智能合约。
+</div>
+<div style="margin-top:.625em;">
+在以太坊网络中，交易执行属于一个事务。具有原子性、一致性、隔离性、持久性特点。
+</div>
+<ul style="margin-left:2.5em;list-style:decimal;line-height:1.5em;">
+  <li style="margin-top:.3em;">原子性: 是不可分割的最小执行单位，要么做，要么不做。</li>
+  <li style="margin-top:.3em;">一致性: 同一笔交易执行，必然是将以太坊账本从一个一致性状态变到另一个一致性状态。</li>
+  <li style="margin-top:.3em;">隔离性: 交易执行途中不会受其他交易干扰。</li>
+  <li style="margin-top:.3em;">持久性: 一旦交易提交，则对以太坊账本的改变是永久性的。后续的操作不会对其有任何影响。</li>
+</ul>
+<div style="margin-top:.625em;">
+因为是事务型，因此我们需确保在执行事务前让交易符合一些设计要求。
+</div>
+<ul style="margin-left:2.5em;list-style:decimal;line-height:1.5em;">
+  <li style="margin-top:.3em;">交易必须唯一，能区分不同交易且同一笔交易不能重复提交到账本中。</li>
+  <li style="margin-top:.3em;">交易内容不得变化，每个节点收到的交易都必须一致，交易执行时账本状态变化也是一致的。</li>
+  <li style="margin-top:.3em;">交易必须被合法签名，只有已正确签名的交易才能被执行。</li>
+  <li style="margin-top:.3em;">交易不能占用过多系统资源，影响其他交易执行。</li>
+</ul>
+<div style="margin-top:.625em;">
+对交易的设计要求，涉及软件系统的方方面面，但最基础部分还是交易数据本身。下面，我细说下交易在 geth 中设计。
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="交易数据结构" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;font-weight:normal;padding-bottom:0;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-top:.625em;">
+  图是以太坊交易数据结构，根据用途，我将其划分为四部分。
+</div>
+<div style="margin-top:1em;">
+  <img style="width:100%" src="/images/deep-ether/24_transaction-struct.png" />
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;font-weight:normal;padding-bottom:0;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div style="margin-top:.625em;">
+开头是一个 uint64 类型的数字，称之为随机数。用于撤销交易、防止双花和修改以太坊账户的 Nonce 值（细节在讲解交易执行流程时讲解）。
+</div>
+<div style="margin-top:.625em;">
+第二部分是关于交易执行限制的设置，gas 为愿意供以太坊虚拟机运行的燃料上限。 gasPrice 是愿意支付的燃料单价。gasPrcie * gas 则为愿意为这笔交易支付的最高手续费。关于 gas 更多内容请阅读《理解Gas和手续费》。
+</div>
+<div style="margin-top:.625em;">
+我从程序执行逻辑上可以这样解释第三部分。是交易发送者输入以太坊虚拟机执行此交易的初始信息： 虚拟机操作对象（接收方 To）、从交易发送方转移到操作对象的资产（Value），以及虚拟机运行时入参(input)。其中 To 为空时，意味着虚拟机无可操作对象，此时虚拟机将利用 input 内容部署一个新合约。
+</div>
+<div style="margin-top:.625em;">
+第四部分是交易发送方对交易的签名结果，可以利用交易内容和签名结果反向推导出签名者，即交易发送方地址。
+</div>
+<div style="margin-top:.625em;">
+四部分内容的组合，解决了交易安全问题、实现了智能合约的互动方式以及提供了灵活可调整的交易手续费。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="交易对象定义" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;font-weight:normal;padding-bottom:0;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-top:.625em;">
+  具体到代码上，geth 将交易对象定义为一个对外可访问的 Transation 对象和内嵌的对外部包不可见的 txdata 。
+</div>
+<div style="margin-top:.625em;">
+  小写的 txdata 是 Go 语言的特性。首字母小写，则相当于其他编程语言中的 private 修饰符，表明该数据结构对外部包不可见。同样小写开头的对象字段(如 Transaction 中的 hash)，也表示外部包无法访问此字段。反之，首字母大写的类型、字段、方法等定义，视为public。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;font-weight:normal;padding-bottom: 0;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+// core/types/transaction.go:38
+type Transaction struct {
+    data txdata
+    // caches
+    hash atomic.Value
+    size atomic.Value
+    from atomic.Value
+}
+
+type txdata struct {
+    AccountNonce uint64     
+    Price        *big.Int  
+    GasLimit     uint64     
+    Recipient    *common.Address 
+    Amount       *big.Int
+    Payload      []byte
+
+    // Signature values
+    V *big.Int
+    R *big.Int
+    S *big.Int
+
+    // This is only used when marshaling to JSON.
+    Hash *common.Hash `json:"hash" rlp:"-"`
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;font-weight:normal;padding-bottom:0;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div style="margin-top:.625em;">
+首先看私有的 txdata 结构体中定义了交易消息中所有必要内容，依次对应前面所说的交易数据结构。有三点需要特别注意。
+</div>
+<div style="margin-top:.625em;">
+一是因涉及哈希运算，因此不能随意调整字段定义顺序，非特殊处理情况下必须按要求定义字段。所以txdata中定义的字段，是符合以太坊交易消息内容顺序的。
+</div>
+<div style="margin-top:.625em;">
+二是在涉及货币计算时，不能因为精度缺失引起计算不准确问题。因此在以太坊、比特币等所有区块链设计中，货币类型均是整数，但最小值1所代表的币值不一样。
+</div>
+<div style="margin-top:.625em;">
+在以太坊中一个以太币等于 10的18次方 Amount，当要表示 100 亿以太币时，Amount 等于10的27次方。已远远超过Uint64所能表示的范围(0-18446744073709551615)。因此 geth 一律采用Go标准包提供的大数 big.Int 进行货币运算和定义货币。这里的Price和Amount均是 big.Int 指针类型。另外，关于签名的三个值也是因为数字太大，而采用 big.Int 类型。
+</div>
+<div style="margin-top:.625em;">
+三是最后的Hash字段，这不属于交易内容的一部分，只是为了在交易的JSON中包含交易哈希。为了防止参与哈希运算，该字段被标记为rlp:"-"。
+</div>
+<div style="margin-top:.625em;">
+其次，Transaction 还定义了三个缓存项：交易哈希值(hash)、交易大小(size)和交易发送方(from)。缓存的原因是使用频次高且CPU计算量大。
+</div>
+<div style="margin-top:.625em;">
+在区块链中最见的是哈希运算，所有链上数据基本都要参与哈希运算。而哈希运算是CPU密集型的，因此有必要对一些哈希运算等进行缓存，降低CPU计算量。首次计算完交易哈希值后，便缓存交易哈希到 hash 字段上。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;font-weight:normal;padding-bottom: 0;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+func (tx *Transaction) Hash() common.Hash {
+   if hash := tx.hash.Load(); hash != nil {
+      return hash.(common.Hash)
+   }
+   v := rlpHash(tx)
+   tx.hash.Store(v)
+   return v
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;font-weight:normal;padding-bottom:0;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div style="margin-top:.625em;">
+hash 是atomic.Value类型，这是Go标准包提供的原子操作对象。这样可防止并发引起多次哈希计算。首先原子加载哈希值，如果存在则返回。如果不存在，则对交易进行哈希计算(rlpHash，是以太坊的哈希算法)，将哈希结果保存并返回。
+</div>
+<div style="margin-top:.625em;">
+第二个缓存是交易大小(size)。交易大小是指交易信息进行RLP编码后的数据大小。代表交易网络传输大小、代表交易占区块大小、代表交易存储大小。 每笔交易进入交易池都需要检查交易大小是否超过 32KB。推送交易数据给其他节点时也需结合交易大小，在不超过网络消息最大限制(默认10MB)下分包推送数据。为避免重复计算开销，在第一次计算后便缓存。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;font-weight:normal;padding-bottom: 0;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+func (tx *Transaction) Size() common.StorageSize {
+   if size := tx.size.Load(); size != nil {
+      return size.(common.StorageSize)
+   }
+   c := writeCounter(0)
+   rlp.Encode(&c, &tx.data)
+   tx.size.Store(common.StorageSize(c))
+   return common.StorageSize(c)
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;font-weight:normal;padding-bottom:0;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div style="margin-top:.625em;">
+如上，执行 rlp.Encode获得可得到数据大小，缓存结果并返回。
+</div>
+<div style="margin-top:.625em;">
+rlp 是以太坊定义的一套区块链数据编码解码协议，而非采用常见的 gzip、json、Protobuf 编码格式。目的是为了尽可能地压缩数据，毕竟区块链数据结构中只有常见的几种数据类型，不需要复杂的协议涉及，即可满足要求。
+</div>
+<div style="margin-top:.625em;">
+最后一个缓存项是交易发送方(from)。交易的发送方，是根据签名反向计算过程，同样是CPU密集型运算。为了保证交易合法性，程序中到处都有涉及取交易发送方地址和校验发送方的合法性。只有正确的签名才能得到发送方地址。因此对交易发送方也进行缓存。
+</div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;font-weight:normal;padding-bottom: 0;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//core/types/transaction_signing.go:72
+func Sender(signer Signer, tx *Transaction) (common.Address, error) {
+   if sc := tx.from.Load(); sc != nil {
+      sigCache := sc.(sigCache) 
+      if sigCache.signer.Equal(signer) {
+         return sigCache.from, nil
+      }
+   }
+
+   addr, err := signer.Sender(tx)
+   if err != nil {
+      return common.Address{}, err
+   }
+   tx.from.Store(sigCache{signer: signer, from: addr})
+   return addr, nil
+}
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;font-weight:normal;padding-bottom:0;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div style="margin-top:.625em;">
+特殊指出是需要一个Signer进行解签名，同时通过signer获取Sender，合法时缓存并返回。但在使用缓存内容时，还需要检查前后两个 Signer 是否一致，因为不一样的Signer 算法不一样，获得的交易签名者也不相同。
+</div>
+<div style="margin-top:.625em;">
+需要注意，上面三个缓存使用都在有一个前提条件：交易对象一旦创建，交易内容不得修改。这也是为何交易对象中单独定义在私有的 txdata 中，而非直接定义在 Transaction 中的原因之一。如下图所示，只能通过调用交易对象方法获取交易内容，无任何途径修改一个现有交易对象内容。
+</div>
+   ]]>
+    </c:sourceContent>
 
     <c:comment>
       <c:comment1>
