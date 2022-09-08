@@ -931,6 +931,201 @@ select * from users where id=1 for update;
 
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>MySQL发生死锁有哪些原因</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<h4>MySQL有三种锁的级别: 页级、表级、行级。</h4>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top:.3em;">
+    <li>表级锁: 开销小，加锁快；不会出现死锁；锁定粒度大，发生锁冲突的概率最高, 并发度最低。</li>
+    <li>行级锁: 开销大，加锁慢；会出现死锁；锁定粒度最小，发生锁冲突的概率最低, 并发度也最高。</li>
+    <li>页面锁: 开销和加锁时间界于表锁和行锁之间；会出现死锁；锁定粒度界于表锁和行锁之间, 并发度一般。</li>
+</ul>
+<h4 style="margin-top:1em;">加锁算法:</h4>
+<ul style="margin-left: 1.5em;list-style-type: disc;margin-top:.3em;">
+    <li>next KeyLocks 锁，同时锁住记录(数据)，并且锁住记录前面的Gap。</li>
+    <li>Gap 锁，不锁记录，仅仅记录前面的Gap。</li>
+    <li>Recordlock 锁（锁数据，不锁Gap）。</li>
+    <li>所以其实 Next-KeyLocks = Gap + Recordlock。</li>
+</ul>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="死锁产生原因和示例" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-top:.5em;">
+所谓死锁: <br /> DeadLock 是指两个或两个以上的进程在执行过程中,因争夺资源而造成的一种互相等待的现象,若无外力作用，它们都将无法推进下去.此时称系统处于死锁状态或系统产生了死锁，这些永远在互相等待的进程称为死锁进程。表级锁不会产生死锁.所以解决死锁主要还是针对于最常用的InnoDB。
+</div>
+<div style="margin-top:.5em;">
+死锁的关键在于: <br />两个(或以上)的Session加锁的顺序不一致。
+</div>
+<div style="margin-top:.5em;">
+那么对应的解决死锁问题的关键就是: <br />让不同的 session 加锁有次序
+</div>
+
+<h4 style="margin-top:1em;color:green;">查询当前数据库运行的所有事务</h4>
+<pre style="margin-top:.5em;padding:.625em 1.2em;background-color:darkslateblue;color:white;font-size:.825em;">
+mysql> SELECT
+  trx_mysql_thread_id,
+  trx_id,
+  trx_state,
+  trx_started,
+  trx_rows_locked,
+  trx_query,
+  trx_rows_locked,
+  trx_isolation_level
+FROM
+  information_schema.innodb_trx;
+</pre>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="死锁 -- 案例一" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-top:.5em;">
+需求：将投资的钱拆成几份随机分配给借款人。
+</div>
+<div style="margin-top:.5em;">
+起初业务程序思路是这样的: 
+</div>
+<div style="margin-top:.5em;">
+投资人投资后，将金额随机分为几份，然后随机从借款人表里面选几个，然后通过一条条 select for update 去更新借款人表里面的余额等。
+</div>
+<div style="margin-top:.5em;">
+例如两个用户同时投资，A用户金额随机分为2份，分给借款人1，2
+</div>
+<div style="margin-top:.5em;">
+B用户金额随机分为2份，分给借款人2，1
+</div>
+<div style="margin-top:.5em;">
+由于加锁的顺序不一样，死锁当然很快就出现了。
+</div>
+<div style="margin-top:.5em;">
+对于这个问题的改进很简单，直接把所有分配到的借款人直接一次锁住就行了。
+</div>
+<div style="margin-top:.5em;">
+那么对应的解决死锁问题的关键就是: <br />让不同的 session 加锁有次序
+</div>
+<pre style="margin-top:.5em;padding:.625em .3em;background-color:black;color:white;font-size:.725em;">
+> select * from t1 where id in (xx,xx,xx) for update
+</pre>
+<div style="margin-top:.5em;">
+在 in 里面的列表值 mysql 是会自动从小到大排序，加锁也是一条条从小到大加的锁
+</div>
+
+<h4 style="margin-top:1em;color:green;">Session1:</h4>
+<pre style="margin-top:.5em;padding:.625em 1.2em;background-color:black;color:white;font-size:.825em;">
+mysql> begin; select * from t3 where id in (8,9) for update;
+ 2.| +----+--------+------+---------------------+
+ 3.| | id | course | name | ctime               |
+ 4.| +----+--------+------+---------------------+
+ 5.| |  8 | WA     | f    | 2016-03-02 11:36:30 |
+ 6.| |  9 | JX     | f    | 2016-03-01 11:36:30 |
+ 7.| +----+--------+------+---------------------+
+ 8.| rows in set (0.04 sec)
+</pre>
+
+<h4 style="margin-top:1em;color:green;">Session2:</h4>
+<pre style="margin-top:.5em;padding:.625em 1.2em;background-color:black;color:white;font-size:.825em;">
+mysql> begin; select * from t3 where id in (10,8,5) for update;
+</pre>
+<div style="margin-top:.5em;">
+锁等待中 ……
+</div>
+<div style="margin-top:.5em;">
+其实这个时候id=10这条记录没有被锁住的，但id=5的记录已经被锁住了，锁的等待在id=8的这里 不信请看
+</div>
+
+<h4 style="margin-top:1em;color:green;">Session3:</h4>
+<pre style="margin-top:.5em;padding:.625em 1.2em;background-color:black;color:white;font-size:.825em;">
+mysql> begin; select * from t3 where id=5 for update;
+</pre>
+<div style="margin-top:.5em;">
+锁等待中 ……
+</div>
+
+<h4 style="margin-top:1em;color:green;">Session4:</h4>
+<pre style="margin-top:.5em;padding:.625em 1.2em;background-color:black;color:white;font-size:.825em;">
+mysql> begin; select * from t3 where id=10 for update;
+ 1.| +----+--------+------+---------------------+
+ 2.| | id | course | name | ctime               |
+ 3.| +----+--------+------+---------------------+
+ 4.| | 10 | JB     | g    | 2016-03-10 11:45:05 |
+ 5.| +----+--------+------+---------------------+
+ 6.| row in set (0.00 sec)
+</pre>
+<div style="margin-top:.5em;">
+在其它 session中id=5 是加不了锁的，但是 id=10 是可以加上锁的。
+</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="死锁 -- 案例二" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.625em;font-family:monospace;">
+      <![CDATA[
+<div style="margin-top:.5em;">
+在开发中, 经常会做这类的判断需求: 根据字段值查询（有索引）, 如果不存在, 则插入; 否则更新。
+</div>
+<div style="margin-top:.5em;">
+以id为主键为例, 目前还没有id=22的行
+</div>
+
+<h4 style="margin-top:1em;color:green;">Session1:</h4>
+<pre style="margin-top:.5em;padding:.625em 1.2em;background-color:black;color:white;font-size:.825em;">
+ 1.| msql> select * from t3 where id=22 for update;
+ 2.| Empty set (0.00 sec)
+</pre>
+
+<h4 style="margin-top:1em;color:green;">Session2:</h4>
+<pre style="margin-top:.5em;padding:.625em 1.2em;background-color:black;color:white;font-size:.825em;">
+ 1.| msql> select * from t3 where id=23 for update;
+ 2.| Empty set (0.00 sec)
+</pre>
+
+<h4 style="margin-top:1em;color:green;">Session1:</h4>
+<pre style="margin-top:.5em;padding:.625em 1.2em;background-color:black;color:white;font-size:.825em;">
+ 1.| insert into t3 values(22,'ac','a',now());
+</pre>
+<div style="margin-top:.5em;">
+锁等待中……
+</div>
+
+<h4 style="margin-top:1em;color:green;">Session2:</h4>
+<pre style="margin-top:.5em;padding:.625em 1.2em;background-color:black;color:white;font-size:.825em;">
+ 1.| msql> insert into t3 values(23,'bc','b',now());
+</pre>
+<div style="margin-top:.5em;">
+ERROR 1213 (40001): Deadlock found when trying to get lock; try restarting transaction
+</div>
+<div style="margin-top:.5em;">
+当对存在的行进行锁的时候(主键)，mysql就只有行锁。
+</div>
+<div style="margin-top:.5em;">
+当对未存在的行进行锁的时候(即使条件为主键)，mysql是会锁住一段范围（有gap锁）
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
     <c:title>事务与隔离级别</c:title>
     <c:desc>
       <c:desc1> <![CDATA[
