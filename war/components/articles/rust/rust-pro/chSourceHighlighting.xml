@@ -2,8 +2,13 @@
 <c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
   <c:abstract>
     <![CDATA[
-        
-        
+<div style="margin-bottom:1em;">
+  Rust是一门系统编程语言，专注于安全，尤其是并发安全，支持函数式和命令式以及泛型等编程范式的多范式语言。Rust在语法上和C++类似，但是设计者想要在保证性能的同时提供更好的内存安全。 Rust最初是由Mozilla研究院的Graydon Hoare设计创造，然后在Dave Herman, Brendan Eich以及很多其他人的贡献下逐步完善的。Rust的设计者们通过在研发Servo网站浏览器布局引擎过程中积累的经验优化了Rust语言和Rust编译器。
+</div>
+
+<div style="margin-bottom:1em;">
+  Rust编译器是在MIT License 和 Apache License 2.0双重协议声明下的免费开源软件。Rust已经连续七年（2016，2017，2018，2019，2020, 2021, 2022）在Stack Overflow开发者调查的“最受喜爱编程语言”评选项目中折取桂冠。
+</div>
 ]]>
   </c:abstract>
 
@@ -46,6 +51,15 @@ $ brew install rust-analyzer
 ## All Autocomplete
 -- 在所有打开的文件中进行关键字搜索以及补全（面对所有文本，不受编程语言以及单个文件的限制）
 
+## rust syntax
+-- 为代码提供语法高亮。
+
+## toml
+-- Rust 使用 toml 做项目的配置管理。
+
+## Tabnine
+-- 基于 AI 的自动补全，可以帮助你更快地撰写代码。一位来自加拿大的大四学霸，开发了一款”Deep TabNine“代码补全工具，实现了这一大胆的想法。它支持23种编程语言、5种编辑器，使用简单，效果惊艳。
+
 ### 设置 LSP 
 ## 通过 sublime 打开一个随意的 rust 文件或项目文件夹，快捷键 command + shift + p 调出命令选项，有两种命令可选：
 -- LSP: Enable Language Server Globally 此命令会让 sublime 只要启动就加载所选的代码分析前端（不建议，会影响s ublime 的冷启动性能）
@@ -64,8 +78,225 @@ $ brew install rust-analyzer
   <img style="max-width:100%" src="/images/rust/1395949-20211205193017709-311037346.png" />
 </div>
 
+<blockquote style="font-size:1em;line-height:1.6em;">
+  <div style="margin-bottom:1em;">
+    Rust 语言服务器（RLS）基于 LSP（Language Server Protocol），即语言服务器协议，LSP 由红帽、微软和 Codenvy 联合推出，可以让不同的程序编辑器与集成开发环境（IDE）方便地嵌入各种编程语言，允许开发人员在最喜爱的工具中使用各种语言来编写程序。
+  </div> 
+  <div style="margin-bottom:1em;">
+    它通过用于开发工具和语言服务器间通信的 JSON-RPC 标准，能够让编程工具提供实时反馈的详细信息并以此实现多种强大功能，比如符号搜寻、语法分析、代码自动补全、移至定义、描绘轮廓与重构等。Rust 语言服务器集成了这些逻辑作为后端，并通过标准的 LSP 提供给前端工具，它被设计为与前端无关，可以被不同的编辑器和 IDE 广泛采用，但目前项目团队仅在 VS Code 中进行测试。用户可以在 VS Code 扩展商店中找到基于 RLS 实现的 Rust 官方插件。
+   </div>
+  <div style="margin-bottom:1em;">
+    <b>rust-anlyzer（RA）</b>是除了 RSL 以外的另一个 Rust 语言服务器，由社区驱动开发。自 2019 年末发布第一个预编译 Release 以来，RA 都会在每周二稳定发布新版本并保持至今。经过快速的迭代，目前 RA 各方面的优化和提升已经超越 RSL，所以也被官方纳入 RSL 2.0 计划的一部分。 Rust 的 VS Code 官方插件也已经增加了对 RA 的支持。
+   </div>
+  <div style="margin-bottom:1em;">
+    RA 目前已经支持 Vim、Emac、Sublime Text 3 和 VSCode 等编辑器，可通过官方文档获取详细的安装指导。
+   </div>
+ </blockquote>
+
     ]]>
     </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Cargo 工作空间</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="font-size:1.2em;">
+  管理多个相互关联且需要协同开发的包
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="创建工作空间" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+$ mkdir rustlabs && cd rustlabs && touch Cargo.toml
+
+### Cargo.toml 内容
+[workspace]
+members = [
+  "lab1",
+  "lib1"
+]
+
+### 在该工作空间下创建 lab1 二进制包
+$ cargo new lab1 && cargo build
+
+### 继续在该工作空间下创建 lib1 代码包 (--lib)
+$ cargo new lib1 --lib && cargo build
+
+### 在 lib1/src/lib.rs 文件中添加一个 add_one 函数
+pub fn add_one(x: i32) -> i32 {
+  x + 1
+}
+
+### 将 lib1 代码包添加到lab1二进制包中, 在 lab1 中将要使用 lib1 导出的函数
+$ vi lab1/Cargo.toml
+[dependencies]
+lib1 = { path = "../lib1" }
+
+### 在 lab1 中使用来自 lib1 包的 add_one 函数
+$ vi lab1/src/main.rs
+use lib1;
+
+fn main() {
+  let num = 10;
+  println!("Hello world! {} plus one is: {}!", num, lib1::add_one(num));
+}
+
+### 构建整个工作空间
+$ cargo build
+
+### 运行指定的二进制包
+$ cargo run -p lab1
+
+
+### 添加外部依赖包
+$ vi lib1/Cargo.toml
+[dependencies]
+rand = "0.3.14"
+
+### 再次构建整个工作空间, 此时 Cargo 就会引入并编译新添加的 rand 包
+$ cargo build
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="为当前工作空间增加测试" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 为 lib1::add_one 函数增加一个测试
+$ vi lib1/src/lib.rs
+#[cfg(test)]
+mod tests {
+
+  use super::*;
+
+  #[test]
+  fn it_works() {
+    assert_eq!(3, add_one(2));
+  }
+}
+
+// 运行当前工作空间下的所有测试
+$ cargo test
+
+// 运行某个特定包的测试
+$ cargo test -p lib1
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="使用 cargo install 从 crates.io 上安装可执行程序" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 输出结果的最后一行显示了二进制文件的安装路径和名称
+$ cargo install ripgrep
+    Finished release [optimized + debuginfo] target(s) in 1m 06s
+  Installing /Users/keesh/.cargo/bin/rg
+   Installed package `ripgrep v13.0.0` (executable `rg`)
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="使用自定义命令扩展 cargo 的功能" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// cargo 允许我们添加子命令来扩展它的功能而无需修改 Cargo 自身, 只要你的 $PATH 路径中存在指定的二进制文件即可, 就好像它是 cargo 的子命令一样
+$ cargo rg
+
+// 显示当前包的依赖图
+$ cargo tree OR cargo tree -p tera
+
+// 列出 cargo 的内置子命令
+$ cargo --list
+Installed Commands:
+    add                  Add dependencies to a Cargo.toml manifest file
+    b                    alias: build
+    bench                Execute all benchmarks of a local package
+    build                Compile a local package and all of its dependencies
+    c                    alias: check
+    check                Check a local package and all of its dependencies for errors
+    clean                Remove artifacts that cargo has generated in the past
+    clippy               Checks a package to catch common mistakes and improve your Rust code.
+    config               Inspect configuration values
+    d                    alias: doc
+    doc                  Build a package's documentation
+    fetch                Fetch dependencies of a package from the network
+    fix                  Automatically fix lint warnings reported by rustc
+    fmt                  Formats all bin and lib files of the current crate using rustfmt.
+    generate-lockfile    Generate the lockfile for a package
+    git-checkout         This command has been removed
+    help                 Displays help for a cargo subcommand
+    init                 Create a new cargo package in an existing directory
+    install              Install a Rust binary. Default location is $HOME/.cargo/bin
+    locate-project       Print a JSON representation of a Cargo.toml file's location
+    login                Save an api token from the registry locally. If token is not specified, it will be read from stdin.
+    logout               Remove an API token from the registry locally
+    metadata             Output the resolved dependencies of a package, the concrete used versions including overrides, in machine-readable format
+    miri
+    new                  Create a new cargo package at <path>
+    owner                Manage the owners of a crate on the registry
+    package              Assemble the local package into a distributable tarball
+    pkgid                Print a fully qualified package specification
+    publish              Upload a package to the registry
+    r                    alias: run
+    read-manifest        Print a JSON representation of a Cargo.toml manifest.
+    remove               Remove dependencies from a Cargo.toml manifest file
+    report               Generate and display various kinds of reports
+    rm                   alias: remove
+    run                  Run a binary or example of the local package
+    rustc                Compile a package, and pass extra options to the compiler
+    rustdoc              Build a package's documentation, using specified custom flags.
+    search               Search packages in crates.io
+    t                    alias: test
+    test                 Execute all unit and integration tests and build examples of a local package
+    tree                 Display a tree visualization of a dependency graph
+    uninstall            Remove a Rust binary
+    update               Update dependencies as recorded in the local lock file
+    vendor               Vendor all dependencies for a project locally
+    verify-project       Check correctness of crate manifest
+    version              Show version information
+    yank                 Remove a pushed crate from the index
+
+    ]]>
+    </c:sourceContent>
+
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>悬空指针</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+{
+  let r;
+  {
+    let x = 1;
+    r = &x;
+  }
+  println!("{}", r)
+}
+
+    ]]>
+    </c:sourceContent>
+
 
     <c:comment>
       <c:comment1>
