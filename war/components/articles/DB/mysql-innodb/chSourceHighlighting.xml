@@ -3295,6 +3295,117 @@ OBJECT_INSTANCE_BEGIN: 140066534007192
   <li>当查询的记录「不存在」时，扫描到第一条不符合条件的二级索引记录，该二级索引的  next-key 锁会退化成间隙锁。因为不存在满足查询条件的记录，所以不会对主键索引加锁。</li>
 </ul>
 
+<div style="margin-top:1.325em;">
+接下里用两个实验来说明。
+</div>
+
+<div style="margin-top:.625em;">
+<b>实验一：针对非唯一索引等值查询时，查询的值不存在的情况。</b>
+</div>
+
+<div style="margin-top:.325em;">
+假设事务 A 对非唯一索引（age）进行了等值查询，且表中不存在 age = 25 的记录。
+</div>
+
+<pre style="margin-top:.5em;padding:.625em 1.2em;background-color:darkslateblue;color:white;font-size:.425em;">
+mysql> begin; select * from t_user where age = 25 for update;
+Query OK, 0 rows affected (0.00 sec)
+
+Empty set (0.00 sec)
+</pre>
+
+<div style="margin-top:1.325em;">
+事务 A 加锁变化过程如下：
+</div>
+
+<ul style="margin-left: 2em;list-style-type: decimal;margin-top: .325em;">
+  <li>定位到第一条不符合查询条件的二级索引记录，即扫描到 age = 39，于是**该二级索引的  next-key 锁会退化成间隙锁，范围是 (22, 39)**。</li>
+  <li>停止查询</li>
+</ul>
+
+<div style="margin-top:.325em;">
+事务 A 在 age = 39 记录的二级索引上，加了 X 型的间隙锁，范围是  (22, 39)。意味着其他事务无法插入 age 值为 23、24、25、26、....、38 这些新记录。不过对于插入 age = 22 和 age = 39 记录的语句，在一些情况是可以成功插入的，而一些情况则无法成功插入，具体哪些情况，会在后面说。
+</div>
+
+<div>
+  <img style="max-width:60%" src="/images/mysql/640-5.png" />
+</div>
+
+<div style="margin-top:1.325em;">
+我们也可以通过 <b>select * from performance_schema.data_locks\G</b> 这条语句来看看事务 A 加了什么锁。
+</div>
+
+<pre style="margin-top:.5em;padding:.625em 1.2em;background-color:darkslateblue;color:white;font-size:.425em;">
+mysql> select * from performance_schema.data_locks\G
+*************************** 1. row ***************************
+               ENGINE: INNODB
+       ENGINE_LOCK_ID: 140066614791384:1067:140066534009760
+ENGINE_TRANSACTION_ID: 1888
+            THREAD_ID: 73
+             EVENT_ID: 31
+        OBJECT_SCHEMA: mydb
+          OBJECT_NAME: t_user
+       PARTITION_NAME: NULL
+    SUBPARTITION_NAME: NULL
+           INDEX_NAME: NULL
+OBJECT_INSTANCE_BEGIN: 140066534009760
+            LOCK_TYPE: TABLE
+            LOCK_MODE: IX
+          LOCK_STATUS: GRANTED
+            LOCK_DATA: NULL
+*************************** 2. row ***************************
+               ENGINE: INNODB
+       ENGINE_LOCK_ID: 140066614791384:2:5:6:140066534006848
+ENGINE_TRANSACTION_ID: 1888
+            THREAD_ID: 73
+             EVENT_ID: 31
+        OBJECT_SCHEMA: mydb
+          OBJECT_NAME: t_user
+       PARTITION_NAME: NULL
+    SUBPARTITION_NAME: NULL
+           INDEX_NAME: index_age          | 索引名字
+OBJECT_INSTANCE_BEGIN: 140066534006848
+            LOCK_TYPE: RECORD             | 行锁: 
+            LOCK_MODE: X,GAP              | 二级索引加X型间隙锁
+          LOCK_STATUS: GRANTED            |   
+            LOCK_DATA: 39, 20             | 范围()
+2 rows in set (0.01 sec)
+</pre>
+
+<div style="margin-top:1.325em;">
+从上图的分析，可以看到，事务 A 在 age = 39 记录的二级索引上（INDEX_NAME: index_age  ），加了范围为 (22, 39) 的 X 型间隙锁。
+</div>
+
+<div style="margin-top:.325em;">
+此时，如果有其他事务插入了 age 值为 23、24、25、26、....、38 这些新记录，那么这些插入语句都会发生阻塞。不过对于插入 age = 39 记录的语句，在一些情况是可以成功插入的，而一些情况则无法成功插入，具体哪些情况，接下来我们就说！
+</div>
+
+<div style="margin-top:.325em;">
+当有一个事务持有二级索引的间隙锁 (22, 39) 时，什么情况下，可以让其他事务的插入 age = 22 或者 age = 39 记录的语句成功？又是什么情况下，插入  age = 22 或者 age = 39 记录时的语句会被阻塞？
+</div>
+
+<div style="margin-top:1.325em;">
+我们先要清楚，什么情况下插入语句会发生阻塞。
+</div>
+
+<div style="margin-top:.325em;">
+插入语句在插入一条记录之前，需要先定位到该记录在 B+树 的位置，如果插入的位置的下一条记录的索引上有间隙锁，才会发生阻塞。
+</div>
+
+<div style="margin-top:.325em;">
+在分析二级索引的间隙锁是否可以成功插入记录时，我们要先要知道二级索引树是如何存放记录的？
+</div>
+
+<div style="margin-top:.325em;">
+二级索引树是按照二级索引值（age列）按顺序存放的，在相同的二级索引值情况下， 再按主键 id 的顺序存放。知道了这个前提，我们才能知道执行插入语句的时候，插入的位置的下一条记录是谁。
+</div>
+
+<div style="margin-top:.325em;">
+基于前面的实验，事务 A 是在 age = 39 记录的二级索引上，加了 X 型的间隙锁，范围是  (22, 39)。
+</div>
+
+
+
     ]]>
     </c:sourceContent>
 
