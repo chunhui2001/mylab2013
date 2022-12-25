@@ -3665,6 +3665,99 @@ Query OK, 0 rows affected (0.00 sec)
 2 rows in set (0.00 sec)
 </pre>
 
+<div style="margin-top:.625em;">
+事务 A 的加锁变化：
+</div>
+
+<ul style="margin-left: 2em;list-style-type:decimal;margin-top: .325em;">
+  <li>最开始要找的第一行是 age = 22，虽然范围查询语句包含等值查询，但是这里不是唯一索引范围查询，所以是不会发生退化锁的现象，因此对该二级索引记录加 next-key 锁，范围是 (21, 22]。同时，对 age = 22 这条记录的主键索引加记录锁，即对 id = 10 这一行记录的主键索引加记录锁。</li>
+  <li style="margin-top:.325em;">由于是范围查询，接着继续扫描已经存在的二级索引记录。扫面的第二行是 age = 39 的二级索引记录，于是对该二级索引记录加 next-key 锁，范围是 (22, 39]，同时，对 age = 39 这条记录的主键索引加记录锁，即对 id = 20 这一行记录的主键索引加记录锁。</li>
+  <li style="margin-top:.325em;">虽然我们看见表中最后一条二级索引记录是 age = 39 的记录，但是实际在 Innodb 存储引擎中，会用一个特殊的记录来标识最后一条记录，该特殊的记录的名字叫 supremum pseudo-record ，所以扫描第二行的时候，也就扫描到了这个特殊记录的时候，会对该二级索引记录加的是范围为  (39, +∞] 的 next-key 锁。</li>
+  <li style="margin-top:.325em;">停止查询</li>
+</ul>
+
+<div style="margin-top:.625em;">
+可以看到，事务 A 对主键索引和二级索引都加了 X 型的锁：
+</div>
+
+<div>
+  <img style="max-width:70%;margin-top:.625em;" src="/images/mysql/640-7.png" />
+</div>
+
+<ul style="margin-left: 2em;list-style-type:decimal;margin-top: 1.325em;">
+  <li>
+    <div>主键索引（id 列）: </div>
+    <ul style="margin-left:1em;list-style-type:disc;margin-top:.325em;">
+      <li>在 id = 10 这条记录的主键索引上，加了记录锁，意味着其他事务无法更新或者删除 id = 10 的这一行记录。</li>
+      <li>在 id = 20 这条记录的主键索引上，加了记录锁，意味着其他事务无法更新或者删除 id = 20 的这一行记录。</li>
+    </ul>
+  </li>
+  <li style="margin-top:.325em;">
+    <div>二级索引（age 列）: </div>
+    <ul style="margin-left:1em;list-style-type:disc;margin-top:.325em;">
+      <li>在 age = 22 这条记录的二级索引上，加了范围为 (21, 22] 的 next-key 锁，意味着其他事务无法更新或者删除 age = 22 的这一些新记录，不过对于是否可以插入 age = 21 和 age = 22 的新记录，还需要看新记录的 id 值，有些情况是可以成功插入的，而一些情况则无法插入，具体哪些情况，我们前面也讲了。</li>
+      <li>在 age = 39 这条记录的二级索引上，加了范围为 (22, 39] 的 next-key 锁，意味着其他事务无法更新或者删除 age = 39 的这一些记录，也无法插入 age 值为 23、24、25、...、38 的这一些新记录。不过对于是否可以插入 age = 22 和 age = 39 的新记录，还需要看新记录的 id 值，有些情况是可以成功插入的，而一些情况则无法插入，具体哪些情况，我们前面也讲了。</li>
+      <li>在特殊的记录（supremum pseudo-record）的二级索引上，加了范围为 (39, +∞] 的 next-key 锁，意味着其他事务无法插入 age 值大于 39 的这些新记录。</li>
+    </ul>
+  </li>
+</ul>
+
+<div style="margin-top:.625em;">
+在 age >= 22  的范围查询中，明明查询 age = 22 的记录存在并且属于等值查询，为什么不会像唯一索引那样，将 age = 22 记录的二级索引上的 next-key 锁退化为记录锁？
+</div>
+
+<div style="margin-top:.625em;">
+因为 age 字段是非唯一索引，不具有唯一性，所以如果只加记录锁（记录锁无法防止插入，只能防止删除或者修改），就会导致其他事务插入一条 age = 22 的记录，这样前后两次查询的结果集就不相同了，出现了幻读现象。
+</div>
+
+<h3 style="color:green;margin-top:1.325em;">没有加索引的查询</h3>
+
+<div style="margin-top:.625em;">
+前面的案例，我们的查询语句都有使用索引查询，也就是查询记录的时候，是通过索引扫描的方式查询的，然后对扫描出来的记录进行加锁。
+</div>
+
+<div style="margin-top:.625em;">
+如果锁定读查询语句，没有使用索引列作为查询条件，或者查询语句没有走索引查询，导致扫描是全表扫描。那么，每一条记录的索引上都会加 next-key 锁，这样就相当于锁住的全表，这时如果其他事务对该表进行增、删、改操作的时候，都会被阻塞。
+</div>
+
+<div style="margin-top:.625em;">
+不只是锁定读查询语句不加索引才会导致这种情况，update 和 delete 语句如果查询条件不加索引，那么由于扫描的方式是全表扫描，于是就会对每一条记录的索引上都会加 next-key 锁，这样就相当于锁住的全表。
+</div>
+
+<div style="margin-top:.625em;">
+因此，在线上在执行 update、delete、select ... for update 等具有加锁性质的语句，一定要检查语句是否走了索引，如果是全表扫描的话，会对每一个索引加 next-key 锁，相当于把整个表锁住了，这是挺严重的问题。
+</div>
+
+<div style="margin-top:.325em;">
+这次我以 MySQL 8.0.26 版本，在可重复读隔离级别之下，做了几个实验，让大家了解了唯一索引和非唯一索引的行级锁的加锁规则。
+</div>
+
+<h3 style="color:green;margin-top:1.325em;">总结下，  MySQL 行级锁的加锁规则。</h3>
+
+<ul style="margin-left: 2em;list-style-type:decimal;margin-top: 1.325em;">
+  <li>
+    <div>唯一索引等值查询：</div>
+    <ul style="margin-left:1em;list-style-type:disc;margin-top:.325em;">
+      <li>当查询的记录是「存在」的，在索引树上定位到这一条记录后，将该记录的索引中的 next-key lock 会退化成「记录锁」。</li>
+      <li>当查询的记录是「不存在」的，在索引树找到第一条大于该查询记录的记录后，将该记录的索引中的 next-key lock 会退化成「间隙锁」。</li>
+    </ul>
+  </li>
+  <li style="margin-top:.325em;">
+    <div>非唯一索引等值查询：</div>
+    <ul style="margin-left:1em;list-style-type:disc;margin-top:.325em;">
+      <li>当查询的记录「存在」时，由于不是唯一索引，所以肯定存在索引值相同的记录，于是非唯一索引等值查询的过程是一个扫描的过程，直到扫描到第一个不符合条件的二级索引记录就停止扫描，然后在扫描的过程中，对扫描到的二级索引记录加的是 next-key 锁，而对于第一个不符合条件的二级索引记录，该二级索引的 next-key 锁会退化成间隙锁。同时，在符合查询条件的记录的主键索引上加记录锁。</li>
+      <li>当查询的记录「不存在」时，扫描到第一条不符合条件的二级索引记录，该二级索引的  next-key 锁会退化成间隙锁。因为不存在满足查询条件的记录，所以不会对主键索引加锁。</li>
+    </ul>
+  </li>
+  <li style="margin-top:.325em;">
+    <div>非唯一索引和主键索引的范围查询的加锁规则不同之处在于：</div>
+    <ul style="margin-left:1em;list-style-type:disc;margin-top:.325em;">
+      <li>唯一索引在满足一些条件的时候，索引的 next-key lock 退化为间隙锁或者记录锁。</li>
+      <li>非唯一索引范围查询，索引的 next-key lock 不会退化为间隙锁和记录锁。</li>
+    </ul>
+  </li>
+</ul>
+
     ]]>
     </c:sourceContent>
 
