@@ -3368,7 +3368,7 @@ OBJECT_INSTANCE_BEGIN: 140066534006848
             LOCK_TYPE: RECORD             | 行锁: 
             LOCK_MODE: X,GAP              | 二级索引加X型间隙锁
           LOCK_STATUS: GRANTED            |   
-            LOCK_DATA: 39, 20             | 范围()
+            LOCK_DATA: 39, 20             | 范围(22,39)
 2 rows in set (0.01 sec)
 </pre>
 
@@ -3400,11 +3400,270 @@ OBJECT_INSTANCE_BEGIN: 140066534006848
 二级索引树是按照二级索引值（age列）按顺序存放的，在相同的二级索引值情况下，再按主键 id 的顺序存放。知道了这个前提，我们才能知道执行插入语句的时候，插入的位置的下一条记录是谁。
 </div>
 
-<div style="margin-top:.325em;">
+<div style="margin-top:1.325em;">
 基于前面的实验，事务 A 是在 age = 39 记录的二级索引上，加了 X 型的间隙锁，范围是  (22, 39)。
 </div>
 
+<div style="margin-top:1.325em;">
+插入 age = 22 记录的成功和失败的情况分别如下：
+</div>
 
+<ul style="margin-left: 2em;list-style-type: decimal;margin-top: .325em;">
+  <li>当其他事务插入一条 age = 22，id = 3 的记录的时候，在二级索引树上定位到插入的位置，而该位置的下一条是 id = 10、age = 22 的记录，该记录的二级索引上没有间隙锁，所以这条插入语句可以执行成功。</li>
+  <li>当其他事务插入一条 age = 22，id = 12 的记录的时候，在二级索引树上定位到插入的位置，而该位置的下一条是 id = 20、age = 39 的记录，正好该记录的二级索引上有间隙锁，所以这条插入语句会被阻塞，无法插入成功。</li>
+</ul>
+
+<div style="margin-top:1.325em;">
+插入 age = 39 记录的成功和失败的情况分别如下：
+</div>
+
+<ul style="margin-left: 2em;list-style-type: decimal;margin-top: .325em;">
+  <li>当其他事务插入一条 age = 39，id = 3 的记录的时候，在二级索引树上定位到插入的位置，而该位置的下一条是 id = 20、age = 39 的记录，正好该记录的二级索引上有间隙锁，所以这条插入语句会被阻塞，无法插入成功。</li>
+  <li>当其他事务插入一条 age = 39，id = 21 的记录的时候，在二级索引树上定位到插入的位置，而该位置的下一条记录不存在，也就没有间隙锁了，所以这条插入语句可以插入成功。</li>
+</ul>
+
+<div style="margin-top:1.325em;">
+所以，当有一个事务持有二级索引的间隙锁 (22, 39) 时，插入 age = 22 或者 age = 39 记录的语句是否可以执行成功，关键还要考虑插入记录的主键值，因为「二级索引值（age列）+主键值（id列）」才可以确定插入的位置，确定了插入位置后，就要看插入的位置的下一条记录是否有间隙锁，如果有间隙锁，就会发生阻塞，如果没有间隙锁，则可以插入成功。
+</div>
+
+<div style="margin-top:1.325em;">
+在前面分析输出结果的时候，我说的结论是：「事务 A 在 age = 39 记录的二级索引上（INDEX_NAME: index_age  ），加了范围为 (22, 39) 的 X 型间隙锁」。这个结论其实还不够准确，因为只考虑了 LOCK_DATA 第一个数值（39），没有考虑 LOCK_DATA 第二个数值（20）。
+</div>
+
+<div style="margin-top:1.325em;">
+那 LOCK_DATA：39，20 是什么意思？
+</div>
+
+<ul style="margin-left: 2em;list-style-type: decimal;margin-top: .325em;">
+  <li>LOCK_DATA 第一个数值，也就是 39，它代表的是 age 值。从前面我们也知道了，LOCK_DATA 第一个数值是 next-key 锁和间隙锁锁住的范围的右边界值。</li>
+  <li>LOCK_DATA 第二个数值，也就是 20，它代表的是 id 值。</li>
+</ul>
+
+<div style="margin-top:1.325em;">
+之所以 LOCK_DATA 要多显示一个数值（ID值），是因为针对「当某个事务持有非唯一索引的 (22, 39) 间隙锁的时候，其他事务是否可以插入 age = 39 新记录」的问题，还需要考虑插入记录的 id 值。而 LOCK_DATA 的第二个数值，就是说明在插入 age = 39 新记录时，哪些范围的 id 值是不可以插入的。
+</div>
+
+<div style="margin-top:1.325em;">
+因此，LOCK_DATA=39，20 + LOCK_MODE=X,GAP 的意思是，事务 A 在 age = 39 记录的二级索引上（INDEX_NAME: index_age ），加了 age 值范围为 (22, 39) 的 X 型间隙锁，同时针对其他事务插入 age 值为 39 的新记录时，不允许插入的新记录的 id 值小于 20。如果插入的新记录的 id 值大于 20，则可以插入成功。
+</div>
+
+<div style="margin-top:1.325em;">
+但是我们无法从 <b>select * from performance_schema.data_locks\G</b> 输出的结果分析出「在插入 age =22 新记录时，哪些范围的 id 值是可以插入成功的」，这时候就得自己画出二级索引的 B+ 树的结构，然后确定插入位置后，看下该位置的下一条记录是否存在间隙锁，如果存在间隙锁，则无法插入成功，如果不存在间隙锁，则可以插入成功。
+</div>
+
+
+<div style="margin-top:.625em;">
+<b>实验二：针对非唯一索引等值查询时，查询的值存在的情况。</b>
+</div>
+
+<div style="margin-top:.325em;">
+假设事务 A 对非唯一索引（age）进行了等值查询，且表中存在 age = 22 的记录。
+</div>
+
+<pre style="margin-top:.5em;padding:.625em 1.2em;background-color:darkslateblue;color:white;font-size:.425em;">
+mysql> begin; select * from t_user where age = 22 for update;
+Query OK, 0 rows affected (0.00 sec)
+
++----+-------+-----+
+| id | name  | age |
++----+-------+-----+
+| 10 | Jerry |  22 |
++----+-------+-----+
+1 row in set (0.00 sec)
+</pre>
+
+<div style="margin-top:1.325em;">
+事务 A 加锁变化过程如下：
+</div>
+
+<ul style="margin-left: 2em;list-style-type: decimal;margin-top: .325em;">
+  <li>由于不是唯一索引，所以肯定存在值相同的记录，于是非唯一索引等值查询的过程是一个扫描的过程，最开始要找的第一行是 age = 22，于是对该二级索引记录加上范围为 (21, 22] 的 next-key 锁。同时，因为 age = 22 符合查询条件，于是对 age = 22 的记录的主键索引加上记录锁，即对 id = 10 这一行加记录锁。</li>
+  <li>接着继续扫描，扫描到的第二行是 age = 39，该记录是第一个不符合条件的二级索引记录，所以该二级索引的  next-key 锁会退化成间隙锁，范围是 (22, 39)。</li>
+  <li>停止查询。</li>
+</ul>
+
+<div style="margin-top:1.325em;">
+可以看到，事务 A 对主键索引和二级索引都加了 X 型的锁：
+</div>
+
+<div>
+  <img style="width:100%;margin-top:.625em;" src="/images/mysql/640-6.png" />
+</div>
+
+<ul style="margin-left: 2em;list-style-type:decimal;margin-top: .325em;">
+  <li>
+    <div>主键索引:</div>
+    <ul style="margin-left:1em;list-style-type:disc;margin-top: .325em;">
+      <li>在 id = 10 这条记录的主键索引上，加了记录锁，意味着其他事务无法更新或者删除 id = 10 的这一行记录。</li>
+    </ul>
+  </li>
+  <li style="margin-top:.325em;">
+    <div>二级索引（非唯一索引）:</div>
+    <ul style="margin-left:1em;list-style-type:disc;margin-top:.325em;">
+      <li>在 age = 22 这条记录的二级索引上，加了范围为 (21, 22] 的 next-key 锁，意味着其他事务无法更新或者删除 age = 22 的这一些新记录，不过对于插入 age = 20 和 age = 21 新记录的语句，在一些情况是可以成功插入的，而一些情况则无法成功插入，具体哪些情况，会在后面说。</li>
+      <li>在 age = 39 这条记录的二级索引上，加了范围 (22, 39) 的间隙锁。意味着其他事务无法插入 age 值为 23、24、..... 、38 的这一些新记录。不过对于插入 age = 22 和 age = 39 记录的语句，在一些情况是可以成功插入的，而一些情况则无法成功插入，具体哪些情况，会在后面说。</li>
+    </ul>
+  </li>
+</ul>
+
+<div style="margin-top:1.325em;">
+我们也可以通过 <b>select * from performance_schema.data_locks\G</b> 这条语句来看看事务 A 加了什么锁。
+</div>
+
+<pre style="margin-top:.5em;padding:.625em 1.2em;background-color:darkslateblue;color:white;font-size:.425em;">
+mysql> select * from performance_schema.data_locks\G
+*************************** 1. row ***************************
+               ENGINE: INNODB
+       ENGINE_LOCK_ID: 140664182881496:1067:140664071334816
+ENGINE_TRANSACTION_ID: 1833
+            THREAD_ID: 51
+             EVENT_ID: 130
+        OBJECT_SCHEMA: mydb
+          OBJECT_NAME: t_user
+       PARTITION_NAME: NULL
+    SUBPARTITION_NAME: NULL
+           INDEX_NAME: NULL
+OBJECT_INSTANCE_BEGIN: 140664071334816
+            LOCK_TYPE: TABLE
+            LOCK_MODE: IX
+          LOCK_STATUS: GRANTED
+            LOCK_DATA: NULL
+*************************** 2. row ***************************
+               ENGINE: INNODB
+       ENGINE_LOCK_ID: 140664182881496:2:5:4:140664071331904
+ENGINE_TRANSACTION_ID: 1833
+            THREAD_ID: 51
+             EVENT_ID: 130
+        OBJECT_SCHEMA: mydb
+          OBJECT_NAME: t_user
+       PARTITION_NAME: NULL
+    SUBPARTITION_NAME: NULL
+           INDEX_NAME: index_age          | 索引名字(二级索引)
+OBJECT_INSTANCE_BEGIN: 140664071331904    | 
+            LOCK_TYPE: RECORD             | 行锁
+            LOCK_MODE: X                  | X型next-key锁
+          LOCK_STATUS: GRANTED            |   
+            LOCK_DATA: 22, 10             | 范围(21,22]
+*************************** 3. row ***************************
+               ENGINE: INNODB
+       ENGINE_LOCK_ID: 140664182881496:2:4:4:140664071332248
+ENGINE_TRANSACTION_ID: 1833
+            THREAD_ID: 51
+             EVENT_ID: 130
+        OBJECT_SCHEMA: mydb
+          OBJECT_NAME: t_user
+       PARTITION_NAME: NULL
+    SUBPARTITION_NAME: NULL
+           INDEX_NAME: PRIMARY            | 主键索引
+OBJECT_INSTANCE_BEGIN: 140664071332248    |
+            LOCK_TYPE: RECORD             | 行锁
+            LOCK_MODE: X,REC_NOT_GAP      | X型记录锁
+          LOCK_STATUS: GRANTED            |  
+            LOCK_DATA: 10                 | 范围id=10
+*************************** 4. row ***************************
+               ENGINE: INNODB
+       ENGINE_LOCK_ID: 140664182881496:2:5:6:140664071332592
+ENGINE_TRANSACTION_ID: 1833
+            THREAD_ID: 51
+             EVENT_ID: 130
+        OBJECT_SCHEMA: mydb
+          OBJECT_NAME: t_user
+       PARTITION_NAME: NULL
+    SUBPARTITION_NAME: NULL
+           INDEX_NAME: index_age          | 索引名字(二级索引)   
+OBJECT_INSTANCE_BEGIN: 140664071332592    |      
+            LOCK_TYPE: RECORD             | 行锁      
+            LOCK_MODE: X,GAP              | X型间隙锁  
+          LOCK_STATUS: GRANTED            | 
+            LOCK_DATA: 39, 20             | 范围(22,39)
+4 rows in set (0.01 sec)
+</pre>
+
+<div style="margin-top:1.325em;">
+从上图的分析可以看到，事务 A 对二级索引（INDEX_NAME: index_age ）加了两个 X 型锁，分别是：
+</div>
+
+<ul style="margin-left: 2em;list-style-type:decimal;margin-top: .325em;">
+  <li>
+    <div>在 age = 22 这条记录的二级索引上，加了范围为 (21, 22] 的 next-key 锁，意味着其他事务无法更新或者删除 age = 22 的这一些新记录，针对是否可以插入 age = 21 和 age = 22 的新记录，分析如下：</div>
+    <ul style="margin-left:1em;list-style-type:disc;margin-top:.325em;">
+      <li>是否可以插入 age = 21 的新记录，还要看插入的新记录的 id 值，如果插入 age = 21 新记录的 id 值小于 5，那么就可以插入成功，因为此时插入的位置的下一条记录是 id = 5，age = 21 的记录，该记录的二级索引上没有间隙锁。如果插入 age = 21 新记录的 id 值大于 5，那么就无法插入成功，因为此时插入的位置的下一条记录是 id = 20，age = 39 的记录，该记录的二级索引上有间隙锁。</li>
+      <li>是否可以插入 age = 22 的新记录，还要看插入的新记录的 id 值，从 LOCK_DATA : 22, 10 可以得知，其他事务插入 age 值为 22 的新记录时，如果插入的新记录的 id 值小于 10，那么插入语句会发生阻塞；如果插入的新记录的 id 大于 10，还要看该新记录插入的位置的下一条记录是否有间隙锁，如果没有间隙锁则可以插入成功，如果有间隙锁，则无法插入成功。</li>
+    </ul>
+  </li>
+  <li style="margin-top:.325em;">
+    <div>在 age = 39 这条记录的二级索引上，加了范围 (22, 39) 的间隙锁。意味着其他事务无法插入 age 值为 23、24、..... 、38 的这一些新记录，针对是否可以插入 age = 22 和 age = 39 的新记录，分析如下：</div>
+    <ul style="margin-left:1em;list-style-type:disc;margin-top:.325em;">
+      <li>是否可以插入 age = 22 的新记录，还要看插入的新记录的 id 值，如果插入 age = 22 新记录的 id 值小于 10，那么插入语句会被阻塞，无法插入，因为此时插入的位置的下一条记录是 id = 10，age = 22 的记录，该记录的二级索引上有间隙锁（ age = 22 这条记录的二级索引上有 next-key 锁）。如果插入 age = 21 新记录的 id 值大于 10，也无法插入，因为此时插入的位置的下一条记录是 id = 20，age = 39 的记录，该记录的二级索引上有间隙锁。</li>
+      <li>是否可以插入 age = 39 的新记录，还要看插入的新记录的 id 值，从 LOCK_DATA : 39, 20 可以得知，其他事务插入 age 值为 39 的新记录时，如果插入的新记录的 id 值小于 20，那么插入语句会发生阻塞，如果插入的新记录的 id 大于 20，则可以插入成功。</li>
+    </ul>
+  </li>
+  <li style="margin-top:.325em;">
+    <div>同时，事务 A  还对主键索引（INDEX_NAME: PRIMARY ）加了X 型的记录锁：</div>
+    <ul style="margin-left:1em;list-style-type:disc;margin-top:.325em;">
+      <li>在 id = 10 这条记录的主键索引上，加了记录锁，意味着其他事务无法更新或者删除 id = 10 的这一行记录。</li>
+    </ul>
+  </li>
+</ul>
+
+<div style="margin-top:1.325em;">
+<b>为什么这个实验案例中，需要在二级索引索引上加范围 (22, 39) 的间隙锁？</b>
+</div>
+
+<div style="margin-top:.625em;">
+要找到这个问题的答案，我们要明白 MySQL 在可重复读的隔离级别场景下，为什么要引入间隙锁？其实是为了避免幻读现象的发生。
+</div>
+
+<div style="margin-top:.625em;">
+如果这个实验案例中：
+</div>
+
+<pre style="margin-top:.5em;padding:1.325em 1.825em;background-color:darkslateblue;color:white;font-size:.425em;">
+mysql> select * from user where age = 22 for update;
+</pre>
+
+<div style="margin-top:.625em;">
+如果事务 A 不在二级索引索引上加范围 (22, 39) 的间隙锁，只在二级索引索引上加范围为 (21, 22] 的 next-key 锁的话，那么就会有幻读的问题。
+</div>
+
+<div style="margin-top:.625em;">
+前面我也说过，在非唯一索引上加了范围为 (21, 22] 的 next-key 锁，是无法完全锁住 age  = 22 新记录的插入，因为对于是否可以插入 age = 22 的新记录，还要看插入的新记录的 id 值，从 LOCK_DATA : 22, 10 可以得知，其他事务插入 age 值为 22 的新记录时，如果插入的新记录的 id 值小于 10，那么插入语句会发生阻塞，如果插入的新记录的 id 值大于 10，则可以插入成功。
+</div>
+
+<div style="margin-top:.625em;">
+也就是说，只在二级索引索引（非唯一索引）上加范围为 (21, 22] 的 next-key 锁，其他事务是有可能插入 age 值为 22 的新记录的（比如插入一个 age = 22，id = 12 的新记录），那么如果事务 A 再一次查询 age = 22 的记录的时候，前后两次查询 age = 22 的结果集就不一样了，这时就发生了幻读的现象。
+</div>
+
+<div style="margin-top:.625em;">
+那么当在 age = 39 这条记录的二级索引索引上加了范围为 (22, 39) 的间隙锁后，其他事务是无法插入一个 age = 22，id = 12 的新记录，因为当其他事务插入一条 age = 22，id = 12 的新记录的时候，在二级索引树上定位到插入的位置，而该位置的下一条是 id = 20、age = 39 的记录，正好该记录的二级索引上有间隙锁，所以这条插入语句会被阻塞，无法插入成功，这样就避免幻读现象的发生。
+</div>
+
+<div style="margin-top:.625em;">
+所以，为了避免幻读现象的发生，就需要在二级索引索引上加范围 (22, 39) 的间隙锁。
+</div>
+
+<h3 style="color:green;margin-top:1.325em;">非唯一索引范围查询</h3>
+
+<div style="margin-top:.325em;">
+非唯一索引和主键索引的范围查询的加锁也有所不同，不同之处在于非唯一索引范围查询，索引的 next-key lock 不会有退化为间隙锁和记录锁的情况，也就是非唯一索引进行范围查询时，对二级索引记录加锁都是加 next-key 锁。
+</div>
+
+<div style="margin-top:.325em;">
+下面简单分析一下，事务 A 的这条范围查询语句：
+</div>
+
+<pre style="margin-top:.5em;padding:1.325em 1.825em;background-color:darkslateblue;color:white;font-size:.425em;">
+mysql> begin; select * from t_user where age >= 22 for update;
+Query OK, 0 rows affected (0.00 sec)
+
++----+-------+-----+
+| id | name  | age |
++----+-------+-----+
+| 10 | Jerry |  22 |
+| 20 | Keesh |  39 |
++----+-------+-----+
+2 rows in set (0.00 sec)
+</pre>
 
     ]]>
     </c:sourceContent>
