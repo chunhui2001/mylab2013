@@ -650,17 +650,68 @@ mod tests {
 
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title>向量 Vec</c:title>
+    <c:title>数组、向量和切片</c:title>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
     <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
-                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 1. 数组是在编译是确定大小的常量，不能在数组中追加或删除元素
+// [T; N] 表示一个N个值的数组, 每个元素的类型都是 T, 
+// 数组长度是类型的一部分，在编译时就确定了，N必须是常量，无法在运行时指定N的值。
+let lazy_caterer: [u32; 6] = [1,3,3,4];
+let taxonomy = ["Animalia", "Arthropoda", "Insects"];
+
+// 2. 向量是一种动态分配，可扩展的值序列，向量的元素保存在堆上，可随意缩放它
+//    每当向量增长到超过其缓冲区容量时，它都会选择一个比原来大1倍的新缓冲区。
+// Vec<T> 表示一个向量，每个元素的类型都是T，可动态调整大小
+let v1 = vec![1, 2, 3];
+let mut v2: Vec<u32> = Vec::<u32>::new();
+let v22 = Vec::<u32>::new();
+let vv = vec![0; 14];
+let v: Vec<i32> = (0..5).collect(); // 使用collect时通常要明确写出类型
+
+println!("{:?}", v2);
+
+// 3. 切片是对其他值中部分元素序列的引用。切片的引用的是一个胖指针，即一个双字宽的值，保存着切片中第一个元素的指针和切片中的元素个数。
+//    切片表示数组或向量的一个范围，由于切片可以是任意长度，因此不能直接保存到变量中，也不能作为函数参数传递，切片永远只能按引用传递。
+// &[T] 读作"共享切片"，可以由多个线程读取，但不可以修改
+// &mut [T] 读作"可修改切片"，允许读写元素，但是不能共享
+let v: Vec<f64> = vec![0.0, 0.707, 1.0, 0.797]; // 向量
+let a: [f64; 4] =     [0.0, -0.707, -1.0, -0.797]; // 数组
+
+let sv: &[f64] = &v; // 切片
+let sa: &[f64] = &a; // 切片
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+  <img src="/images/rust/array-vec-slice.png" style="max-width:100%;" />
+</div>
+<div style="text-align: center;">
+  向量、数组、切片、引用 之间的内存布局逻辑图
+</div>
+
+<ul style="margin-left:1em;list-style-type:disc;margin-top:1.325em;">
+  <li style="margin-top:.325em;">普通引用是对单个值的非所有型指针</li>
+  <li style="margin-top:.325em;">切片引用是对多个值的非所有型指针</li>
+  <li style="margin-top:.325em;">切片引用的是一个胖指针，即一个双字宽的值，保存着切片中第一个元素的指针和切片中的元素个数。</li>
+</ul>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="向量 Vec" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
                      bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
       <![CDATA[
 // 显示写出类型
 fn build_vector() -> Vec<i16> {
-  let must v: Vec<i16> = Vec::<i16>::new();
+  let mut v: Vec<i16> = Vec::<i16>::new();
   v.push(10i16)
   v.push(20i16)
   v
@@ -668,7 +719,7 @@ fn build_vector() -> Vec<i16> {
 
 // 类型推断, 提高代码可读性
 fn build_vector() -> Vec<i16> {
-  let must v = Vec::new();
+  let mut v = Vec::new();
   v.push(10)
   v.push(20)
   v
@@ -685,13 +736,50 @@ fn build_vector() -> Vec<i16> {
   </c:entry>
   
 
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>字符串类型</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+let noodles = "noodles".to_string();
+let oodles = &noodles[1..];
+let poodles = "中_国";
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+  <img src="/images/rust/string-&str-str.png" style="max-width:100%;" />
+</div>
+<div style="text-align: center;">
+  String、&str、str
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
     <c:title>悬空指针</c:title>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
     <c:sourceContent type="" title="悬空指针 -- 例子1" id="sourceContent1" style="background-color:transparent;"
-                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
                      bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
       <![CDATA[
 {
@@ -736,7 +824,7 @@ error: could not compile `lab2` due to previous error
     </c:sourceContent>
 
     <c:sourceContent type="" title="借用向量中的元素" id="sourceContent1" style="background-color:transparent;"
-                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
                      bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
       <![CDATA[
 let v = vec![1, 2, 3];
