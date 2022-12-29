@@ -750,6 +750,9 @@ fn build_vector() -> Vec<i16> {
 let noodles = "noodles".to_string();
 let oodles = &noodles[1..];
 let poodles = "中_国";
+
+println!("{}", poodles.len()); // 字节数, > 7
+println!("{}", poodles.chars().count()); // 字符长度, > 3
     ]]>
     </c:sourceContent>
     <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
@@ -759,9 +762,264 @@ let poodles = "中_国";
 <div>
   <img src="/images/rust/string-&str-str.png" style="max-width:100%;" />
 </div>
-<div style="text-align: center;">
-  String、&str、str
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>所有权</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="font-size:1.2em;">
+在 Rust 中每个值都<b>只有一个</b>决定其生命期的所有者，当这个所有者被释放(dropped)时，其所有的值也会被清除。
 </div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="向量 Vector" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+fn print_padovan() {
+  let mut padovan = vec![1,1,1]; // 分配内存
+  for i in 3..10 {
+    let next = padovan[i - 3] + padovan[i - 2];
+    padovan.push(next);
+  }
+  println!("P(1..10) = {:?}", padovan);
+} // 清除 padovan
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+  <img src="/images/rust/vecu32.png" style="max-width:100%;" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Box" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// Rust 的 Box 类型是说明所有权的一个典型例子，Box<T> 是一个指针，其指向存储在堆中的T类型的值。
+// 调用 Box::new(v) 会在堆上分配相应的内存缓冲区，并将值v转移进去。最后返回
+{
+  let point = Box::new((0.625, 0.5); 
+  let label = format!("{:?}", point);
+
+    println!(
+        "{}, {}, {}, {}",
+        label,
+        label.len(),
+        label.chars().count(),
+        label.capacity()
+    ); // > (0.625, 0.5), 12, 12, 16
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+  <img src="/images/rust/point&label-heap.png" style="max-width:100%;" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="结构体 struct" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+#[derive(Debug)]
+struct Person { name: String, birth: i32 }
+
+let mut composers = Vec::new();
+
+composers.push(Person{ name: "Palestrina".to_string(), birth: 1525 });
+composers.push(Person{ name: "Dowland".to_string(), birth: 1563 });
+composers.push(Person{ name: "Lully".to_string(), birth: 1632 });
+
+for c in composers {
+    println!("{:?}, {}, {}", c, c.name, c.birth);
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+  <img src="/images/rust/struct-heap.png" style="max-width:100%;" />
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>转移</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div style="font-size:1.2em;">
+在 Rust 中给<b>变量赋值</b>、给<b>函数传参</b>、从<b>函数返回值</b>这样的操作都不会复制值，而是<b>转移(move)</b>值。
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Python" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+s = ['udon', 'ramen', 'soba']
+t = s    // 赋值代价较小，引用计数相对麻烦。
+u = s
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+  <img src="/images/rust/python-string-array-heap.png" style="max-width:100%;" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="C++" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+using namespace std;
+vector<string> s = { "udon", "ramen", "soba" };
+vector<string> t = s; // 产生深度复制, 即复制s到t。保证了内存所有权的清晰!
+vector<string> u = s; // 产生深度复制, 即复制s到t。保证了内存所有权的清晰!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+  <img src="/images/rust/c++-vec-heap.png" style="max-width:100%;" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Rust" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+let s = vec!["udon".to_string(), "ramen".to_string(), "soba".to_string()];
+let t = s; // 转移所有权
+let u = s; // s的值已经被转移，编译器拒绝编译这行代码
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+  <img src="/images/rust/rust-vec-heap.png" style="max-width:100%;" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Copy类型 &amp;mdash; 转移的例外" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+#[derive(Copy, Clone)] // 如果自定义结构体的所有字段都是copy类型，那可以在该结构体上加该注释
+struct Label { number: u32 }
+
+fn print_label(l: Label) {
+  println!("STAMP: {}", l.number);
+}
+
+let l = Label { number: 3 };
+
+// 如果Label不是Copy类型，编译器拒绝编译这行代码
+// 把非copy类型的值传给print会把值的所有权转移给print, print会在返回前将该值清除
+print_label(l);
+
+println!("My label number is: {}", l.number); 
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Rc &amp; Arc 共享所有权" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+use std::rc::Rc;
+
+let s: Rc<String> = Rc::new("shirataki".to_string()); // Rust 假设 Rc 指针指向的值通常是共享的
+
+s.push_str("aa"); // 编译器拒绝编译这行代码, Rust 里不存在即共享又可以修改的值
+
+let t: Rc<String> = s.clone();
+let u: Rc<String> = s.clone();
+
+println!("{:?}", s);
+println!("{:?}", t);
+println!("{:?}", u);
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+  <img src="/images/rust/rc-string-heap.png" style="max-width:100%;" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="共享引用 &amp; 可修改引用" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+let x = 1000;
+let r = &x;     // 共享引用
+let f = *r;     // 对 r 解引用进而读取存储在 x 里值
+
+println!("{}, {}", *r, f);
+
+let mut a = 10; 
+let b = &mut a; // &mut a 是 y 的可修改引用
+
+*b += 1;        // 显示对 b 解引用进而修改 a 的值
+
+println!("{}", b);
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="给引用赋值" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+let x = 10;
+let y = 20;
+let mut r = &x;
+
+if true {
+  r = &y; // 给引用赋值会导致它指向新值
+}
+
+println!("{}", r);
+
     ]]>
     </c:sourceContent>
 
