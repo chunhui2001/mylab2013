@@ -21,6 +21,10 @@
 <div style="margin-bottom:1em;line-height:1.625;">
   当变量的生命周期超出作用域时，程序会自动调用此方法。它还用Result和Option类型替代了空指针的概念，这意味着Rust不允许代码中出现null/undefined的值。
 </div>
+
+<div style="margin-bottom:1em;line-height:1.625;">
+  <b>你需要深入理解 rust 如何确保引用永远不会指向已经离开作用域的变量。</b>
+</div>
 ]]>
   </c:abstract>
 
@@ -1354,9 +1358,9 @@ struct S<'a> {
 // 但是如果用早期 rust 版本编译这段代码，rust 会抱怨说 y 活的不够长
 // 尽管明显足够长，为什么 rust 会担心呢？仔细分析一下，你会发现它这样担心是有道理的
 
-// 编译器拒绝编译这行代码, 对于 S 来说, 编译器并不知道 x,y 谁先被销毁，  
-// 只能通过某种标记告诉他每个字段的生命周期                            
-// 通过给 x,y 定义不同的生命周期标记(<'a, 'b>)解决这个问题             
+
+                        
+           
 fn main() {
     let x = 10;                                       |'a
     let r;                                            |
@@ -1366,10 +1370,162 @@ fn main() {
             let s = S { x: &x, y: &y };     |'c  |    |
             r = s.x;                        |    |    |
             println!("{}, {}", s.x, s.y);   |    |    |
-        }                                        |    |
+        }                                   |    |    |
     }                                            |    |
-    println!("{}", r);                                |
-}                                                     |
+    println!("{}", r);                                | // 编译器拒绝编译这行代码, 对于 S 来说, 编译器并不知道 x,y 谁先被销毁，  
+}                                                     | // 只能通过某种标记告诉他每个字段的生命周期    
+                                                        // 通过给 x,y 定义不同的生命周期标记(<'a, 'b>)解决这个问题  
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="函数签名的生命周期" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+fn f<'a, 'b>(r<'a>: &i32, s<'b>: &i32) -> &<'a>i32 {
+  r
+}
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="省略生命周期参数" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// rust 会在生命周期参数明显合理的时候，可以省略他们
+struct S<'a, 'b> {
+  x: &<'a>i32,
+  y: &<'b>i32
+}
+
+// 省略写法
+fn sum_rxy(r: &i32, s: S) -> i32 {
+  r + s.x + s.y
+}
+
+// 完整写法
+fn sum_rxy<'a, 'b, 'c>(r: &'a i32, s: S<'b, 'c>) -> i32 {
+  r + s.x + s.y
+}
+
+// 当函数返回引用时，也需要携带生命周期参数
+// 省略写法
+fn first_and_third(point: &[i32, 3]) -> (&i32, &i32) {
+  (&point[0], &point[2])
+}
+
+// 完整写法
+fn first_and_third(point: &'a [i32, 3]) -> (&'a i32, &'a i32) {
+  (&point[0], &point[2])
+}
+
+// 如果函数参数中有多个生命周期，则 rust 无法推断哪个生命周期更适合返回值, 此时 rust 要求你明确写出返回值的生命周期属性
+// ....
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="某个类型的函数参数接受引用形式的 self 参数" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// rust 会假设 self 的生命周期就是返回值需要的生命周期
+struct StringTable {
+  elements: Vec[String],
+}
+
+// 省略写法
+impl StringTable {
+  fn find_by_prefix(&self, prefix: &str) -> Option<&String> {
+    for i in 0 .. self.elements.len() {
+      if self.elements[i].starts_with(prefix) {
+        return Some(&self.elements[i])
+      }
+    }
+    None
+  }
+}
+
+// 完整写法
+impl StringTable {
+  fn find_by_prefix<'a, 'b>(&'a self, prefix: &'b str) -> Option<&String> {
+    // 此时 rust 假设你无论借用的是什么，都是从 self 中借用的
+    ... 
+  }
+}
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="共享与修改" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 以下代码可能引入悬空指针
+let v = vec![4, 8, 19, 27, 34, 10];
+let r = &v;
+let aside = v;    // 给 aside 赋值会转移向量，导致 v 变成未初始化状态
+r[0];             // 由于 v 变成了未初始化状态，所以 r 变成了悬空指针
+
+
+// 修复以上错误
+let v = vec![4, 8, 19, 27, 34, 10];
+{
+  let r = &v;       | 引用的生命周期在 v 转移给 aside 之前结束  
+  r[0];             |   
+}                   |     
+let aside = v;      // v 分配的内存转移给 aside 
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+  <img src="/images/rust/flag1.png" style="width:100%;" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="extend_from_slice &amp;mdash; 由于向量重新分配内存空间导致切片变成悬空指针" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[   
+fn extend_slice(vec: &mut Vec<f64>, slice: &[f64]) {
+  for elt in slice {
+    vec.push(*elt);
+  }
+}     
+
+fn main() {
+
+  let mut wave = Vec::new();
+  let head = vec![0.0, 1.0];
+  let tail = [1.2, 0.34];
+
+  extend_slice(&mut wave, &head);     // 用另一个向量扩展 wave
+  extend_slice(&mut wave, &tail);     // 用数组扩展 wave
+
+  // 追加一个元素，将自动扩容1倍
+  <!-- wave.push(1.0); -->
+
+  // 用向量自身追加向量, 
+  // 在给向量追加元素时，如果缓冲区慢了，系统会自动分配一个更大的缓冲区
+  // 当缓冲区自动扩容时，slice 参数仍然指向原来的四个元素缓冲区，该内存已经被清除，此时 slice 变成了悬空指针
+  // rust 编译器拒绝编译这行代码
+  extend_slice(&mut wave, &wave)   
+
+  // 当 Java 中出现此问题时会抛出 ConcurrentModificationException
+  // ....   
+
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+  <img src="/images/rust/flag2.png" style="width:100%;" />
+</div>
     ]]>
     </c:sourceContent>
 
