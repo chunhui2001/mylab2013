@@ -1455,7 +1455,25 @@ impl StringTable {
     ]]>
     </c:sourceContent>
 
-    <c:sourceContent type="" title="共享与修改" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="html" title="共享与修改" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+  Rust 关于修改引用和共享引用的规则
+</div>
+<ul style="margin-left:0em;list-style-type:none;margin-top:.625em;line-height:1.6;">
+  <li>
+    <b>共享访问是只读访问</b> 共享引用借用的值是只读的。在共享引用的整个生命周期内，任何事物都不能修改其引用目标，也不能修改其引用目标的可触达的值。结构体中不存在指向任何目标的可修改引用，所有者是只读的 &mdash;&mdash; 实际上是这个值被冻结了。
+  </li>
+  <li style="margin-top:.625em;">
+    <b>可修改访问是排他访问</b> 可修改引用借用的值只能通过该引用访问。在可修改引用的整个生命周期内，没有其他路径可触及其引用目标，或触及其引用目标可触及的值。唯一能够与可修改引用的生命周期重叠的，就是从该可修改引用自身借用的引用。
+  </li>
+</ul>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
                      bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
       <![CDATA[
@@ -1526,6 +1544,71 @@ fn main() {
 <div>
   <img src="/images/rust/flag2.png" style="width:100%;" />
 </div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<ul style="margin-left:2em;list-style-type:decimal;margin-top:.625em;line-height:1.6;">
+  <li>
+    在调用 extend_slice 函数时传入的第一个参数 &mut wave，意味着该函数已经向 wave 借用了一个可修改引用，这意味着该可修改引用必须是可触及这个向量及其元素的唯一路径。
+  </li>
+  <li style="margin-top:.625em;">
+    而传入的第二个参数，意味着对 slice 切片需要向 wave 再次借用一个共享引用，这违反了前面提到的第二条原则。rust 拒绝这样的操作, 即编译报错。
+  </li>
+  <li style="margin-top:.625em;">
+    rust 也可以认为 extend_slice 函数违反了第二条原则: 在待用该函数时 slice 参数已经借用了对 wave 元素的共享引用，所以无论是元素还是 vec 本身都是只读的。此时就不能再次向一个只读的值借用可修改引用了。
+  </li>
+</ul>
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+  <img src="/images/rust/flag3.png" style="width:100%;" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="通过一下例子解释上边这张图" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[   
+// 以下代码详细阐述了共享引用的借用规则
+let mut x = 10;
+
+let r1 = &x;          // 第一次借用 x 的不可修改引用
+let r2 = &x;          // 第二次借用 x 的不可修改引用。可以，允许多次借出共享引用
+
+x += 2;               // 错误，一个值如果把他的引用借出去了，在还回来之前不可以修改。
+
+let m = &mut x;       // 错误，因为 x 已经借出了不可修改引用, 此时不能再次借出x的可修改引用。
+
+let mut y = 20;
+let m1 = &mut y;      // m1 借用了 y 的可修改引用
+let m2 = &mut y;      // 错误，不能借用2次可修改引用
+let z = y;            // 错误，此时不能用 y，因为它已经借出了可修改引用
+
+
+// 从共享引用借用共享引用是可以的
+let mut w = (107, 109);
+let r = &w;
+let r0 = &r.0;        // 可以，共享引用可以在借为共享引用
+let r1 = &mut r.1;    // 错误，共享引用不可以在借为可修改引用
+
+// 可修改引用可以在借为可修改引用
+let mut v = (136, 139);   
+let m = &mut v;
+let m0 = &mut m.0;    // 可以，可修改引用可以在借为可修改引用
+
+*m0 = 137;            
+let r1 = &m.1;        // 可以，可修改引用可以在借为共享引用
+
+v.1                   // 错误，已经借出可修改引用，禁止通过其他路径访问
+
     ]]>
     </c:sourceContent>
 
