@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<div>
+The <b>connection reset by peer</b> is a <a href="https://www.ibm.com/docs/en/db2/11.1?topic=message-tcpip-errors">TCP/IP</a> error that occurs when the other end (peer) has unexpectedly closed the connection. It happens when you send a packet from your end, but the other end crashes and forcibly closes the connection with the <a href="https://ipwithease.com/tcp-rst-flag/">RST</a> packet instead of the <a href="https://ipwithease.com/what-is-tcp-fin-packet/">TCP FIN</a>, which is used to close a connection under normal circumstances. In Go, you can detect the connection reset by peer by checking if the error returned by the peer is equal to <a href="https://pkg.go.dev/syscall#ECONNRESET">syscall.ECONNRESET</a>.
+</div>
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Reproduce the connection reset by peer error</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>We can reproduce the error by creating a server and client that do the following:</div>
+<ul style="margin-left:2.5em;list-style-type:decimal;margin-top: .325em;">
+  <li>the server reads a single byte and then closes the connection</li>
+  <li>the client sends more than one byte</li>
+</ul>
+<div style="margin-top:.625em;">If the server closes the connection with the remaining bytes in the socket’s receive buffer, then an <b>RST</b> packet is sent to the client. When the client tries to read from such a closed connection, it will get the <b>connection reset by peer</b> error.</div>
+<div style="margin-top:.625em;">See the following example, which simulates this behavior.</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+package main
+
+import (
+    "errors"
+    "log"
+    "net"
+    "os"
+    "syscall"
+    "time"
+)
+
+func server() {
+    listener, err := net.Listen("tcp", ":8080")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    defer listener.Close()
+
+    conn, err := listener.Accept()
+    if err != nil {
+        log.Fatal("server", err)
+        os.Exit(1)
+    }
+    data := make([]byte, 1)
+    if _, err := conn.Read(data); err != nil {
+        log.Fatal("server", err)
+    }
+
+    conn.Close()
+}
+
+func client() {
+    conn, err := net.Dial("tcp", "localhost:8080")
+    if err != nil {
+        log.Fatal("client", err)
+    }
+
+    if _, err := conn.Write([]byte("ab")); err != nil {
+        log.Printf("client: %v", err)
+    }
+
+    time.Sleep(1 * time.Second) // wait for close on the server side
+
+    data := make([]byte, 1)
+    if _, err := conn.Read(data); err != nil {
+        log.Printf("client: %v", err)
+        if errors.Is(err, syscall.ECONNRESET) {
+            log.Print("This is connection reset by peer error")
+        }
+    }
+}
+
+func main() {
+    go server()
+
+    time.Sleep(3 * time.Second) // wait for server to run
+
+    client()
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Output:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+2021/10/20 19:01:58 client: read tcp [::1]:59897->[::1]:8080: read: connection reset by peer
+2021/10/20 19:01:58 This is connection reset by peer error
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Handle the connection reset by peer error" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+Typically, you can see the <b>connection reset by peer</b> error in response to a request being sent from the client to the server. It means that something bad has happened to the server: it has rebooted, the program has crashed, or other problems have occurred that cause the connection to be forcibly closed. Since TCP connections can be broken, there is no need to handle the <b>connection reset by peer</b> in any special way on the client side. You can log the error, ignore it or retry the connection when it occurs. In the example above, we detect the error using the <a href="https://gosamples.dev/check-error-type">errors.Is()</a> function by checking if the returned error is an instance of <a href="https://pkg.go.dev/syscall#ECONNRESET">syscall.ECONNRESET</a>.
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Difference between 'connection reset by peer' and 'broken pipe'" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+Both connection reset by peer and broken pipe errors occur when a peer (the other end) unexpectedly closes the underlying connection. However, there is a subtle difference between them. Usually, you get the connection reset by peer when you read from the connection after the server sends the RST packet, and when you write to the connection after the RST instead, you get the broken pipe error.
+</div>
+<div style="margin-top:.625em;">
+Check <a href="#Handle-broken-pipe-error-in-Go">how to handle the broken pipe error in Go</a> post, where will find another example of generating an <b>RST</b> packet and the <b>broken pipe</b> error.
+</div>
+<div style="margin-top:.625em;">
+Replace the <b>client()</b> function in the example above with the following code to reproduce the <b>broken pipe</b> error.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+func client() {
+
+    conn, err := net.Dial("tcp", "localhost:8080")
+
+    if err != nil {
+        log.Fatal("client", err)
+    }
+
+    if _, err := conn.Write([]byte("ab")); err != nil {
+        log.Printf("client: %v", err)
+    }
+
+    time.Sleep(1 * time.Second) // wait for close on the server side
+
+    if _, err := conn.Write([]byte("b")); err != nil {
+        log.Printf("client: %v", err)
+    }
+
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+With the new client, you will see the output:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+2021/10/20 19:55:40 client: write tcp [::1]:60399->[::1]:8080: write: broken pipe
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Note that these simple examples do not cover all cases where <b>connection reset by peer</b> and <b>broken pipe</b> may occur. There are much more situations where you can see these errors, and what error you see in what situation requires a deep understanding of the <a href="https://en.wikipedia.org/wiki/Transmission_Control_Protocol">TCP</a> design.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Handle-broken-pipe-error-in-Go">Handle 'broken pipe' error in Go"</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+The <b>broken pipe</b> is a <a href="https://www.ibm.com/docs/en/db2/11.1?topic=message-tcpip-errors">TCP/IP</a> error occurring when you write to a stream where the other end (the peer) has closed the underlying connection. The first write to the closed connection causes the peer to reply with an <a href="https://ipwithease.com/tcp-rst-flag/">RST</a> packet indicating that the connection should be terminated immediately. The second write to the socket that has already received the <a href="https://ipwithease.com/tcp-rst-flag/">RST</a> causes the <b>broken pipe</b> error. To detect the <b>broken pipe</b> in Go, check if the error returned by the peer is equal to <a href="https://pkg.go.dev/syscall#EPIPE">syscall.EPIPE</a>. Usually, this error can be seen when the server crashes while the client is sending data to it.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Reproduce the broken pipe error" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>In the following example, we reproduce the <b>broken pipe</b> error by creating a server and client that do the following:</div>
+<ul style="margin-left:2.5em;list-style-type:decimal;margin-top: .325em;">
+  <li>the server reads a single byte and then closes the connection</li>
+  <li>the client sends three bytes with an interval of one second between them</li>
+</ul>
+<div style="margin-top:.625em;">The server receives the first client byte and closes the connection. The next byte of the client sent to the closed connection causes the server to reply with an <a href="https://ipwithease.com/tcp-rst-flag/">RST</a> packet. The socket that received the <a href="https://ipwithease.com/tcp-rst-flag/">RST</a> will return the <b>broken pipe</b> error when more bytes are sent to it. This is what happens when the client sends the last byte to the server.</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+package main
+
+import (
+    "errors"
+    "log"
+    "net"
+    "os"
+    "syscall"
+    "time"
+)
+
+func server() {
+    listener, err := net.Listen("tcp", ":8080")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    defer listener.Close()
+
+    conn, err := listener.Accept()
+    if err != nil {
+        log.Fatal("server", err)
+        os.Exit(1)
+    }
+    data := make([]byte, 1)
+    if _, err := conn.Read(data); err != nil {
+        log.Fatal("server", err)
+    }
+
+    conn.Close()
+}
+
+func client() {
+    conn, err := net.Dial("tcp", "localhost:8080")
+    if err != nil {
+        log.Fatal("client", err)
+    }
+
+    // write to make the connection closed on the server side
+    if _, err := conn.Write([]byte("a")); err != nil {
+        log.Printf("client: %v", err)
+    }
+
+    time.Sleep(1 * time.Second)
+
+    // write to generate an RST packet
+    if _, err := conn.Write([]byte("b")); err != nil {
+        log.Printf("client: %v", err)
+    }
+
+    time.Sleep(1 * time.Second)
+
+    // write to generate the broken pipe error
+    if _, err := conn.Write([]byte("c")); err != nil {
+        log.Printf("client: %v", err)
+        if errors.Is(err, syscall.EPIPE) {
+            log.Print("This is broken pipe error")
+        }
+    }
+}
+
+func main() {
+    go server()
+
+    time.Sleep(3 * time.Second) // wait for server to run
+
+    client()
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Output:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+2021/10/21 19:10:01 client: write tcp 127.0.0.1:50389->127.0.0.1:8080: write: broken pipe
+2021/10/21 19:10:01 This is broken pipe error
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Handle the broken pipe error" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+To handle the <b>broken pipe</b>, you need to check if the error returned from the other end of the connection is an instance of <a href="https://pkg.go.dev/syscall#EPIPE">syscall.EPIPE</a>. In the example above, we perform this check using the <a href="https://gosamples.dev/check-error-type">errors.Is()</a> function and print the message <b>"This is broken pipe error"</b> if it occurs. The <b>broken pipe</b> can be seen on either the client or server side, depending on which one is trying to write to the closed connection. Typically there is no need to handle it in any special way since it is normal that a connection may be interrupted by either side of the communication. For example, you can ignore the error, log it or reconnect when it occurs.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Difference between 'broken pipe' and 'connection reset by peer'" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:.625em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+Usually, you get the <b>broken pipe</b> error when you write to the connection after the <a href="https://ipwithease.com/tcp-rst-flag/">RST</a> is sent, and when you read from the connection after the <a href="https://ipwithease.com/tcp-rst-flag/">RST</a> instead, you get the <b>connection reset by peer error</b>. Check our <a href="#Reproduce-the-connection-reset-by-peer-error">article about connection reset by peer</a> error to better understand the difference between these two errors.
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+</c:component>
