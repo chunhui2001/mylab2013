@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<div>
+    绿色线程解决了一个开发中的常见问题。你不希望代码阻塞 CPU，使它无法执行有意义的工作。我们通过使用多任务来解决这个问题，它允许我们暂停执行某一段代码同时唤醒执行另一段代码，并在他们的“上下文”之间切换。
+</div>
+<div style="margin-top:.625em;">
+    不要把它与并行性（parallelism）混淆，虽然这确实容易混淆，但它们是两个不同的东西。可以这样理解，绿色线程让我们更爽也更高效地工作，从而更有效地利用资源，而并行性就像在问题上投入更多资源。
+</div>
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">这篇文章是写给谁的？</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>在这篇文章中，我们会探索兔子洞中的世界（译者注：引喻爱丽丝漫游奇境记中的新世界），如果这听起来很可怕，那么这篇文章可能不适合你，回去过自己幸福的小日子吧。</div>
+
+<div style="margin-top:.625em;">如果你是一个好奇的人，想要了解这些东西的运作方式，那么请继续读下去。也许你已经听说过 Go 及其提供的 goroutine，或者 Ruby、Julia 中的等价物，你知道如何使用它们但想知道它们是如何工作的——那么也请继续读下去。</div>
+
+<div style="margin-top:.625em;">此外，这应该会很有趣，如果：</div>
+
+<ul style="margin-left:2.5em;list-style-type:decimal;margin-top: .325em;">
+  <li>你是 Rust 的新手，想要了解有关其功能的更多信息。</li>
+  <li>你已经跟进 Rust 社区中有关 async / await 、Pin-API 以及我们需要 Generator 的原因的讨论。考虑这种情况，我尝试将所有这些一并放在本文中。</li>
+  <li>你想学习Rust中内联汇编的基础知识。</li>
+  <li>你只是好奇。</li>
+</ul>
+
+<div style="margin-top:.625em;">好吧，加入我，我们将试图弄清楚我们需要了解的关于它们的一切。</div>
+
+<div style="margin-top:.625em;">你不必是 Rust 程序员就能理解本文，但强烈建议你首先阅读一些基本语法。如果你想长时间跟踪或克隆代码仓库并且跑一下代码，你应该安装 Rust 并学习相关的基础知识。</div>
+
+<div style="margin-top:.625em;">我在这里提供的所有代码都在一个文件中并且没有依赖项，这意味着你可以轻松地启动自己的工程并跟着本文完成编码，只要你真的想（我建议你想）。你甚至可以在Rust的代码演练页面上运行大部分代码。只是要记得使用编译器的nightly版本。</div>
+
+<h3>可移植性和一些问题</h3>
+
+<div>目前 <b>asm！</b> 宏存在一个问题，它不能在 <b>release</b> 模式下编译。它似乎与我在内联宏中使用的 <b>"= m"</b> 约束有关。</div>
+
+<div style="margin-top:.625em;">2019-06-21 补充编辑：</div>
+
+<div style="margin-top:.325em;">我决定解决这个问题并更改内联汇编以在发布版本上编译和运行。我已经在 OSX，Linux 和 Windows 上测试了代码。</div>
+
+<h3>免责声明</h3>
+
+<div>我不打算在这里做一个完美的实现。我正在一步步的尝试深入了解本质，并将其融入原本打算成为文章的内容，而不是扩展为一本小书。这个实现并不能体现 Rust 语言的最大优势 —— Rust的安全保证机制 —— 不过这确实显示了 Rust 的一个有趣的用法，代码大多非常干净，易于跟进。</div>
+
+<div style="margin-top:.625em;">但是，如果你发现了可以使代码更安全而不会显著增加复杂性的地方，欢迎你在 Github 仓库中创建一个问题，甚至能提一个 Pull Request 就更棒了。</div>
+
+<h3>鸣谢</h3>
+
+<div>Quentin Carbonneaux 在 2013 年写了一篇很棒的文章，我以它作为主要的代码示例的灵感来源。感谢 nickelpro 提供有关 Windows 支持的帮助和反馈。</div>
+
+<h3>补充编辑</h3>
+
+<div>2019-06-18：实现 Windows 支持的新章节.</div>
+
+<div style="margin-top:.325em;">2019-06-21：相当大的改变和清理。Valgrind 报告了一些代码问题并且崩溃了。现在已经修复，目前还没有未解决的问题。此外，代码现在可以在 debug 和 release 两种 build 模式上运行，而不会在所有平台上出现任何问题。感谢各位报告你们发现的问题。</div>
+
+<div style="margin-top:.325em;">2019-06-26：支持 Windows 附录将 XMM 字段视为 64 位，但它们是 128 位，这是我的疏忽。纠正这一点为那一章增加了一些有趣的材料，但不幸的是也增加了一些复杂性。不管怎样，它现在已得到纠正和解释。</div>
+
+<div style="margin-top:.325em;">2019-22-12: 增加一行代码来确保我们从分配器获取的内存是 16 字节对齐的。重构为在写入堆栈时使用“高”内存地址作为偏移量的基地址，因为这使对齐更加容易。感谢 @Veetaha 解决了这个问题。</div>
+
+<h3>绿色线程</h3>
+
+<div>绿色线程解决了一个开发中的常见问题。你不希望代码阻塞 CPU，使它无法执行有意义的工作。我们通过使用多任务来解决这个问题，它允许我们暂停执行某一段代码同时唤醒执行另一段代码，并在他们的 “上下文” 之间切换。</div>
+
+<div style="margin-top:.325em;">不要把它与并行性（parallelism）混淆，虽然这确实容易混淆，但它们是两个不同的东西。可以这样理解，绿色线程让我们更爽也更高效地工作，从而更有效地利用资源，而并行性就像在问题上投入更多资源。</div>
+
+<div style="margin-top:.325em;">通常有两种方法可以做到这一点：</div>
+
+<ul style="margin-left:2.5em;list-style-type:decimal;margin-top: .125em;">
+  <li>抢占式多任务处理</li>
+  <li>非抢占式多任务处理（或协同多任务处理）</li>
+</ul>
+
+<h3>抢占式多任务处理</h3>
+
+<div>某个外部调度程序停止当前任务并在切换回去之前运行另一个任务。在这种情况下，任务本身没有什么发言权，决定是由 “另外的东西”（通常是某种调度程序）做出的。操作系统内核用的就是这种方式，即允许你在一个单线程系统上使用 UI 界面的同时还进行 CPU 进行计算。我们不打算探讨这种线程，但我觉得当你理解一个其中一个范式时，你会更好的理解这两种范式。</div>
+
+<h3>非抢占式多任务处理</h3>
+
+<div>这就是我们要探讨的内容。一个任务由自己决定什么时候 CPU 会更好地做其他事情而不是等待当前任务会发生的事情。通常，它是通过对调度程序产生（yielding）控制来实现的。一个正常的用例是，在会造成阻塞的事情发生时产生控制，比如 IO 操作。当控制产生时，中央调度程序会指示 CPU 继续处理另一个就绪的任务，而不会阻塞。</div>
+
+<h3>背景信息</h3>
+
+<div>这是本书中最技术性的部分，但如果我们真的想要理解，这是必经之路。我将保证尽可能快地回归重点，我们很快就会开始写代码。</div>
+
+<div style="margin-top:.325em;">让我们开始吧! 首先，我们将直接干扰和控制 CPU。这样可移植性不是很好，因为有很多种 CPU。不过主要思路是一样的，但实现细节的一小部分将有所不同。</div>
+
+<div style="margin-top:.325em;">我们将介绍一种比较常用的体系结构：x86-64。</div>
+
+<div style="margin-top:.325em;">在这种架构中，CPU 具有一组16个寄存器：</div>
+
+
+<table style="color:darkslateblue;margin:.5em 0;line-height:1.3em;width:100%;">
+    <tbody>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight:normal;width:140px;">Register</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;width:600px;">Usage</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">callee saved</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%rax</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">temporary register; with variable arguments passes information about the number of vector registers used; 1<sup>st</sup> return register</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">No</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%rbx</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">callee-saved register</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">Yes</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%rcx</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">used to pass 4<sup>th</sup> integer argument to functions used to pass 3<sup>rd</sup> argument to functions; 2<sup>nd</sup> return register</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">No</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%rdx</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">used to pass 3<sup>rd</sup> argument to functions; 2<sup>nd</sup> return register</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">No</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%rsp</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">stack pointer</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">Yes</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%rbp</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">callee-saved register; optionally used as frame pointer</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">Yes</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%rsi</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">used to pass 2<sup>nd</sup> argument to functions</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">No</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%rdi</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">used to pass 1<sup>st</sup> argument to functions</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">No</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%r8</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">used to pass 5<sup>th</sup> argument to functions</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">No</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%r9</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">used to pass 6<sup>th</sup> argument to functions</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">No</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%r10</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">temporary register, used for passing a function's static chain pointer</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">No</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%r11</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">temporary register</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">No</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%r12-r14</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">callee-saved registers</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">Yes</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%r15</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">callee-saved register; optionally used as GOT base pointer</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">Yes</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%xmm0-%xmm1</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">used to pass and return floating point arguments</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">No</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%xmm2-%xmm7</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">used to pass floating point arguments</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">No</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%xmm8-%xmm15</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">temporary registers</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">No</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%mm0-%mm7</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">temporary registers</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">No</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%k0-%k7</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">temporary registers</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">No</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%st0,%st1</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">temporary registers, used to return long double arguments</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">No</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%st2,%st7</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">temporary registers</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">No</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">%fs</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">Reserved for system (as thread specific data register)</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">No</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">mxcsr</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">SSE2 control and status word</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">partial</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">x87 SW</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">x87 status word</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">No</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight: normal;">x87 CW</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">x87 control word</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">Yes</td>
+        </tr>
+    </tbody>
+</table>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+</c:component>
