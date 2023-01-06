@@ -13,7 +13,7 @@
 
 
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title id="Reproduce-the-connection-reset-by-peer-error">这篇文章是写给谁的？</c:title>
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">绪论及基本概念</c:title>
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
@@ -21,6 +21,9 @@
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
       <![CDATA[
+
+<h3>这篇文章是写给谁的？</h3>
+
 <div>在这篇文章中，我们会探索兔子洞中的世界（译者注：引喻爱丽丝漫游奇境记中的新世界），如果这听起来很可怕，那么这篇文章可能不适合你，回去过自己幸福的小日子吧。</div>
 
 <div style="margin-top:.625em;">如果你是一个好奇的人，想要了解这些东西的运作方式，那么请继续读下去。也许你已经听说过 Go 及其提供的 goroutine，或者 Ruby、Julia 中的等价物，你知道如何使用它们但想知道它们是如何工作的——那么也请继续读下去。</div>
@@ -260,6 +263,48 @@
         </tr>
     </tbody>
 </table>
+
+<div style="margin-top:.325em;">如果你有兴趣，可以在这里找到规范的其余部分：https://github.com/hjl-tools/x86-psABI/wiki/X86-psABI。</div>
+
+<div style="margin-top:.325em;">我们现在感兴趣的是标记为 “callee saved” 的寄存器。正是这些寄存器记录我们程序的上下文：下一个的运行指令、基本指针、栈指针等等。我们稍后会详细了解这一点。</div>
+
+<div style="margin-top:.325em;">如果我们想直接向 CPU 发号施令，我们需要一些用汇编语言编写的最小代码，幸运的是我们只需要知道一些非常基本的汇编指令。比如如何在寄存器之间移动值：</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:darkslateblue;color:white;font-size:.825em;">
+mov  rax, rsp
+</pre>
+
+<div style="margin-top:.625em;">Windows 的约定略有不同。在 Windows 上，寄存器 XMM6:XMM15 也是被调用者保存的，如果我们的函数使用它们，则必须保存和恢复。我们的代码在 Windows 上运行正常，即使我们在此示例中仅使用 psABI 约定。</div>
+
+<div style="margin-top:.625em;">还有一个细微的区别，你可以在附录：支持 Windows 中读到我们解决的整个过程。你仍然可以继续跟进，因为所有内容都可以在 Windows 上运行，但这不会是一个正确的实现。</div>
+
+<h3>汇编语言的超级快速介绍</h3>
+
+<div>首先，也是最重要的，汇编语言的可移植性不是很好，每个 CPU 可能都有一组特殊的指令，但有些指令在今天的大多数台式计算机上很常见。有两种流行的方言：AT&T方言和英特尔方言。</div>
+
+<div style="margin-top:.325em;">在 Rust 中编写内联汇编时，AT&T 方言是标准，但在 Rust 中我们可以指定我们想要使用 “英特尔”方言。Rust 主要将它留给 LLVM （译者注：LLVM 是 Rust 编译器的后端）来处理内联汇编，而 LLVM 的内联汇编非常类似于在 C 中编写内联汇编时使用的语法。这样可以更容易地查看 C 内联 ASM 以进行学习，因为语法将非常熟悉（虽然不完全相同）。</div>
+
+<div style="margin-top:.325em;">我们将在示例中使用AT&T方言。</div>
+
+<div style="margin-top:.325em;">汇编语言具有强大的向后兼容性保证。这就是为什么你会看到相同的寄存器以不同的方式处理。让我们看一下我们先前那个例子里的%rax寄存器：</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:darkslateblue;color:white;font-size:.825em;">
+%rax  # 64位寄存器（8字节）
+%eax  # “rax”寄存器的低32位 
+%ax   # “rax”寄存器的低16位 
+%ah   # “rax”寄存器的“ax”部分的高8位 
+%al   # “rax”寄存器的“ax”部分的低8位
+</pre>
+
+<div style="margin-top:.625em;">正如你所看到的，这基本上就是 CPU 发展的历史。由于目前大多数 CPU 都是 64 位，我们将在代码中使用 64 位寄存器。</div>
+
+<div style="margin-top:.625em;">汇编中的字长（原文: the word size）也有历史原因。它起源于 CPU 拥有 16 位数据总线的时候，因此一个字是 16 位。这与我们的主题相关，因为在 AT&T 方言中，你会看到许多带有 “q”（四字，quad-word）或 “l”（长字，long-word）的说明。因此，movq 意味着移动 4 * 16位 = 64位。</div>
+
+<div style="margin-top:.625em;">而一个普通的 mov 将使用寄存器的大小。这是英特尔方言的标准，也是我们在代码中使用的标准。</div>
+
+<div style="margin-top:.625em;">我们将在下一章中详细介绍更多内联汇编的语法。</div>
+
+<div style="margin-top:.625em;">还有一点需要注意的是，x86-64 上的堆栈对齐方式是 16 字节。记住这一点，后面要用。</div>
     ]]>
     </c:sourceContent>
     <c:comment>
@@ -269,4 +314,114 @@
     </c:comment>
   </c:entry>
 
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">一个能跑通的例子</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+
+<h3>创建我们的项目</h3>
+
+<div>首先，让我们在名为 green_threads 的文件夹中启动一个新项目。命令行执行：</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:lightseagreen;color:white;font-size:.825em;">
+$ cargo init
+</pre>
+
+<div style="margin-top:.825em;">我们需要使用 nightly 版本的 Rust，因为我们将使用一些尚未稳定的功能：</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:lightseagreen;color:white;font-size:.825em;">
+$ rustup override set nightly
+</pre>
+
+<div style="margin-top:.825em;">在我们的 main.rs 文件中，我们首先启用一个功能，它允许我们使用 asm! 宏：</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:lightseagreen;color:white;font-size:.825em;">
+use core::arch::asm;
+</pre>
+
+<div style="margin-top:.825em;">我们在这里设置一个较小的栈尺寸，只有 48 个字节，这样我们可以在切换上下文之前打印并查看这个栈：</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:lightseagreen;color:white;font-size:.825em;">
+const SSIZE: isize = 48;
+</pre>
+
+<div style="margin-top:.825em;">在 OSX 中使用这么小的栈的好像有些问题。此代码运行的最小值是 624 字节的栈大小。如果你想要遵循这个确切的例子，代码可以在 Rust Playground 上运行（但是由于最终代码中的循环，你需要等待大概 30 秒的超时时间）。</div>
+
+<div style="margin-top:.825em;">然后，我们添加一个表示 CPU 状态的结构。我们现在只关注存储 “栈指针” 的寄存器，所以只需要添加下面的代码：</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:lightseagreen;color:white;font-size:.825em;">
+#[derive(Debug, Default)]
+#[repr(C)]
+struct ThreadContext {
+    rsp: u64,
+}
+</pre>
+
+<div style="margin-top:.825em;">在后面的示例中，我们将使用之前链接中的规范文档中标记为 “callee saved”（由被调用者保存的）的所有寄存器。这些就是 x86-64 ABI 描述的寄存器中那些用来保存上下文的寄存器，但是现在我们只需要一个寄存器来使 CPU 跳转到我们的栈。</div>
+
+<div style="margin-top:.825em;">需要注意的是，这个结构定义需要加上 #[repr(C)]，因为我们需要按照汇编代码的方式去访问数据。Rust 没有稳定的 ABI，因此我们无法确保它会在内存中以 rsp 作为前 8 个字节来表示。C 具有稳定的 ABI，这一属性正是在告诉编译器使用兼容 C-ABI 的内存布局。当然，我们的结构现在只有一个字段，但我们稍后会添加更多字段。</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:lightseagreen;color:white;font-size:.825em;">
+// 对于这个非常简单的例子，我们将定义一个函数，它只打印一条消息，然后永远循环：
+fn hello() -> ! {
+    println!("I LOVE WAKING UP ON A NEW STACK!");
+    loop {}
+}
+</pre>
+
+<div style="margin-top:.825em;">接下来是我们的内联汇编，我们切换到自己的栈。</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:lightseagreen;color:white;font-size:.825em;">
+unsafe fn gt_switch(new: *const ThreadContext) {
+    asm!(
+        "mov rsp, [{0} + 0x00]",
+        "ret",
+        in(reg) new,
+    );
+}
+</pre>
+
+<div style="margin-top:.825em;">我们在这里使用了一个技巧。我们写入要在新栈上运行的函数的地址。然后我们将存储此地址的第一个字节的地址传递给 rsp 寄存器（我们设置给 new.rsp 的地址值将指向位于我们自己的栈上的地址，该地址将导致上述函数被调用）。我讲清楚了吗？</div>
+
+<div style="margin-top:.825em;">ret 关键字将程序控制转移到位于栈顶部的返回地址。由于我们将地址推送到 %rsp 寄存器，因此CPU会认为它是当前运行的函数的返回地址，因此当我们传递 ret 指令时，它会直接返回到我们自己的栈中。CPU 做的第一件事就是读取函数的地址并运行它。</div>
+
+<h3>Rust 内联汇编宏的快速入门</h3>
+
+<div>如果您之前没有使用内联汇编，可能会看起来很陌生，但我们稍后会使用扩展版本来切换上下文，所以我将逐行解释我们正在做什么: 
+unsafe 是一个关键字，表示 Rust 无法在我们编写的函数中强制执行安全保证。由于我们直接操作 CPU，这绝对是不安全的。</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:lightseagreen;color:white;font-size:.825em;">
+gt_switch(new: *const ThreadContext)
+</pre>
+
+<div style="margin-top:.825em;">在这里我们获取一个指向 ThreadContext 实例的指针，我们只读取一个字段。</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:lightseagreen;color:white;font-size:.825em;">
+asm!("
+</pre>
+
+<div style="margin-top:.825em;">这是 Rust 标准库中的 asm! 宏。它将检查我们的语法，在遇到看起来不像 AT&T（默认情况下）汇编语法的情况时会产生一个错误消息。
+这个宏里第一个输入是汇编模板：</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:lightseagreen;color:white;font-size:.825em;">
+"mov rsp, [{0} + 0x00]",
+</pre>
+
+<div style="margin-top:.825em;">这是一个简单的指令，它将存储在基地址为 {0} 偏移量为 0x00 处的值（这意味着在十六进制中完全没有偏移）移动到 rsp 寄存器。由于 rsp 寄存器存储指向栈上下一个值的指针，因此我们有效地将我们提供的地址压到当前的栈上，覆盖了当前已有的值。</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 </c:component>
