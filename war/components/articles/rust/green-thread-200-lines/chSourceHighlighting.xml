@@ -834,15 +834,382 @@ I LOVE WAKING UP ON A NEW STACK!
 
 <div>在我们开始之前，我得提醒你我们编写的代码非常不安全，并且这也不是编写 Rust 代码的 “最佳实践”。我希望在不引入很多不必要的复杂性的前提下使其尽可能安全，所以如果你发现了更安全方法，又不会让我们的代码过于复杂，那么我鼓励亲爱的你为该项目提一个 RP（Pull Request）。</div>
 
-<div style="margin-top:.825em;">它们不同之处在于如何访问和使用该部分内存。栈支持在内存的连续部分上使用简单的入栈/弹栈指令，这使得它使用起来很快。堆内存由内存分配器按需分配，并且可以分散在不同的位置。</div>
-
-<div style="margin-top:.825em;">我们不会在这里讨论栈和堆之间的差异，因为有很多文章详细解释它们，包括 Rust 编程语言中的一章。</div>
-
-<h3>栈是什么样的</h3>
+<h3>让我们开始吧</h3>
 
 <div>
-  <img style="max-width:260px" src="/images/rust/14143541_62a82c3d42cd576347.webp" />
+  我们要做的第一件事就是在 <b>main.rs</b> 中删除我们的示例。我们从头开始并添加以下内容：
 </div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:darkslategray;color:white;font-size:.825em;">
+// #![feature(asm)]
+// #![feature(naked_functions)]
+// use std::ptr;
+// 
+// const DEFAULT_STACK_SIZE: usize = 1024 * 1024 * 2;
+// const MAX_THREADS: usize = 4;
+// static mut RUNTIME: usize = 0;
+
+#![feature(naked_functions)]
+use std::arch::asm;
+
+const DEFAULT_STACK_SIZE: usize = 1024 * 1024 * 2;
+const MAX_THREADS: usize = 4;
+static mut RUNTIME: usize = 0;
+
+</pre>
+
+<div style="margin-top:.625em;">我们启用了两个特性（feature），我们之前介绍过的 <b>asm</b> 功能，以及我们需要解释的 <b>naked_functions</b> 功能。</div>
+
+<h3>naked_functions</h3>
+
+<div>
+  当 Rust 编译一个函数时，它会为每个函数添加一个小的序言和尾声，这会在我们切换上下文时给我们带来一些问题，因为我们最终得到了一个未对齐的栈。这在我们的第一个简单示例中运行良好，但是一旦我们需要再次切换回相同的栈，我们就会遇到麻烦。将某个函数标记为 <b>#[naked]</b> 会删除序言和结尾。此属性主要用于内联汇编。
+</div>
+
+<div style="margin-top:.625em;">我们的 <b>DEFAULT_STACK_SIZE</b> 设置为 2 MB，这足够我们使用。我们还将 <b>MAX_THREADS</b> 设置为 4，因为我们的示例不需要太大。</div>
+
+<div style="margin-top:.625em;">最后一个常量 <b>RUNTIME</b> 是一个指向我们运行时的指针（是的，我知道，一个可变的全局变量不是很好，但我们稍后需要它，我们只在运行时初始化时设置这个变量）。</div>
+
+<div style="margin-top:.625em;">我们开始填上一些代表数据的内容：</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:darkslategray;color:white;font-size:.825em;">
+// pub struct Runtime {
+//     threads: Vec<Thread>,
+//     current: usize,
+// }
+// 
+// #[derive(PartialEq, Eq, Debug)]
+// enum State {
+//     Available,
+//     Running,
+//     Ready,
+// }
+// 
+// struct Thread {
+//     id: usize,
+//     stack: Vec<u8>,
+//     ctx: ThreadContext,
+//     state: State,
+// }
+// 
+// #[derive(Debug, Default)]
+// #[repr(C)]
+// struct ThreadContext {
+//     rsp: u64,
+//     r15: u64,
+//     r14: u64,
+//     r13: u64,
+//     r12: u64,
+//     rbx: u64,
+//     rbp: u64,
+// }
+
+pub struct Runtime {
+    threads: Vec<Thread>,
+    current: usize,
+}
+
+#[derive(PartialEq, Eq, Debug)]
+enum State {
+    Available,
+    Running,
+    Ready,
+}
+
+struct Thread {
+    id: usize,
+    stack: Vec<u8>,
+    ctx: ThreadContext,
+    state: State,
+}
+
+#[derive(Debug, Default)]
+#[repr(C)]
+struct ThreadContext {
+    rsp: u64,
+    r15: u64,
+    r14: u64,
+    r13: u64,
+    r12: u64,
+    rbx: u64,
+    rbp: u64,
+}
+</pre>
+
+<div style="margin-top:.625em;"><b>Runtime</b> 将是我们的主要入口。我们会创建一个非常小的、简单的运行时来调度和切换我们的线程。运行时包含一个 <b>Thread</b> 的数组和一个 <b>current</b> 字段，以指示我们当前正在运行的线程。</div>
+
+<div style="margin-top:.625em;"><b>Thread</b> 保存线程的数据。每个线程都有一个 <b>id</b>，这样我们就可以将不同的线程区分开。栈类似于我们在前面章节中的第一个示例中看到的内容。<b>ctx</b> 字段是一个上下文，表示我们的 CPU 需要在栈上剩余的位置恢复的数据，以及一个 <b>state</b>，它是我们的线程状态。</div>
+
+<div style="margin-top:.625em;">整篇文章中的 “线程” 以及 <b>Thread</b> 指的就是我们要实现的 “绿色线程（Grean Thread）”，而不是操作系统线程。</div>
+
+<div style="margin-top:.625em;"><b>State</b> 是一个枚举，代表我们的线程所处的状态：</div>
+
+<ul style="margin-left:2.5em;list-style-type:decimal;margin-top: .125em;">
+  <li><b>Available</b> 表示线程可用，并且可以根据需要分配任务；</li>
+  <li><b>Running</b> 意味着线程正在运行；</li>
+  <li><b>Ready</b> 意味着线程已准备好继续前进和恢复执行。</li>
+</ul>
+
+<div style="margin-top:.625em;"><b>ThreadContext</b> 保存 CPU 需要在栈上恢复执行的寄存器的数据。</div>
+
+<div style="margin-top:.625em;">如果你不记得，请返回 <b>绪论及基本概念</b> 一章以了解寄存器。这些是 x86-64 体系结构规范中标记为 <b>“callee saved”</b> 的寄存器。</div>
+
+<div style="margin-top:.625em;">让我们继续：</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:darkslategray;color:white;font-size:.825em;">
+// impl Thread {
+// fn new(id: usize) -> Self {
+//         Thread {
+//             id,
+//             stack: vec![0_u8; DEFAULT_STACK_SIZE],
+//             ctx: ThreadContext::default(),
+//             state: State::Available,
+//         }
+//     }
+// }
+impl Thread {
+    fn new(id: usize) -> Self {
+        Thread {
+            id,
+            stack: vec![0_u8; DEFAULT_STACK_SIZE],
+            ctx: ThreadContext::default(),
+            state: State::Available,
+        }
+    }
+}
+</pre>
+
+<div style="margin-top:.625em;">这部分很简单。新线程在 <b>Available</b> 状态下启动，表示已准备好为其分配任务。</div>
+
+<div style="margin-top:.625em;">需要注意的一点是我们在这里分配了栈内存。这不是必需的，也不是资源的最佳使用方法，因为我们没有在首次使用时分配,，而为一个只是可能需要的线程分配了内存。不过，这降低了我们代码的复杂性，而我们的代码有比为栈分配内存更重要的关注点。</div>
+
+<div style="margin-top:.625em;">需要着重注意的是，一旦分配了栈，它就不能移动（move）！不应使用数组的 <b>push()</b> 或任何方法触发内存重分配。如果要把这部分代码写的更好一些，我们可以创建自己的类型，只暴露那些我们认为可以安全使用的方法。值得一提的是，<b>Vec<T></b> 有一个名为 <b>into_boxed_slice()</b> 的方法，它返回一个堆分配的切片 <b>Box<[T]></b>。切片不能增长，所以如果我们改为使用它，我们可以避免重新分配问题。</div>
+
+<h3>实现运行时</h3>
+
+<div>
+  此段中的所有代码都在 <b>impl Runtime</b> 代码块中，这意味着它们是 <b>Runtime</b> 结构上的方法。
+</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:darkslategray;color:white;font-size:.825em;">
+// impl Runtime {
+// pub fn new() -> Self {
+// // 这将是我们的基本线程, 会被初始化为
+// // Running 状态
+// let base_thread = Thread {
+//             id: 0,
+//             stack: vec![0_u8; DEFAULT_STACK_SIZE],
+//             ctx: ThreadContext::default(),
+//             state: State::Running,
+//         };
+// 
+// let mut threads = vec![base_thread];
+// let mut available_threads: Vec<Thread> = (1..MAX_THREADS).map(|i| Thread::new(i)).collect();
+//         threads.append(&mut available_threads);
+// 
+//         Runtime {
+//             threads,
+//             current: 0,
+//         }
+//     }
+impl Runtime {
+    pub fn new() -> Self {
+        // This will be our base thread, which will be initialized in 
+        // the `running` state
+        let base_thread = Thread {
+            id: 0,
+            stack: vec![0_u8; DEFAULT_STACK_SIZE],
+            ctx: ThreadContext::default(),
+            state: State::Running,
+        };
+
+        let mut threads = vec![base_thread];
+        let mut available_threads: Vec<Thread> = (1..MAX_THREADS).map(|i| Thread::new(i)).collect();
+        threads.append(&mut available_threads);
+
+        Runtime {
+            threads,
+            current: 0,
+        }
+    }
+</pre>
+
+<div style="margin-top:.625em;">当我们实例化 <b>Runtime</b> 时，我们创建了一个基础线程。此线程将设置为 <b>Running</b> 状态，并确保我们保持运行时运行，直到所有任务完成。</div>
+
+<div style="margin-top:.625em;">然后我们实例化其余的线程并将当前线程设置为 <b>0</b> ，也就是我们的基本线程。</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:darkslategray;color:white;font-size:.825em;">
+// /// 这里有点作弊，但是我们需要一个指向存储的 Runtime 的指针
+// /// 这样即便我们没有它的引用，
+// /// 也可以对其调用 yield.
+// pub fn init(&self) {
+//   unsafe {
+//     let r_ptr: *const Runtime = self;
+//     RUNTIME = r_ptr as usize;
+//   }
+// }
+
+/// This is cheating a bit, but we need a pointer to our Runtime 
+/// stored so we can call yield on it even if we don't have a 
+/// reference to it.
+pub fn init(&self) {
+    unsafe {
+        let r_ptr: *const Runtime = self;
+        RUNTIME = r_ptr as usize;
+    }
+}
+</pre>
+
+<div style="margin-top:.625em;">然后我们需要这样（译者注：为那个可变的全局变量赋值），正如我在定义常量时所提到的，我们需要以后能够调用 <b>yield</b>。代码有点难看，但我们知道只要有任何线程可以 <b>yield</b>，我们的运行时就会存活，只要我们不滥用它就可以安全地运行。</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:darkslategray;color:white;font-size:.825em;">
+// pub fn run(&mut self) -> ! {
+//   while self.t_yield() {}
+//   std::process::exit(0);
+// }
+pub fn run(&mut self) -> ! {
+  while self.t_yield() {}
+  std::process::exit(0);
+}
+</pre>
+
+<div style="margin-top:.625em;">这是我们开始启动运行时的地方。它将不断调用 <b>t_yield()</b> 直到返回 <b>false</b>，<b>false</b> 意味着没有工作要做了，我们可以退出进程。</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:darkslategray;color:white;font-size:.825em;">
+// fn t_return(&mut self) {
+//   if self.current != 0 {
+//     self.threads[self.current].state = State::Available;
+//     self.t_yield();
+//   }
+// }
+fn t_return(&mut self) {
+    if self.current != 0 {
+        self.threads[self.current].state = State::Available;
+        self.t_yield();
+    } 
+}
+</pre>
+
+<div style="margin-top:.625em;">这是我们在线程完成时调用的返回函数。<b>return</b> 是 Rust 中的另一个保留关键字，因此我们将此命名为 <b>t_return()</b>。请注意我们的线程用户不会调用它，我们设置栈，以便在任务完成时调用它。如果调用线程是 <b>base_thread</b>（即基础线程），我们什么都不做。我们的运行时将在基础线程上为我们调用 <b>yield</b>。如果从生成的线程中调用它，我们知道它已经完成，因为所有线程都在它们的栈顶部有一个 <b>guard</b> 函数（我们将下面进一步展示），并且这个 <b>t_return</b> 函数唯一被调用的地方就是我们的 <b>guard</b> 函数。我们将当前线程状态设置为 <b>Available</b>，让运行时知道它已准备好接受新任务，然后立即调用 <b>t_yield</b>，它将调度新的线程运行。</div>
+
+<div style="margin-top:.625em;">接下来是我们的 <b>yield</b> 函数：</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:darkslategray;color:white;font-size:.825em;">
+// fn t_yield(&mut self) -> bool {
+//   let mut pos = self.current;
+//   while self.threads[pos].state != State::Ready {
+//               pos += 1;
+//   if pos == self.threads.len() {
+//                   pos = 0;
+//               }
+//   if pos == self.current {
+//   return false;
+//               }
+//           }
+// 
+//   if self.threads[self.current].state != State::Available {
+//   self.threads[self.current].state = State::Ready;
+//           }
+// 
+//   self.threads[pos].state = State::Running;
+//   let old_pos = self.current;
+//   self.current = pos;
+// 
+//   unsafe {
+//   switch(&mut self.threads[old_pos].ctx, &self.threads[pos].ctx);
+//           }
+// 
+//   // 防止 Windows 的编译器优化我们的代码。
+//   self.threads.len() > 0
+// }
+#[inline(never)]
+fn t_yield(&mut self) -> bool {
+    let mut pos = self.current;
+    while self.threads[pos].state != State::Ready {
+        pos += 1;
+        if pos == self.threads.len() {
+            pos = 0;
+        }
+        if pos == self.current {
+            return false;
+        }
+    }
+
+    if self.threads[self.current].state != State::Available {
+        self.threads[self.current].state = State::Ready;
+    }
+
+    self.threads[pos].state = State::Running;
+    let old_pos = self.current;
+    self.current = pos;
+
+    unsafe {
+        let old: *mut ThreadContext = &mut self.threads[old_pos].ctx;
+        let new: *const ThreadContext = &self.threads[pos].ctx;
+        asm!("call switch", in("rdi") old, in("rsi") new, clobber_abi("C"));
+    }
+    self.threads.len() > 0
+}
+</pre>
+
+<div style="margin-top:.625em;">这是我们运行时的核心。我们必须将此命名为 <b>t_yield</b>，因为 <b>yield</b> 是 Rust 中的保留关键字。在这里，我们遍历所有线程，看看是否有线程处于 <b>Ready</b> 状态，<b>Ready</b> 表明它已准备好恢复执行。在现实世界的程序中，这可能是一个数据库调用的返回。</div>
+
+<div style="margin-top:.625em;">如果没有线程是 <b>Ready</b> 的，就直接返回。这是一个非常简单的调度程序，只使用轮询算法，真正的调度程序可能有更复杂的方法来决定下一个要运行的任务。</div>
+
+<div style="margin-top:.625em;">这是一个为我们的例子量身定制的非常简单的实现。如果我们的线程尚未准备好进行（未处于 <b>Ready</b> 状态）并仍在等待比如来自数据库的响应，会发生什么？
+解决这个问题并不困难，当一个线程 <b>Ready</b> 时，我们可以轮询它的状态，而不是直接运行我们的代码，。比如，如果它真的准备好运行它可以返回 <b>IsReady</b>，如果仍旧在等待某些操作完成它可以返回 <b>Pending</b>。在后一种情况下，我们可以直接它处于 <b>Ready</b> 状态，以便稍后再次进行轮询。是不是听起来很熟悉？如果您已经阅读了Future在Rust中的工作方式，那么我们将开始就它们如何组合在一起提供一些建议。</div>
+
+<div style="margin-top:.625em;">如果我们找到一个准备运行的线程，那就将当前线程的状态从 <b>Running</b> 修改为 <b>Ready</b>。</div>
+
+<div style="margin-top:.625em;">然后我们调用 <b>switch</b> 来保存当前上下文（旧上下文）并将新上下文加载到 CPU 中。新上下文要么是新任务，要么是 CPU 在现有任务上恢复工作所需的所有信息。</div>
+
+<div style="margin-top:.625em;">最终的 <b>self.threads.len() > 0</b> 的部分只是阻止编译器优化代码的一种方法。这种情况发生在 Windows 上，但不发生在 Linux 上，例如在运行性能测试时是一个常见问题。因此，我们可以使用 <b>std::hint::black_box</b> 来防止编译器为了更快地执行代码而走得太远并跳过我们需要的步骤。我选择了另外一种方法，只要是有注释的就应该没问题，无论如何代码永远不会执行到这里。</div>
+
+<div style="margin-top:.625em;">接下来是我们的 <b>spawn()</b> 函数：</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:darkslategray;color:white;font-size:.825em;">
+// pub fn spawn(&mut self, f: fn()) {
+// 
+//   let available = self
+//       .threads
+//       .iter_mut()
+//       .find(|t| t.state == State::Available)
+//       .expect("no available thread.");
+// 
+//   let size = available.stack.len();
+//   let s_ptr = available.stack.as_mut_ptr();
+// 
+//   unsafe {
+//     ptr::write(s_ptr.offset((size - 24) as isize) as *mut u64, guard as u64);
+//     ptr::write(s_ptr.offset((size - 32) as isize) as *mut u64, f as u64);
+//     available.ctx.rsp = s_ptr.offset((size - 32) as isize) as u64;
+//   }
+// 
+//   available.state = State::Ready;
+// 
+// }
+
+pub fn spawn(&mut self, f: fn()) {
+    let available = self
+        .threads
+        .iter_mut()
+        .find(|t| t.state == State::Available)
+        .expect("no available thread.");
+
+    let size = available.stack.len();
+    unsafe {
+        let s_ptr = available.stack.as_mut_ptr().offset(size as isize);
+        let s_ptr = (s_ptr as usize & !15) as *mut u8;
+        std::ptr::write(s_ptr.offset(-16) as *mut u64, guard as u64);
+        std::ptr::write(s_ptr.offset(-24) as *mut u64, skip as u64);
+        std::ptr::write(s_ptr.offset(-32) as *mut u64, f as u64);
+        available.ctx.rsp = s_ptr.offset(-32) as u64;
+    }
+    available.state = State::Ready;
+}
+
+// Remember to close "}" the `impl Runtime` block here
+</pre>
 
     ]]>
     </c:sourceContent>
