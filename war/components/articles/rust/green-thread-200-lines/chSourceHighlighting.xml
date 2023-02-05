@@ -647,7 +647,298 @@ I LOVE WAKING UP ON A NEW STACK!
 
 <div>某些实现使用可增长的栈。这让我们可以只分配一小部分内存就足够为大多数任务使用，但是当我们用光这个栈时它不会导致栈溢出，而是分配一个新的更大的栈并将所有内容从当前栈中移到这个新的更大的栈上，并可以恢复程序继续执行。</div>
 
-<div style="margin-top:.425em;">Go 语言就是一个这样的例子。它从一个 8 KB 的栈开始，当它的空间用完时，它会重新分配到一个更大的栈。但是正如编程中的每一件事都是有代价的，所有指针都需要正确地被更新，这不是一件容易的事。如果你对 Go 如何处理它的栈更感兴趣（这是可增长栈的使用和权衡的一个很好的例子）可以参看这篇文章：https://blog.cloudflare.com/how-stacks-are-handled-in-go/</div>
+<div style="margin-top:.625em;">Go 语言就是一个这样的例子。它从一个 8 KB 的栈开始，当它的空间用完时，它会重新分配到一个更大的栈。但是正如编程中的每一件事都是有代价的，所有指针都需要正确地被更新，这不是一件容易的事。如果你对 Go 如何处理它的栈更感兴趣（这是可增长栈的使用和权衡的一个很好的例子）可以参看这篇文章：https://blog.cloudflare.com/how-stacks-are-handled-in-go/</div>
+
+<div style="margin-top:.625em;">请注意稍后会很重要的一件事：我们使用 Rust 标准库中普通的 <b>Vec<u8></b>。对我们来说非常方便，但也有一些问题。除了其它之外，我们无法保证它会留在内存中的同一位置。你可能会想到，如果栈移动到不同的地址空间，我们的程序会崩溃，因为我们的所有指针都将变为无效。比如对我们的栈执行 <b>push()</b> 这样简单的操作可能会触发一次增长，当 <b>Vec</b> 扩展它时会请求一个新的、更大的内存块并将值移动到新位置。</div>
+
+<div style="margin-top:.625em;">好了，现在我们已经了解了栈的外观和工作原理，我们已准备好继续实现绿色线程。你已经完成了很多艰苦的工作，所以我答应你开始写代码。</div>
+
+<h3>如何设置栈</h3>
+
+<div>Windows x64-86 的栈设置与 x64-86 psABI 调用约定略有不同。我将在 <b>附录：支持Windows</b> 的章节中花更多时间介绍 Windows 栈，但重要的是要知道如果用那些并不接受多个参数的简单函数设置栈，两者的差异不是很大，就像我们目前做的这样。</div>
+
+<div style="margin-top:.625em;">psABI 的栈布局如下：</div>
+
+<div>
+  <img style="max-width:100%" src="/images/rust/14143541_62a82c3d6d04388967.webp" />
+</div>
+
+<div style="margin-top:.625em;">如你所知，<b>%rsp</b> 是我们的栈指针。你可以看到，我们需要将栈指针放在距离我们的基地址为 16 的倍数位置。返回的地址位于相邻的 8 个字节中，如你所见，上面有一个内存参数的空间。当我们想要做比迄今为止更复杂的事情时，我们需要牢记这一点。</div>
+
+<h3>幕后花絮</h3>
+
+<div>如果你足够好奇，你可能想知道切换到栈后它发生了什么？</div>
+
+<div style="margin-top:.625em;">答案是我们用 Rust 编写的代码被编译成 CPU 的指令，然后就像使用任何其他的栈一样，接管并使用我们的栈。</div>
+
+<div style="margin-top:.625em;">遗憾的是，为了清楚地展示这一点，我得将栈大小增加到 1024 字节，才能为打印出栈本身获得足够的空间，所以目前这样我们无法打印。</div>
+
+<h3>幕后花絮</h3>
+
+<div>不过，我制作了一个示例的更改版本，在运行时它会打印出两个文本文件，一个是 <b>BEFORE.txt</b>，在我们切换到栈之前打印出我们的栈，一个 <b>AFTER.txt</b> 打印出我们切换后的栈。然后，你可以自己查看栈现在是如何存活并由我们的代码使用的。</div>
+
+<div style="margin-top:.625em;">如果你在此代码中看到任何你无法识别的内容，请稍作休息，我们会尽快搞清楚它们。</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:darkslategray;color:white;font-size:.825em;">
+// #![feature(asm)]
+// #![feature(naked_functions)]
+// use std::io::Write;
+// 
+// const SSIZE: isize = 1024;
+// static mut S_PTR: *const u8 = 0 as *const u8;
+// 
+// #[derive(Debug, Default)]
+// #[repr(C)]
+// struct ThreadContext {
+//     rsp: u64,
+//     r15: u64,
+//     r14: u64,
+//     r13: u64,
+//     r12: u64,
+//     rbx: u64,
+//     rbp: u64,
+// }
+// 
+// fn print_stack(filename: &str) {
+// let mut f = std::fs::File::create(filename).unwrap();
+// unsafe {
+// for i in (0..SSIZE).rev() {
+// writeln!(
+//                 f,
+// "mem: {}, val: {}",
+//                 S_PTR.offset(i as isize) as usize,
+// *S_PTR.offset(i as isize)
+//             )
+//                 .expect("Error writing to file.");
+//         }
+//     }
+// }
+// 
+// fn hello() {
+// println!("I LOVE WAKING UP ON A NEW STACK!");
+// print_stack("AFTER.txt");
+// 
+// loop {}
+// }
+// 
+// unsafe fn gt_switch(new: *const ThreadContext) {
+// asm!("
+//         mov 0x00($0), %rsp
+//         ret
+//         "
+//     :
+//     : "r"(new)
+//     :
+//     : "alignstack"
+//     );
+// }
+// 
+// fn main() {
+// let mut ctx = ThreadContext::default();
+// let mut stack = vec![0_u8; SSIZE as usize];
+// let stack_ptr = stack.as_mut_ptr();
+// 
+// unsafe {
+//         S_PTR = stack_ptr;
+//         std::ptr::write(stack_ptr.offset(SSIZE - 16) as *mut u64, hello as u64);
+// print_stack("BEFORE.txt");
+//         ctx.rsp = stack_ptr.offset(SSIZE - 16) as u64;
+// gt_switch(&mut ctx);
+//     }
+// }
+// -----------------------------------
+
+use std::arch::asm;
+use std::io::Write;
+
+const SSIZE: isize = 1024;
+static mut S_PTR: *const u8 = 0 as *const u8;
+
+#[derive(Debug, Default)]
+#[repr(C)]
+struct ThreadContext {
+    rsp: u64,
+    r15: u64,
+    r14: u64,
+    r13: u64,
+    r12: u64,
+    rbx: u64,
+    rbp: u64,
+}
+
+fn print_stack(filename: &str) {
+    let mut f = std::fs::File::create(filename).unwrap();
+    unsafe {
+        for i in (0..SSIZE).rev() {
+            writeln!(
+                f,
+                "mem: {}, val: {}",
+                S_PTR.offset(i as isize) as usize,
+                *S_PTR.offset(i as isize)
+            )
+            .expect("Error writing to file.");
+        }
+    }
+}
+
+fn hello() {
+    println!("I LOVE WAKING UP ON A NEW STACK!");
+    print_stack("AFTER.txt");
+
+    loop {}
+}
+
+unsafe fn gt_switch(new: *const ThreadContext) {
+    asm!(
+        "mov rsp, [{0} + 0x00]",
+        "ret",
+        in(reg) new
+    );
+}
+
+pub fn main() {
+
+    let mut ctx = ThreadContext::default();
+    let mut stack = vec![0_u8; SSIZE as usize];
+    let stack_ptr = stack.as_mut_ptr();
+
+    unsafe {
+        let stack_bottom = stack.as_mut_ptr().offset(SSIZE);
+        let sb_aligned = (stack_bottom as usize & !15) as *mut u8;
+        S_PTR = sb_aligned;
+        std::ptr::write(stack_ptr.offset(SSIZE - 16) as *mut u64, hello as u64);
+        print_stack("BEFORE.txt");
+        ctx.rsp = stack_ptr.offset(SSIZE - 16) as u64;
+        gt_switch(&mut ctx);
+    }
+
+}
+</pre>
+
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">一个绿色线程的实现</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+
+<div>在我们开始之前，我得提醒你我们编写的代码非常不安全，并且这也不是编写 Rust 代码的 “最佳实践”。我希望在不引入很多不必要的复杂性的前提下使其尽可能安全，所以如果你发现了更安全方法，又不会让我们的代码过于复杂，那么我鼓励亲爱的你为该项目提一个 RP（Pull Request）。</div>
+
+<h3>让我们开始吧</h3>
+
+<div>我们要做的第一件事就是在 <b>main.rs</b> 中删除我们的示例。我们从头开始并添加以下内容：</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:darkslategray;color:white;font-size:.825em;">
+
+// #![feature(asm)]
+// #![feature(naked_functions)]
+//  stdptr;
+// 
+//  DEFAULT_STACK_SIZE:       ;
+//  MAX_THREADS:   ;
+//   RUNTIME:   ;
+
+#![feature(naked_functions)]
+use std::arch::asm;
+
+const DEFAULT_STACK_SIZE: usize = 1024 * 1024 * 2;
+const MAX_THREADS: usize = 4;
+static mut RUNTIME: usize = 0;
+</pre>
+
+<div style="margin-top:.625em;">我们启用了两个特性（feature），我们之前介绍过的 <b>asm</b> 功能，以及我们需要解释的 <b>naked_functions</b> 功能。</div>
+
+<h3>naked_functions</h3>
+
+<div>当 Rust 编译一个函数时，它会为每个函数添加一个小的序言和尾声，这会在我们切换上下文时给我们带来一些问题，因为我们最终得到了一个未对齐的栈。这在我们的第一个简单示例中运行良好，但是一旦我们需要再次切换回相同的栈，我们就会遇到麻烦。将某个函数标记为 <b>#[naked]</b> 会删除序言和结尾。此属性主要用于内联汇编。</div>
+
+<div style="margin-top:.625em;">我们的 <b>DEFAULT_STACK_SIZE</b> 设置为 2 MB，这足够我们使用。我们还将 <b>MAX_THREADS</b> 设置为 4，因为我们的示例不需要太大。</div>
+
+<div style="margin-top:.625em;">最后一个常量 <b>RUNTIME</b> 是一个指向我们运行时的指针（是的，我知道，一个可变的全局变量不是很好，但我们稍后需要它，我们只在运行时初始化时设置这个变量）。</div>
+
+<div style="margin-top:.625em;">我们开始填上一些代表数据的内容：</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:darkslategray;color:white;font-size:.825em;">
+//    {
+//     threads: Thread,
+//     current: ,
+// }
+// 
+// #[derive(PartialEq, Eq, Debug)]
+//   {
+//     Available,
+//     Running,
+//     Ready,
+// }
+// 
+//   {
+//     id: ,
+//     stack: ,
+//     ctx: ThreadContext,
+//     state: State,
+// }
+// 
+// #[derive(Debug, Default)]
+// #[repr(C)]
+//   {
+//     rsp: ,
+//     r15: ,
+//     r14: ,
+//     r13: ,
+//     r12: ,
+//     rbx: ,
+//     rbp: ,
+// }
+pub struct Runtime {
+    threads: Vec<Thread>,
+    current: usize,
+}
+
+#[derive(PartialEq, Eq, Debug)]
+enum State {
+    Available,
+    Running,
+    Ready,
+}
+
+struct Thread {
+    id: usize,
+    stack: Vec<u8>,
+    ctx: ThreadContext,
+    state: State,
+}
+
+#[derive(Debug, Default)]
+#[repr(C)]
+struct ThreadContext {
+    rsp: u64,
+    r15: u64,
+    r14: u64,
+    r13: u64,
+    r12: u64,
+    rbx: u64,
+    rbp: u64,
+}
+</pre>
+
+<div style="margin-top:.625em;"><b>Runtime</b> 将是我们的主要入口。我们会创建一个非常小的、简单的运行时来调度和切换我们的线程。运行时包含一个 <b>Thread</b> 的数组和一个 <b>current</b> 字段，以指示我们当前正在运行的线程。</div>
+
     ]]>
     </c:sourceContent>
     <c:comment>

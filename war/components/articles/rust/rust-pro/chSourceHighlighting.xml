@@ -1620,4 +1620,193 @@ v.1                   // 错误，已经借出可修改引用，禁止通过其�
   </c:entry>
   
 
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>错误处理</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+<div>
+painc(诧异) 和 Result 是 Rust 的错误处理机制。
+</div>
+<div style="margin-top:.625em;">
+普通的错误使用 Result 处理，这些错误通常由程序外部的情况导致，比如错误输入、网络中断、或者权限问题。
+</div>
+]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="painc 诧异" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+fn main() {
+
+    let r = pirate_share(500, 0);
+
+    println!("{}", r);
+    println!("{}", r / 1 as f64);
+    println!("{}", r.is_infinite());
+
+    let a = r; // 复制
+
+    println!("{}", a);
+
+    if r.is_infinite() {
+        panic!("error"); // 诧异
+    }
+    
+}
+
+fn pirate_share(total: u64, crew_size: usize) -> f64 {
+    let half = total as f64 / 2.0;
+    half / crew_size as f64
+}
+
+
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.8;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+
+<div style="margin-top:.625em;">
+painc(诧异) 用于处理永远不会发生的错误。当程序发生诧异时会<b>展开栈</b>。
+</div>
+
+<div style="margin-top:.425em;">
+诧异不是崩溃也不是未定义行为，它是安全的且不违反 Rust 的任何安全规则。
+</div>
+
+<div style="margin-top:.425em;">
+painc(诧异) 是线程级别的，一个线程诧异时其他线程可以正常运行自己的业务。<b>父线程可以捕获子线程的诧异，并优雅地处理相应的错误。</b>
+</div>
+
+<div style="margin-top:.425em;">
+还有一种方法可以<b>捕获栈展开</b>，它允许诧异线程存活并继续运行。标准库函数 std::panic::catch_unwind() 就是为此设计的。
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="中止进程" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.8;font-family:monospace;">
+      <![CDATA[
+
+<div style="margin-top:.625em;">
+展开栈是默认的诧异行为，但在两种情况下 Rust 不会展开栈。
+</div>
+
+<div style="margin-top:.425em;">
+如果在 Rust 展开第一个函数之后的清理期间 .drop() 方法触发了第二个诧异，那么这个诧异被认为是致命的。此时 Rust 会停止展开栈并中止整个进程。
+</div>
+
+<div style="margin-top:.425em;">
+如果编译时加上 -C panic=abort，那么编译后程序中的第一个诧异就会立即终止进程。（此选项能够减小编译后代码的大小）
+</div>
+
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="Result 结果" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.8;font-family:monospace;">
+      <![CDATA[
+
+<div style="margin-top:.625em;">
+Rust 没有异常，在 Rust 中函数执行失败可以通过一个返回类型来表示。
+</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:darkslateblue;color:white;font-size:.825em;">
+fn get_weather(location: LatLng) -> Result<WeatherReport, io::Error> {
+  // .....
+
+}
+
+// 啰嗦写法
+match get_weather(hometown) {
+  Ok(report) => {
+    display_weather(hometown, &report);
+  }
+  Err(err) => {
+    println!("error query the weather: {}", err);
+    schedule_weather_retry();
+  }
+}
+
+// 简化写法1
+let report = get_weather(hometown).unwrap_or_else( |_err| vague_prediction(hometown));
+
+// 简化写法2
+let report = get_weather(hometown).unwrap(); // 仅返回成功的值，如果 result 是错误的结果会触发诧异。
+
+// 简化写法2
+let report = get_weather(hometown).expect(message_here); // 失败时返回自定义错误信息。
+
+// 将结果转换为引用
+result.as_ref() 将 Result<T, E> 转换为 Result<&T, &E>，即借用现有 result 中成功或错误值的引用
+
+// 将结果转换为可修改引用
+result.as_mut() 将 Result<T, E> 转换为 Result<&mut T, &mut E>，即借用现有 result 中成功或错误值的可修改引用
+
+// 取得 &str 类型的错误信息
+err.description();
+
+// 返回一个 Option<&Error>，取得触发 err 的底层错误(如果有的话)
+err.cause()
+
+</pre>
+
+<div style="margin-top:1em;">
+打印错误信息不一定会打印出错误原因。可以使用这个函数打印所有可用信息。
+</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:darkslateblue;color:white;font-size:.825em;">
+use std::error::Error;
+use std::io::{Write, stderr};
+
+/// 把错误信息转存到 stderr
+/// 
+/// 如果在构建当前错误信息或写入 stderr 时发生另一个错误，则忽略该错误
+fn print_error(mut err: &Error) {
+  
+  let _ = writeln!(stderr(), "error: {}", err);
+
+  while let Some(cause) = err.cause() {
+    let _ = writeln!(stderr(), "caused by: {}", cause);
+    err = cause;
+  }
+
+}
+
+</pre>
+
+<div style="margin-top:1em;">
+<b>标准库的错误类型不包含栈跟踪信息，但是使用 error_chain 包可以方便地定义自己的错误类型，以支持在创建时获取栈跟踪信息。</b>
+</div>
+
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="传播错误" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.8;font-family:monospace;">
+      <![CDATA[
+
+<div style="margin-top:.625em;">
+Rust 没有异常，在 Rust 中函数执行失败可以通过一个返回类型来表示。
+</div>
+
+    ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+
+
 </c:component>
