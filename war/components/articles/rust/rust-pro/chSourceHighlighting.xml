@@ -1717,7 +1717,7 @@ Rust 没有异常，在 Rust 中函数执行失败可以通过一个返回类型
 </div>
 
 <pre style="margin-top:.5em;padding:.825em 1.2em;background-color:darkslateblue;color:white;font-size:.825em;">
-fn get_weather(location: LatLng) -> Result<WeatherReport, io::Error> {
+fn get_weather(location: LatLng) -> Result&lt;WeatherReport, io::Error&gt; {
   // .....
 
 }
@@ -1789,12 +1789,88 @@ fn print_error(mut err: &Error) {
 
     <c:sourceContent type="html" title="传播错误" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
-                     bodyStyle="padding:0;font-size:1em;line-height:1.8;font-family:monospace;">
+                     bodyStyle="padding:0;font-size:1em;line-height:1.6;font-family:monospace;">
       <![CDATA[
 
 <div style="margin-top:.625em;">
-Rust 没有异常，在 Rust 中函数执行失败可以通过一个返回类型来表示。
+在尝试可能出错的操作时，有时并不希望立即处理错误。如果在每个可能出错的地方都写上 10 行 match 语句，就显得有点啰嗦了。
 </div>
+
+<div style="margin-top:.325em;">
+我们通常希望调用者来处理错误。换句话说，我们希望错误可以沿着调用栈向上传播。
+</div>
+
+<div style="margin-top:.325em;">
+Rust 的 ? 操作符可以传播错误。可在任何产生 Result 的表达式后面加 ?，例如：
+</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:darkslateblue;color:white;font-size:.825em;">
+let weather = get_weather(hometome)?;
+</pre>
+
+<div style="margin-top:1.625em;">
+? 操作符的行为取决于这个函数是返回一个成功结果，还是返回一个错误结果。
+</div>
+
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li>如果是成功结果，那么它会打开 Result 并取出其中的值。</li>
+  <li>如果是错误结果，那么它会立即从闭合函数中返回，并将错误结果沿调用链向上传播。为确保传播成功，只能对返回类型为 Result 的函数使用 ?。</li>
+</ul>
+
+<div style="margin-top:.325em;">
+? 操作符并不神秘。同样的操作使用一个 match 表达式也能实现，只不过太长了：
+</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:darkslateblue;color:white;font-size:.825em;">
+let weather = match get_weather(hometown) {
+  Ok(succes_value) => succes_value,
+  Err(err) => return Err(err)
+}
+</pre>
+
+<div style="margin-top:1em;">
+出错概率极高的代码示例子
+</div>
+
+<pre style="margin-top:.5em;padding:.825em 1.2em;background-color:darkslateblue;color:white;font-size:.825em;">
+use std::fs;
+use std::io;
+use std::path::Path;
+
+fn main() {
+    let src_path = Path::new("./foo/bar.txt");
+    let dst_path = Path::new("./foo/bar.txt2");
+
+    move_all(src_path, dst_path).unwrap_or_else(|_err| println!("{}", _err.to_string()));
+}
+
+fn move_all(src: &Path, dst: &Path) -> io::Result<()> {
+
+    // 判断文件夹是否存在
+    if !fs::metadata(dst).is_ok() {
+        fs::create_dir_all(dst)?; // 创建文件夹
+    }
+
+    // 判断源文件夹是否存在
+    if !fs::metadata(src).is_ok() {
+        panic!("src not exists: path={}", String::from(src.to_string_lossy()));
+    }
+
+    // 读取dir可能失败
+    for entry_result in src.read_dir()? {
+        let entry = entry_result?;                    // 读取文件可能失败
+        let dst_file = dst.join(entry.file_name());   // 拼接目标路径
+        println!("src_file={:?}, dist_file={}", entry.path(), dst_file.display().to_string());  // 打印日志
+        fs::rename(entry.path(), dst_file).unwrap();  // 重命名可能失败
+    }
+
+    // 删除文件夹
+    fs::remove_dir_all(src)?;
+
+    Ok(()) // 成功
+}
+
+</pre>
 
     ]]>
     </c:sourceContent>
