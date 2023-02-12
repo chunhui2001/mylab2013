@@ -2001,9 +2001,17 @@ impl std::error::Error for JsonError {
 
 ]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="" title="命名字段结构体" id="sourceContent1" style="background-color:transparent;"
+
+    <c:sourceContent type="html" title="命名字段结构体 &amp;mdash; GrayscaleMap" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
                      bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+结构体布局 .....
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;margin-top:1em;">
       <![CDATA[
 
 fn main() {
@@ -2011,16 +2019,18 @@ fn main() {
   let width = 1024;
   let height = 576;
 
-  let image = GrayscaleMap{
+  let _image = GrayscaleMap{
     pixels: vec![0; width * height],
     size: (width, height)
   };
 
   // OR 
-  let image = GrayscaleMap::new_map(width, height);
+  let _image = GrayscaleMap::new_map(width, height);
 
-  assert_eq!(image.size, (1024, 576));
-  assert_eq!(image.pixels.len(), 1024 * 576);
+  assert_eq!(_image.size, (1024, 576));
+  assert_eq!(_image.pixels.len(), 1024 * 576);
+
+  println!("capacity: {}", _image.pixels.capacity())
 
 }
 
@@ -2037,9 +2047,178 @@ impl GrayscaleMap {
   pub fn new_map(width: usize, height: usize) -> GrayscaleMap {
     GrayscaleMap{
       pixels: vec![0; width * height],
-      size: (width: height)
+      size: (width, height)
     }
   }
+
+}
+
+
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="命名字段结构体 &amp;mdash; GrayscaleMap" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+fn main() {
+
+    let b = Broom {
+        name: "Hokey".to_string(),
+        height: 60,
+        health: 100,
+        position: (100.0, 2.0, 0.0),
+        intent: BroomIntent::FetchWater,
+    };
+
+    let (broom1, mut broom2) = Broom::chop(b);
+
+    broom2.intent = BroomIntent::DumpWater;
+
+    println!("{:?}", broom1);
+    println!("{:?}", broom2);
+
+}
+
+/// 用于表示怪物
+#[derive(Debug)]
+#[allow(dead_code)]
+pub struct Broom {
+    pub name: String,
+    pub height: u32,
+    pub health: u32,
+    pub position: (f32, f32, f32),
+    pub intent: BroomIntent,
+}
+
+/// 扫帚枚举，用于表示怪物可能干的两件事
+#[derive(Copy, Clone, Debug)]
+pub enum BroomIntent {
+    FetchWater,
+    DumpWater,
+}
+
+impl Broom {
+    // 按值接收怪物，取得所有权
+    pub fn chop(b: Broom) -> (Broom, Broom) {
+        // 基于 b 初始化 broom1，只修改 height。因为 String 不是可复制类型
+        // 所以此时broom1取得了b.name的所有权
+        let mut broom1 = Broom {
+            height: b.height / 2,
+            ..b
+        };
+
+        // 基于 broom1 初始化 broom2，由于 (broom1.name) String 不是可复制类型，所以必须显示地克隆 broom1.name
+        let mut broom2 = Broom {
+            name: broom1.name.clone(),
+            ..broom1
+        };
+
+        // 给两个怪物扫帚取一个不一样的名字
+        broom1.name.push_str("_1");
+        broom2.name.push_str("_2");
+
+        (broom1, broom2)
+    }
+}
+
+
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="类元组结构体" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+// 创建这种类型的结构体就像创建元组一样，只不过要加上结构体的名字。
+pub struct Bounds (pub usize, pub usize);
+
+let image_bounds = Bounds(1024, 768);
+
+// 类元组结构体体非常适合创建新类型，即只包含一个要经过严格类型检查的组件的结构体。
+// 例如想只使用 ASCII 文本，可以像这样定义一个新的类型
+pub struct Ascii(Vec<u8>);
+
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="类基元结构体" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 这种结构体在使用特型的时候有用
+// 这种类型的结构体值，不占内存，也不会生成操作他们的代码。
+// 例如：表达式 .. 是对类基元结构体值 RangeFull 的简写
+pub struct Onesuch;
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="通过 impl 给结构体增加方法" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+#[derive(Debug,Clone)]
+pub struct Queue {
+  older: Vec<char>,     // 旧元素，最老的在最后
+  younger: Vec<char>,   // 新元素，最新的在后边
+}
+
+impl Queue {
+  
+  // 把一个字符放到队列的最后
+  pub fn push(&mut self, c: char) {
+    self.younger.push(c);
+  }
+
+  pub fn pop(&mut self) -> Option<char> {
+
+    if self.older.is_empty() {
+      
+      if self.younger.is_empty() {
+        return None;
+      }
+      
+      use std::mem::swap;
+
+      // 把 younger 中的元素转移到 older 中，并保持对外承诺的顺序
+      swap(&mut self.older, &mut self.younger);
+
+      self.older.reverse();
+
+    }
+
+    // 到这里 older 里肯定有元素
+    self.older.pop()
+
+  }
+
+}
+
+fn main () {
+  
+  let mut queue = Queue{
+    older: vec![],
+    younger: vec![],
+  };
+
+  queue.push('0');
+  queue.push('1');
+  queue.push('2');
+  queue.push('3');
+  queue.push('4');
+  queue.push('5');
+
+  let l = queue.pop();
+
+  println!("{:?}", queue);
+  println!("{}", l.unwrap());
+
+  let _ = queue.pop();
+  let l = queue.pop();
+
+  println!("{:?}", queue);
+  println!("{}", l.unwrap());
+
 
 }
 
