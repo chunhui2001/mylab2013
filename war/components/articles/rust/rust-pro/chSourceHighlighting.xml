@@ -1969,7 +1969,7 @@ use std;
 use std::fmt;
 
 impl fmt::Display for JsonError {
-  fn fmt(&self, f: &mt fmt::Formatter) -> Result&lt;(), fmt::Error&gt; {
+  fn fmt(&self, f: &mut fmt::Formatter) -> Result&lt;(), fmt::Error&gt; {
     write!(f, "{} ({}:{})", self.message, self.line, self.column)
   }
 }
@@ -2395,6 +2395,176 @@ pub struct SpiderRobot {
                      bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
       <![CDATA[
 Rust 枚举还可以包含数据，而且可以是不同类型的数据。
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+
+#[derive(Debug, PartialEq)]
+pub enum TimeUnit {
+  Seconds, Minutes, Hours, Days, Months, Years
+}
+
+// rust 枚举也可以有方法
+impl TimeUnit {
+  
+  // 返回这个时间单位的复数名词
+  pub fn plural(&self) -> &'static str {
+
+    match self {
+      TimeUnit::Seconds => "seconds",
+      TimeUnit::Minutes => "minutes",
+      TimeUnit::Hours => "hours",
+      TimeUnit::Days => "days",
+      TimeUnit::Months => "months",
+      TimeUnit::Years => "years",
+    }
+
+  }
+
+  pub fn singular(&self) -> &'static str {
+    self.plural().trim_end_matches('s')
+  }
+
+}
+
+impl fmt::Display for TimeUnit {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        write!(f, "{}", self.plural())
+    }
+}
+
+fn main() {
+  let s = TimeUnit::Seconds;
+  println!("{}", s.plural());
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="包含数据的枚举" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+显示一个对用户更友好的近似时间。
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+
+#[derive(Debug, PartialEq)]
+pub enum RoughTime {
+  InThePast(TimeUnit, u32),
+  JustNow,
+  InTheFuture(TimeUnit, u32)
+}
+
+impl fmt::Display for RoughTime {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        match self {
+            RoughTime::InThePast(a, b) => write!(f, "{}{} 以前", b, a),
+            RoughTime::JustNow => write!(f, "{}", "Just now"),
+            RoughTime::InTheFuture(a, b) => write!(f, "将来 {}{}", b, a),
+        }
+    }
+}
+
+fn main() {
+  let t1 = RoughTime::InThePast(TimeUnit::Years, 20 * 4 + 7);
+  let t2 = RoughTime::InThePast(TimeUnit::Hours, 3);
+  let t3 = RoughTime::JustNow;
+  println!("{:?}", t1);
+  println!("{:?}", t2);
+  println!("{:?}", t3);
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+<div>
+  <img style="max-width:650px" src="/images/rust/RoughTime-layout.png" />
+</div>
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="结构体变体枚举" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+与常规结构体一样包含命名字段。
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+
+pub enum Shape {
+  Sphere { center: Point3d, radius: f32 },
+  Cuboid { corner1: Point3d, corner2: Point3d },
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+
+pub enum RelationshipStatus {
+
+  // 基元枚举
+  Single,
+  InArelationship, 
+
+  // 元组枚举
+  ItsComplicated(Option<String>), 
+
+  // 命名字段枚举
+  ItsExtremelyComplicated {
+    car: DifferentialEquation, 
+    cdr: EarlyModernistPoem
+  }
+
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="使用枚举的富数据结构" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+枚举也可以用来快速实现类似树的数据结构。比如任何 Json 文档都可以用这个 Rust 类型表示:
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+
+pub enum Json {
+  Null, 
+  Boolean(bool),
+  Number(f64), 
+  String(String), 
+  Array(Vec<Json>), 
+  Object(Box<HashMap<String, Json>>)
+}
+
 ]]>
     </c:sourceContent>
 
