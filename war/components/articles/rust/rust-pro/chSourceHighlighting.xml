@@ -2578,6 +2578,80 @@ pub enum Json {
 ]]>
     </c:sourceContent>
 
+    <c:sourceContent type="html" title="泛型枚举" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+Rust 标准库中的最常用的两个枚举类型都是泛型枚举: Option&lt;T&gt;, Result&lt;T,E&gt;
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+
+#[derive(Debug)]
+pub enum Option<T> {
+  None,
+  Some(T)
+}
+
+#[derive(Debug)]
+pub enum Result<T, E> {
+  Ok(T),
+  Err(E)
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+基于 rust 泛型数据结构实现的二叉树。
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:.85em;line-height:1.3;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+
+use self::BinaryTree::*;
+
+/// T类型值的有序集合
+#[derive(Debug)]
+pub enum BinaryTree<T> {
+  Empty, 
+  NonEmpty(Box<TreeNode<T>>)    // 一个指向位于堆内存的 TreeNode 的指针
+}
+
+/// 用于表示二叉树的节点
+#[derive(Debug)]
+pub struct TreeNode<T> {
+  pub element: T, 
+  pub left: BinaryTree<T>,
+  pub right: BinaryTree<T>
+} 
+
+fn main() {
+  
+  let mercury_tree  = NonEmpty(Box::new(TreeNode{ element: "Mercury", left: Empty, right: Empty }));
+  let jupiter_tree  = NonEmpty(Box::new(TreeNode{ element: "Juptiter", left: Empty, right: Empty }));
+  let mars_tree     = NonEmpty(Box::new(TreeNode{ element: "Mars", left: jupiter_tree, right: mercury_tree }));
+  let venus_tree   = NonEmpty(Box::new(TreeNode{ element: "Venus", left: Empty, right: Empty }));
+  let uranus_tree   = NonEmpty(Box::new(TreeNode{ element: "Mars", left: Empty, right: venus_tree }));
+  let saturn_tree   = NonEmpty(Box::new(TreeNode{ element: "Saturn", left: mars_tree, right: uranus_tree }));
+
+  println!("{:?}", saturn_tree);
+
+}
+
+]]>
+    </c:sourceContent>
+
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
