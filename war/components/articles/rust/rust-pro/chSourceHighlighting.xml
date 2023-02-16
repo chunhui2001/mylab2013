@@ -2390,7 +2390,7 @@ pub struct SpiderRobot {
 ]]></c:desc1>
     </c:desc>
 
-    <c:sourceContent type="html" title="枚举 enum" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="html" title="枚举(enum)" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
       <![CDATA[
@@ -2402,8 +2402,9 @@ Rust 枚举还可以包含数据，而且可以是不同类型的数据。
                      titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;margin-top:1em;">
       <![CDATA[
+use std::fmt;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub enum TimeUnit {
   Seconds, Minutes, Hours, Days, Months, Years
 }
@@ -2457,8 +2458,9 @@ fn main() {
                      titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;margin-top:1em;">
       <![CDATA[
+use std::fmt;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub enum RoughTime {
   InThePast(TimeUnit, u32),
   JustNow,
@@ -2606,19 +2608,20 @@ pub enum Result<T, E> {
 ]]>
     </c:sourceContent>
 
-    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
-                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
-                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;margin-top:1em;">
+    <c:sourceContent type="html" title="基于 rust 泛型数据结构实现的二叉树" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
       <![CDATA[
-基于 rust 泛型数据结构实现的二叉树。
+<div>
+  <img style="max-width:100%" src="/images/rust/binary-tree-layout.png" />
+</div>
 ]]>
     </c:sourceContent>
 
     <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
-                     bodyStyle="padding:0;font-size:.85em;line-height:1.3;font-family:monospace;margin-top:1em;">
+                     bodyStyle="padding:0;font-size:.85em;line-height:1.3;font-family:monospace;">
       <![CDATA[
-
 use self::BinaryTree::*;
 
 /// T类型值的有序集合
@@ -2636,17 +2639,299 @@ pub struct TreeNode<T> {
   pub right: BinaryTree<T>
 } 
 
+impl<T: Ord> BinaryTree<T> {
+  
+  pub fn add(&mut self, value: T) {
+
+    match *self {
+      Empty => *self = NonEmpty(Box::new(TreeNode{ element: value, left: Empty, right: Empty })),
+      NonEmpty(ref mut node) => {
+        if value <= node.element {
+          node.left.add(value);
+        } else {
+          node.right.add(value);
+        }
+      }
+    }
+
+  }
+
+}
+
 fn main() {
   
   let mercury_tree  = NonEmpty(Box::new(TreeNode{ element: "Mercury",  left: Empty,         right: Empty }));
   let jupiter_tree  = NonEmpty(Box::new(TreeNode{ element: "Juptiter", left: Empty,         right: Empty }));
   let mars_tree     = NonEmpty(Box::new(TreeNode{ element: "Mars",     left: jupiter_tree,  right: mercury_tree }));
   let venus_tree    = NonEmpty(Box::new(TreeNode{ element: "Venus",    left: Empty,         right: Empty }));
-  let uranus_tree   = NonEmpty(Box::new(TreeNode{ element: "Mars",     left: Empty,         right: venus_tree }));
+  let uranus_tree   = NonEmpty(Box::new(TreeNode{ element: "Uranus",   left: Empty,         right: venus_tree }));
   let saturn_tree   = NonEmpty(Box::new(TreeNode{ element: "Saturn",   left: mars_tree,     right: uranus_tree }));
 
   println!("{:?}", saturn_tree);
 
+  let mut tree = BinaryTree::Empty;
+
+  tree.add(8);
+  tree.add(9);
+  tree.add(6);
+  tree.add(2);
+  tree.add(6);
+  tree.add(11);
+  tree.add(1);
+
+  println!("print2: {:?}", tree);
+
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="枚举模式" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+#[derive(Debug)]
+pub enum RoughTime {
+  InThePast(TimeUnit, u32),
+  JustNow,
+  InTheFuture(TimeUnit, u32)
+}
+
+impl RoughTime {
+  
+  pub fn to_string(&self) -> String {
+    // 模式匹配
+    match self {
+      RoughTime::InThePast(units, count) => format!("{} {} ago", count, units.plural()),
+      RoughTime::JustNow => format!("just now"),
+      RoughTime::InTheFuture(units, count) => format!("{} {} ago", count, units.plural()),
+    }
+  }
+
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="字面量模式" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+match meadow.count_rabbits() {
+  0 => {},
+  1 => println!("A rabbit is nosing around in the clover."),
+  n => println!("There are {} rabbits hopping abount in the meadow", n),
+}
+
+let calendar = match settings.get_string("calendar") {
+  "gregorian"   => Calendar::Gregorian,
+  "chinese"     => Calendar::Chinese,
+  "ethiopian"   => Calendar::Ethiopian,
+  other         => return parse_error("calendar", other),
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="通配符模式" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+let caption = match photo.tagged_pet() {
+  Pet::Tyrannosaur    => "RRRAAAAAHHHHHHH",
+  Pet::Samoyed        => "RRRAAAAAHHHHHHH",
+  Pet::Tyrannosaur    => "*dog thoughts",
+  _                   => "I'm cute, love me"              // 通用标题，任何宠物都适用
+} 
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+
+match document.selection() {
+  Shape::TextSpan(start, end) => paint_text_selection(start, end),
+  Shape::Rectangle(rect)      => paint_rect_selection(rect),
+  _                           => panic!("unexpected selection type")
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+
+fn check_move(current_hex: Hex, click: Point) -> game::Result<Hex> {
+  
+  match point_to_hex(click) {
+    None => Err("That's not a game space."),
+    // Some(current_hex) 错误: 模式匹配时会引入新的变量，他会遮住函数参数 current_hex
+    // Some(current_hex) => Err("You are already there! You must click somewhere else."),
+    Some(hex) => 
+      if hex == current_hex {
+        Err("You are already there! You must click somewhere else.")
+      } else {
+        Ok(hex)
+      }
+    Some(other_hex) => Ok(other_hex)
+  }
+
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="元组模式匹配" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+fn describe_point(x: i32, y: i32) -> &'static str {
+  
+  use std::cmp::Ordering::*;
+
+  match (x.cmp(&0), y.cmp(&0)) {
+    (Equal, Equal) => "at the origin",
+    (_, Equal) => "on the x axis",
+    (Equal, _) => "on the y axis",
+    (Greater, Greater) => "in the first quadrant",
+    (Less, Greater) => "in the second quadrant",
+    _ => "somewhere else",
+  }
+
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="结构体模式匹配" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+match balloon.location {
+  Point{ x: 0, y: height } => println!("straiht up {} meters", height),
+  Point{ x: x, y: y } => println!("at {{}m, {}m}", x, y)
+}
+
+match get_account(id) {
+  Some(Account{ name, language, .. }) => language.show_custom_greeting(name),
+  None => {}
+}
+
+match account {
+  // 注意: 匹配不可复制的值会转移值
+  // 这里 account.name, account.language 被转移到了 name, language 中，其他元素则被丢弃了
+  Account{ name, language, ...} => {
+    ui.greeting(&name, &language);
+    ui.show_settings(&account); // 错误: 此处 account 已经被转移了
+  }
+}
+
+// 使用 ref 借用匹配的值
+match account {
+  Account{ ref name, ref language, ...} => {
+    ui.greeting(&name, &language);
+    ui.show_settings(&account); // 没问题
+  }
+}
+
+// 匹配可修改引用
+match line_result {
+  Err(ref err) => log_error(err),   // 此处 err 是 &Error (共享引用)
+  Ok(ref mut line) => {             // line 是可修改引用 (&mut String)
+    trim_comments(line);            // 原地修改
+    handle(line);
+  }
+}
+
+// & 模式匹配
+match chars.peek() {
+  Some(&c) => println!("coming up: {:?}", c),
+  None => println!("end of chars")
+}
+
+match sphere.center() {
+  &Point3d{ x, y, z } => ...
+}
+
+// 匹配不可复制值
+match friend.borrow_car() {
+  // Some(&Car{ engine, ... }) => ...     // 如果 engine 是不可复制则会触发错误
+  Some(&Car{ ref engine, ... } )          // 正确: 对不可复制值用 ref 取得值的引用
+  None => {}
+}
+
+// 匹配多种可能性
+let at_end = match chars.peek() {
+  Some(&'\r') | Some(&'\n') | None => true,
+  _ => false
+}
+
+// ... 匹配某个范围的值
+// 0 ... 9 (全纳: 包含0和9)
+// 0 .. 9 (半开放: 包含0但不包含9)
+match next_char {
+  '0' ... '9' => self.read_number(),
+  'a' ... 'z' | 'A' ... 'Z' => self.read_word(),
+  ' ' | '\t' | '\n' => self.skip_whitespace(),
+  _ => self.handle_punctuation()
+}
+
+// 模式匹配护具
+match robot.last_known_location() {
+  // 如果模式匹配转移值，则不能添加 if 护具。因为值被转移后，就不能继续匹配了。
+  // 解决办法是改为借用值，例如: Some(ref point)
+  Some(point) if self.distance_to(point) < 10 => short_distance_strategy(point),
+  Some(point) => long_distance_strategy(point),
+  None => searching_strategy(point)
+}
+
+// @模式
+match self.get_selection() {
+  // Shape::Rect(top_left, bottom_right) => optimized_paint(&Shape::Rect(top_left, bottom_right)),
+  rect @ Shape::Rect(..) => optimized_paint(&rect)          // @ 将匹配到的值转移或复制到 rect 中
+  other_shape => paint_outline(other_shape.get_outline())
+}
+
+// @模式也使用于匹配范围 
+match chars.next() {
+  Some(digit @ '0' ... '9') => read_number(digit, chars)
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="可驳模式(refutable pattern)" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 只处理一种特定的枚举
+if let RoughTime::InTheFuture(_, _) = user.date_of_birth() {
+  user.set_time_traveler(true);
+}
+
+// 尽在成功时运行某些代码
+if let Some(document) = cache_map.get(&id) {
+  return send_cached_response(document);
+}
+
+// 失败时重复做某件事
+while let Err(err) = present_cheesy_anti_robot_task() {
+  log_robot_attempt(err);
+}
+
+// 遍历一个迭代器
+while let Some(_) = lines.peek() {
+  read_paragraph(&mut lines);
 }
 
 ]]>
