@@ -1774,11 +1774,11 @@ use std::io::{Write, stderr};
 /// 把错误信息转存到 stderr
 /// 
 /// 如果在构建当前错误信息或写入 stderr 时发生另一个错误，则忽略该错误
-fn print_error(mut err: &Error) {
+pub fn print_error(mut err: &dyn Error) {
   
   let _ = writeln!(stderr(), "error: {}", err);
 
-  while let Some(cause) = err.cause() {
+  while let Some(cause) = err.source() {
     let _ = writeln!(stderr(), "caused by: {}", cause);
     err = cause;
   }
@@ -2943,6 +2943,432 @@ while let Some(_) = lines.peek() {
       </c:comment1>
     </c:comment>
   </c:entry>
+  
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>特型与泛型</c:title>
+    <c:desc>
+      <c:desc1 style="margin-bottom:0;"> <![CDATA[
+<div>
+  Rust 对多态的支持构建于两个相关特性之上: 特型(trait) 与 泛型(generic)
+</div>
+]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+trait Write {
+  fn write(&mut self, buf: &[u8]) -> Result<usize>;
+  fn flush(&mut self) -> Result<()>;
+  fn write_all(&mut self, buf: &[u8]) -> Result<()>;
+  ....
+}
+
+use std::io::Write;
+
+// 接口
+fn say_hello(out: &mut dyn Write) -> std::io::Result<()> {
+  let _ = out.write_all(b"hello world");
+  out.flush()
+}
+
+// 泛型函数
+fn min<T: Ord>(value1: T, value2: T) -> T {
+  if value1 <= value2 {
+    value1
+  } else {
+    value2
+  }
+}
+
+fn main() {
+    // 写入内存
+    let mut bytes = vec![];
+    say_hello(&mut bytes).unwrap();
+
+    assert_eq!(bytes, b"hello world");
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="在任意类型上实现任意特型" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+// 将自定义特型 IsEmoji 引入当前作用域时才可见
+pub trait IsEmoji {
+  fn is_emoji(&self) -> bool;
+}
+
+// 给一个已有的类型 char 添加 is_emoji 方法
+impl IsEmoji for char {
+  pub fn is_emoji(&self) -> bool {
+    false
+  }
+}
+
+// 给 str 类型添加 is_emoji 方法
+impl IsEmoji for str {
+  pub fn is_emoji(&self) -> bool {
+    false
+  }
+}
+
+fn main() {
+  assert_eq!('%'.is_emoji(), false);
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="在某类型家族上使用泛型impl" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+use std::io::{self, Write};
+
+pub trait WriteHtml {
+  fn write_html(&mut self, html: &HtmlDocument) -> io::Result<()>;
+}
+
+// 为任意 std::io::writer 类型实现 WriteHtml 特型
+// 对每个实现了 Write 的类型 W, 实现 WriteHtml 方法
+impl<W: Write> WriteHtml for W {
+  fn write_html(&mut self, html: &HtmlDocument) -> io::Result<()> {
+    ....
+  }
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="参考 serde 库的特型实现" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+// 在 serde 源代码中: Vec、HashMap 这样标准的数据结构为 bool, i8, i16, i32, i64, 数组和元组等类型实现了 Serialize 特型
+use std::env;
+use std::error::Error;
+use std::io::{Write, stderr};
+use std::collections::HashMap;
+use std::fs::File;
+use serde::Serialize;
+use serde_json;
+
+pub fn print_error(mut err: &dyn Error) {
+  
+  let _ = writeln!(stderr(), "error: {}", err);
+
+  while let Some(cause) = err.source() {
+    let _ = writeln!(stderr(), "caused by: {}", cause);
+    err = cause;
+  }
+
+}
+
+pub fn save_configuration(file_name: &str, config: &HashMap<&str, &str>) -> std::io::Result<()> {
+  // 创建一个JSON序列化处理程序将数据写入文件
+  let writer = File::create(file_name)?;
+  // let mut serializer = serde_json::Serializer::pretty(writer); // 格式化输出
+  let mut serializer = serde_json::Serializer::new(writer);
+  // 剩下的事交给 serde 的 serialize() 方法处理
+  config.serialize(&mut serializer)?;
+  Ok(())
+}
+
+
+fn main() {
+
+    let args: Vec<String> = env::args().collect();
+
+    let mut contacts = HashMap::new();
+
+    contacts.insert("Daniel", "798-1364");
+    contacts.insert("Ashley", "645-7689");
+    contacts.insert("Katie", "435-8291");
+    contacts.insert("Robert", "956-1745");
+
+    let file_name = 
+        if args.len() > 1 {
+          &args[1][..]     // 接收命令行参数文件名
+        } else {
+          "file_1.json"
+        };
+
+    save_configuration(file_name, &contacts).unwrap_or_else( |_err| print_error(&_err));
+
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="特型中的 Self" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+// 谁调用了 x.clone(), Selft 就是谁的类型
+// 如果 x 是 String，那 Self 的类型就是 String
+pub trait Clone {
+  fn clone(&self) -> Self;
+  ...
+}
+
+// 指定 Self 的特型
+pub trait Spliceable {
+  // 这样声明函数意味着: self 和 other 的类型必须完全一样
+  fn splice(&self, other: &Self) -> Self;
+}
+
+// Self 是 CherryTree(樱桃树) 的别名
+impl Spliceable for CherryTree {
+  fn splice(&self, other: &Self) -> Self {
+    ....
+  }
+}
+
+// Self 是 Mammoth(猛犸象) 的别名
+impl Spliceable for Mammoth {
+  fn splice(&self, other: &Self) -> Self {
+    ....
+  }
+}
+
+// 错误: 使用 Self 类型的特性与特性目标不能共存
+// Rust 拒绝编译这种代码, 因为它没办法对 left.splice(right) 调用做类型检查
+// 特型目标的核心在于类型到运行时才能知道, 而在编译时 rust 没办法判断 left 和 right 是不是同一种类型
+// 注: 此处的 “特型目标” 指的是: 实现了某特型的类型以特型的身份出现
+pub fn splice_anything(left: &Spliceable, right: &Spliceable) {
+  let combo = left.splice(right);
+  ....
+}
+
+// 解决上边错误的办法是设计一个目标友好的特型
+pub trait MagaSpliceable {
+  // 这样定义使得 self 和 other 的类型不必完全一样(条件放宽了)
+  fn splice(&self, other: &MagaSpliceable) -> Box<MagaSpliceable>;
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="子特型" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+可以将一个特型声明为另一个特型的扩展
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+// 所有可见的游戏角色
+// 实现 Creature 的类型也必须实现 Visible 特型
+pub trait Creature: Visible {
+  fn position(&self) -> (i32, i32);
+  fn facint(&self) -> Direction;
+}
+
+impl Visiable for Broom {
+  ...
+}
+
+impl Creature for Broom {
+  ...
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="Rust 特型可以包含静态方法和构造函数" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+// 字符串集合特型
+// 注: 此处的 “特型目标” 指的是: 实现了某特型的类型以特型的身份出现
+pub trait StringSet {
+  
+  // 静态方法: 不接收 self 参数的方法是静态方法
+  // 由于特型目标不支持静态方法, 所以增加条件绑定 where Self: Sized
+  // 增加这个条件绑定后就可以使用 &StringSet 特型目标了
+  // 虽然增加了绑定条件，但是特型目标仍然不支持两个静态方法, 但是可以创建特型目标并调用其他的非静态方法
+  // 同样的做法也适用于任何其他不兼容特型目标(即:不能与特性目标共存)的方法
+  // fn new() -> Self;
+  fn new() -> Self 
+              where Self: Sized;
+
+  // 静态方法: 返回一个包含 strings 中所有字符串的集合
+  // 由于特型目标不支持静态方法, 所以增加条件绑定 where Self: Sized
+  // 增加这个条件绑定后就可以使用 &StringSet 特型目标了
+  // 同样的做法也适用于任何其他不兼容特型目标(即:不能与特性目标共存)的方法
+  fn from_slice(strings: &[&str]) -> Self 
+              where Self: Sized;
+
+  // 确定当前集合是否包含特定的 string_value
+  fn contains(&self, string_value: &str) -> bool;
+
+  // 向当前集合中添加一个字符串
+  fn add(&mut self, string: &str);
+
+}
+
+// 返回 document 中不再 wordlist 中的单词的集合
+fn unknown_words<S: StringSet>(document: &Vec<String>, wordlist: &S) -> S {
+  
+  let mut unknowns = S::new();
+
+  for word in document {
+    if !wordlist.contains(word) {
+      unknowns.add(word);
+    }
+  }
+
+  unknowns
+
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="完全限定方法调用" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+// 以下四种函数调用都是等价的
+"hello".to_string();                      // 并没有说明要调用的是哪个 to_string() 方法，
+                                          // rust会通过一个方法查找算法(根据类型、强制解引用等)，来判断将要调用哪个具体方法
+str::to_string("hello");                  // 限定方法(即指定方法关联的类型或特型)
+ToString::to_string("hello");             // 限定方法
+<str as ToString>::to_string("hello");    // 完全限定方法
+
+// 当 rust 无法推断 self 时需要使用完全限定方法
+let zero = 0;     // 类型未指定，可能是 i8, u8
+zero.abs();       // 错误，对于不确定的类型 rust 无法推断将要调用哪个方法
+i64.abs(zero);    // 正确(因为使用了完全限定方法)
+
+// 将函数本身作为值时需要使用完全限定方法
+let words: Vec<String> = 
+    line.split_whitespace()                 // 产生 &str 值的迭代器
+        .map(<str as ToString>::to_string)  // 完全限定方法调用 
+        .collect();
+
+// 完全限定语法也适用于静态方法调用
+S::new(); 等价于 StringSet::new(); 或 <S as StringSet>::new();
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="定义类型关系的特型" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+特型是类型可以实现的一组方法。在需要多个类型相互协作的情况下，特型可以用来描述类型之间的关系。
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 关联类型 -- 之迭代器(Iterator)工作原理
+pub trait Iterator {
+  type Item;                                  // 一个关联类型, 即: 所有实现 Iterator 的类型都必须指定自己产生的项(item)的类型。
+  fn next(&mut self) -> Option<Self::Item>;
+}
+
+impl Iterator for Args {
+  
+  type Item = String;
+
+  fn next(&mut self) -> Option<String> {
+    ...
+  }
+
+}
+
+// 泛型函数同样可以使用关联类型
+pub fn collect_into_vector<I: Iterator>(iter: I) -> Vec<I::Item> {
+  
+  let mut results = Vec::new();
+
+  // 此处 rust 为推断出 value 的类型 
+  for value in iter {
+    results.push(value);
+  }
+
+  results
+
+}
+
+// 打印出一个迭代器的所有值
+pub fn dump<I>(iter: I) 
+           where I: Iterator {
+  for (index, value) in iter.enumerate() {
+    println!("{}: {:?}", index, value);     // value 是不可以打印类型
+  }
+}
+
+use std::fmt::Debug;
+
+// 打印出一个迭代器的所有值
+pub fn dump<I>(iter: I) 
+           where I: Iterator, I::Item: Debug {
+  for (index, value) in iter.enumerate() {
+    println!("{}: {:?}", index, value);     // Item 实现了 Debug
+  }
+}
+
+// 打印出一个 String 迭代器的所有值
+pub fn dump<I>(iter: I) 
+           where I: Iterator<Item=String> {
+  for (index, value) in iter.enumerate() {
+    println!("{}: {:?}", index, value);     // String 实现了 Debug
+  }
+}
+
+// OR
+pub fn dump(iter: &mut Iterator<Item=String>) {
+  for (index, value) in iter.enumerate() {
+    println!("{}: {:?}", index, value);     // String 实现了 Debug
+  }
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="泛型特型(或操作符重载的原理)" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// rust 中的乘法运算符, 支持 * 操作符的类型实现的特型
+// RHS (Right Hand Side) 右手边的减写形式
+pub trait Mul<RHS> {
+  type Output;                                // 应用 * 操作符之后返回的结果类型
+  fn mul(self, rhs: RHS) -> Self::Output;     // * 操作符对应的方法
+}
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
   
 
 

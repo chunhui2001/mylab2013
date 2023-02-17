@@ -8,8 +8,6 @@
   <xsl:template match="c:component[@type='chSourceHighlighting']">
     <!--script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js?autoload=true&amp;skin=sunburst&amp;lang=css" defer="defer"></script-->
 
-
-    
     <link rel="stylesheet" type="text/css" href="/RenderingAssets/components/chSourceHighlighting/chSourceHighlighting.css" />
     <div class="chSourceHighlighting">
       <xsl:if test="normalize-space(c:abstract) != ''">
@@ -80,14 +78,14 @@
             <xsl:value-of select="'0em'"/>
           </xsl:if>
         </xsl:variable>
-        <div style="margin-bottom:{$mb};font-size:1em;">
+        <xsl:variable name="style">
+            <xsl:value-of select="current()/@style"/>
+        </xsl:variable>
+        <div style="margin-bottom:{$mb};font-size:1em;{$style}">
           <xsl:value-of disable-output-escaping="yes" select="current()"/>
         </div>
       </xsl:if>
     </xsl:for-each>
-
-
-
 
     <xsl:variable name="style" select="'overflow:hidden;border:none;'" />
 
@@ -191,15 +189,11 @@
                   </li>
                 </xsl:otherwise>
               </xsl:choose>
-              
-              
             </xsl:if>
           </xsl:for-each>
         </ul>
       </xsl:if>
     </xsl:for-each>
-    
-    
   </xsl:template>
 
   <xsl:template name="build-expand">
@@ -287,7 +281,7 @@
           <xsl:with-param name="trim"   select="$trim" />
         </xsl:call-template>
       </xsl:with-param>
-      <xsl:with-param name="trim"   select="$trim" />
+      <xsl:with-param name="trim" select="$trim" />
     </xsl:call-template>
   </xsl:template>
 </xsl:stylesheet>  
