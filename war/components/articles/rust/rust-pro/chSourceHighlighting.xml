@@ -2951,7 +2951,7 @@ while let Some(_) = lines.peek() {
     <c:desc>
       <c:desc1 style="margin-bottom:0;"> <![CDATA[
 <div>
-  Rust 对多态的支持构建于两个相关特性之上: 特型(trait) 与 泛型(generic)
+  Rust 对多态的支持构建于两个相关特性之上: 特型(trait) 与 泛型(generic), 合理利用泛型与特型可以<b>避免虚拟方法消耗</b>和<b>向下类型转换</b>。
 </div>
 ]]></c:desc1>
     </c:desc>
@@ -3366,6 +3366,8 @@ pub trait Mul<RHS> {
                      titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
       <![CDATA[
+// 任意 Rng 类型可以生成所有 Rand 类型的值
+
 use rand::random;
 
 // 推断类型
@@ -3386,9 +3388,155 @@ pub trait Rng {
 // OsRng 无法预测的随机数生成器
 
 // rand 包用到的一个伴型特型叫 Rand
+/// 可以使用 Rng 随机生成的类型
 pub trait Rand: Sized {
   fn rand<R: Rng>(rng: &mut R) -> Self;
 }
+
+// f64, bool 等类型都实现了这个 Rand 特型
+let x = f64::rand(rng);
+let b = bool::rand(rng);
+
+// 实际上 random() 函数只是简单封装了下对 rand 方法的调用
+pub fn random<T: Rand>() -> T {
+  T::rand(&mut global_rng())
+}
+
+// ### 标准库中计算散列码的实现是伴型特型的另一个例子
+// 1. 实现 Hash 的类型是可以散列化的, 因此可以用作散列表的键
+// 2. 实现 Hasher 的类型是散列化算法。
+// 3. Hash 有一个泛型方法 Hash::hash() 接收任何类型的 Hasher 作为参数
+
+// ### serde 库的 Serialize 特型也用到了 "伴型特型" (Serializer)
+// 1. serde 支持可插拔的序列化格式
+// 2. 不同的 Serializer 实现了 JSON, Yaml, CBOR(二进制格式)
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="逆向工程绑定" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// *************************************************************************************************
+// ***** 对以下示例中的 N 的绑定过程进行了逆向工程, 让编译器指导自己反复检查自己的工作，最终给出合理的条件绑定 *****
+// *************************************************************************************************
+
+// 常规函数
+pub fn dot(v1: &[i64], v2: &[i64]) -> i64 {
+  let mut total = 0;
+  for i in 0 .. v1.len() {
+    total = total + v1[i] * v2[i];
+  }
+  total
+}
+
+// 泛型函数(由于此处的泛型参数N可能并不支持乘法和加法，所以rust编译报错)
+pub fn dot<N>(v1: &[N], v2: &[N]) -> N {
+  let mut total = 0;                // 由于0的类型始终是整数
+  for i in 0 .. v1.len() {
+    total = total + v1[i] * v2[i];
+  }
+  total
+}
+
+// 需要给泛型参数 N 添加限定类型
+pub fn dot<N: Add<Output=N> + Mul<Output=N> + Default>(v1: &[N], v2: &[N]) -> N {
+  // 由于0的类型始终是整数, 所以需声明有默认值的类型才能调用此方法
+  // 在 rust 标准库中有个 Default 特型，所有有默认值的类型都实现了 Default 特型 
+  // let mut total = 0;
+  let mut total = N.default();
+  for i in 0 .. v1.len() {
+    // 两个数相乘并不一定会得到相同的类型, 需要告诉rust这个泛型函数只适用于常规乘法运算
+    // 需要给 Add, Mul 增加限定条件: Add<Output=N>, Mul<Output=N>
+    // total = total + v1[i] * v2[i]; 
+    total = total + v1[i] * v2[i];
+  }
+  total
+}
+
+// *************************************************************************************************
+// ***** where N: Add<Output=N> + Mul<Output=N> + Default + Copy ***********************************
+// ***** Rust这种"条件绑定"设计的优点是：****************************************************************
+// ***** 1. 可以让泛型代码具有向前兼容的能力 *************************************************************
+// ***** 2. 绑定的另一个优点是可以通过编译器报错知道要解决的麻烦在哪里 ***************************************
+// ***** 3. 相比C++编译器设计模版的错误信息要比 Rust 啰嗦的多，是模版呢还是调用者，通常难于分辨 ****************
+// ***** 4. 最终要的优点是代码即文档: 代码里已经明确了程序的运行原理 ****************************************
+// *************************************************************************************************
+// 增加可读性: 将限定条件转移到 where 子句中
+pub fn dot<N>(v1: &[N], v2: &[N]) -> N 
+          where N: Add<Output=N> + Mul<Output=N> + Default + Copy {
+
+  // 由于0的类型始终是整数, 所以需声明有默认值的类型才能调用此方法
+  // 在 rust 标准库中有个 Default 特型，所有有默认值的类型都实现了 Default 特型 
+  // let mut total = 0;
+  let mut total = N.default();
+
+  for i in 0 .. v1.len() {
+    
+    // 两个数相乘并不一定会得到相同的类型, 需要告诉rust这个泛型函数只适用于常规乘法运算
+    // 需要给 Add, Mul 增加限定条件: Add<Output=N>, Mul<Output=N>
+    // total = total + v1[i] * v2[i]; 
+
+    // v1[i] 会把值从切片中转移，但函数声明中的 N 可能是不可复制类型
+    // 所以需要让 rust 知道 N 是可复制类型: + Copy 
+    // total = total + v1[i] * v2[i]; 
+    
+    total = total + v1[i] * v2[i];
+  
+  }
+  
+  total
+
+}
+
+// 有一个流行的 rust 开源库 num，
+// 该库定义了 Num 特型用于表示所有 Number 类型
+// (支持加，减，乘，除的都可以是 number)
+pub fn dot<N>(v1: &[N], v2: &[N]) -> N 
+          where N: Num + Copy {
+
+  // let mut total = 0;
+  let mut total = N.zero();
+
+  for i in 0 .. v1.len() {
+    // v1[i] 会把值从切片中转移，但函数声明中的 N 可能是不可复制类型
+    // 所以需要让 rust 知道 N 是可复制类型: + Copy 
+    // total = total + v1[i] * v2[i]; 
+    total = total + v1[i] * v2[i];
+  }
+  
+  total
+
+}
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>实用特型</c:title>
+    <c:desc>
+      <c:desc1 style="margin-bottom:0;"> <![CDATA[
+<div>
+  Rust 对多态的支持构建于两个相关特性之上: 特型(trait) 与 泛型(generic), 合理利用泛型与特型可以<b>避免虚拟方法消耗</b>和<b>向下类型转换</b>。
+</div>
+]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
 
 ]]>
     </c:sourceContent>
