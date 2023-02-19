@@ -3527,14 +3527,136 @@ pub fn dot<N>(v1: &[N], v2: &[N]) -> N
     <c:title>实用特型</c:title>
     <c:desc>
       <c:desc1 style="margin-bottom:0;"> <![CDATA[
-<div>
-  Rust 对多态的支持构建于两个相关特性之上: 特型(trait) 与 泛型(generic), 合理利用泛型与特型可以<b>避免虚拟方法消耗</b>和<b>向下类型转换</b>。
-</div>
+
+<table style="margin:.5em 0;line-height:1.3em;width:100%;">
+    <thead>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;
+          border-top: solid 1px black;border-style: dashed;">
+            <th style="padding: 0;margin: 0;text-align: right;padding-right:1em;">特型</th>
+            <th style="padding: 0;margin: 0;text-align: left;padding:.5em 0;padding-left:1em;">作用</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;
+          border-top: solid 1px black;border-style: dashed;">
+            <td style="margin:0;text-align:right;padding:.5em 1em;">Drop</td>
+            <td style="margin:0;text-align:left;padding:.5em 1em;">解构函数，清除值时Rust自动运行的清除代码。</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;
+          border-top: solid 1px black;border-style: dashed;">
+            <td style="margin:0;text-align:right;padding:.5em 1em;">Sized</td>
+            <td style="margin:0;text-align:left;padding:.5em 1em;">标记特型，针对编译时可以知道大小的类型。而不是像切片那样动态大小的类型。</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;
+          border-top: solid 1px black;border-style: dashed;">
+            <td style="margin:0;text-align:right;padding:.5em 1em;">Clone</td>
+            <td style="margin:0;text-align:left;padding:.5em 1em;">针对支持克隆值的类型。</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;
+          border-top: solid 1px black;border-style: dashed;">
+            <td style="margin:0;text-align:right;padding:.5em 1em;">Copy</td>
+            <td style="margin:0;text-align:left;padding:.5em 1em;">标记特型，针对可以简单地对内存中包含的值进行逐字节复制来克隆的类型。</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;
+          border-top: solid 1px black;border-style: dashed;">
+            <td style="margin:0;text-align:right;padding:.5em 1em;">Deref与DerefMut</td>
+            <td style="margin:0;text-align:left;padding:.5em 1em;">智能指针类型的特型</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;
+          border-top: solid 1px black;border-style: dashed;">
+            <td style="margin:0;text-align:right;padding:.5em 1em;">Default</td>
+            <td style="margin:0;text-align:left;padding:.5em 1em;">针对有合理“默认值”的类型</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;
+          border-top: solid 1px black;border-style: dashed;">
+            <td style="margin:0;text-align:right;padding:.5em 1em;">AsRef与AsMut</td>
+            <td style="margin:0;text-align:left;padding:.5em 1em;">转换特型，借用某种类型的引用。</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;
+          border-top: solid 1px black;border-style: dashed;">
+            <td style="margin:0;text-align:right;padding:.5em 1em;">Borrow与BorrowMut</td>
+            <td style="margin:0;text-align:left;padding:.5em 1em;">转换特型，类似AsRef/AsMut，但额外保证一致的散列、顺序和相等</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;
+          border-top: solid 1px black;border-style: dashed;">
+            <td style="margin:0;text-align:right;padding:.5em 1em;">From与Into</td>
+            <td style="margin:0;text-align:left;padding:.5em 1em;">转换特型，将某种类型的值转换为另一种特型。</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;
+          border-top: solid 1px black;border-style: dashed;">
+            <td style="margin:0;text-align:right;padding:.5em 1em;">ToOwned</td>
+            <td style="margin:0;text-align:left;padding:.5em 1em;">转换特型，将引用转换为所有值。</td>
+        </tr>
+    </tbody>
+</table>
 ]]></c:desc1>
     </c:desc>
 
-    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
-                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+    <c:sourceContent type="" title="Drop" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// Application 拥有字符串的内容和向量元素缓冲区对应的堆内存空间。
+// Rust 会在 Applicaiton 被清除时自动释放这些存储空间
+pub struct Application {
+  name: String,
+  nicknames: Vec<String>
+}
+
+// 可以通过实现 std::ops::Drop 特型自定义 Rust 清除值的方式
+// Rust 会在清除每个值之前调用 Drop::drop, 所以该方法接收到的值肯定是完全初始化的。
+pub trait Drop {
+  fn drop(&mut self);
+}
+
+// 为 Applicaiton 类型实现 Drop 的代码可以任意使用其字段
+impl Drop for Application {
+  
+  pub fn drop(&self) {
+    
+    print!("Droping {}", self.name);
+
+    if !self.nickname.is_empty() {
+      print!("(AKA {})", self.nicknames.join(","));
+    }
+
+    println!("");
+
+  }
+
+}
+
+fn main() {
+  let mut a = Applicaiton(name: "Zues".to_string(), nicknames: vec!["cloudcollector".to_string()]);
+  println!("before assignment");
+  a = Applicaiton(name: "Hera".to_string(), nicknames: vec![]);
+  println!("at end of block");
+}
+
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="Sized" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="Clone" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// Clone 特型适用于可以复制自身的类型。
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="Copy" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
       <![CDATA[
 
