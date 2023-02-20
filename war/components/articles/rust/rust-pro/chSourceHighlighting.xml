@@ -3724,10 +3724,22 @@ fn main() {
                      bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
       <![CDATA[
 // Clone 特型适用于可以复制自身的类型, 定义如下:
+// 由于函数不可能返回非固定大小的值，所以 Clone 特型本身扩展了 Sized 特型
+// 调用 clone() 必须保证绝对成功，某些在复制过程中可能失败的类型不能实现 Clone 特型
+// rust 标准库的很多类型均实现了 Clone: bool, f32, String, Vec<T>, HashMap
 trait Clone: Sized {
+  // 克隆一个值，通常涉及创建该值所拥有一切内容的副本及分配内存
   fn clone(&self) -> Self;
+  // 该方法将 self 修改为 source 的一个副本：
+  // 1. 假设 s 和 t 都是 String，则语句 s = t.clone()，必须先克隆 t，清除 s 的值，然后将克隆出来的值转移到 s 中
+  // 2. 这涉及一次堆内存分配和一次堆内存释放，
+  // 3. 如果 s 值所拥有的堆缓冲区有足够的容量可以装下 t 的内容，就无需分配或释放了
+  // 4. 此时只要将 t 的文本复制到 s 的缓冲区，在调整下长度即可
+  // 5. 在泛型代码中，应该尽量使用 clone_from
+  // 如果你对Clone的实现只是简单地对自有类型的每个字段或元素应用 clone，然后在基于克隆的副本构建一个新的值，那么 clone_from 的默认定义就足够用了
+  // 此种情况下: 只需要在类的定义上加 #[derive(Clone)]，rust 就会为你实现它
   fn clone_from(&mut self, source: &Self) {
-    *self = source.clone();
+    *self = source.clone(); 
   }
 }
 
@@ -3738,6 +3750,86 @@ trait Clone: Sized {
                      titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
       <![CDATA[
+// 如果某类型实现了 std::marker::Copy 标记特型，那么它就是 Copy 类型。
+// 1. Rust 只允许类型在"字节对字节的深度复制"能满足要求的情况下实现 Copy 特型
+// 2. 如果某类型可能拥有任意资源，比如缓冲区或操作系统句柄的类型，不能实现 Copy
+// 3. 任何实现了 Drop 的类型不可以在实现 Copy, Rust 认为如果一个类型需要特殊的清理代码，那么就一定要特殊的复制代码！！
+// 4. 如果一个类型实现了 Copy，那么在变量赋值或传参时会产一个原始值的副本，而不是转移值。因此隐式复制的代价是很大的，谨慎使用 Copy 特型
+// 5. 可以使用 #[derive(Copy)] 让 rust 为你派生 Copy
+trait Copy: Clone {
+  
+}
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="Deref 与 DerefMut" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 修改解引用操作符 * 和 . 在自定义类型上的行为。
+// Box<T> 和 Rc<T> 这样的指针类型实现了这两个特型，从而可以像 Rust 内置的指针类型一样行事。
+// -- 例如: Box<Complex> 类型的值 b，那么 *b 引用的就是 b 指向的 Complex 的值，而 b.re 指向的是类型字段的值
+// 如果一次 deref 调用可以消除类型匹配错误，那 rust 会为你插入一次，这种操作被称为"解引用强制转型":
+// 1. 假设有一个 Rc<String> 的值 r: 
+//    -- String.find 可以简单地写成 r.find('?') 而不需要写成 (*r).find('?')，
+//    -- 这里的方法调用隐式借用了 r，而 &Rc<String> 被强制转换成了 &String, 
+//    -- 因为 Rc<T> 实现了 Deref<Target=T>
+// 2. 虽然 split_at 是 str 切片类型的方法，可以在 String 值上使用 split_at 等方法:
+//    -- 因为 String 实现了 Deref<Target=str>, 
+//    -- 这样 String 就不需要在实现 str 的所有方法了
+//    -- 因为可以将 &String 强制转型为 &str
+//    -- 此时涉及到连续多次应用“解引用强制转型”: &Rc<String> to &String to &str
+// 3. 假设有一个字节向量 v:
+//    -- 可以将这个向量 &v 传给一个参数是 &[u8] 的函数，
+//    -- 因为 Vec<T> 实现了 Deref<Target=[T]>
+// 设计 Deref 和 DerefMut 设计的目的是：
+// -- 为了实现智能指针类型(Box,Rc,Arc)和简化某些会频繁通过引用来使用的类型的所有者版本(例如Vec<T>和String是[T]和str的所有者版本)
+pub trait Deref {
+  type Target: ?Sized;
+  fn deref(&self) -> &Self::Target;     // 将前一种类型的引用转换为后一种类型的引用
+}
+
+pub trait DerefMut: Deref {
+  fn deref_mut(&mut self) -> &mut Self::Target;
+}
+
+// 例子:
+pub struct Selector<T> {
+  pub elements: Vec<T>,     // 所有元素用一个向量存储
+  pub current: usize;       // 当前元素的索引
+}
+
+use std::ops::{Deref, DerefMut}
+
+impl<T> Deref for Selector<T> {
+  type Target = T;
+  fn deref(&self) -> &T {
+    &self.elements[self.current];
+  }
+}
+
+impl<T> DerefMut for Selector<T> {
+  fn deref_mut(&self) -> &mut T {
+    &mut self.elements[self.current]
+  }
+}
+
+fn main() {
+  
+  let mut s = Selector{ elements: vec!['x', 'y', 'z'], current: 2 };
+
+  // 因为 Selector 实现了 Deref, 所以可以使用 * 操作符引用它的当前元素
+  println!("{}", *s);
+
+  // 通过"解引用强制转型"直接在 Selector 上使用 char 的方法
+  println!("{}", s.is_alphabetic());
+
+  // 通过给 Selector 的引用赋值，将 'z' 自改为 'w'
+  *s = 'w';
+
+  println!("{}", s);
+
+}
 
 ]]>
     </c:sourceContent>
