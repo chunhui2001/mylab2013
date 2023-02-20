@@ -3596,20 +3596,26 @@ pub fn dot<N>(v1: &[N], v2: &[N]) -> N
                      titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
       <![CDATA[
-// Application 拥有字符串的内容和向量元素缓冲区对应的堆内存空间。
-// Rust 会在 Applicaiton 被清除时自动释放这些存储空间
-pub struct Application {
-  name: String,
-  nicknames: Vec<String>
-}
-
 // 可以通过实现 std::ops::Drop 特型自定义 Rust 清除值的方式
 // Rust 会在清除每个值之前调用 Drop::drop, 所以该方法接收到的值肯定是完全初始化的。
+// 如果某类型实现了 Drop 就不能在实现 Copy 特型:
+// 1. 如果一个类型是 Copy，就意味着简单的字节对字节的复制已经足以产生一个值的独立副本
+// 2. 注意: 在同一份数据上不止一次调用同一个 drop 方法通常是错误的
 pub trait Drop {
   fn drop(&mut self);
 }
 
+// Application 拥有字符串的内容和向量元素缓冲区对应的堆内存空间。
+// Rust 会在 Applicaiton 被清除时自动释放这些存储空间
+pub struct Application {
+  name: String,             // String 内部使用 Vec<u8> 保存其文本，因此 String 自身不需要实现 Drop，而是有 Vec 负责释放其字符
+  nicknames: Vec<String>    // Vec 类型实现了 Drop，可以清除自己的每个元素，然后释放他们占用的堆内存空间
+}
+
 // 为 Applicaiton 类型实现 Drop 的代码可以任意使用其字段
+// 1. String 内部使用 Vec<u8> 保存其文本，因此 String 自身不需要实现 Drop，而是有 Vec 负责释放其字符
+// 2. Vec 类型实现了 Drop，可以清除自己的每个元素，然后释放他们占用的堆内存空间
+// 3. 保存 Application 值自身的内存也有所有者: 可能是一个局部变量或某个数据结构，他们会负责释放对应的内存
 impl Drop for Application {
   
   pub fn drop(&self) {
@@ -3633,6 +3639,31 @@ fn main() {
   println!("at end of block");
 }
 
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 在 Unix 系统上，Rust 标准库在内部使用以下类型表示操作系统的文件描述符:
+pub struct FileDesc {
+  // c_int 是 i32 的别名
+  // fd 表示文件描述符的编号
+  // 在进程关闭时关闭该文件句柄
+  pub fd: c_int,        
+}
+
+impl Drop for FileDesc {
+  pub fn drop(&mut self) {
+    // libc::close 是 C 库的 close 函数在 Rust 中的名字
+    // Rust 代码只能在 unsafe 块中调用 C 函数
+    let _ = unsafe { 
+      libc::close(self.fd) 
+    };
+  }
+}
 
 ]]>
     </c:sourceContent>
