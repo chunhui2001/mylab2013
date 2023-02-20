@@ -3668,11 +3668,53 @@ impl Drop for FileDesc {
 ]]>
     </c:sourceContent>
 
-    <c:sourceContent type="" title="Sized" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="" title="Sized (固定大小类型)" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
       <![CDATA[
+// ### 固定大小
+// 固定大小类型，指的是相同类型的值在内存中都具有相同大小。
+// u64: 8字节
+// (f32, f32, f32): 12字节
+// 虽然 Vec<T> 拥有分配在堆上的大小可变的缓冲区，但Vec值本身只包含一个指向该缓冲区的指针、缓冲区的容量和长度。因此 Vec<T> 也是固定大小的类型。
 
+// ### 非固定大小
+// Rust 也有一些非固定大小的类型，其值的大小是不固定的。
+// 1. 比如 str(注意没有 &) 类型是非固定大小的，字符串字面量 "diminutive" 和 "big" 是对占用 10 字节和3字节 str 切片的引用。
+// 2. [T](注意没有 &) 这样的数组切片类型也是非固定大小的，即: 共享引用 &[u8] 可以指向任意大小的 [u8] 切片。
+// 3. 对特型目标的引用也是非固定大小的
+//    -- 特型目标是一个指向实现了给定特型的某个值的指针
+//    -- &std::io::Write 和 Box<std::io::Write> 都是指向实现了 Write 特型的某个值的指针。
+//    -- rust 不能在变量中存储非固定大小的值，也不能将他们作为参数传递，只能通过 &str 或 Box<Write> 这样本身是固定大小的指针来使用他们。
+//    -- 指向非固定大小值的指针始终是一个"胖指针"，占两个字宽。
+//    -- "胖指针"即包含指向切片的指针，也包含切片的长度。
+//    -- 而"特型目标"包含一个指向方法实现的虚拟表的指针。
+//    -- 不知道长度就不能使用索引访问 [u8] 值, 而不知道对 Write 的特定实现，就不能调用 Box<Write> 上的方法。
+//    -- 胖指针补充了类型缺少的信息，给出了长度和虚拟表的指针。遗漏的信息被动态信息所取代。
+// 4. 结构体类型的最后一个字段可能是非固定大小的，此时结构体本身也是非固定大小的。
+// 5. rust 函数不可能返回非固定大小的值
+
+struct RcBox<T: ?Sized> {
+  ref_count: usize,
+  value: T
+}
+
+use std::fmt::Display;
+
+fn display(boxed: &RcBox<Display>) {
+  println!("{:?}", boxed);
+}
+
+fn main() {
+  let boxed_lunch: RcBox<String> = RcBox{ ref_count: 1, value: "lunch".to_string() };
+  // let boxed_displayable: &RcBox<Display> = &box_lunch;
+  display(&box_lunch);
+}
+
+// 1. 所有固定大小的类型都实现了 std::marker::Sized 特型。Rust 为其适用的所有类型自动实现了这个特型。
+// 2. 开发者不能自己实现 Sized 特型，唯一需要使用 Sized 的场景是绑定类型变量。T: Sized 要求 T 必须是一个编译时大小已知的类型。这种特型称为标记特型。
+// 3. 由于非固定大小的类型具有很大的局限性，因此大多数泛型变量应该被限制为使用 Sized 类型。
+// 4. Rust 隐式的将 Sized 特型用作泛型变量的默认绑定限制，如果不想这样的限制就必须显示声明，比如: struct S<T: ?Sized> { ... }
 
 ]]>
     </c:sourceContent>
@@ -3681,7 +3723,13 @@ impl Drop for FileDesc {
                      titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
       <![CDATA[
-// Clone 特型适用于可以复制自身的类型。
+// Clone 特型适用于可以复制自身的类型, 定义如下:
+trait Clone: Sized {
+  fn clone(&self) -> Self;
+  fn clone_from(&mut self, source: &Self) {
+    *self = source.clone();
+  }
+}
 
 ]]>
     </c:sourceContent>
