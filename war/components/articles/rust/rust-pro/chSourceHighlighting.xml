@@ -3796,20 +3796,20 @@ pub trait DerefMut: Deref {
 // 例子:
 pub struct Selector<T> {
   pub elements: Vec<T>,     // 所有元素用一个向量存储
-  pub current: usize;       // 当前元素的索引
+  pub current: usize       // 当前元素的索引
 }
 
-use std::ops::{Deref, DerefMut}
+use std::ops::{Deref, DerefMut};
 
 impl<T> Deref for Selector<T> {
   type Target = T;
   fn deref(&self) -> &T {
-    &self.elements[self.current];
+    &self.elements[self.current]
   }
 }
 
 impl<T> DerefMut for Selector<T> {
-  fn deref_mut(&self) -> &mut T {
+  fn deref_mut(&mut self) -> &mut T {
     &mut self.elements[self.current]
   }
 }
@@ -3819,16 +3819,297 @@ fn main() {
   let mut s = Selector{ elements: vec!['x', 'y', 'z'], current: 2 };
 
   // 因为 Selector 实现了 Deref, 所以可以使用 * 操作符引用它的当前元素
+  // 当使用 *s 时，发生了"强制解引用转换"
   println!("{}", *s);
 
   // 通过"解引用强制转型"直接在 Selector 上使用 char 的方法
+  // 当使用 s.is_alphabetic() 时，发生了"强制解引用转换"
   println!("{}", s.is_alphabetic());
 
   // 通过给 Selector 的引用赋值，将 'z' 自改为 'w'
   *s = 'w';
 
-  println!("{}", s);
+  println!("{}", *s);
 
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// "解引用强制转型"用来解决类型冲突，但是在做"类型变量的绑定"时无法应用这种规则
+fn show_it(thing: &str) {
+  println!("{}", thing);
+}
+
+use std::fmt::Display;
+
+fn show_it_generic<T: Display>(thing: T) {
+  println!("{}", thing);
+}
+
+let s = Selector{elements: vec!["good", "bad", "ugly"], current: 2};
+
+// 在调用 show_it(&s) 时, 实参是: &Selector<&str>, 形参是: &str
+// 并且 rust 发现了 Deref<Target=str> 的实现, 于是就把调用重写为 show_it(s.deref())
+show_it(&s);
+
+// 此时的参数类型是 Selector<&str> 这个实参没有实现 Display
+show_it_generic(&s);
+
+// 可通过类型转换，改变传递给 show_it_generic 的实参, 来解决此问题
+show_it_generic(&s as &str);
+
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="Default" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 在 rust 中有默认值的类型都实现了 std::default::Default 特型
+// Vec, HashMap, BinaryHeap, i32, u32, bool 等等
+// 如果结构体的所有字段都实现了 Default, 则可以使用 #[derive(Default)] 自动为结构体实现 Default
+pub trait Default {
+  fn default() -> Self;
+}
+
+// String 对 Default 的实现很直观
+impl Default for String {
+  fn default() -> Self {
+    String::new()
+  }
+}
+
+// ### 例如如果你想构建某个值的集合，但是希望调用者决定到底构建什么样的集合时非常有用。
+// 1. Iterator 特型的 partition 方法会将迭代器产生的值分成2个集合，而哪个值分到哪个集合由一个闭包决定：
+use std::collections::HashSet;
+
+fn main() {
+    let squares = [4, 9, 16, 25, 36, 49, 64];
+    let (powers_of_two, impure): (HashSet<i32>, HashSet<i32>) = squares.iter().partition(|&n| {
+        println!("{}", n);
+        n & (n - 1) == 0
+    });
+    println!("{:?}", powers_of_two);
+    println!("{:?}", impure);
+    println!("{}", 4 & (4 - 1));
+    println!("{}", 9 & (9 - 1));
+}
+
+// ### Default 的另一个常见用途是为具有大量字段的结构体生成默认值
+let params = glium::DrawParameters{
+  line_width: Some(0.02),
+  point_size: Some(0.02),
+  .. Default::default()       // 用所有字段的默认值初始化 DrawParameters 结构体
+                              // 然后用结构体的 .. 语法为需要修改的 line_width 和 point_size 字段创建新的值
+}
+
+target.draw(..., &params).unwrap();
+
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="AsRef 与 AsMut" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 一个类型如果实现了 AsRef<T>，就意味着可以向这个类型借用一个 &T
+// Vec<T> 实现了 AsRef<[T]>, String 实现了 AsRef<str>
+// 可以将 String 的内容借用为字节数组，是因为 String 也实现了 AsRef<[u8]>
+trait AsRef<T: ?Sized> {
+  fn as_ref(&self) -> &T;
+}
+
+trait AsMut<T: ?Sized> {
+  fn as_mut(&mut self) -> &mut T;
+}
+
+// AsRef 通常用于使函数在接收参数的类型中更加灵活, 例如, std::fs::File::open 函数的声明如下:
+fn open<P: AsRef<Path>>(path: P) -> Result<File> { ... }
+
+// 从函数声明中可以知道任何实现了 AsRef<Path> 的类型都可以调用这个函数: String, str, OsString, OsStr, PathBuf, Path 等等
+// 因此可以给 open 传入一个字符串字面量
+let dot_emacs = std::fs::File.open("_file_path/_here")?;
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="Borrow 与 BorrowMut" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 如果一个类型实现了 Borrow<T>, 那么他的 borrow 方法可以从自身有效地借用一个 &T
+// 只有当 &T 与他所借用的值具有相同的散列和比较特型时，一个类型才可以实现 Borrow<T>
+// 例如: String 实现了 AsRef<T>, AsRef<[u8]>, AsRef<Path>, 但是这三种目标类型通常具有不同的散列值。
+//      -- 只有 &str 切片能保证与对应的 String 有相同的散列化结果，因此 String 只实现了 Borrow<str>
+trait Borrow<Borrowed: ?Sized> {
+  fn borrow(&self) -> &Borrowed;
+}
+
+// 例子1: 从 std::collections::HashMap<String, i32> 中查询一条记录的方法的签名可以定义如下: 
+impl HashMap<K, V> where K: Eq + Hash {
+  // 这里的 key 被强制要求传入一个 String 值, 实际上这里只需要传入一个键的引用
+  fn get(&self, key: K) -> Option<&V> {
+    ....
+  }
+}
+
+// 改进版本, 此时如果想查询一个常量字符串必须写成这样, 这很荒谬: 
+// 1. 先在堆上分配一个 String 的缓冲区，
+// 2. 在把文本复制进去，
+// 3. 接着用 &String 来借用它，
+// 4. 然后传给 get，
+// 5. 最后清理掉键的缓冲区
+hashtable.get("twenty-two".to_string());
+impl HashMap<K, V> where K: Eq + Hash {
+  // 传入一个键的 &String, 取得键对应的值
+  fn get(&self, key: &K) -> Option<&V> {
+    ....
+  }
+}
+
+// 最终版本:
+// 如果可以通过 &Q 借用记录的键，而且可引用的散列和比较与键本身一样，那么 &Q 可以作为键类型
+// 因为 String 实现了 Borrow<String> 和 Borrow<str>, 所以 &String 和 &str 都可以作为键
+impl HashMap<K, V> where K: Eq + Hash {
+  fn get<Q: ?Sized>(&self, key: &Q) -> Option<&V> where K: Borrow<Q>, Q: Eq + Hash {
+    ....
+  }
+}
+
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="From 与 Into" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 消费一种类型的值，然后返回另一种类型的值
+// From 和 Into 可以取得他们参数的所有权
+// AsRef 和 AsMut 从一种类型借用另一种类型的引用
+trait std::convert::Into<T>: Sized {
+  fn into(self) -> T;
+}
+
+trait std::convert::From<T>: Sized {
+  fn from(T) -> Self;
+}
+
+// 通常使用 Into 让函数更灵活地接收参数
+use std::net::Ipv4Addr;
+
+// ping 函数不仅可以接收 Ipv4Address 作为参数, 也可以接收 u32 或 [u8; 4] 数组 (因为后边两个类型实现了 Into<Ipv4Address> 特型)
+// 有时候把 Ipv4Address 当成一个 32 位整数或者一个 4 字节数组来处理会更有用
+fn ping<A>(address: A) -> std::io::Result<bool> where A: Into<Ipv4Addr> {
+  let ipv4_address = address.into();
+  ... 
+}
+
+fn main() {
+
+  // into
+  println!("{:?}", ping(Ipv4Addr::new(23, 21, 68, 141))); // 传入 Ipv4Addr
+  println!("{:?}", ping([66, 146, 219, 98]));             // 传入 [u8; 4]
+  println!("{:?}", ping(0xd076eb94_u32));                 // 传入u32
+
+  // from
+  let addr1 = Ipv4Addr::from([66, 146, 219, 98]);         // 从数组创建ip地址
+  let addr2 = Ipv4Addr::from(0xd076eb94_u32);             // 将整数转成ip地址
+
+  println!("{:?}", addr1);
+  println!("{:?}", addr2);
+
+  let text = "Beautiful Soup".to_string();
+  // 找 String 堆缓冲区, 将其作为向量元素的缓冲区并返回
+  // 这种转换无须重新分配或复制文本，这也是转移可以提高实现效率的另一个例子
+  // 由于 into 取得的是参数的值，所以 text 在转换之后就变成未初始化状态了
+  let bytes: Vec<u8> = text.into();                 
+
+  println!("{:?}", bytes);
+
+  // String 实现了 From<&str>, 可以将字符串切片复制到一个在堆内存上新分配的缓冲区并返回 String
+  let _string = String::from("hello world");
+
+  println!("{}", _string);
+
+}
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="ToOwned" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 给定一个引用，产生其引用目标的所有型副本的通常方式是调用 clone() 方法
+// 1. 如果想克隆一个 &str 或 &[i32] 怎么办? 
+// 2. 克隆一个 &T 必须返回一个类型的值，str 和 [u8] 都是非固定大小的，他们都不是函数可以返回的类型！！
+
+// 把引用转换为所有型的值
+trait ToOwned {
+  // 根据定义 Owned 必须实现 Borrow<Self>
+  type Owned: Borrow<Self>;
+  // to_owned 可以返回能借用为 &Self 的任何类型
+  // 可以从 Vec<T> 借用一个 &[T], 因此 [T] 可以实现 ToOwned<Owned=Vec<T>>, 只要 T 实现了 Clone 即可
+  fn to_owned(&self) -> Self::Owned;
+}
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="Borrow 与 ToOwned 实例" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 要想用好 Rust，必须把所有权相关的问题想清楚！！
+// 一个函数到底应该按引用传递还是按值传递，有时候只能到程序运行时才能决定到底是借用还是取得所有权更合适。
+// 写时克隆 std::borrow::Cow (clone on write) 类型为此提供了一种解决方案:
+// 1. 可以借用一个对B的共享引用
+// 2. 也可以拥有一个值
+// 3. Cow 实现了 Deref, 所以可以把它当成一个对 B 的共享引用, 进而调用B的任何方法
+// 4. 如果它是 Owned，就借用对这个所有值的共享引用
+// 5. 如果它是 Borrowed, 就交出它持有的引用
+pub enum Cow<'a, B: ?Sized + 'a> where B: ToOwned {
+  Borrowed(&'a B);                // '
+  Owned(<B as ToOwned>::Owned),
+}
+
+
+
+// ## 写时复制
+// 1. 调用 to_mut 方法也可以取得对一个 Cow 值的可修改引用，此时方法返回的是 &mut B
+// 2. 如果 Cow 恰好是 Cow::Borrowed, 
+//    -- to_mut 就直接调用引用的 to_owned 方法, 取得对引用目标的所有型副本
+//    -- 将 Cow 改为 Cow::Owned, 并借用对这个新所有值的可修改引用。这就是"写时复制"
+
+// Cow 的一个常见用途是返回静态分配的字符串常量或者计算的字符串。
+// 假设你需要将一个错误枚举转换为一条消息，这个信息有时是不确定长度的，此时可以返回一个 Cow<'static, str>
+use std::path::PathBuf;
+use std::borrow::Cow;
+
+// 在 Cow 的帮助下 describe 及其调用者得以把内存分配推迟到了真正必要的时候
+fn describe(error: &Error) -> Cow<'static, str> { // '
+  math *error {
+    Error::OutOfMemory => "out of memory".into(),         // 返回 Cow::Borrowed, 引用一个静态分配的字符串
+    Error::StackOverflow => "stack overflow".into(),      // 返回 Cow::Borrowed, 引用一个静态分配的字符串
+    Error::MachineOnFire => "machine on fire".into(),     // 返回 Cow::Borrowed, 引用一个静态分配的字符串
+    Error::Infathomable => "machine bewildered".into(),   // 返回 Cow::Borrowed, 引用一个静态分配的字符串
+    Error::FileNotFound(ref path) => {
+      format!("file not found: Path={}", path.display()).into()   // 返回 Cow::Owned
+    }
+  }
+}
+
+fn main() {
+  let mut log: Vec<String> = Vec::new();
+  log.push(describe(&error).into_owned());                            // 取得所有型的值并放到向量中
+  println!("Disaster has struck: error_mesage={}", describe(&error)); // 把 Cow 当成 &str
+  println!("logs: error_message={:?}", log);
 }
 
 ]]>
@@ -3843,5 +4124,52 @@ fn main() {
   
   
 
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>闭包</c:title>
+    <c:desc>
+    </c:desc>
+
+    <c:sourceContent type="" title="排序" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 对一个自定义结构体排序
+// 对一个自定义结构体排序
+#[derive(Debug)]
+pub struct City {
+    pub name: String,
+    pub population: i64,
+    pub country: String,
+}
+
+fn sort_cities(cities: &mut [City]) {
+    cities.sort_by_key(|city| -city.population); // 利用闭包排序
+}
+
+fn main() {
+    let mut cities = vec![
+        City { name: "name1".to_string(), population: 54, country: "c1".to_string(), },
+        City { name: "name2".to_string(), population: 56, country: "c2".to_string(), },
+        City { name: "name3".to_string(), population: 6, country: "c3".to_string(), },
+    ];
+
+    sort_cities(&mut cities);
+
+    println!("{:?}", cities);
+}
+
+
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
 
 </c:component>
