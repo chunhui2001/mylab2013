@@ -4142,6 +4142,13 @@ pub struct City {
     pub name: String,
     pub population: i64,
     pub country: String,
+    pub monster_attack_risk: f64,
+}
+
+impl City {
+  pub fn get_statistic(&self, &stat: Statisic) -> i64 {
+    11
+  }
 }
 
 fn sort_cities(cities: &mut [City]) {
@@ -4159,6 +4166,103 @@ fn main() {
 
     println!("{:?}", cities);
 }
+
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="盗用闭包的值" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+use std::thread;
+
+pub fn start_sorting_thread(mut cities: Vec<City>, stat: Statisic) -> thread::JoinHandle<Vec<City>> {
+  
+  // 此处的 move 转移了 stat
+  lt key_fn = move |city: &City| -> i64 {
+    -city.get_statistic(stat)
+  }
+
+  // 此处的 move 转移了 cities 和 key_fn
+  thread::spawn(move || {
+    // 在新线程中调用闭包
+    cities.sort_by_key(key_fn);
+    cities
+  })
+
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="函数与闭包类型" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 函数和闭包可以被当作值来使用，这意味着他们也有自己的类型
+// 结构体可以包含函数类型的字段，泛型类型如 Vec 可以存储一批函数, 只要他们的值一样就行
+// 函数值很小，一个 fn 值就是这个函数机器码的内存地址，与C++中的函数指针类似
+// fn(&T) -> bool           // fn 类型(仅函数)
+// Fn(&T) -> bool           // Fn 特型(包括函数和闭包)
+fn city_population_descending(city: &City) -> i64 {
+  -city.population
+}
+
+fn city_monster_attack_risk_descending(city: &City) -> f64 {
+  -city.monster_attack_risk
+}
+
+let my_key_fn: fn(&City) -> i64 = 
+    if user.prefs.by_population {
+      city_population_descending
+    } else {
+      city_monster_attack_risk_descending
+    }
+
+clients.sort_by_key(my_key_fn);
+
+fn has_monster_attacks(city: &City) -> bool {
+  city.monster_attack_risk > 0.0
+}
+
+// ### 一个函数可以接收另一个函数作为参数
+fn count_selected_cities(cities: &Vec<City>, test_fn: fn(&City) -> bool) -> usize {
+  
+  let mut count = 0;
+
+  for city in cities {
+    if test_fn(city) {
+      count += 1;
+    }
+  }
+
+  count
+
+}
+
+// 泛型函数
+fn count_selected_cities_generic<F>(cities: &Vec<City>, test_fn: F) -> usize where F: Fn(&City) -> bool {
+  
+  let mut count = 0;
+
+  for city in cities {
+    if test_fn(city) {
+      count += 1;
+    }
+  }
+
+  count
+
+}
+
+fn main() {
+  let n = count_selected_cities(&my_cities, has_monster_attacks);                             // 仅函数
+  let n = count_selected_cities_generic(&my_cities, has_monster_attacks);
+  let n = count_selected_cities_generic(&my_cities, |city| city.monster_attack_risk > 0.0);   // 包括函数和闭包
+  println!("{}", n)
+}
+
 
 
 ]]>
