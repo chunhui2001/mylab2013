@@ -4395,6 +4395,7 @@ fn main() {
       <![CDATA[
 use std::collections::BTreeMap;
 
+#[derive(Default)]
 pub struct Request {
     pub method: String,
     pub url: String,
@@ -4402,6 +4403,7 @@ pub struct Request {
     pub body: Vec<u8>,
 }
 
+#[derive(Default)]
 pub struct Response {
     pub code: u32,
     pub headers: BTreeMap<String, String>,
@@ -4447,37 +4449,22 @@ fn main() {
 
     router.add_route("/", |_| {
         println!("index");
-        Response {
-            code: 200,
-            headers: BTreeMap::new(),
-            body: vec![],
-        }
+        Response { ..Default::default() }
     }); // 每个回调都是不同的类型
 
     router.add_route("/gcd", |req| {
         println!("{}", req.url);
-        Response {
-            code: 200,
-            headers: BTreeMap::new(),
-            body: vec![],
-        }
+        Response { ..Default::default() }
     }); // 每个回调都是不同的类型
 
-    let _routers = &router.routers;
-
-    for (key, _val) in _routers.into_iter() {
-        let req = Request {
-            method: "get".to_string(),
-            url: "fff".to_string(),
-            headers: BTreeMap::new(),
-            body: vec![],
-        };
+    for (key, _val) in (&router.routers).into_iter() {
+        let req = Request { url: "fff".to_string(), ..Default::default() };
         _val(&req);
         println!("{}", key);
     }
 
     println!("routers: Size={}", router.routers.len());
-    
+
 }
 ]]>
     </c:sourceContent>
