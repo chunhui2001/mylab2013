@@ -4279,7 +4279,7 @@ fn main() {
 // Rust 闭包的设计保证它非常快，比函数指针还要快，快到完全可以用在强度和性能要求极高的环境下。
 // 1. 在大多数语言中闭包是分配在堆上的，动态分派，然后由垃圾回收程序负责回收。
 // 2. 传统编译器很难对闭包应用“行内化”优化策略以减少函数调用并进而应用其他优化。
-// 3. Rust 闭包不会被分配到堆上，除非你把他们装到 Box, Vec 或其他容器里
+// 3. Rust 闭包不会被分配到堆上，除非你把他们装到 Box, Vec 或其他容器里(此时需通过特型对象动态调用它, 稍稍慢一点点, 但仍然和其他特型对象一样快)
 // 4. 每个闭包都有自己的类型，所以 Rust 编译器只要知道了闭包的类型，就可以将该闭包的代码行内化。
 ]]>
     </c:sourceContent>
@@ -4438,7 +4438,7 @@ impl BasicRouter {
         C: Fn(&Request) -> Response + 'static,
     {
         // '
-        // 加 'static 标签, Box::new(callback) 会报错，因为如果闭包中包含超出作用域的变量或引用, 那么这个调用是不安全的
+        // 不加 'static 标签, Box::new(callback) 会报错，因为如果闭包中包含超出作用域的变量或引用, 那么这个调用是不安全的
         self.routers.insert(url.to_string(), Box::new(callback));
     }
 }
@@ -4466,6 +4466,193 @@ fn main() {
     println!("routers: Size={}", router.routers.len());
 
 }
+]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="有效使用闭包" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+在 Java、C#、JavaScript 中常见的设计模式无法原封不动照搬到 Rust 里来。例如: <b>MVC (Model-View-Controller), </b>对于用户界面的每个元素，MVC框架都会创建三个对象: 模型、视图、控制器，其中<b>模型表示UI元素的状态</b>，<b>视图负责处理元素的外观</b>，<b>控制器处理用户交互</b>。
+</div>
+<div>
+  <img style="max-width:100%" src="/images/rust/mvc-digram.png" />
+</div>
+<div style="margin-top:.325em;">
+如上图所示: 通常每个对象都会有另一个或另外两个对象的引用。可能是直接引用，也可能是通过回调来引用。当三个对象中的一个发生了某个事件时，它会通知另外两个对象，因此一切立即更新。问题在于，哪个对象"拥有"其他对象则永远说不清。
+</div>
+<div style="margin-top:.325em;">
+&hearts; 传统的MVC模式在未经修改的情况下无法在 Rust 中使用。在 Rust 中必须明确所有权，必须消除循环引用。模型和控制器之间不能直接互相引用。
+</div>
+<div style="margin-top:.325em;">
+&hearts; Rust 的激进赌注就是一定存在优秀的设计。有时候可以让每个闭包接收它需要的引用作为参数，通过闭包所有权和生命周期来解决问题。
+</div>
+<div style="margin-top:.325em;">
+&hearts; 有时候可以在系统中给每件东西分配一个数值，然后传递数值而不传递引用。或者，可以实现诸多MVC变体中的一种，保证对象之间并不是都互相引用。
+</div>
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>迭代器 - Iterator </c:title>
+    <c:desc>
+      <c:desc1 style="line-height:1.6;"> <![CDATA[
+<div>
+  通过<b>"迭代器"</b>可以产生一系列的值，通常需要用循环来操作它。Rust 标准库提供了遍历向量、字符串、散列表、和其他集合的迭代器，也提供了从输入流、网络连接和线程间通信渠道产生的文本行的迭代器。
+</div>
+]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// Rust 迭代器非常灵活、擅长表达且高效率。
+fn triangle(n: i32) -> i32 {
+  let mut sum = 0;
+  for i in 1 .. n+1 {
+    sum += i;
+  }
+  sum
+}
+
+fn triangle_fold(n: i32) -> i32 {
+  
+  // 累计值从 0 开始
+  // fold 取得 1..n+1 产生的每个值，
+  // 把累加的值和当前值传给闭包 |sum, item| sum + item, 然后闭包的返回值又作为新的累加值
+  // 最终返回的值就是 fold 自己的返回值
+  (1 .. n+1).fold(0, |sum, item| sum + item)
+
+  // ### Rust 会把上边这行代码编译为优化的机器码:
+  // 1. Rust 知道 fold 的定义，会将其嵌入 triangle_fold 中
+  // 2. 闭包 |sum, item| sum + item 也会嵌入其中 
+  // 3. Rust 检查了组合后的代码, 发现有更简单的方式
+  // 4. 最终 Rust 将其转换为1条乘法指令和几个算数运算: 
+  // (n * (n + 1)) / 2
+
+}
+
+fn main() {
+  println!("{}", triangle(199));
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="Iterator 和 IntoIterator" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// Rust 迭代器迭代器指的是任何实现了 std::iter::Iterator 特型的值
+trait Iterator {
+  type Item;                                // 产生的值的类型
+  fn next(&mut self) -> Option<Self::Item>;
+  ...
+}
+
+// into_iter 接收一个值，然后基于这个值返回一个迭代器
+// 任何实现 IntoIterator 的类型为"可迭代类型", 即可以在需要的时候通过循环来访问它
+trait IntoIterator where Self::IntoIter::Item == Self::Item {
+  type Item;                                // 产生的值的类型
+  type IntoIter: Iterator;                  // 迭代器自身类型
+  fn into_iter(self) -> Self::IntoIter;
+}
+
+fn main() {
+
+  // Rust 的 for 循环实现了迭代器操作, 要迭代某个向量的元素可以这样写:
+  let v = vec!["antimony", "arsenic", "aluminum", "selenium"];
+
+  for element in &v {
+    println!("{}", element);
+  }
+
+  // 在后台，每个 for 循环都只是对调用 IntoIterator 和 Iterator 方法的简写形式:
+  let mut iterator = (&v).into_iter();
+
+  while let Some(element) = iterator.next() {
+    println!("{}", element);
+  }
+
+  println!("{:?}", v);
+}
+
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="iter 和 iter_mut 方法" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 大多数集合都提供了 iter 和 iter_mut 方法, 用于产生该类型的迭代器的共享和可修改引用。
+// 每个类型都可以实现 iter 和 iter_mut, 适合什么实现方式由自己决定。
+// std::path::Path 的 iter 就是一个迭代器的典型实现方式
+// use std::ffi::OsStr;
+use std::path::Path;
+
+fn main () {
+  
+  let path = Path::new("/tmp/log.txt");
+  let mut iterator = path.iter();
+
+  while let Some(p) = iterator.next() {
+    println!("{}", p.to_str().unwrap());
+  }
+
+}
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="IntoIterator 实现" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 如果类型实现了 IntoIterator, 则可以调用它的 into_iter 方法
+use std::collections::BTreeSet;
+
+fn main() {
+
+    let mut favorites = BTreeSet::new();
+
+    favorites.insert("Liebestraume No. 3".to_string());
+    favorites.insert("Lucy in the Sky With Diamonds".to_string());
+    favorites.insert("5".to_string());
+    favorites.insert("1".to_string());
+    favorites.insert("2".to_string());
+    favorites.insert("7".to_string());
+
+    // 对于"共享引用", into_iter 会返回产生迭代项"共享引用的迭代器"        for element in &collection { ... }
+    // 对于"可修改引用", into_iter 会返回产生迭代项"可修改引用的迭代器"     for element in &mut collection { ... }
+    // 对于"按值传递的集合", into_iter 返回的集合会取得集合的所有权        for element in collection { ... }
+    let mut it = (&favorites).into_iter();
+
+    while let Some(f) = it.next() {
+        println!("{}", f);
+    }
+
+    for f in (&favorites).into_iter() {
+        println!("{}", f);
+    }
+
+    for f in (&favorites).into_iter() {
+        println!("{}", f);
+    }
+
+}
+
 ]]>
     </c:sourceContent>
 
