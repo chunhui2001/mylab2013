@@ -4621,6 +4621,9 @@ fn main () {
                      bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
       <![CDATA[
 // 如果类型实现了 IntoIterator, 则可以调用它的 into_iter 方法
+// 对于"共享引用", into_iter 会返回产生迭代项"共享引用的迭代器": for element in &collection { ... }
+// 对于"可修改引用", into_iter 会返回产生迭代项"可修改引用的迭代器": for element in &mut collection { ... }
+// 对于"按值传递的集合", into_iter 返回的集合会取得集合的所有权: for element in collection { ... }
 use std::collections::BTreeSet;
 
 fn main() {
@@ -4634,9 +4637,6 @@ fn main() {
     favorites.insert("2".to_string());
     favorites.insert("7".to_string());
 
-    // 对于"共享引用", into_iter 会返回产生迭代项"共享引用的迭代器"        for element in &collection { ... }
-    // 对于"可修改引用", into_iter 会返回产生迭代项"可修改引用的迭代器"     for element in &mut collection { ... }
-    // 对于"按值传递的集合", into_iter 返回的集合会取得集合的所有权        for element in collection { ... }
     let mut it = (&favorites).into_iter();
 
     while let Some(f) = it.next() {
@@ -4653,6 +4653,40 @@ fn main() {
 
 }
 
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="IntoIterator 之泛型实现" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 打印任何可迭代类型
+use std::fmt::Debug;
+
+// 不能使用 iter 和 iter_mut 来实现这个泛型函数，因为他们不是任何特型的方法
+// 大多数可迭代类型只是恰好有以这两个名字命名的方法而已
+pub fn dump<T, U>(t: T) where T: IntoIterator<Item=U>, U: Debug {
+  for u in t {
+    println!("{:?}", u);
+  }
+}
+
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="drain 方法" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 很多集合类型都会提供 drain 方法, 以一个集合的可修改引用为参数, 返回一个能把每个元素所有权传给消费者的迭代器。
+// 与按值接收并消费集合的 into_iter() 方法不同, drain 只是借用对集合的引用, 在迭代器被清除后, 它会清空集合中所有剩余的元素。
+// 在可以通过范围指定索引的类型如 String、向量和 VecDeque 中, drain 方法接收要移除元素的值, 而不是提取(drain)整个序列
+use std::iter::FromIterator;
+
+fn main() {
+  let mut outer = "Earth".to_string();
+  let inner = String::from_iter(outer.drain(..)); // 如果使用全范围(..)作为参数, 则可以提取整个序列
+  println!("{}", outer);
+  println!("{}", inner);
+}
 ]]>
     </c:sourceContent>
 
