@@ -5569,11 +5569,154 @@ fn main() {
                      titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
       <![CDATA[
+[dependencies]
+serde = { version = "1.0.152", features = ["derive"] }
+serde_json = "1.0.93"
+
 // 为二叉树实现迭代器方法
+use serde::Serialize;
 use self::BinaryTree::*;
 
-pub struct TreeIter<'a, T: 'a> {
+/// T类型值的有序集合
+#[derive(Debug, Serialize)]
+pub enum BinaryTree<T> {
+  Empty, 
+  NonEmpty(Box<TreeNode<T>>)    // 一个指向位于堆内存的 TreeNode 的指针
+}
+
+/// 用于表示二叉树的节点
+#[derive(Debug, Serialize)]
+pub struct TreeNode<T> {
+  pub element: T, 
+  pub left: BinaryTree<T>,
+  pub right: BinaryTree<T>
+} 
+
+// 给 BinaryTree 定义一个 iter 方法, 返回二叉树的迭代器
+impl<T> BinaryTree<T> {
   
+  // 根据给定的值，创建新的二叉树节点
+  fn make_node(value: T, left: BinaryTree<T>, right: BinaryTree<T>) -> BinaryTree<T> {
+    NonEmpty(Box::new(TreeNode{ element: value, left: left, right: right }))
+  }
+
+  fn iter(&self) -> TreeIter<T> {
+    let mut iter = TreeIter{unvisited: Vec::new()};
+    iter.push_left_edge(self);
+    iter
+  }
+
+}
+
+impl<T: Ord> BinaryTree<T> {
+
+  pub fn add(&mut self, value: T) {
+
+    match *self {
+      // Empty => *self = NonEmpty(Box::new(TreeNode{ element: value, left: Empty, right: Empty })),
+      Empty => *self = BinaryTree::make_node(value, Empty, Empty),
+      NonEmpty(ref mut node) => {
+        if value <= node.element {
+          node.left.add(value);
+        } else {
+          node.right.add(value);
+        }
+      }
+    }
+
+  }
+
+}
+
+// BinaryTree 的按序遍历状态
+pub struct TreeIter<'a, T: 'a> {
+  // 树节点引用的栈, 因为使用的是 Vec 的 push 和 pop 方法, 所以栈顶是向量的末尾
+  // 节点迭代器将从栈顶取得下一个值, 未访问的祖先节点在下边, 如果该栈空了，则迭代结束
+  unvisited: Vec<&'a TreeNode<T>>       // '
+}
+
+impl<'a, T: 'a> TreeIter<'a, T> {       // '
+  
+  // 常见的操作是先将树左边的节点推到栈里, 为此, 在迭代器上定义这么个一个方法
+  fn push_left_edge(&mut self, mut tree: &'a BinaryTree<T>) {  // '
+
+    while let NonEmpty(ref node) = *tree {
+      self.unvisited.push(node);              // 最左边的节点在栈的上边
+      tree = &node.left;
+    }
+  }
+
+}
+
+// 接下来在树的共享引用上实现 IntoIterator, 调用 BinaryTree::iter 返回迭代器
+impl<'a, T: 'a> IntoIterator for &'a BinaryTree<T> {      // 'a
+    
+    type Item = &'a T;                  // '
+    // 这个 IntoIter 定义将 TreeIter 作为 &BinaryTree 的迭代器类型
+    type IntoIter = TreeIter<'a, T>;    // ' 
+
+    fn into_iter(self) -> Self::IntoIter {
+      self.iter()
+    }
+
+}
+
+// 实际遍历树
+impl<'a, T> Iterator for TreeIter<'a, T> {
+  
+  type Item = &'a T;                        // '
+
+  fn next(&mut self) -> Option<&'a T> {     // '
+
+    // 查找迭代必须产生的节点, 或者结束迭代
+    let node = match self.unvisited.pop() {
+      None => return None,
+      Some(n) => n
+    };
+
+    // 当前节点后面的下一个节点是当前节点右子节点的最左子节点, 因此把它推进栈里
+    self.push_left_edge(&node.right);
+
+    // 产生对节点值的引用
+
+    Some(&node.element)
+
+  }
+
+}
+
+fn main() {
+  
+  let mercury_tree  = BinaryTree::make_node("Mercury", Empty, Empty); 
+  let jupiter_tree  = BinaryTree::make_node("Juptiter", Empty, Empty);
+  let mars_tree     = BinaryTree::make_node("Mars", jupiter_tree, mercury_tree);
+  let venus_tree    = BinaryTree::make_node("Venus", Empty, Empty);
+  let uranus_tree   = BinaryTree::make_node("Uranus", Empty, venus_tree);
+  let mut saturn_tree   = BinaryTree::make_node("Saturn", mars_tree, uranus_tree);
+
+  saturn_tree.add("Abc");
+  saturn_tree.add("Zip");
+  saturn_tree.add("Mars");
+  saturn_tree.add("Saturn");
+
+  for (i, item) in (0..).zip(&saturn_tree) {
+      println!("{}: {}", i, item);
+  }
+
+  println!("-------");
+
+  let mut tree = BinaryTree::Empty;
+
+  tree.add(8);
+  tree.add(9);
+  tree.add(6);
+  tree.add(2);
+  tree.add(6);
+  tree.add(11);
+  tree.add(1);
+
+  println!("print2: {}", serde_json::to_string(&tree).unwrap());
+
 }
 ]]>
     </c:sourceContent>
