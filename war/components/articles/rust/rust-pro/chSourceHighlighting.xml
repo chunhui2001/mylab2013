@@ -5485,6 +5485,98 @@ fn main() {
 
 ]]>
     </c:sourceContent>
+    <c:sourceContent type="" title="消费迭代器之 nth、last，find" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+fn main() {
+    let mut squares = (0..10).map(|m| m);
+    println!("{:?}", squares.nth(0));                 // 等同于调用 .next()
+    println!("{:?}", squares.find(|i| i > &3));       // 取出第一个返回 true 的值
+    println!("{:?}", squares.find(|i| i > &5));
+    // println!("{:?}", squares.by_ref().last());     // 消费迭代器的所有项, 并返回最后1项
+    println!("{:?}", squares.by_ref().rev().next());  // 反转迭代器并返回下一项, 即最后一项
+    println!("{:?}", squares.by_ref().rev().next()); 
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="构建集合之 collect、FromIterator" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+use std::collections::{ HashSet, BTreeSet, LinkedList, HashMap, BTreeMap };
+
+fn main() {
+  
+  // collect() 只是一个快捷方式, 底层依赖 std::iter::FromIterator 特型
+  let args                        = std::env::args().collect::<HashSet<String>>();
+  let args                        = std::env::args().collect::<BTreeSet<String>>();
+  let args                        = std::env::args().collect::<LinkedList<String>>();
+
+  let args: HashSet<String>       = std::env::args().collect();
+  let args: BTreeSet<String>      = std::env::args().collect();
+  let args: LinkedList<String>    = std::env::args().collect();
+
+  let args: HashMap<String, usize>  = std::env::args().zip(0..).collect();
+  let args: BTreeMap<String, usize> = std::env::args().zip(0..).collect();
+
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="消费迭代器之 nth、last，find" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+fn main() {
+    let mut squares = (0..10).map(|m| m);
+    println!("{:?}", squares.nth(0));                 // 等同于调用 .next()
+    println!("{:?}", squares.find(|i| i > &3));       // 取出第一个返回 true 的值
+    println!("{:?}", squares.find(|i| i > &5));
+    // println!("{:?}", squares.by_ref().last());     // 消费迭代器的所有项, 并返回最后1项
+    println!("{:?}", squares.by_ref().rev().next());  // 反转迭代器并返回下一项, 即最后一项
+    println!("{:?}", squares.by_ref().rev().next()); 
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Extend 特型" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 可以将一个迭代器的项添加到集合中
+fn main() {
+    let mut v: Vec<i32> = (0..5).collect();
+    v.extend(&[31, 33, 45, 32, 65]);
+    println!("{:?}", v);
+}
+
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="partition" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 把一个迭代器的项分成两个集合, 使用闭包决定哪一项属于哪个集合
+fn main() {
+    let things = ["doorknob", "mushroom", "noodle", "giraffe", "grapefurit"];
+    // 凡事有生命的其名字的首字母始终是奇数个字母
+    let (living, nonliving): (Vec<&str>, Vec<&str>) =
+        things.iter().partition(|name| name.as_bytes()[0] & 1 != 0);
+    println!("{:?}, {:?}", living, nonliving);
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="实现自己的迭代器" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 为二叉树实现迭代器方法
+use self::BinaryTree::*;
+
+pub struct TreeIter<'a, T: 'a> {
+  
+}
+]]>
+    </c:sourceContent>
 
     <c:comment>
       <c:comment1>
@@ -5493,5 +5585,29 @@ fn main() {
     </c:comment>
   </c:entry>
   
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>集合</c:title>
+    <c:desc>
+      <c:desc1 style="line-height:1.6;"> <![CDATA[
+
+]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// 
+]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 
 </c:component>
