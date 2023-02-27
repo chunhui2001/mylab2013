@@ -6348,6 +6348,7 @@ fn main() {
                      titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
       <![CDATA[
+$ cargo add regex
 // regex 值表示解析之后的正则表达式
 use regex::Regex;
 
@@ -6387,31 +6388,51 @@ fn main() {
                      titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
       <![CDATA[
-// regex 值表示解析之后的正则表达式
+// lazy_static 包提供了首次使用时懒构建静态值的优雅方式
+$ cargo add lazy_static
+#[macro_use] extern crate lazy_static;
+
 use regex::Regex;
 
+// 第一次用到的时候在构建
+lazy_static! {
+    static ref SEMVER: Regex =
+        Regex::new(r"(\d+)\.(\d+)\.(\d+)(-[-.[:alnum:]]*)?").expect("error parsing regex");
+}
+
 fn main() {
-    
     // semver 版本号, 比如: 0.2.1
-    let semver = Regex::new(r"(\d+)\.(\d+)\.(\d+)(-[-.[:alnum:]]*)?").unwrap();
     let haystack = r#"regex = "0.12.50"#;
-    let captures = semver.captures(haystack).unwrap();
-    println!("is_match: {}", semver.is_match(haystack));
+    let captures = SEMVER.captures(haystack).unwrap();
+
+    println!("is_match: {}", SEMVER.is_match(haystack));
     println!("captures[0]: {}", &captures[0]);
     println!("captures[1]: {}", &captures[1]);
     println!("captures[2]: {}", &captures[2]);
     println!("captures[3]: {}", &captures[3]);
 
-    println!("{:>30}: {}", "captures.get(3)", captures.get(3).unwrap().as_str());
-    println!("{:>30}: {}", "captures.get(3).start()", captures.get(3).unwrap().start());
-    println!("{:>30}: {}", "captures.get(3).end()", captures.get(3).unwrap().end());
+    println!(
+        "{:>30}: {}",
+        "captures.get(3)",
+        captures.get(3).unwrap().as_str()
+    );
+    println!(
+        "{:>30}: {}",
+        "captures.get(3).start()",
+        captures.get(3).unwrap().start()
+    );
+    println!(
+        "{:>30}: {}",
+        "captures.get(3).end()",
+        captures.get(3).unwrap().end()
+    );
     println!("{:>30}: {:?}", "captures.get(4)", captures.get(4));
 
     let haystack = "In the beginning, there was 1.0.0 \
                     For a while, we used 1.0.1-beta \
                     but in the end, we settled on 1.2.4";
 
-    let _matchs: Vec<&str> = semver
+    let _matchs: Vec<&str> = SEMVER
         .find_iter(haystack)
         .map(|_match| _match.as_str())
         .collect();
@@ -6419,9 +6440,33 @@ fn main() {
     println!("{:?}", _matchs);
 
 }
-
 ]]>
     </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>输入和输出</c:title>
+    <c:desc>
+      <c:desc1 style="line-height:1.6;font-size:1.1em;"> <![CDATA[
+Rust 标准库针对输入和输出的特型是通过 3 个特型，即: Read, BufRead, Write
+]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="UTF-8" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+....
+]]>
+    </c:sourceContent>
+
 
     <c:comment>
       <c:comment1>
