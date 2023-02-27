@@ -6096,7 +6096,7 @@ fn main() {
         </tr>
         <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-top: solid 1px black;border-style: dashed;">
             <td style="margin:0;text-align:right;padding:.5em 1em;">右对齐，字段宽度</td>
-            <td style="margin:0;text-align:left;padding:.5em 1em;">{:<12}</td>
+            <td style="margin:0;text-align:left;padding:.5em 1em;">{:>12}</td>
             <td style="margin:0;text-align:left;padding:.5em 1em;">"&nbsp;&nbsp;&nbsp;&nbsp;bookends"</td>
             <td style="margin:0;text-align:left;padding:.5em 1em;">-</td>
         </tr>
@@ -6184,7 +6184,7 @@ fn main() {
         </tr>
         <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-top: solid 1px black;border-style: dashed;">
             <td style="margin:0;text-align:right;padding:.5em 1em;">右对齐，宽度</td>
-            <td style="margin:0;text-align:left;padding:.5em 1em;">{:<12}</td>
+            <td style="margin:0;text-align:left;padding:.5em 1em;">{:>12}</td>
             <td style="margin:0;text-align:left;padding:.5em 1em;">"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1234"</td>
             <td style="margin:0;text-align:left;padding:.5em 1em;">-</td>
         </tr>
@@ -6202,7 +6202,7 @@ fn main() {
         </tr>
         <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-top: solid 1px black;border-style: dashed;">
             <td style="margin:0;text-align:right;padding:.5em 1em;">右对齐，符号，宽度</td>
-            <td style="margin:0;text-align:left;padding:.5em 1em;">{:<+12}</td>
+            <td style="margin:0;text-align:left;padding:.5em 1em;">{:>+12}</td>
             <td style="margin:0;text-align:left;padding:.5em 1em;">"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+1234"</td>
             <td style="margin:0;text-align:left;padding:.5em 1em;">-</td>
         </tr>
@@ -6344,11 +6344,82 @@ fn main() {
 </table>
 ]]>
     </c:sourceContent>
-    <c:sourceContent type="html" title="正则表达式" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="" title="正则表达式" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
       <![CDATA[
-// 
+// regex 值表示解析之后的正则表达式
+use regex::Regex;
+
+fn main() {
+    
+    // semver 版本号, 比如: 0.2.1
+    let semver = Regex::new(r"(\d+)\.(\d+)\.(\d+)(-[-.[:alnum:]]*)?").unwrap();
+    let haystack = r#"regex = "0.12.50"#;
+    let captures = semver.captures(haystack).unwrap();
+    println!("is_match: {}", semver.is_match(haystack));
+    println!("captures[0]: {}", &captures[0]);
+    println!("captures[1]: {}", &captures[1]);
+    println!("captures[2]: {}", &captures[2]);
+    println!("captures[3]: {}", &captures[3]);
+
+    println!("{:>30}: {}", "captures.get(3)", captures.get(3).unwrap().as_str());
+    println!("{:>30}: {}", "captures.get(3).start()", captures.get(3).unwrap().start());
+    println!("{:>30}: {}", "captures.get(3).end()", captures.get(3).unwrap().end());
+    println!("{:>30}: {:?}", "captures.get(4)", captures.get(4));
+
+    let haystack = "In the beginning, there was 1.0.0 \
+                    For a while, we used 1.0.1-beta \
+                    but in the end, we settled on 1.2.4";
+
+    let _matchs: Vec<&str> = semver
+        .find_iter(haystack)
+        .map(|_match| _match.as_str())
+        .collect();
+
+    println!("{:?}", _matchs);
+
+}
+
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="正则表达式 - 懒构建 Regex 值" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.3;font-family:monospace;">
+      <![CDATA[
+// regex 值表示解析之后的正则表达式
+use regex::Regex;
+
+fn main() {
+    
+    // semver 版本号, 比如: 0.2.1
+    let semver = Regex::new(r"(\d+)\.(\d+)\.(\d+)(-[-.[:alnum:]]*)?").unwrap();
+    let haystack = r#"regex = "0.12.50"#;
+    let captures = semver.captures(haystack).unwrap();
+    println!("is_match: {}", semver.is_match(haystack));
+    println!("captures[0]: {}", &captures[0]);
+    println!("captures[1]: {}", &captures[1]);
+    println!("captures[2]: {}", &captures[2]);
+    println!("captures[3]: {}", &captures[3]);
+
+    println!("{:>30}: {}", "captures.get(3)", captures.get(3).unwrap().as_str());
+    println!("{:>30}: {}", "captures.get(3).start()", captures.get(3).unwrap().start());
+    println!("{:>30}: {}", "captures.get(3).end()", captures.get(3).unwrap().end());
+    println!("{:>30}: {:?}", "captures.get(4)", captures.get(4));
+
+    let haystack = "In the beginning, there was 1.0.0 \
+                    For a while, we used 1.0.1-beta \
+                    but in the end, we settled on 1.2.4";
+
+    let _matchs: Vec<&str> = semver
+        .find_iter(haystack)
+        .map(|_match| _match.as_str())
+        .collect();
+
+    println!("{:?}", _matchs);
+
+}
+
 ]]>
     </c:sourceContent>
 
