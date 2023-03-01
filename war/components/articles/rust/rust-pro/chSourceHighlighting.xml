@@ -6631,7 +6631,62 @@ fn main() {
 
 ]]>
     </c:sourceContent>
+    <c:sourceContent type="" title="copy_dir_to" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+use std::fs;
+use std::io;
+use std::path::Path;
 
+pub fn copy_dir_to(src: &Path, dst: &Path) -> io::Result<()> {
+  
+  if !dst.is_dir() {
+    fs::create_dir(dst)?;
+  }
+
+  for entry_result in src.read_dir()? {
+
+    let entry = entry_result?;
+    let file_type = entry.file_type()?;
+
+    copy_to(&entry.path(), &file_type, &dst.join(entry.file_name()))?;
+
+  }
+
+  Ok(())
+
+}
+
+pub fn copy_to(src: &Path, src_type: &fs::FileType, dst: &Path) -> io::Result<()> {
+  
+  if src_type.is_file() {
+    fs::copy(src, dst)?;
+  } else if src_type.is_dir() {
+    copy_dir_to(src, dst)?;
+  } else {
+    return Err(io::Error::new(io::ErrorKind::Other, format!("don't know how to copy: {}", src.display())));
+  }
+
+  Ok(())
+
+}
+
+fn main() {
+    let src = "path1";
+    let dst = "path2";
+
+    match copy_dir_to(&Path::new(src), &Path::new(dst)) {
+      Ok(_) => {
+        println!("{}, {}", src, dst);
+      }
+      Err(err) => {
+        panic!("{}", err);
+      }
+    }
+}
+]]>
+    </c:sourceContent>
 
     <c:comment>
       <c:comment1>
