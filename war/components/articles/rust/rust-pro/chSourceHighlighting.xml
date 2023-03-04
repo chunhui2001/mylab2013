@@ -7090,6 +7090,22 @@ fn start_file_indexing_thread(texts: Receiver<String>) -> (Receiver<InMemoryInde
 
 ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="线程安全: Send 与 Sync" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.325em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+  Rust 代码的彻底安全取决于两个内置特型: std::marker::Send 和 std::marker::Sync
+</div>
+
+<ul style="margin-left:2.625em;list-style-type:decimal;">
+  <li style="margin-top:.325em;">实现 Send 的类型可以安全地把值传到另一个线程，即他们可以在线程间转移。</li>
+  <li style="margin-top:.325em;">实现 Sync 的类型可以安全地把不可修改引用传到另一个线程，即他们可以在线程间共享。</li>
+  <li style="margin-top:.325em;">在 Rust 中，大多数类型即是 Send 也是 Sync。程序中甚至不必使用 #[derive] 为结构体或枚举来实现这两个特型。Rust 会自动帮你实现。</li>
+  <li style="margin-top:.325em;">在通过 spawn 创建线程时，传入的闭包必须是 Send。这意味着它所包含的所有值都必须是 Send。</li>
+</ul>
+]]>
+    </c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
