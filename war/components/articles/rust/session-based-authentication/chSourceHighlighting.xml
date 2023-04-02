@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<div>
+This article is a sample from <a href="https://zero2prod.com/">Zero To Production In Rust</a>, a book on backend development in Rust.
+You can get a copy of the book on <a href="https://zero2prod.com/">zero2prod.com</a>.
+<a href="https://www.lpalmieri.com/subscribe">Subscribe to the newsletter</a> to be notified when a new episode is published.
+</div>
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">TL;DR</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;">
+      <![CDATA[
+<div>In the previous episode we established that 'Basic' Authentication is not a great fit when dealing with a browser: it requires the user to present their credentials on <b>every single page</b>.</div>
+<div style="margin-top:.625em;">In this episode we will explore a viable alternative, <b>session-based authentication</b>.
+The user is asked to authenticate once, via a login form: if successful, the server generates a one-time secret, stored in the browser as a cookie.</div>
+<div style="margin-top:.625em;">We will build - from scratch - an admin dashboard. It will include a login form, a logout button and a form to change your password. It will give us an opportunity to discuss a few security challenges <b>(i.e. XSS)</b>, introduce new concepts <b>(e.g. cookies, HMAC tags)</b> and try out new tooling <b>(e.g. flash messages, actix-session)</b>.</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:0em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">1. Serving HTML Pages</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;">
+      <![CDATA[
+<div>So far we have steered away from the complexity of browsers and web pages - it helped us in limiting the number of new concepts we had to pick up early on in our learning journey.
+We have now built enough expertise to make the jump - we will handle both the HTML page and the payload submission for our login form.</div>
+<div style="margin-top:.625em;">Let's start from the basics: how do we return an HTML page from our API? <br /> We can begin by adding a dummy home page endpoint.</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;">
+      <![CDATA[
+//! src/routes/mod.rs
+ 
+// [...]
+// New module!
+mod home;
+pub use home::*;
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;">
+      <![CDATA[
+//! src/routes/home/mod.rs
+use actix_web::HttpResponse;
+
+pub async fn home() -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;">
+      <![CDATA[
+//! src/startup.rs
+use crate::routes::home;
+// [...]
+
+fn run(/* */) -> Result</* */> {
+    // [...]
+    let server = HttpServer::new(move || {
+        App::new()
+            // [...]
+            .route("/", web::get().to(home))
+            // [...]
+    })
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>Not much to be seen here - we are just returning a 200 OK without a body. <br />
+Let's add a very simple HTML landing page1 to the mix:</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;">
+      <![CDATA[
+<!-- src/routes/home/home.html -->
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Home</title>
+    </head>
+    <body>
+        <p>Welcome to our newsletter!</p>
+    </body>
+</html>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>We want to read this file and return it as the body of our <b>GET /</b> endpoint.
+We can use <b>include_str!</b>, a macro from Rust's standard library: it reads the file at the provided path and returns its content as a <b>&'static str</b>.</div>
+<div style="margin-top:.625em;">This is possible because <b>include_str!</b> operates <b>at compile-time</b> - the file content is stored as part of the application binary, therefore ensuring that a pointer to its content (<b>&str</b>) remains valid indefinitely (<b>'static</b>)<sup>2</sup>.</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;">
+      <![CDATA[
+//! src/routes/home/mod.rs
+// [...]
+
+pub async fn home() -> HttpResponse {
+    HttpResponse::Ok().body(include_str!("home.html"))
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>If you launch your application with cargo run and visit <b>http://localhost:8000</b> in the browser you should see the <b>Welcome to our newsletter!</b> message.</div>
+<div style="margin-top:.625em;">The browser is not entirely happy though - if you open the browser's console3, you should see a warning.
+On Firefox 93.0:</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">The character encoding of the HTML document was not declared.</li>
+  <li style="margin-top:.325em;">The document will render with garbled text in some browser configurations if the document contains characters from outside the US-ASCII range.</li>
+  <li style="margin-top:.325em;">The character encoding of the page must be declared in the document or in the transfer protocol.</li>
+</ul>
+<div style="margin-top:.625em;">In other words - the browser has inferred that we are returning HTML content, but it would very much prefer to be told explicitly.</div>
+<div style="margin-top:.625em;">We have two options:</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">Add a special HTML <b>meta</b> tag in the document;</li>
+  <li style="margin-top:.325em;">Set the <b>Content-Type</b> HTTP header (<b>"transfer protocol"</b>).</li>
+</ul>
+<div style="margin-top:.625em;">Better to use both.</div>
+<div style="margin-top:.625em;">Embedding the information inside the document works nicely for browsers and bot crawlers (e.g. Googlebot) while the Content-Type HTTP header is understood by all HTTP clients, not just browsers.</div>
+<div style="margin-top:.625em;">When returning an HTML page, the content type should be set to text/html; charset=utf-8.
+Let's add it in:</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;">
+      <![CDATA[
+<!-- src/routes/home/home.html -->
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- This is equivalent to a HTTP header -->
+        <meta http-equiv="content-type" content="text/html; charset=utf-8">
+        <title>Home</title>
+    </head>
+    <!-- [...] -->
+</html>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;">
+      <![CDATA[
+//! src/routes/home/mod.rs
+// [...]
+use actix_web::http::header::ContentType;
+
+pub async fn home() -> HttpResponse {
+    HttpResponse::Ok()
+        .content_type(ContentType::html())
+        .body(include_str!("home.html"))
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>The warning should have disappeared from your browsers' console. <br />
+Congrats, you have just served your first well-formed web page!</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:0em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">2. Login</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;">
+      <![CDATA[
+<div>Let's start working on our login form. <br />
+We need to wire up an endpoint placeholder, just like we did for GET /. We will serve the login form at GET /login.</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;">
+      <![CDATA[
+//! src/routes/mod.rs
+
+// [...]
+// New module!
+mod login;
+pub use login::*;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;">
+      <![CDATA[
+//! src/routes/login/mod.rs
+mod get;
+pub use get::login_form;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;">
+      <![CDATA[
+//! src/routes/login/get.rs
+use actix_web::HttpResponse;
+
+pub async fn login_form() -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;">
+      <![CDATA[
+//! src/startup.rs
+use crate::routes::{/* */, login_form};
+// [...]
+
+fn run(/* */) -> Result<Server, std::io::Error> {
+    // [...]
+    let server = HttpServer::new(move || {
+        App::new()
+            // [...]
+            .route("/login", web::get().to(login_form))
+            // [...]
+    })
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.1. HTML Forms" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;">
+      <![CDATA[
+The HTML will be more convoluted this time:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;">
+      <![CDATA[
+<!-- src/routes/login/login.html -->
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8">
+        <title>Login</title>
+    </head>
+    <body>
+        <form>
+            <label>Username
+                <input 
+                    type="text" 
+                    placeholder="Enter Username" 
+                    name="username"
+                >
+            </label>
+
+            <label>Password
+                <input 
+                    type="password" 
+                    placeholder="Enter Password"
+                    name="password"
+                >
+            </label>
+
+            <button type="submit">Login</button>
+        </form>
+    </body>
+</html>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;">
+      <![CDATA[
+//! src/routes/login/get.rs
+use actix_web::HttpResponse;
+use actix_web::http::header::ContentType;
+
+pub async fn login_form() -> HttpResponse {
+    HttpResponse::Ok()
+        .content_type(ContentType::html())
+        .body(include_str!("login.html"))
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<b>form</b> is the HTML element doing the heavy-lifting here. Its job is to collect a set of data fields and send them over for processing to a backend server.
+</div>
+<div style="margin-top:.625em;">
+The fields are defined using the <b>input</b> element - we have two here: username and password.
+Inputs are given a <b>type</b> attribute - it tells the browser how to display them.
+<b>text</b> and <b>password</b> will both be rendered as a single-line free-text field, with one key difference: the characters entered into a <b>password</b> field are obfuscated.
+</div>
+<div style="margin-top:.625em;">
+Each input is wrapped in a label element:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">clicking on the label name toggles the input field;</li>
+  <li style="margin-top:.325em;">it improves accessibility for screen-readers users (it is read out loud when the user is focused on the element).</li>
+</ul>
+<div style="margin-top:.625em;">
+On each input we have set two other attributes:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">placeholder, whose value is shown as a suggestion within the text field before the user starts filling the form;</li>
+  <li style="margin-top:.325em;">name, the key that we must use in the backend to identify the field value within the submitted form data.</li>
+</ul>
+<div style="margin-top:.625em;">
+At the end of the form, there is a <b>button</b> - it will trigger the submission of the provided input to the backend.
+</div>
+<div style="margin-top:.625em;">
+What happens if you enter a random username and password and try to submit it?
+</div>
+
+<ul style="margin-left:2.5em;list-style-type:decimal;margin-top: .325em;">
+  <li style="margin-top:.325em;">The page refreshes, the input fields are reset - the URL has changed though!</li>
+  <li style="margin-top:.325em;">It should now be http://localhost:8000/login?username=myusername&password=mysecretpassword.</li>
+</ul>
+<div style="margin-top:.625em;">
+This is form's default behaviour<sup>4</sup> - <b>form</b> submits the data to the very same page it is being served from (i.e. /login) using the <b>GET HTTP verb</b>. This is far from ideal - as you have just witnessed, a <b>form submitted</b> via GET encodes all input data in clear text as query parameters. Being part of the URL, they end up stored as part of the browser's navigation history. Query parameters are also captured in logs (e.g. http.route property in our own backend).
+We really do not want passwords or any type of sensitive data there.
+</div>
+<div style="margin-top:.625em;">
+We can change this behaviour by setting a value for action and method on form:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;">
+      <![CDATA[
+<!-- src/routes/login/login.html -->
+<!-- [...] -->
+<form action="/login" method="post">
+<!-- [...] -->
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.425;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>We could technically omit action, but the default behaviour is not particularly well-documented therefore it is clearer to define it explicitly.
+</div>
+<div style="margin-top:.625em;">
+Thanks to method="post" the input data will be passed to the backend using the request body, a much safer option.
+</div>
+<div style="margin-top:.625em;">
+If you try to submit the form again, you should see a 404 in the API logs for POST /login. Let's define the endpoint!
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+</c:component>
