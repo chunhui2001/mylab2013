@@ -619,21 +619,9 @@ async fn validate_credentials(
     ]]>
     </c:sourceContent>
 
-    <c:comment>
-      <c:comment1>
-        <![CDATA[]]>
-      </c:comment1>
-    </c:comment>
-  </c:entry>
 
-
-  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
-    <c:title id="Reproduce-the-connection-reset-by-peer-error">2.3.1. Building An authentication Module</c:title>
-    <c:desc>
-      <c:desc1> <![CDATA[]]></c:desc1>
-    </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
-                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+    <c:sourceContent type="html" title="2.3.1. Building An authentication Module" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
       <![CDATA[
 Let's refactor <code>validate_credentials</code> to prepare it for extraction - we want to build a shared <code>authentication</code> module, which we will use in both <code>POST /login</code> and <code>POST /newsletters</code>.
@@ -810,6 +798,779 @@ error[E0277]: `?` couldn't convert the error to `PublishError`
     |
     ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+This comes from the call to <code>verify_credentials</code> inside <code>publish_newsletters</code>, the request handler.
+<code>AuthError</code> does not implement a conversion into <code>PublishError</code>, therefore the <code>?</code> operator cannot be used.
+We will call <code>map_err</code> to perform the mapping inline:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/newsletters.rs
+// [...]
+
+pub async fn publish_newsletter(/* */) -> Result<HttpResponse, PublishError> {
+    // [...]
+    let user_id = validate_credentials(credentials, &pool)
+        .await
+        // We match on `AuthError`'s variants, but we pass the **whole** error 
+        // into the constructors for `PublishError` variants. This ensures that
+        // the context of the top-level wrapper is preserved when the error is 
+        // logged by our middleware.
+        .map_err(|e| match e {
+            AuthError::InvalidCredentials(_) => PublishError::AuthError(e.into()),
+            AuthError::UnexpectedError(_) => PublishError::UnexpectedError(e.into()),
+        })?;
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The code should compile now. <br />
+Let's complete the extraction by moving <code>validate_credentials</code>, <code>Credentials</code>, <code>get_stored_credentials</code> and <code>verify_password_hash</code> into the <code>authentication</code> module:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/authentication.rs
+use crate::telemetry::spawn_blocking_with_tracing;
+use anyhow::Context;
+use secrecy::{Secret, ExposeSecret};
+use argon2::{Argon2, PasswordHash, PasswordVerifier};
+use sqlx::PgPool;
+// [...]
+
+pub struct Credentials {
+    // These two fields were not marked as `pub` before!
+    pub username: String,
+    pub password: Secret<String>,
+}
+
+#[tracing::instrument(/* */)]
+pub async fn validate_credentials(/* */) -> Result</* */> {
+    // [...]
+}
+
+#[tracing::instrument(/* */)]
+fn verify_password_hash(/* */) -> Result</* */> {
+    // [...]
+}
+
+#[tracing::instrument(/* */)]
+async fn get_stored_credentials(/* */) -> Result</* */> {
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/newsletters.rs
+// [...]
+use crate::authentication::{validate_credentials, AuthError, Credentials};
+// There will be warnings about unused imports, follow the compiler to fix them!
+// [...]
+    ]]>
+    </c:sourceContent>
+
+
+
+    <c:sourceContent type="html" title="2.3.2. Rejecting Invalid Credentials" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+The extracted <code>authentication</code> module is now ready to be used in our <code>login</code> function. <br />
+Let's plug it in:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/login/post.rs
+use crate::authentication::{validate_credentials, Credentials};
+use actix_web::http::header::LOCATION;
+use actix_web::web;
+use actix_web::HttpResponse;
+use secrecy::Secret;
+use sqlx::PgPool;
+
+#[derive(serde::Deserialize)]
+pub struct FormData {
+    username: String,
+    password: Secret<String>,
+}
+
+#[tracing::instrument(
+    skip(form, pool),
+    fields(username=tracing::field::Empty, user_id=tracing::field::Empty)
+)]
+// We are now injecting `PgPool` to retrieve stored credentials from the database
+pub async fn login(form: web::Form<FormData>, pool: web::Data<PgPool>) -> HttpResponse {
+    let credentials = Credentials {
+        username: form.0.username,
+        password: form.0.password,
+    };
+    tracing::Span::current()
+        .record("username", &tracing::field::display(&credentials.username));
+    match validate_credentials(credentials, &pool).await {
+        Ok(user_id) => {
+            tracing::Span::current()
+                .record("user_id", &tracing::field::display(&user_id));
+            HttpResponse::SeeOther()
+                .insert_header((LOCATION, "/"))
+                .finish()
+        }
+        Err(_) => {
+            todo!()
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+A login attempt using random credentials should now fail: the request handler panics due to <code>validation_credentials</code> returning an error, which in turn leads to <code>actix-web</code> dropping the connection. It is not a graceful failure - the browser is likely to show something along the lines of <code>The connection was reset</code>.
+We should try as much as possible to avoid panics in request handlers - all errors should be handled gracefully.
+Let's introduce a <code>LoginError</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/login/post.rs
+// [...]
+use crate::authentication::AuthError;
+use crate::routes::error_chain_fmt;
+use actix_web::http::StatusCode;
+use actix_web::{web, ResponseError};
+
+#[tracing::instrument(/* */)]
+pub async fn login(/* */) -> Result<HttpResponse, LoginError> {
+    // [...]
+    let user_id = validate_credentials(credentials, &pool)
+        .await
+        .map_err(|e| match e {
+            AuthError::InvalidCredentials(_) => LoginError::AuthError(e.into()),
+            AuthError::UnexpectedError(_) => LoginError::UnexpectedError(e.into()),
+        })?;
+    tracing::Span::current().record("user_id", &tracing::field::display(&user_id));
+    Ok(HttpResponse::SeeOther()
+        .insert_header((LOCATION, "/"))
+        .finish())
+}
+
+#[derive(thiserror::Error)]
+pub enum LoginError {
+    #[error("Authentication failed")]
+    AuthError(#[source] anyhow::Error),
+    #[error("Something went wrong")]
+    UnexpectedError(#[from] anyhow::Error),
+}
+
+impl std::fmt::Debug for LoginError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        error_chain_fmt(self, f)
+    }
+}
+
+impl ResponseError for LoginError {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            LoginError::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            LoginError::AuthError(_) => StatusCode::UNAUTHORIZED,
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The code is very similar to what we wrote a few sections ago while refactoring <code>POST /newsletters</code>.
+What is the effect on the browser?
+</div>
+<div style="margin-top:.625em;">
+Submission of the form triggers a page load, resulting in <code>Authentication failed</code> being shown on screen5.
+Much better than before, we are making progress!
+</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="2.4. Contextual Errors" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+The error message is clear enough - but what should the user do next?
+It is reasonable to assume that they want to try to enter their credentials again - they have probably misspelled their username or their password.
+</div>
+<div style="margin-top:.625em;">
+We need the error message to appear on top of the login form - providing the user with information while allowing them to quickly retry.
+</div>
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="2.4.1. Naive Approach" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+What is the simplest possible approach? <br />
+We could return the login HTML page from <code>ResponseError</code>, injecting an additional paragraph (<code>&lt;p&gt;</code> HTML element) reporting the error to the user. <br />
+It would look like this:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/login/post.rs
+// [...]
+
+impl ResponseError for LoginError {
+    fn error_response(&self) -> HttpResponse {
+        HttpResponse::build(self.status_code())
+            .content_type(ContentType::html())
+            .body(format!(
+                r#"<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <title>Login</title>
+</head>
+<body>
+    <p><i>{}</i></p>
+    <form action="/login" method="post">
+        <label>Username
+            <input
+                type="text"
+                placeholder="Enter Username"
+                name="username"
+            >
+        </label>
+        <label>Password
+            <input
+                type="password"
+                placeholder="Enter Password"
+                name="password"
+            >
+        </label>
+        <button type="submit">Login</button>
+    </form>
+</body>
+</html>"#,
+                self
+            ))
+    }
+
+    fn status_code(&self) -> StatusCode {
+        match self {
+            LoginError::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            LoginError::AuthError(_) => StatusCode::UNAUTHORIZED,
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>This approach has a few drawbacks:</div>
+
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">we have two slightly-different-but-almost-identical login pages, defined in two different places. If we decide to make changes to the login form, we need to remember to edit both;</li>
+  <li style="margin-top:.325em;">the user is prompted to confirm form resubmission if they try to refresh the page after an unsuccessful login attempt.</li>
+</ul>
+
+<div style="margin-top:.625em;">
+To solve the second issue, we need the user to land on a <code>GET</code> endpoint. <br />
+To solve the first issue, we need to find a way to reuse the HTML we wrote in <code>GET /login</code>, instead of duplicating it.
+</div>
+<div style="margin-top:.625em;">
+We can achieve both goals with another redirect: if authentication fails, we send the user back to <code>GET /login</code>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/login/post.rs
+// [...]
+
+impl ResponseError for LoginError {
+    fn error_response(&self) -> HttpResponse {
+        HttpResponse::build(self.status_code())
+            .insert_header((LOCATION, "/login"))
+            .finish()
+    }
+
+    fn status_code(&self) -> StatusCode {
+        StatusCode::SEE_OTHER
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>Unfortunately a vanilla redirect is not enough - the browser would show the login form to the user again, with no feedback explaining that their login attempt was unsuccessful. <br />
+We need to find a way to instruct GET /login to show an error message.
+</div>
+<div style="margin-top:.625em;">
+Let's explore a few options.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.4.2. Query Parameters" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+    The value of the <code>Location</code> header determines the URL the user will be redirected to.
+It does not end there though - we can also specify query parameters!
+</div>
+<div style="margin-top:.625em;">
+Let's encode the authentication error message in an <code>error</code> query parameter.
+Query parameters are part of the URL - therefore we need to URL-encode the display representation of <code>LoginError</code>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dependencies]
+urlencoding = "2"
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/login/post.rs
+// [...]
+
+impl ResponseError for LoginError {
+    fn error_response(&self) -> HttpResponse {
+        let encoded_error = urlencoding::Encoded::new(self.to_string());
+        HttpResponse::build(self.status_code())
+            .insert_header((LOCATION, format!("/login?error={}", encoded_error)))
+            .finish()
+    }
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The <code>error</code> query parameter can then be extracted in the request handler for GET /login.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/login/get.rs
+use actix_web::{web, HttpResponse, http::header::ContentType};
+
+#[derive(serde::Deserialize)]
+pub struct QueryParams {
+    error: Option<String>,
+}
+
+pub async fn login_form(query: web::Query<QueryParams>) -> HttpResponse {
+    let _error = query.0.error;
+    HttpResponse::Ok()
+        .content_type(ContentType::html())
+        .body(include_str!("login.html"))
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Finally, we can customise the returned HTML page based on its value:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/login/get.rs
+// [...]
+
+pub async fn login_form(query: web::Query<QueryParams>) -> HttpResponse {
+    let error_html = match query.0.error {
+        None => "".into(),
+        Some(error_message) => format!("<p><i>{error_message}</i></p>"),
+    };
+    HttpResponse::Ok()
+        .content_type(ContentType::html())
+        .body(format!(
+            r#"<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <title>Login</title>
+</head>
+<body>
+    {error_html}
+    <form action="/login" method="post">
+        <label>Username
+            <input
+                type="text"
+                placeholder="Enter Username"
+                name="username"
+            >
+        </label>
+        <label>Password
+            <input
+                type="password"
+                placeholder="Enter Password"
+                name="password"
+            >
+        </label>
+        <button type="submit">Login</button>
+    </form>
+</body>
+</html>"#,
+        ))
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It works<sup>6</sup>!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.4.3. Cross-Site Scripting (XSS)" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>Query parameters are not private - our backend server cannot prevent users from tweaking the URL.
+In particular, it cannot prevent attackers from playing with them.</div>
+<div style="margin-top:.625em;">
+Try to navigate to the following URL:
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+http://localhost:8000/login?error=Your%20account%20has%20been%20locked%2C%20
+    please%20submit%20your%20details%20%3Ca%20href%3D%22https%3A%2F%2Fzero2prod.com
+    %22%3Ehere%3C%2Fa%3E%20to%20resolve%20the%20issue.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+On top of the login form you will see: <br />
+Your account has been locked, please submit your details here to resolve the issue.
+</div>
+<div style="margin-top:.625em;">
+with <code>here</code> being a link to another website (zero2prod.com, in this case).
+In a more realistic scenario, <code>here</code> would link to a website controlled by an attacker, luring the victim into disclosing their login credentials.
+</div>
+<div style="margin-top:.625em;">
+This is known as a <code>cross-site scripting</code> attack (<code>XSS</code>). <br />
+The attacker injects HTML fragments or JavaScript snippets into a trusted website by exploiting dynamic content built from untrusted sources - e.g. user inputs, query parameters, etc. <br />
+From a user perspective, XSS attacks are particularly insidious - the URL matches the one you wanted to visit, therefore you are likely to trust the displayed content.
+</div>
+<div style="margin-top:.625em;">
+OWASP provides an <a href="https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html">extensive cheat sheet</a> on how to prevent XSS attacks - I strongly recommend familiarising with it if you are working on a web application.
+</div>
+<div style="margin-top:.625em;">
+Let's look at the guidance for our issue here: we want to display untrusted data (the value of a query parameter) inside an HTML element (<code>&lt;p&gt;&lt;i&gt;UNTRUSTED DATA HERE&lt;/i&gt;&lt;/p&gt;</code>).
+According to OWASP's guidelines, we must HTML entity-encode the untrusted input - i.e.:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">convert <code>&</code> to <code>&amp;</code></li>
+  <li style="margin-top:.325em;">convert <code>&lt;</code> to <code>&lt;</code></li>
+  <li style="margin-top:.325em;">convert <code>&gt;</code> to <code>&gt;</code></li>
+  <li style="margin-top:.325em;">convert <code>"</code> to <code>&quot;</code></li>
+  <li style="margin-top:.325em;">convert <code>'</code> to <code>&#x27;</code></li>
+  <li style="margin-top:.325em;">convert <code>/</code> to <code>&#x2F.</code></li>
+</ul>
+<div style="margin-top:.625em;">
+HTML entity encoding prevents the insertion of further HTML elements by escaping the characters required to define them. <br />
+Let's amend our <code>login_form</code> handler:
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[#! Cargo.toml
+# [...]
+[dependencies]
+htmlescape = "0.3"
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/login/get.rs
+// [...]
+
+pub async fn login_form(/* */) -> HttpResponse {
+    let error_html = match query.0.error {
+        None => "".into(),
+        Some(error_message) => format!(
+            "<p><i>{}</i></p>",
+            htmlescape::encode_minimal(&error_message)
+        ),
+    };
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Load the compromised URL again - you will see a different message:
+</div>
+<div style="margin-top:.625em;">
+Your account has been locked, please submit your details &lt;a href="https://zero2prod.com"&gt;here&lt;/a&gt; to resolve the issue.
+</div>
+<div style="margin-top:.625em;">
+The HTML <code>a</code> element is no longer rendered by the browser - the user has now reasons to suspect that something fishy is going on. <br />
+Is it enough?
+</div>
+<div style="margin-top:.625em;">
+At the very least, users are less likely to copy-paste and navigate to the link compared to just clicking on <code>here</code>. Nonetheless, attackers are not naive - they will amend the injected message as soon as they notice that our website is performing HTML entity encoding. It could be as simple as
+</div>
+<div style="margin-top:.625em;">
+Your account has been locked, please call +CC3332288777 to resolve the issue.
+</div>
+<div style="margin-top:.625em;">
+This might be good enough to lure in a couple of victims. We need something stronger than character escaping.
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.4.4. Message Authentication Codes" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We need a mechanism to verify that the query parameters have been set by our API and that they have not been altered by a third party.
+</div>
+<div style="margin-top:.625em;">
+This is known as <a href="https://en.wikipedia.org/wiki/Message_authentication">message authentication</a> - it guarantees that the message has not been modified in transit (<code>integrity</code>) and it allows you to verify the identity of the sender (<code>data origin authentication</code>).
+</div>
+<div style="margin-top:.625em;">
+Message authentication codes (<code>MACs</code>) are a common technique to provide message authentication - a tag is added to the message allowing verifiers to check its integrity and origin. <br />
+<code>HMAC</code> are a well-known family of MACs - <code>h</code>ash-based <code>m</code>essage <code>a</code>uthentication <code>c</code>odes.
+</div>
+<div style="margin-top:.625em;">
+HMACs are built around a secret and a hash function. <br />
+The secret is prepended to the message and the resulting string is fed into the hash function. The resulting hash is then concatenated to the secret and hashed again - the output is the message tag. <br />
+In pseudo-code:
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+let hmac_tag = hash(
+    concat(
+        key, 
+        hash(concat(key, message))
+    )
+);
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We are deliberately omitting a few nuances around key padding - you can find all the details in <a href="https://datatracker.ietf.org/doc/html/rfc2104">RFC 2104</a>.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.4.5. Add An HMAC Tag To Protect Query Parameters" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's try to use a HMAC to verify integrity and provenance for our query parameters.
+The <a href="https://github.com/RustCrypto">Rust Crypto</a> organization provides an implementation of HMACs, the <code>hmac</code> crate. We will also need a hash function <code>- let's go for SHA-256</code>.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dependencies]
+hmac = { version = "0.12", features = ["std"] }
+sha2 = "0.10"
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's add another query parameter to our Location header, tag, to store the HMAC of our error message.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/login/post.rs
+use hmac::{Hmac, Mac};
+// [...]
+
+impl ResponseError for LoginError {
+    fn error_response(&self) -> HttpResponse {
+        let query_string = format!(
+            "error={}", 
+            urlencoding::Encoded::new(self.to_string())
+        );
+        // We need the secret here - how do we get it?
+        let secret: &[u8] = todo!();
+        let hmac_tag = {
+            let mut mac = Hmac::<sha2::Sha256>::new_from_slice(secret).unwrap();
+            mac.update(query_string.as_bytes());
+            mac.finalize().into_bytes()
+        };
+        HttpResponse::build(self.status_code())
+            // Appending the hexadecimal representation of the HMAC tag to the 
+            // query string as an additional query parameter.
+            .insert_header((
+                LOCATION, 
+                format!("/login?{}&tag={:x}", query_string, hmac_tag)
+            ))
+            .finish()
+    }
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The code snippet is almost perfect - we just need a way to get our secret! <br />
+Unfortunately it will not be possible from within <code>ResponseError</code> - we only have access to the error type (<code>LoginError</code>) that we are trying to convert into an HTTP response. <code>ResponseError</code> is just a specialised Into trait. <br />
+In particular, we do not have access to the application state (i.e. we cannot use the <code>web::Data</code> extractor), which is where we would be storing the secret.
+</div>
+<div style="margin-top:.625em;">
+Let's move our code back into the request handler:
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/login/post.rs
+use secret::ExposeSecret;
+// [...]
+
+#[tracing::instrument(
+    skip(form, pool, secret),
+    fields(username=tracing::field::Empty, user_id=tracing::field::Empty)
+)]
+pub async fn login(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+    // Injecting the secret as a secret string for the time being.
+    secret: web::Data<Secret<String>>,
+    // No longer returning a `Result<HttpResponse, LoginError>`!
+) -> HttpResponse {
+    // [...]
+    match validate_credentials(credentials, &pool).await {
+        Ok(user_id) => {
+            tracing::Span::current()
+                .record("user_id", &tracing::field::display(&user_id));
+            HttpResponse::SeeOther()
+                .insert_header((LOCATION, "/"))
+                .finish()
+        }
+        Err(e) => {
+            let e = match e {
+                AuthError::InvalidCredentials(_) => LoginError::AuthError(e.into()),
+                AuthError::UnexpectedError(_) => LoginError::UnexpectedError(e.into()),
+            };
+            let query_string = format!(
+                "error={}", 
+                urlencoding::Encoded::new(e.to_string())
+            );
+            let hmac_tag = {
+                let mut mac = Hmac::<sha2::Sha256>::new_from_slice(
+                    secret.expose_secret().as_bytes()
+                ).unwrap();
+                mac.update(query_string.as_bytes());
+                mac.finalize().into_bytes()
+            };
+            HttpResponse::SeeOther()
+                .insert_header((
+                    LOCATION,
+                    format!("/login?{query_string}&tag={hmac_tag:x}")
+                ))
+                .finish()
+        }
+    }
+}
+
+// The `ResponseError` implementation for `LoginError` has been deleted.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+This is a viable approach - and it compiles. <br />
+It has one drawback - we are no longer propagating upstream, to the middleware chain, the error context. This is concerning when dealing with a <code>LoginError::UnexpectedError</code> - our logs should really capture what has gone wrong.
+Luckily enough, there is a way to have our cake and eat it too: <code>actix_web::error::InternalError</code>. <br />
+<code>InternalError</code> can be built from a <code>HttpResponse</code> and an error. It can be returned as an error from a request handler (it implements <code>ResponseError</code>) and it returns to the caller the <code>HttpResponse</code> you passed to its constructor - exactly what we needed!
+</div>
+<div style="margin-top:.625em;">
+Let's change <code>login</code> once again to use it:
+</div>
+]]>
+    </c:sourceContent>
 
     <c:comment>
       <c:comment1>
@@ -817,6 +1578,7 @@ error[E0277]: `?` couldn't convert the error to `PublishError`
       </c:comment1>
     </c:comment>
   </c:entry>
+
 
 
 </c:component>
