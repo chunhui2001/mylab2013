@@ -2343,6 +2343,755 @@ As you can see, the cookie API is significantly more ergonomic. Nonetheless ther
 The test should fail, as expected.
 ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="2.4.10. How To Set A Cookie In actix-web" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+How do we set a cookie on the outgoing response in actix-web?
+We can work with headers directly:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/login/post.rs
+// [...]
+
+#[tracing::instrument(/* */)]
+pub async fn login(/* */) -> Result<HttpResponse, InternalError<LoginError>> {
+    match validate_credentials(/* */).await {
+        Ok(/* */) => {/* */}
+        Err(e) => {
+            // [...]
+            let response = HttpResponse::SeeOther()
+                .insert_header((LOCATION, "/login"))
+                .insert_header(("Set-Cookie", format!("_flash={e}")))
+                .finish();
+            Err(InternalError::from_response(e, response))
+        }
+    }
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+This change should be enough to get the test to pass. <br />
+Just like <code>reqwest</code>, <code>actix-web</code> provides a dedicated cookie API. <code>Cookie::new</code> takes two arguments - the name and the value of the cookie. Let's use it:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/login/post.rs
+use actix_web::cookie::Cookie;
+// [...]
+
+#[tracing::instrument(/* */)]
+pub async fn login(/* */) -> Result<HttpResponse, InternalError<LoginError>> {
+    match validate_credentials(/* */).await {
+        Ok(/* */) => {/* */}
+        Err(e) => {
+            // [...]
+            let response = HttpResponse::SeeOther()
+                .insert_header((LOCATION, "/login"))
+                .cookie(Cookie::new("_flash", e.to_string()))
+                .finish();
+            Err(InternalError::from_response(e, response))
+        }
+    }
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test should stay green.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.4.11. An Integration Test For Login Failures - Part 2" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+    Let's focus on the other side of the story now - <code>GET /login</code>. We want to verify that the error message, passed along in the <code>_flash</code> cookie, is actually rendered above the login form shown to the user after the redirect.
+</div>
+<div style="margin-top:.625em;">
+Let's start by adding a <code>get_login_html</code> helper method on TestApp:
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/helpers.rs
+// [...]
+
+impl TestApp {
+    // Our tests will only look at the HTML page, therefore
+    // we do not expose the underlying reqwest::Response
+    pub async fn get_login_html(&self) -> String {
+        reqwest::Client::new()
+            .get(&format!("{}/login", &self.address))
+            .send()
+            .await
+            .expect("Failed to execute request.")
+            .text()
+            .await
+            .unwrap()
+    }
+    // [...]
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can then extend our existing test to call <code>get_login</code> after having submitted invalid credentials to <code>POST /login</code>:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/login.rs
+// [...]
+
+#[tokio::test]
+async fn an_error_flash_message_is_set_on_failure() {
+    // [...]
+    // Act
+    let login_body = serde_json::json!({
+        "username": "random-username",
+        "password": "random-password"
+    });
+    let response = app.post_login(&login_body).await;
+
+    // Assert
+    // [...]
+
+    // Act - Part 2
+    let html_page = app.get_login_html().await;
+    assert!(html_page.contains(r#"<p><i>Authentication failed</i></p>"#));
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The test should fail. <br />
+As it stands, there is no way for us to get it to pass: we are not propagating the cookies set by <code>POST /login</code> when sending a request to <code>GET /login</code> - the browser would be expected to fulfill this task in normal circumstances. Can <code>reqwest</code> take care of it?
+</div>
+<div style="margin-top:.625em;">
+By default, it does not - but it can be configured to! We just need to pass <code>true</code> to <code>reqwest::ClientBuilder::cookie_store</code>.
+There is a caveat though - we must use the same instance of <code>reqwest::Client</code> for all requests to our API if we want cookie propagation to work. This requires a bit of refactoring in <code>TestApp</code> - we are currently creating a new <code>reqwest::Client</code> instance inside every helper method. Let's change <code>TestApp::spawn_app</code> to create and store an instance of <code>reqwest::Client</code> which we will in turn use in all its helper methods.
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/helpers.rs
+// [...]
+
+pub struct TestApp {
+    // [...]
+    // New field!
+    pub api_client: reqwest::Client
+}
+
+pub async fn spawn_app() -> TestApp {
+    // [...]
+    let client = reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::none())
+        .cookie_store(true)
+        .build()
+        .unwrap();
+
+    let test_app = TestApp {
+        // [...]
+        api_client: client,
+    };
+    // [...]
+}
+
+
+impl TestApp {
+    pub async fn post_subscriptions(/* */) -> reqwest::Response {
+        self.api_client
+            .post(/* */)
+            // [...]
+    }
+
+    pub async fn post_newsletters(/* */) -> reqwest::Response {
+        self.api_client
+            .post(/* */)
+        // [...]
+    }
+
+    pub async fn post_login<Body>(/* */) -> reqwest::Response
+        where
+            Body: serde::Serialize,
+    {
+        self.api_client
+            .post(/* */)
+            // [...]
+    }
+
+    pub async fn get_login_html(/* */) -> String {
+        self.api_client
+            .get(/* */)
+        // [...]
+    }
+    // [...]
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Cookie propagation should now work as expected.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.4.12. How To Read A Cookie In actix-web" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+It's time to look again at our request handler for <code>GET /login</code>:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/login/get.rs
+use crate::startup::HmacSecret;
+use actix_web::http::header::ContentType;
+use actix_web::{web, HttpResponse};
+use hmac::{Hmac, Mac, NewMac};
+
+#[derive(serde::Deserialize)]
+pub struct QueryParams {
+    error: String,
+    tag: String,
+}
+
+impl QueryParams {
+    fn verify(self, secret: &HmacSecret) -> Result<String, anyhow::Error> {
+        /* */
+    }
+}
+
+pub async fn login_form(
+    query: Option<web::Query<QueryParams>>,
+    secret: web::Data<HmacSecret>,
+) -> HttpResponse {
+    let error_html = match query {
+        None => "".into(),
+        Some(query) => match query.0.verify(&secret) {
+            Ok(error) => {
+                format!("<p><i>{}</i></p>", htmlescape::encode_minimal(&error))
+            }
+            Err(e) => {
+                tracing::warn!(/* */);
+                "".into()
+            }
+        },
+    };
+    HttpResponse::Ok()
+        .content_type(ContentType::html())
+        .body(format!(/* HTML */))
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's begin by ripping out all the code related to query parameters and their (cryptographic) validation:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/login/get.rs
+use actix_web::http::header::ContentType;
+use actix_web::HttpResponse;
+
+pub async fn login_form() -> HttpResponse {
+    let error_html: String = todo!();
+    HttpResponse::Ok()
+        .content_type(ContentType::html())
+        .body(format!(/* HTML */))
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Back to the basics. Let's seize this opportunity to remove the dependencies we added during our HMAC adventure - <code>sha2</code>, <code>hmac</code> and <code>hex</code>.
+</div>
+<div style="margin-top:.625em;">
+To access cookies on an incoming request we need to get our hands on <code>HttpRequest</code> itself. Let's add it as an input to <code>login_form</code>:
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/login/get.rs
+// [...]
+use actix_web::HttpRequest;
+
+pub async fn login_form(request: HttpRequest) -> HttpResponse {
+    // [...]
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can then use <code>HttpRequest::cookie</code> to retrieve a cookie given its name:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/login/get.rs
+// [...]
+
+pub async fn login_form(request: HttpRequest) -> HttpResponse {
+    let error_html = match request.cookie("_flash") {
+        None => "".into(),
+        Some(cookie) => {
+            format!("<p><i>{}</i></p>", cookie.value())
+        }
+    };
+    // [...]
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Our integration test should pass now!
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.4.13. How To Delete A Cookie In actix-web" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+What happens if you refresh the page after a failed login attempt? The error message is still there!
+The same thing happens if you open a new tab and navigate straight to <code>http://localhost:8000/login</code> - <code>Authentication failed</code> will show up on top of the login form.
+</div>
+<div style="margin-top:.625em;">
+This is not what we had in mind when we said that error messages should be ephemeral. How do we fix it? There is no <code>Unset-cookie</code> header - how do we delete the <code>_flash</code> cookie from the user's browser?
+</div>
+<div style="margin-top:.625em;">
+Let's zoom in on the lifecycle of a cookie.
+When it comes to durability, there are two types of cookies: <code>session cookies</code> and <code>persistent cookies</code>. Session cookies are stored in memory - they are deleted when the session ends (i.e. the browser is closed). Persistent cookies, instead, are saved to disk and will still be there when you re-open the browser.
+</div>
+<div style="margin-top:.625em;">
+A vanilla <code>Set-Cookie</code> header creates a session cookie. To set a persistent cookie you must specify an expiration policy using a cookie attribute - either <code>Max-Age</code> or <code>Expires</code>.
+<code>Max-Age</code> is interpreted as the number of seconds remaining until the cookie expires - e.g. <code>Set-Cookie: _flash=omg; Max-Age=5</code> creates a persistent <code>_flash</code> cookie that will be valid for the next 5 seconds.
+<code>Expires</code>, instead, expects a date - e.g. <code>Set-Cookie: _flash=omg; Expires=Thu, 31 Dec 2022 23:59:59 GMT;</code> creates a persistent cookie that will be valid until the end of 2022.
+</div>
+<div style="margin-top:.625em;">
+Setting <code>Max-Age</code> to 0 instructs the browser to immediately expire the cookie - i.e. to unset it, which is exactly what we want! A bit hacky? Yes, but it is what it is.
+</div>
+<div style="margin-top:.625em;">
+Let's kick-off the implementation work. We can start by modifying our integration test to account for this scenario - the error message should not be shown if we reload the login page after the first redirect:
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/login.rs
+// [...]
+
+#[tokio::test]
+async fn an_error_flash_message_is_set_on_failure() {
+    // Arrange
+    // [...]
+    // Act - Part 1 - Try to login
+    // [...]
+    // Act - Part 2 - Follow the redirect
+    // [...]
+    // Act - Part 3 - Reload the login page
+    let html_page = app.get_login_html().await;
+    assert!(!html_page.contains(r#"<p><i>Authentication failed</i></p>"#));
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>cargo test</code> should report a failure. We now need to change our request handler - we must set the <code>_flash</code> cookie on the response with <code>Max-Age=0</code> to remove the flash messages stored in the user's browser.:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/login/get.rs
+use actix_web::cookie::{Cookie, time::Duration};
+//! [...]
+
+pub async fn login_form(request: HttpRequest) -> HttpResponse {
+    // [...]
+    HttpResponse::Ok()
+        .content_type(ContentType::html())
+        .cookie(
+            Cookie::build("_flash", "")
+                .max_age(Duration::ZERO)
+                .finish(),
+        )
+        .body(/* */)
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test should pass now! We can make our intent clearer by refactoring our handler to use the <code>add_removal_cookie</code> method:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/login/get.rs
+use actix_web::cookie::{Cookie, time::Duration};
+//! [...]
+
+pub async fn login_form(request: HttpRequest) -> HttpResponse {
+    // [...]
+    let mut response = HttpResponse::Ok()
+        .content_type(ContentType::html())
+        .body(/* */);
+    response
+        .add_removal_cookie(&Cookie::new("_flash", ""))
+        .unwrap();
+    response
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Under the hood, it performs the exact same operation but it does not require the reader to piece together the meaning of setting <code>Max-Age</code> to zero.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.4.14. Cookie Security" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+What security challenges do we face when working with cookies?
+</div>
+<div style="margin-top:.625em;">
+It is still possible to perform a XSS attack using cookies, but it requires a bit more effort compared to query parameters - you cannot craft a link to our website that sets or manipulates cookies. Nonetheless, using cookies naively can expose us to bad actors.
+What type of attacks can be mounted against cookies?
+</div>
+<div style="margin-top:.625em;">
+Broadly speaking, we want to prevent attackers from tampering with our cookies (i.e. integrity) or sniffing their content (i.e. confidentiality).
+</div>
+<div style="margin-top:.625em;">
+First and foremost, transmitting cookies over an insecure connection (i.e. HTTP instead of HTTPS) exposes us to man in the middle attacks - the request sent to the server by the browser can be intercepted, read and its content modified arbitrarily.
+</div>
+<div style="margin-top:.625em;">
+The first line of defense is our API - it should reject requests sent over unencrypted channels. We can benefit from an additional layer of defense by marking newly created cookies as <a href="https://en.wikipedia.org/wiki/Secure_cookie">Secure</a>: this instructs browsers to only attach the cookie to requests transmitted over secure connections.
+</div>
+<div style="margin-top:.625em;">
+The second major threat to the confidentiality and integrity of our cookies is JavaScript: scripts running client-side can interact with the cookie store, read/modify existing cookies or set new ones. As a rule of thumb, a least-privilege policy is a good default: cookies should not be visible to scripts unless there is a compelling reason to do otherwise. We can mark newly created cookies as <code>Http-Only</code> to hide them from client-side code - the browser will store them and attach them to outgoing requests, as usual, but scripts will not be able to see them.
+</div>
+<div style="margin-top:.625em;">
+<code>Http-Only</code> is a good default, but it is not a panacea - JavaScript code might not be able to access our Http-Only cookie, but there are ways to overwrite them7 and trick the backend to perform some unexpected or undesired actions.
+Last but not least, users can be a threat as well! They can freely manipulate the content of their cookie storage using the developer tools provided by their browser. While this might not be an issue when looking at flash messages, it definitely becomes a concern when working with other types of cookies (e.g. auth sessions, which we will be looking at shortly).
+</div>
+<div style="margin-top:.625em;">
+We should have multiple layers of defense. <br />
+We already know of an approach to ensure integrity, no matter what happens in the front-channel, don't we?
+<code>M</code>essage <code>a</code>uthentication <code>c</code>odes (MAC), the ones we used to secure our query parameters! A cookie value with an HMAC tag attached is often referred to as a <code>signed cookie</code>. By verifying the tag on the backend we can be confident that the value of a signed cookie has not been tampered with, just like we did for query parameters.
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.4.15. actix-web-flash-messages" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We could use the cookie API provided by <code>actix-web</code> to harden our cookie-based implementation of flash messages - some things are straight-forward (<code>Secure</code>, <code>Http-Only</code>), others requires a bit more work (HMAC), but they are all quite achievable if we put in some effort.
+We have already covered HMAC tags in depth when discussing query parameters, so there would be little educational benefit in implementing signed cookies from scratch. We will instead plug in one of the crates from <code>actix-web</code>'s community ecosystem: <code>actix-web-flash-messages</code>.
+</div>
+<div style="margin-top:.625em;">
+<code>actix-web-flash-messages</code> provides a framework to work with flash messages in <code>actix-web</code>, closely modeled after <a href="https://docs.djangoproject.com/en/3.2/ref/contrib/messages/#module-django.contrib.messages">Django's message framework</a>.
+</div>
+<div style="margin-top:.625em;">
+Let's add it as a dependency:
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dependencies]
+actix-web-flash-messages = { version = "0.4", features = ["cookies"] }
+# [...]
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+To start playing around with flash messages we need to register <a href="https://docs.rs/actix-web-flash-messages/latest/actix_web_flash_messages/struct.FlashMessagesFramework.html">FlashMessagesFramework</a> as a middleware on our <code>actix_web</code>'s App:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+// [...]
+use actix_web_flash_messages::FlashMessagesFramework;
+
+fn run(/* */) -> Result<Server, std::io::Error> {
+    // [...]
+    let message_framework = FlashMessagesFramework::builder(todo!()).build();
+    let server = HttpServer::new(move || {
+        App::new()
+            .wrap(message_framework.clone())
+            .wrap(TracingLogger::default())
+        // [...]
+    })
+    // [...]
+}
+
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>FlashMessagesFramework::builder</code> expects a storage backend as argument - where should flash messages be stored and retrieved from? <br />
+<code>actix-web-flash-messages</code> provides a cookie-based implementation, <a href="https://docs.rs/actix-web-flash-messages/latest/actix_web_flash_messages/storage/struct.CookieMessageStore.html">CookieMessageStore</a>.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+// [...]
+use actix_web_flash_messages::storage::CookieMessageStore;
+
+fn run(/* */) -> Result<Server, std::io::Error> {
+    // [...]
+    let message_store = CookieMessageStore::builder(todo!()).build();
+    let message_framework = FlashMessagesFramework::builder(message_store).build();
+    // [...]
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>CookieMessageStore</code> enforces that the cookie used as storage is signed, therefore we must provide a <code>Key</code> to its builder. We can reuse the <code>hmac_secret</code> we introduced when working on HMAC tags for query parameters:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+// [...]
+use secrecy::ExposeSecret;
+use actix_web::cookie::Key;
+
+fn run(/* */) -> Result<Server, std::io::Error> {
+    // [...]
+    let message_store = CookieMessageStore::builder(
+        Key::from(hmac_secret.expose_secret().as_bytes())
+    ).build();
+    // [...]
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We can now start to send <a href="https://docs.rs/actix-web-flash-messages/latest/actix_web_flash_messages/struct.FlashMessage.html">FlashMessages</a>.
+Each <code>FlashMessage</code> has a level and a string of content. The message level can be used for filtering and rendering - for example:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">Only show flash messages at info level or above in a production environment, while retaining debug level messages for local development;</li>
+  <li style="margin-top:.325em;">Use different colours, in the UI, to display messages (e.g. red for errors, orange for warnings, etc.).</li>
+</ul>
+<div style="margin-top: .325em;">
+We can rework <code>POST /login</code> to send a <code>FlashMessage</code>:
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/login/post.rs
+// [...]
+use actix_web_flash_messages::FlashMessage;
+
+#[tracing::instrument(/* */)]
+pub async fn login(/* */) -> Result</* */> {
+    // [...]
+    match validate_credentials(/* */).await {
+        Ok(/* */) => { /* */ }
+        Err(e) => {
+            let e = /* */;
+            FlashMessage::error(e.to_string()).send();
+            let response = HttpResponse::SeeOther()
+                // No cookies here now!
+                .insert_header((LOCATION, "/login"))
+                .finish();
+            // [...]
+        }
+    }
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The <code>FlashMessagesFramework</code> middleware takes care of all the heavy-lifting behind the scenes - creating the cookie, signing it, setting the right properties, etc.
+</div>
+<div style="margin-top: .325em;">
+We can also attach multiple flash messages to a single response - the framework takes care of how they should be combined and represented in the storage layer.
+</div>
+<div style="margin-top: .325em;">
+How does the receiving side work? How do we read incoming flash messages in <code>GET /login</code>?
+</div>
+<div style="margin-top: .325em;">
+We can use the <code>IncomingFlashMessages</code> extractor:
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/login/get.rs
+// [...]
+use actix_web_flash_messages::{IncomingFlashMessages, Level};
+use std::fmt::Write;
+
+// No need to access the raw request anymore!
+pub async fn login_form(flash_messages: IncomingFlashMessages) -> HttpResponse {
+    let mut error_html = String::new();
+    for m in flash_messages.iter().filter(|m| m.level() == Level::Error) {
+        writeln!(error_html, "<p><i>{}</i></p>", m.content()).unwrap();
+    }
+    HttpResponse::Ok()
+        // No more removal cookie!
+        .content_type(ContentType::html())
+        .body(format!(/* */))
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The code needs to change a bit to accommodate the chance of having received multiple flash messages, but overall it is almost equivalent. In particular, we no longer have to deal with the cookie API, neither to retrieve incoming flash messages nor to make sure that they get erased after having been read - <code>actix-web-flash-messages</code> takes care of it. The validity of the cookie signature is verified in the background as well, before the request handler is invoked.
+</div>
+<div style="margin-top: .325em;">
+What about our tests? <br />
+They are failing:
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+---- login::an_error_flash_message_is_set_on_failure stdout ----
+thread 'login::an_error_flash_message_is_set_on_failure' panicked at 
+'assertion failed: `(left == right)`
+  left: `"Ik4JlkXTiTlc507ERzy2Ob4Xc4qXAPzJ7MiX6EB04c4%3D%5B%7B%2[...]"`,
+ right: `"Authentication failed"`'
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Our assertions are a bit too close to the implementation details - we should only verify that the rendered HTML contains (or does not contain) the expected error message. Let's amend the test code:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/login.rs
+// [...]
+
+#[tokio::test]
+async fn an_error_flash_message_is_set_on_failure() {
+    // Arrange
+    // [...]
+    // Act - Part 1 - Try to login
+    // [...]
+    // Assert
+    // No longer asserting facts related to cookies
+    assert_is_redirect_to(&response, "/login");
+
+    // Act - Part 2 - Follow the redirect
+    let html_page = app.get_login_html().await;
+    assert!(html_page.contains("<p><i>Authentication failed</i></p>"));
+
+    // Act - Part 3 - Reload the login page
+    let html_page = app.get_login_html().await;
+    assert!(!html_page.contains("<p><i>Authentication failed</i></p>"));
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test should pass now.
+]]>
+    </c:sourceContent>
 
     <c:comment>
       <c:comment1>
