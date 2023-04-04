@@ -3102,4 +3102,584 @@ The test should pass now.
 
 
 
+
+  <c:entry style="margin-top:0em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">3. Sessions</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We focused for a while on what should happen on a failed login attempt. Time to swap: what do we expect to see after a successful login?
+</div>
+<div style="margin-top:.625em;">
+Authentication is meant to restrict access to functionality that requires higher privileges - in our case, the capability to send out a new issue of the newsletter to the entire mailing list. We want to build an administration panel - we will have a <code>/admin/dashboard</code> page, restricted to logged-in users, to access all admin functionality.
+We will get there in stages. As the very first milestone, we want to:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">redirect to <code>/admin/dashboard</code> after a successful login attempt to show a </code>Welcome &lt;username&gt;! </code>greeting message;</li>
+  <li style="margin-top:.325em;">if a user tries to navigate directly to <code>/admin/dashboard</code> and they are not logged in, they will be redirected to the login form.</li>
+</ul>
+<div style="margin-top:.625em;">
+This plan requires <code>sessions</code>.
+</div>
+
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="3.1. Session-based Authentication" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Session-based authentication is a strategy to avoid asking users to provide their password on every single page. Users are asked to authenticate once, via a login form: if successful, the server generates a one-time secret - an authenticated session token.
+</div>
+<div style="margin-top:.625em;">
+The backend API will accept the session token instead of the username/password combination and grant access to the restricted functionality. The session token must be provided on every request - this is why session tokens are stored as cookies. The browser will make sure to attach the cookie to all outgoing requests for the API.
+</div>
+<div style="margin-top:.625em;">
+From a security point of view, a valid session token is as powerful as the corresponding authentication secrets - e.g. the username/password combination, biometrics or physical second factors. We must take extreme care to avoid exposing session tokens to attackers.
+</div>
+<div style="margin-top:.625em;">
+OWASP provides <a href="https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html">extensive guidance</a> on how to secure sessions - we will be implementing most of their recommendations in the next sections.
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="3.2. Session Store" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's start to think about the implementation! <br />
+Based on what we discussed so far, we need the API to generate a session token after a successful login. The token value must be unpredictable - we do not want attackers to be able to generate or guess a valid session token. OWASP recommends using a cryptographically secure pseudorandom number generator (CSPRNG).
+Randomness on its own is not enough - we also need uniqueness. If we were to associate two users with the same session token we would be in trouble:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">we could be granting higher privileges to one of the two compared to what they deserve;</li>
+  <li style="margin-top:.325em;">we risk exposing personal or confidential information, such as names, emails, past activity, etc.</li>
+</ul>
+<div style="margin-top:.625em;">
+We need a <code>session store</code> - the server must remember the tokens it has generated in order to authorize future requests for logged-in users. We also want to associate information to each active session - this is known as <code>session state</code>.
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="3.3. Choosing A Session Store" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+During the lifecycle of a session we need to perform the following operations:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;"><code>creation</code>, when a user logs in;</li>
+  <li style="margin-top:.325em;"><code>retrieval</code>, using the session tokens extracted from the cookie attached to the incoming requests;</li>
+  <li style="margin-top:.325em;"><code>update</code>, when a logged-in user performs some actions that lead to a change in their session state;</li>
+  <li style="margin-top:.325em;"><code>deletion</code>, when the user logs out.</li>
+</ul>
+<div style="margin-top:.625em;">
+These are commonly known as CRUD (<code>c</code>reate, <code>d</code>elete, <code>r</code>ead, <code>u</code>pdate).
+</div>
+<div style="margin-top:.625em;">
+We also need some form of <code>expiration</code> - sessions are meant to be short-lived. Without a clean-up mechanism we are going to end up using more space for outdated/stale session than active ones.
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="3.3.1. Postgres" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Would Postgres be a viable session store? <br />
+We could create a new <code>sessions</code> table with the token as primary index - an easy way to ensure token uniqueness. We have a few options for the session state:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">"classical" relational modelling, using a normalised schema (i.e. the way we approached storage of our application state);</li>
+  <li>a single <code>state</code> column holding a collection of key-value pairs, using the <code>jsonb</code> data type.</li>
+</ul>
+<div style="margin-top:.625em;">
+Unfortunately, there is no built-in mechanism for row expiration in Postgres. We would have to add a <code>expires_at</code> column and trigger a cleanup job on a regular schedule to purge stale sessions - somewhat cumbersome.
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="3.3.2. Redis" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+<a href="https://redis.io/">Redis</a> is another popular option when it comes to session storage.
+Redis is an in-memory database - it uses RAM instead of disk for storage, trading off durability for speed. It is great fit, in particular, for data that can be modelled as a collection of key-value pairs. It also provides native support for expiration - we can attach a time-to-live to all values and Redis will take care of disposal.
+</div>
+<div style="margin-top:.625em;">
+How would it work for sessions?
+Our application never manipulates sessions in bulk - we always work on a single session at a time, identified using its token. Therefore, we can use the session token as key while the value is the JSON representation of the session state - the application takes care of serialization/deserialization.
+Sessions are meant to be short-lived - no reason to be concerned by the usage of RAM instead of disk for persistence, the speed boost is a nice side effect!
+</div>
+<div style="margin-top:.625em;">
+As you might have guessed at this point, we will be using Redis as our session storage backend!
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="3.4. actix-session" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<code>actix-session</code> provides session management for <code>actix-web</code> applications. Let's add it to our dependencies:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dependencies]
+# [...]
+actix-session = "0.6"
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The key type in <code>actix-session</code> is <code>SessionMiddleware</code> - it takes care of loading the session data, tracking changes to the state and persisting them at the end of the request/response lifecycle.
+</div>
+<div style="margin-top:.625em;">
+To build an instance of <code>SessionMiddleware</code> we need to provide a storage backend and a secret key to sign (or encrypt) the session cookie. The approach is quite similar to the one used by <code>FlashMessagesFramework</code> in <code>actix-web-flash-messages</code>.
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+// [...]
+use actix_session::SessionMiddleware;
+
+fn run(
+    // [...]
+) -> Result<Server, std::io::Error> {
+    // [...]
+    let secret_key = Key::from(hmac_secret.expose_secret().as_bytes());
+    let message_store = CookieMessageStore::builder(secret_key.clone()).build();
+    // [...]
+    let server = HttpServer::new(move || {
+        App::new()
+            .wrap(message_framework.clone())
+            .wrap(SessionMiddleware::new(todo!(), secret_key.clone()))
+            .wrap(TracingLogger::default())
+        // [...]
+    })
+    // [...]
+}
+
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>actix-session</code> is quite flexible when it comes to storage - you can provide your own by implementing the <code>SessionStore</code> trait. It also offers some implementations out of the box, hidden behind a set of feature flags - including a Redis backend. Let's enable it:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dependencies]
+# [...]
+actix-session = { version = "0.6", features = ["redis-rs-tls-session"] }
+
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now access <code>RedisSessionStore</code>. To build one we will have to pass a Redis connection string as input - let's add <code>redis_uri</code> to our configuration struct:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+// [...] 
+
+#[derive(serde::Deserialize, Clone)]
+pub struct Settings {
+    // [...]
+    // We have not created a stand-alone settings struct for Redis,
+    // let's see if we need more than the uri first!
+    // The URI is marked as secret because it may embed a password.
+    pub redis_uri: Secret<String>,
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# configuration/base.yaml
+# 6379 is Redis' default port
+redis_uri: "redis://127.0.0.1:6379"
+# [...]
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's use it to build a <code>RedisSessionStore</code> instance:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+// [...]
+use actix_session::storage::RedisSessionStore;
+
+impl Application {
+    // Async now! We also return anyhow::Error instead of std::io::Error    
+    pub async fn build(configuration: Settings) -> Result<Self, anyhow::Error> {
+        // [...]
+        let server = run(
+            // [...]
+            configuration.redis_uri
+        ).await?;
+        // [...]
+    }
+}
+
+// Now it's asynchronous!
+async fn run(
+    // [...]
+    redis_uri: Secret<String>,
+// Returning anyhow::Error instead of std::io::Error    
+) -> Result<Server, anyhow::Error> {
+    // [...]
+    let redis_store = RedisSessionStore::new(redis_uri.expose_secret()).await?;
+    let server = HttpServer::new(move || {
+        App::new()
+            .wrap(message_framework.clone())
+            .wrap(SessionMiddleware::new(redis_store.clone(), secret_key.clone()))
+            .wrap(TracingLogger::default())
+            // [...]
+        })
+    // [...]
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+// [...]
+
+#[tokio::main]
+// anyhow::Result now instead of std::io::Error
+async fn main() -> anyhow::Result<()> {
+    // [...]
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Time to add a running Redis instance to our setup.
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="3.4.1. Redis In Our Development Setup" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We need to run a Redis container alongside the Postgres container in our CI pipeline - check out the <a href="https://github.com/LukeMathWalker/zero-to-production/blob/root-chapter-10-part2/.github/workflows/general.yml">updated YAML in the book repository</a>.
+</div>
+<div style="margin-top:.625em;">
+We also need a running Redis container on our development machine to execute the test suite and launch the application. Let's add a script to launch it:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# scripts/init_redis.sh
+#!/usr/bin/env bash
+set -x
+set -eo pipefail
+
+# if a redis container is running, print instructions to kill it and exit
+RUNNING_CONTAINER=$(docker ps --filter 'name=redis' --format '{{.ID}}')
+if [[ -n $RUNNING_CONTAINER ]]; then
+  echo >&2 "there is a redis container already running, kill it with"
+  echo >&2 "    docker kill ${RUNNING_CONTAINER}"
+  exit 1
+fi
+
+# Launch Redis using Docker
+docker run \
+    -p "6379:6379" \
+    -d \
+    --name "redis_$(date '+%s')" \
+    redis:6
+
+>&2 echo "Redis is ready to go!"
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The script needs to be marked as executable and then launched:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ chmod +x ./scripts/init_redis.sh
+$ ./script/init_redis.sh
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="3.4.2. Redis On Digital Ocean" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Digital Ocean does not support the creation of a development Redis cluster via the <code>spec.yaml</code> file. You need to go through their dashboard - create a new Redis cluster <a href="https://cloud.digitalocean.com/databases/new?engine=redis">here</a>. Make sure to select the datacenter where you deployed the application. Once the cluster has been created, you have to go through a quick "Get started" flow to configure a few knobs (trusted sources, eviction policy, etc.).
+</div>
+<div style="margin-top:.625em;">
+At the end of the "Get started" flow you will be able to copy a connection string to your newly provisioned Redis instance. The connection string embeds a username and a password, therefore we must treat it as a secret. We will inject its value into the application using an environment value - set <code>APP_REDIS_URI</code> from the <code>Settings</code> panel in your application console.
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="3.5. Admin Dashboard" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Our session store is now up and running in all the environments we care about. It is time to actually do something with it!
+</div>
+<div style="margin-top:.625em;">
+Let's create the skeleton for a new page, the admin dashboard.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/mod.rs
+mod dashboard;
+
+pub use dashboard::admin_dashboard;
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/dashboard.rs
+use actix_web::HttpResponse;
+
+pub async fn admin_dashboard() -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/mod.rs
+// [...]
+mod admin;
+pub use admin::*;
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+use crate::routes::admin_dashboard;
+// [...]
+async fn run(/* */) -> Result<Server, anyhow::Error> {
+    // [...]
+    let server = HttpServer::new(move || {
+        App::new()
+            // [...]
+            .route("/admin/dashboard", web::get().to(admin_dashboard))
+            // [...]
+    })
+    // [...]
+}
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="3.5.1. Redirect On Login Success" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's start to work on the first milestone:
+</div>
+<div style="margin-top:.625em;">
+Redirect to <code>/admin/dashboard</code> after a successful login attempt to show a <code>Welcome <username>!</code> greeting message;
+</div>
+<div style="margin-top:.625em;">
+We can encode the requirements in an integration test:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/login.rs
+// [...]
+
+#[tokio::test]
+async fn redirect_to_admin_dashboard_after_login_success() {
+    // Arrange
+    let app = spawn_app().await;
+
+    // Act - Part 1 - Login
+    let login_body = serde_json::json!({
+        "username": &app.test_user.username,
+        "password": &app.test_user.password
+    });
+    let response = app.post_login(&login_body).await;
+    assert_is_redirect_to(&response, "/admin/dashboard");
+
+    // Act - Part 2 - Follow the redirect
+    let html_page = app.get_admin_dashboard().await;
+    assert!(html_page.contains(&format!("Welcome {}", app.test_user.username)));
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/helpers.rs
+// [...]
+
+impl TestApp {
+    // [...]
+    pub async fn get_admin_dashboard(&self) -> String {
+        self.api_client
+            .get(&format!("{}/admin/dashboard", &self.address))
+            .send()
+            .await
+            .expect("Failed to execute request.")
+            .text()
+            .await
+            .unwrap()
+    }
+}
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test should fail:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+---- login::redirect_to_admin_dashboard_after_login_success stdout ----
+thread 'login::redirect_to_admin_dashboard_after_login_success' panicked at 
+'assertion failed: `(left == right)`
+  left: `"/"`,
+ right: `"/admin/dashboard"`'
+]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Getting past the first assertion is easy enough - we just need to change the <code>Location</code> header in the response returned by <code>POST /login</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/login/post.rs
+// [...]
+
+#[tracing::instrument(/* */)]
+pub async fn login(/* */) -> Result</* */> {
+    // [...]
+    match validate_credentials(/* */).await {
+        Ok(/* */) => {
+            // [...]
+            Ok(HttpResponse::SeeOther()
+                .insert_header((LOCATION, "/admin/dashboard"))
+                .finish())
+        }
+        // [...]
+    }
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test will now fail on the second assertion:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+---- login::redirect_to_admin_dashboard_after_login_success stdout ----
+thread 'login::redirect_to_admin_dashboard_after_login_success' panicked at 
+'assertion failed: html_page.contains(...)',
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Time to put those sessions to work.
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
 </c:component>
