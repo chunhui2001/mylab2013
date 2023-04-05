@@ -3672,6 +3672,1042 @@ thread 'login::redirect_to_admin_dashboard_after_login_success' panicked at
 Time to put those sessions to work.
     ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="3.5.2. Session" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We need to identify the user once it lands on <code>GET /admin/dashboard</code> after following the redirect returned by <code>POST /login</code> - this is a perfect usecase for sessions.
+</div>
+<div style="margin-top:.625em;">
+We will store the user identifier into the session state in login and then retrieve it from the session state in <code>admin_dashboard</code>.
+</div>
+<div style="margin-top:.625em;">
+We need to become familiar with <code>Session</code>, the second key type from <code>actix_session</code>. <br />
+<code>SessionMiddleware</code> does all the heavy lifting of checking for a session cookie in incoming requests - if it finds one, it loads the corresponding session state from the chosen storage backend. Otherwise, it creates a new empty session state. <br />
+We can then use <code>Session</code> as an extractor to interact with that state in our request handlers.
+</div>
+<div style="margin-top:.625em;">
+Let's see it in action in <code>POST /login</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/login/post.rs
+use actix_session::Session;
+// [...]
+
+#[tracing::instrument(
+    skip(form, pool, session),
+    // [...]
+)]
+pub async fn login(
+    // [...]
+    session: Session,
+) -> Result</* */> {
+    // [...]
+    match validate_credentials(/* */).await {
+        Ok(user_id) => {
+            // [...]
+            session.insert("user_id", user_id);
+            Ok(HttpResponse::SeeOther()
+                .insert_header((LOCATION, "/admin/dashboard"))
+                .finish())
+        }
+        // [...]
+    }
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dependencies]
+# We need to add the `serde` feature
+uuid = { version = "1", features = ["v4", "serde"] }
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+You can think of <code>Session</code> as a handle on a <code>HashMap</code> - you can insert and retrieve values against <code>String</code> keys.
+The values you pass in must be serializable - <code>actix-session</code> converts them into JSON behind the scenes. That's why we had to add the <code>serde</code> feature to our <code>uuid</code> dependency.
+</div>
+<div style="margin-top:.625em;">
+Serialisation implies the possibility of failure - if you run <code>cargo check</code> you will see that the compiler warns us that we are not handling the <code>Result</code> returned by <code>session.insert</code>. Let's take care of that:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/login/post.rs
+// [...]
+#[tracing::instrument(/* */)]
+pub async fn login(/* */) -> Result<HttpResponse, InternalError<LoginError>> {
+    // [...]
+    match validate_credentials(/* */).await {
+        Ok(user_id) => {
+            // [...]
+            session
+                .insert("user_id", user_id)
+                .map_err(|e| login_redirect(LoginError::UnexpectedError(e.into())))?;
+            // [...]
+        }
+        Err(e) => {
+            let e = match e {
+                AuthError::InvalidCredentials(_) => LoginError::AuthError(e.into()),
+                AuthError::UnexpectedError(_) => LoginError::UnexpectedError(e.into()),
+            };
+            Err(login_redirect(e))
+        }
+    }
+}
+
+// Redirect to the login page with an error message.
+fn login_redirect(e: LoginError) -> InternalError<LoginError> {
+    FlashMessage::error(e.to_string()).send();
+    let response = HttpResponse::SeeOther()
+        .insert_header((LOCATION, "/login"))
+        .finish();
+    InternalError::from_response(e, response)
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+If something goes wrong, the user will be redirected back to the <code>/login</code> page with an appropriate error message.
+</div>
+<div style="margin-top:.625em;">
+What does <code>Session::insert</code> actually do, though? <br />
+All operations performed against <code>Session</code> are executed in memory - they do not affect the state of the session as seen by the storage backend. After the handler returns a response, <code>SessionMiddleware</code> will inspect the in-memory state of <code>Session</code> - if it changed, it will call Redis to update (or create) the state. It will also take care of setting a session cookie on the client, if there wasn't one already.
+</div>
+<div style="margin-top:.625em;">
+Does it work though? Let's try to get the <code>user_id</code> on the other side!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/dashboard.rs
+use actix_session::Session;
+use actix_web::{web, HttpResponse};
+use uuid::Uuid;
+
+// Return an opaque 500 while preserving the error's root cause for logging.
+fn e500<T>(e: T) -> actix_web::Error 
+where
+    T: std::fmt::Debug + std::fmt::Display + 'static
+{
+    actix_web::error::ErrorInternalServerError(e)
+}
+
+pub async fn admin_dashboard(
+    session: Session
+) -> Result<HttpResponse, actix_web::Error> {
+    let _username = if let Some(user_id) = session
+        .get::<Uuid>("user_id")
+        .map_err(e500)?
+    {
+        todo!()
+    } else {
+        todo!()
+    };
+    Ok(HttpResponse::Ok().finish())
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+When using <code>Session::get</code> we must specify what type we want to deserialize the session state entry into - a <code>Uuid</code> in our case. Deserialization may fail, so we must handle the error case.
+</div>
+<div style="margin-top:.625em;">
+Now that we have the <code>user_id</code>, we can use it to fetch the username and return the "<code>Welcome {username}!</code>" message we talked about before.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/dashboard.rs
+// [...]
+use actix_web::http::header::ContentType;
+use actix_web::web;
+use anyhow::Context;
+use sqlx::PgPool;
+
+pub async fn admin_dashboard(
+    session: Session,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, actix_web::Error> {
+    let username = if let Some(user_id) = session
+        .get::<Uuid>("user_id")
+        .map_err(e500)? 
+    {
+        get_username(user_id, &pool).await.map_err(e500)?
+    } else {
+        todo!()
+    };
+    Ok(HttpResponse::Ok()
+        .content_type(ContentType::html())
+        .body(format!(
+            r#"<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <title>Admin dashboard</title>
+</head>
+<body>
+    <p>Welcome {username}!</p>
+</body>
+</html>"#
+        )))
+}
+
+#[tracing::instrument(name = "Get username", skip(pool))]
+async fn get_username(
+    user_id: Uuid, 
+    pool: &PgPool
+) -> Result<String, anyhow::Error> {
+    let row = sqlx::query!(
+        r#"
+        SELECT username
+        FROM users
+        WHERE user_id = $1
+        "#,
+        user_id,
+    )
+    .fetch_one(pool)
+    .await
+    .context("Failed to perform a query to retrieve a username.")?;
+    Ok(row.username)
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Our integration test should pass now!
+</div>
+<div style="margin-top:.625em;">
+Stay there though, we are not finished yet - as it stands, our login flow is potentially vulnerable to <a href="https://acrossecurity.com/papers/session_fixation.pdf">session fixation attacks</a>.
+</div>
+<div style="margin-top:.625em;">
+Sessions can be used for more than authentication - e.g. to keep track of what items have been added to the basket when shopping in "guest" mode. This implies that a user might be associated to an anonymous session and, after they authenticate, to a privileged session. This can be leveraged by attackers.
+</div>
+<div style="margin-top:.625em;">
+Websites go to great lengths to prevent malicious actors from sniffing session tokens, leading to another attack strategy - seed the user's browser with a known session token before they log in, wait for authentication to happen and, boom, you are in!
+</div>
+<div style="margin-top:.625em;">
+There is a simple countermeasure we can take to disrupt this attack - <a href="https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html#renew-the-session-id-after-any-privilege-level-change">rotating the session token when the user logs in</a>. 
+</div>
+<div style="margin-top:.625em;">
+This is such a common practice that you will find it supported in the session management API of all major web frameworks - including <code>actix-session</code>, via <code>Session::renew</code>. Let's add it in:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/login/post.rs
+// [...]
+#[tracing::instrument(/* */)]
+pub async fn login(/* */) -> Result<HttpResponse, InternalError<LoginError>> {
+    // [...]
+    match validate_credentials(/* */).await {
+        Ok(user_id) => {
+            // [...]
+            session.renew();
+            session
+                .insert("user_id", user_id)
+                .map_err(|e| login_redirect(LoginError::UnexpectedError(e.into())))?;
+            // [...]
+        }
+        // [...]
+    }
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Now we can sleep better.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.5.3. A Typed Interface To Session" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+<code>Session</code> is powerful but, taken as is, it is a brittle foundation to build your application state-handling on. We are accessing data using a string-based API, being careful to use the same keys and types on both sides - insertion and retrieval. It works when the state is very simple, but it quickly degrades into a mess if you have several routes accessing the same data - how can you be sure that you updated all of them when you want to evolve the schema? How do we prevent a key typo from causing a production outage?
+</div>
+<div style="margin-top:.625em;">
+Tests can help, but we can use the type system to make the problem go away entirely. We will build a strongly-typed API on top of <code>Session</code> to access and modify the state - no more string keys and type casting in our request handlers.
+<code>Session</code> is a foreign type (defined in <code>actix-session</code>) therefore we must use the <a href="https://rust-lang.github.io/rfcs/0445-extension-trait-conventions.html">extension trait pattern</a>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/lib.rs
+// [...]
+pub mod session_state;
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/session_state.rs
+use actix_session::Session;
+use uuid::Uuid;
+
+pub struct TypedSession(Session);
+
+impl TypedSession {
+    const USER_ID_KEY: &'static str = "user_id";
+
+    pub fn renew(&self) {
+        self.0.renew();
+    }
+
+    pub fn insert_user_id(&self, user_id: Uuid) -> Result<(), serde_json::Error> {
+        self.0.insert(Self::USER_ID_KEY, user_id)
+    }
+
+    pub fn get_user_id(&self) -> Result<Option<Uuid>, serde_json::Error> {
+        self.0.get(Self::USER_ID_KEY)
+    }
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dependencies]
+serde_json = "1"
+# [...]
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+How will the request handlers build an instance of <code>TypedSession</code>? <br />
+We could provide a constructor that takes a <code>Session</code> as argument. Another option is to make <code>TypedSession</code> itself an <code>actix-web</code> extractor - let's try that out!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/session_state.rs
+// [...]
+use actix_session::SessionExt;
+use actix_web::dev::Payload;
+use actix_web::{FromRequest, HttpRequest};
+use std::future::{Ready, ready};
+
+impl FromRequest for TypedSession {
+    // This is a complicated way of saying 
+    // "We return the same error returned by the 
+    // implementation of `FromRequest` for `Session`".
+    type Error = <Session as FromRequest>::Error;
+    // Rust does not yet support the `async` syntax in traits.
+    // From request expects a `Future` as return type to allow for extractors
+    // that need to perform asynchronous operations (e.g. a HTTP call)
+    // We do not have a `Future`, because we don't perform any I/O,
+    // so we wrap `TypedSession` into `Ready` to convert it into a `Future` that
+    // resolves to the wrapped value the first time it's polled by the executor.
+    type Future = Ready<Result<TypedSession, Self::Error>>;
+
+    fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
+        ready(Ok(TypedSession(req.get_session())))
+    }
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It is just three lines long, but it does probably expose you to a few new Rust concepts/constructs. Take the time you need to go line by line and properly understand what is happening - or, if you prefer, understand the gist and come back later to deep dive!
+</div>
+<div style="margin-top:.625em;">
+We can now swap <code>Session</code> for <code>TypedSession</code> in our request handlers:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/login/post.rs
+// You can now remove the `Session` import
+use crate::session_state::TypedSession;
+// [...]
+
+#[tracing::instrument(/* */)]
+pub async fn login(
+    // [...]
+    // Changed from `Session` to `TypedSession`!
+    session: TypedSession,
+) -> Result</* */> {
+    // [...]
+    match validate_credentials(/* */).await {
+        Ok(user_id) => {
+            // [...]
+            session.renew();
+            session
+                .insert_user_id(user_id)
+                .map_err(|e| login_redirect(LoginError::UnexpectedError(e.into())))?;
+            // [...]
+        }
+        // [...]
+    }
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/dashboard.rs
+// You can now remove the `Session` import
+use crate::session_state::TypedSession;
+// [...]
+
+pub async fn admin_dashboard(
+    // Changed from `Session` to `TypedSession`!
+    session: TypedSession,
+    // [...]
+) -> Result</* */> {
+    let username = if let Some(user_id) = session.get_user_id().map_err(e500)? {
+        // [...]
+    } else {
+        todo!()
+    };
+    // [...]
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test suite should stay green.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.5.4. Reject Unauthenticated Users" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We can now take care of the second milestone:
+</div>
+<div style="margin-top:.625em;">
+If a user tries to navigate directly to <code>/admin/dashboard</code> and they are not logged in, they will be redirected to the login form.
+</div>
+<div style="margin-top:.625em;">
+Let's encode the requirements in an integration test, as usual:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/main.rs
+mod admin_dashboard;
+// [...]
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/admin_dashboard.rs
+use crate::helpers::{spawn_app, assert_is_redirect_to};
+
+#[tokio::test]
+async fn you_must_be_logged_in_to_access_the_admin_dashboard() {
+    // Arrange
+    let app = spawn_app().await;
+
+    // Act
+    let response = app.get_admin_dashboard_html().await;
+
+    // Assert
+    assert_is_redirect_to(&response, "/login");
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/helpers.rs
+//! 
+impl TestApp {
+    // [...]
+    pub async fn get_admin_dashboard(&self) -> reqwest::Response {
+        self.api_client
+            .get(&format!("{}/admin/dashboard", &self.address))
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
+    pub async fn get_admin_dashboard_html(&self) -> String {
+        self.get_admin_dashboard().await.text().await.unwrap()
+    }
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test should fail - the handler panics. <br />
+We can fix it by fleshing out that <code>todo!()</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/dashboard.rs
+use actix_web::http::header::LOCATION;
+// [...]
+
+pub async fn admin_dashboard(
+    session: TypedSession,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, actix_web::Error> {
+    let username = if let Some(user_id) = session.get_user_id().map_err(e500)? {
+        // [...]
+    } else {
+        return Ok(HttpResponse::SeeOther()
+            .insert_header((LOCATION, "/login"))
+            .finish());
+    };
+    // [...]
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test will pass now.
+    ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:0em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">4. Seed Users</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Everything looks great - in our test suite. <br />
+We have not done any exploratory testing for the most recent functionality - we stopped messing around in the browser more or less at the same time we started to work on the happy path. It is not a coincidence - we currently cannot exercise the happy path! <br />
+There is no user in the database and we do not have a sign up flow for admins - the implicit expectation has been that the application owner would become the first admin of the newsletter somehow
+</div>
+<div style="margin-top:.625em;">
+It is time to make that a reality. <br />
+We will create a seed user - i.e. add a migration that creates a user into a database when the application is deployed for the first time. The seed user will have a pre-determined username and password; they will then be able to change their password after they log in for the first time.
+</div>
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.1. Database Migration" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's create a new migration using <code>sqlx</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ sqlx migrate add seed_user
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We need to insert a new row into the users table. We need:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">a user id (UUID);</li>
+  <li style="margin-top:.325em;">a username;</li>
+  <li style="margin-top:.325em;">a PHC string.</li>
+</ul>
+<div style="margin-top:.625em;">
+Pick your favourite UUID generator to get a valid user id. We will use admin as username. <br />
+Getting a PHC string is a bit more cumbersome - we will use everythinghastostartsomewhere as a password, but how do we generate the corresponding PHC string? <br />
+We can cheat by leveraging the code we wrote in our test suite:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/helpers.rs
+// [...]
+
+impl TestUser {
+    pub fn generate() -> Self {
+        Self {
+            // [...]
+            // password: Uuid::new_v4().to_string(),
+            password: "everythinghastostartsomewhere".into(),
+        }
+    }
+
+    async fn store(&self, pool: &PgPool) {
+        // [...]
+        let password_hash = /* */;
+        // `dbg!` is a macro that prints and returns the value 
+        // of an expression for quick and dirty debugging.
+        dbg!(&password_hash);
+        // [...]
+    }
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+This is just a temporary edit - it is then enough to run <code>cargo test -- --nocapture</code> to get a well-formed PHC string for our migration script. Revert the changes once you have it.
+</div>
+<div style="margin-top:.625em;">
+The migration script will look like this:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+--- 20211217223217_seed_user.sql
+INSERT INTO users (user_id, username, password_hash)
+VALUES (
+    'ddf8994f-d522-4659-8d02-c1d479057be6',
+    'admin',
+    '$argon2id$v=19$m=15000,t=2,p=1$OEx/rcq+3ts//WUDzGNl2g$Am8UFBA4w5NJEmAtquGvBmAlu92q/VQcaoL5AyJPfc8'
+);
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ sqlx migrate run
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Run the migration and then launch your application with <code>cargo run</code> - you should finally be able to log in successfully!
+If everything works as expected, a "Welcome admin!" message should greet you at <code>/admin/dashboard</code>. Congrats!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.2. Password Reset" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's look at the current situation from another perspective - we just provisioned a highly privileged user with a known username/password combination. This is dangerous territory.
+We need to give our seed user the possibility to change their password. It is going to be the first piece of functionality hosted on the admin dashboard!
+</div>
+<div style="margin-top:.625em;">
+No new concepts will be required to build this functionality - take this section as an opportunity to revise and make sure that you have a solid grasp on everything we covered so far!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.2.1. Form Skeleton" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's start by putting in place the required scaffolding. It is a form-based flow, just like the login one - we need a <code>GET</code> endpoint to return the HTML form and a <code>POST</code> endpoint to process the submitted information:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/mod.rs
+// [...]
+mod password;
+pub use password::*;
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/password/mod.rs
+mod get;
+pub use get::change_password_form;
+mod post;
+pub use post::change_password;
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/password/get.rs
+use actix_web::http::header::ContentType;
+use actix_web::HttpResponse;
+
+pub async fn change_password_form() -> Result<HttpResponse, actix_web::Error> {
+    Ok(HttpResponse::Ok().content_type(ContentType::html()).body(
+        r#"<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <title>Change Password</title>
+</head>
+<body>
+    <form action="/admin/password" method="post">
+        <label>Current password
+            <input
+                type="password"
+                placeholder="Enter current password"
+                name="current_password"
+            >
+        </label>
+        <br>
+        <label>New password
+            <input
+                type="password"
+                placeholder="Enter new password"
+                name="new_password"
+            >
+        </label>
+        <br>
+        <label>Confirm new password
+            <input
+                type="password"
+                placeholder="Type the new password again"
+                name="new_password_check"
+            >
+        </label>
+        <br>
+        <button type="submit">Change password</button>
+    </form>
+    <p><a href="/admin/dashboard">&lt;- Back</a></p>
+</body>
+</html>"#,
+    ))
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/password/post.rs
+use actix_web::{HttpResponse, web};
+use secrecy::Secret;
+
+#[derive(serde::Deserialize)]
+pub struct FormData {
+    current_password: Secret<String>,
+    new_password: Secret<String>,
+    new_password_check: Secret<String>,
+}
+
+pub async fn change_password(
+    form: web::Form<FormData>,
+) -> Result<HttpResponse, actix_web::Error> {
+    todo!()
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+use crate::routes::{change_password, change_password_form};
+// [...]
+
+async fn run(/* */) -> Result<Server, anyhow::Error> {
+    // [...]
+    let server = HttpServer::new(move || {
+        App::new()
+            // [...]
+            .route("/admin/password", web::get().to(change_password_form))
+            .route("/admin/password", web::post().to(change_password))
+            // [...]
+    })
+    // [...]
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Just like the admin dashboard itself, we do not want to show the change password form to users who are not logged in. Let's add two integration tests:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/main.rs
+mod change_password;
+// [...]
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/helpers.rs
+// [...]
+
+impl TestApp {
+    // [...]
+    pub async fn get_change_password(&self) -> reqwest::Response {
+        self.api_client
+            .get(&format!("{}/admin/password", &self.address))
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+    
+    pub async fn post_change_password<Body>(&self, body: &Body) -> reqwest::Response
+        where
+            Body: serde::Serialize,
+    {
+        self.api_client
+            .post(&format!("{}/admin/password", &self.address))
+            .form(body)
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/change_password.rs
+use crate::helpers::{spawn_app, assert_is_redirect_to};
+use uuid::Uuid;
+
+#[tokio::test]
+async fn you_must_be_logged_in_to_see_the_change_password_form() {
+    // Arrange
+    let app = spawn_app().await;
+
+    // Act
+    let response = app.get_change_password().await;
+
+    // Assert
+    assert_is_redirect_to(&response, "/login");
+}
+
+#[tokio::test]
+async fn you_must_be_logged_in_to_change_your_password() {
+    // Arrange
+    let app = spawn_app().await;
+    let new_password = Uuid::new_v4().to_string();
+
+    // Act
+    let response = app
+        .post_change_password(&serde_json::json!({
+            "current_password": Uuid::new_v4().to_string(),
+            "new_password": &new_password,
+            "new_password_check": &new_password,
+        }))
+        .await;
+
+    // Assert
+    assert_is_redirect_to(&response, "/login");
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can then satisfy the requirements by adding a check in the request handlers:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/password/get.rs
+use crate::session_state::TypedSession;
+use crate::utils::{e500, see_other};
+// [...]
+
+pub async fn change_password_form(
+    session: TypedSession
+) -> Result</* */> {
+    if session.get_user_id().map_err(e500)?.is_none() {
+        return Ok(see_other("/login"));
+    };
+    // [...]
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/password/post.rs
+use crate::session_state::TypedSession;
+use crate::utils::{e500, see_other};
+// [...]
+
+pub async fn change_password(
+    // [...]
+    session: TypedSession,
+) -> Result<HttpResponse, actix_web::Error> {
+    if session.get_user_id().map_err(e500)?.is_none() {
+        return Ok(see_other("/login"));
+    };
+    todo!()
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/utils.rs
+use actix_web::HttpResponse;
+use actix_web::http::header::LOCATION;
+
+// Return an opaque 500 while preserving the error root's cause for logging.
+pub fn e500<T>(e: T) -> actix_web::Error
+where
+    T: std::fmt::Debug + std::fmt::Display + 'static,
+{
+    actix_web::error::ErrorInternalServerError(e)
+}
+
+pub fn see_other(location: &str) -> HttpResponse {
+    HttpResponse::SeeOther()
+        .insert_header((LOCATION, location))
+        .finish()
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/lib.rs
+// [...]
+pub mod utils;
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/dashboard.rs
+// The definition of e500 has been moved to src/utils.rs
+use crate::utils::e500;
+// [...]
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We do not want the change password form to be an orphan page either - let's add a list of available actions to our admin dashboard, with a link to our new page:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/dashboard.rs
+// [...]
+
+pub async fn admin_dashboard(/* */) -> Result</* */> {
+    // [...]
+    Ok(HttpResponse::Ok()
+        .content_type(ContentType::html())
+        .body(format!(
+            r#"<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <title>Admin dashboard</title>
+</head>
+<body>
+    <p>Welcome {username}!</p>
+    <p>Available actions:</p>
+    <ol>
+        <li><a href="/admin/password">Change password</a></li>
+    </ol>
+</body>
+</html>"#,
+        )))
+}
+]]>
+    </c:sourceContent>
 
     <c:comment>
       <c:comment1>
