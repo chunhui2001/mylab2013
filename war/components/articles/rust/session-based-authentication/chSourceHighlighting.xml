@@ -4708,6 +4708,1105 @@ pub async fn admin_dashboard(/* */) -> Result</* */> {
 }
 ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="4.2.2. Unhappy Path: New Passwords Do Not Match" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We have taken care of all the preliminary steps, it is time to start working on the core functionality. <br />
+Let's start with an unhappy case - we asked the user to write the new password twice and the two entries do not match. We expect to be redirected back to the form with an appropriate error message.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/change_password.rs
+// [...]
+
+#[tokio::test]
+async fn new_password_fields_must_match() {
+    // Arrange
+    let app = spawn_app().await;
+    let new_password = Uuid::new_v4().to_string();
+    let another_new_password = Uuid::new_v4().to_string();
+
+    // Act - Part 1 - Login
+    app.post_login(&serde_json::json!({
+        "username": &app.test_user.username,
+        "password": &app.test_user.password
+    }))
+    .await;
+
+    // Act - Part 2 - Try to change password
+    let response = app
+        .post_change_password(&serde_json::json!({
+            "current_password": &app.test_user.password,
+            "new_password": &new_password,
+            "new_password_check": &another_new_password,
+        }))
+        .await;
+    assert_is_redirect_to(&response, "/admin/password");
+
+    // Act - Part 3 - Follow the redirect
+    let html_page = app.get_change_password_html().await;
+    assert!(html_page.contains(
+        "<p><i>You entered two different new passwords - \
+         the field values must match.</i></p>"
+    ));
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/helpers.rs
+// [...]
+
+impl TestApp {
+    // [...]
+
+    pub async fn get_change_password_html(&self) -> String {
+        self.get_change_password().await.text().await.unwrap()
+    }
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test fails because the request handler panics. Let's fix it:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/password/post.rs
+use secrecy::ExposeSecret;
+// [...]
+
+pub async fn change_password(/* */) -> Result</* */> {
+    // [...]
+    // `Secret<String>` does not implement `Eq`, 
+    // therefore we need to compare the underlying `String`.
+    if form.new_password.expose_secret() != form.new_password_check.expose_secret() {
+        return Ok(see_other("/admin/password"));
+    }
+    todo!()
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+That takes care of the redirect, the first part of the test, but it does not handle the error message:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+---- change_password::new_password_fields_must_match stdout ----
+thread 'change_password::new_password_fields_must_match' panicked at 
+'assertion failed: html_page.contains(...)', 
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We have gone through this journey before for the login form - we can use a flash message again!
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/password/post.rs
+// [...]
+use actix_web_flash_messages::FlashMessage;
+
+pub async fn change_password(/* */) -> Result</* */> {
+    // [...]
+    if form.new_password.expose_secret() != form.new_password_check.expose_secret() {
+        FlashMessage::error(
+            "You entered two different new passwords - the field values must match.",
+        )
+        .send();
+        // [...]
+    }
+    todo!()
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/password/get.rs
+// [...]
+use actix_web_flash_messages::IncomingFlashMessages;
+use std::fmt::Write;
+
+pub async fn change_password_form(
+    session: TypedSession,
+    flash_messages: IncomingFlashMessages,
+) -> Result<HttpResponse, actix_web::Error> {
+    // [...]
+
+    let mut msg_html = String::new();
+    for m in flash_messages.iter() {
+        writeln!(msg_html, "<p><i>{}</i></p>", m.content()).unwrap();
+    }
+
+    Ok(HttpResponse::Ok()
+        .content_type(ContentType::html())
+        .body(format!(
+            r#"<!-- [...] -->
+<body>
+    {msg_html}
+    <!-- [...] -->
+</body>
+</html>"#,
+        )))
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test should pass.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.2.3. Unhappy Path: The Current Password Is Invalid" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+You might have noticed that we require the user to provide its current password as part of the form. This is to prevent an attacker who managed to acquire a valid session token from locking the legitimate user out of their account.
+</div>
+<div style="margin-top:.625em;">
+Let's add an integration test to specify what we expect to see when the provided current password is invalid:
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/change_password.rs
+// [...]
+
+#[tokio::test]
+async fn current_password_must_be_valid() {
+    // Arrange
+    let app = spawn_app().await;
+    let new_password = Uuid::new_v4().to_string();
+    let wrong_password = Uuid::new_v4().to_string();
+
+    // Act - Part 1 - Login
+    app.post_login(&serde_json::json!({
+        "username": &app.test_user.username,
+        "password": &app.test_user.password
+    }))
+    .await;
+
+    // Act - Part 2 - Try to change password
+    let response = app
+        .post_change_password(&serde_json::json!({
+            "current_password": &wrong_password,
+            "new_password": &new_password,
+            "new_password_check": &new_password,
+        }))
+        .await;
+
+    // Assert
+    assert_is_redirect_to(&response, "/admin/password");
+
+    // Act - Part 3 - Follow the redirect
+    let html_page = app.get_change_password_html().await;
+    assert!(html_page.contains(
+        "<p><i>The current password is incorrect.</i></p>"
+    ));
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+To validate the value passed as current_password we need to retrieve the username and then invoke the validate_credentials routine, the one powering our login form. <br />
+Let's start with the username:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/password/post.rs
+use crate::routes::admin::dashboard::get_username;
+use sqlx::PgPool;
+// [...]
+
+pub async fn change_password(
+    // [...]
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, actix_web::Error> {
+    let user_id = session.get_user_id().map_err(e500)?;
+    if user_id.is_none() {
+        return Ok(see_other("/login"));
+    };
+    let user_id = user_id.unwrap();
+
+    if form.new_password.expose_secret() != form.new_password_check.expose_secret() {
+        // [...]
+    }
+    let username = get_username(user_id, &pool).await.map_err(e500)?;
+    // [...]
+    todo!()
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/dashboard.rs
+// [...]
+
+#[tracing::instrument(/* */)]
+// Marked as `pub`!
+pub async fn get_username(/* */) -> Result</* */> {
+    // [...]
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now pass the username and password combination to <code>validate_credentials</code> - if the validation fails, we need to take different actions depending on the returned error:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/password/post.rs
+// [...]
+use crate::authentication::{validate_credentials, AuthError, Credentials};
+
+pub async fn change_password(/* */) -> Result</* */> {
+    // [...]
+    let credentials = Credentials {
+        username,
+        password: form.0.current_password,
+    };
+    if let Err(e) = validate_credentials(credentials, &pool).await {
+        return match e {
+            AuthError::InvalidCredentials(_) => {
+                FlashMessage::error("The current password is incorrect.").send();
+                Ok(see_other("/admin/password"))
+            }
+            AuthError::UnexpectedError(_) => Err(e500(e).into()),
+        }
+    }
+    todo!()
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test should pass.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.2.4. Unhappy Path: The New Password Is Too Short" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We do not want our users to choose a weak password - it exposes their account to attackers. <br />
+OWASP's provides <a href="https://github.com/OWASP/ASVS/blob/master/4.0/en/0x11-V2-Authentication.md#v21-password-security-requirements">a minimum set of requirements</a> when it comes to password strength - passwords should be longer than 12 characters but shorter than 128 characters.
+</div>
+<div style="margin-top:.625em;">
+Add these validation checks to our <code>POST /admin/password</code> endpoint as an exercise!
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.2.5. Logout" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+It is finally time to look at the happy path - a user successfully changing their password.
+We will use the following scenario to check that everything behaves as expected:
+</div>
+
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">Log in;</li>
+  <li style="margin-top:.325em;">Change password by submitting the change password form;</li>
+  <li style="margin-top:.325em;">Log out;</li>
+  <li style="margin-top:.325em;">Log in again using the new password.</li>
+</ul>
+
+<div style="margin-top:.625em;">
+There is just one roadblock left - we do not have a log-out endpoint yet!
+Let's work to bridge this functionality gap before moving forward.
+</div>
+<div style="margin-top:.625em;">
+Let's start by encoding our requirements in a test:
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/admin_dashboard.rs
+// [...]
+
+#[tokio::test]
+async fn logout_clears_session_state() {
+    // Arrange
+    let app = spawn_app().await;
+
+    // Act - Part 1 - Login
+    let login_body = serde_json::json!({
+        "username": &app.test_user.username,
+        "password": &app.test_user.password
+    });
+    let response = app.post_login(&login_body).await;
+    assert_is_redirect_to(&response, "/admin/dashboard");
+
+    // Act - Part 2 - Follow the redirect
+    let html_page = app.get_admin_dashboard_html().await;
+    assert!(html_page.contains(&format!("Welcome {}", app.test_user.username)));
+
+    // Act - Part 3 - Logout
+    let response = app.post_logout().await;
+    assert_is_redirect_to(&response, "/login");
+
+    // Act - Part 4 - Follow the redirect
+    let html_page = app.get_login_html().await;
+    assert!(html_page.contains(r#"<p><i>You have successfully logged out.</i></p>"#));
+
+    // Act - Part 5 - Attempt to load admin panel
+    let response = app.get_admin_dashboard().await;
+    assert_is_redirect_to(&response, "/login");
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/helpers.rs
+// [...]
+
+impl TestApp {
+    // [...]
+
+    pub async fn post_logout(&self) -> reqwest::Response {
+        self.api_client
+            .post(&format!("{}/admin/logout", &self.address))
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+A log-out is a state-alerting operation: we need to use the POST method via a HTML button:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/dashboard.rs
+// [...]
+
+pub async fn admin_dashboard(/* */) -> Result</* */> {
+    // [...]
+    Ok(HttpResponse::Ok()
+        .content_type(ContentType::html())
+        .body(format!(
+            r#"<!-- [...] -->
+<p>Available actions:</p>
+<ol>
+    <li><a href="/admin/password">Change password</a></li>
+    <li>
+        <form name="logoutForm" action="/admin/logout" method="post">
+            <input type="submit" value="Logout">
+        </form>
+    </li>
+</ol>
+<!-- [...] -->"#,
+        )))
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We now need to add the corresponding <code>POST /admin/logout</code> request handler.
+</div>
+<div style="margin-top:.625em;">
+What does it actually mean to log out? <br />
+We are using session-based authentication - a user is "logged in" if there is a valid user id associated with the user_id key in the session state. To log out it is enough to delete the session - remove the state from the storage backend and unset the client-side cookie.
+</div>
+<div style="margin-top:.625em;">
+<code>actix-session</code> has a dedicated method for this purpose - <code>Session::purge</code>. We need to expose it in our <code>TypedSession</code> abstraction and then call it in <code>POST /logout</code>'s request handler:
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/session_state.rs
+// [...]
+impl TypedSession {
+    // [...]
+    pub fn log_out(self) {
+        self.0.purge()
+    }
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/logout.rs
+use crate::session_state::TypedSession;
+use crate::utils::{e500, see_other};
+use actix_web::HttpResponse;
+use actix_web_flash_messages::FlashMessage;
+
+pub async fn log_out(session: TypedSession) -> Result<HttpResponse, actix_web::Error> {
+    if session.get_user_id().map_err(e500)?.is_none() {
+        Ok(see_other("/login"))
+    } else {
+        session.log_out();
+        FlashMessage::info("You have successfully logged out.").send();
+        Ok(see_other("/login"))
+    }
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/login/get.rs
+// [...]
+pub async fn login_form(/* */) -> HttpResponse {
+    // [...]
+    // Display all messages levels, not just errors!
+    for m in flash_messages.iter() {
+        // [...]
+    }
+    // [...]
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/mod.rs
+// [...]
+mod logout;
+pub use logout::log_out;
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+use crate::routes::log_out;
+// [...]
+
+async fn run(/* */) -> Result<Server, anyhow::Error> {
+    // [...]
+    let server = HttpServer::new(move || {
+        App::new()
+            // [...]
+            .route("/admin/logout", web::post().to(log_out))
+        // [...]
+    })
+    // [...]
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.2.6. Happy Path: The Password Was Changed Successfully" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We can now get back to the happy path scenario in our change password flow:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">Log in;</li>
+  <li style="margin-top:.325em;">Change password by submitting the change password form;</li>
+  <li style="margin-top:.325em;">Log out;</li>
+  <li style="margin-top:.325em;">Log in again, successfully, using the new password.</li>
+</ul>
+<div style="margin-top:.625em;">
+Let's add an integration test:
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/change_password.rs
+// [...]
+
+#[tokio::test]
+async fn changing_password_works() {
+    // Arrange
+    let app = spawn_app().await;
+    let new_password = Uuid::new_v4().to_string();
+
+    // Act - Part 1 - Login
+    let login_body = serde_json::json!({
+        "username": &app.test_user.username,
+        "password": &app.test_user.password
+    });
+    let response = app.post_login(&login_body).await;
+    assert_is_redirect_to(&response, "/admin/dashboard");
+
+    // Act - Part 2 - Change password
+    let response = app
+        .post_change_password(&serde_json::json!({
+            "current_password": &app.test_user.password,
+            "new_password": &new_password,
+            "new_password_check": &new_password,
+        }))
+        .await;
+    assert_is_redirect_to(&response, "/admin/password");
+
+    // Act - Part 3 - Follow the redirect
+    let html_page = app.get_change_password_html().await;
+    assert!(html_page.contains("<p><i>Your password has been changed.</i></p>"));
+
+    // Act - Part 4 - Logout
+    let response = app.post_logout().await;
+    assert_is_redirect_to(&response, "/login");
+
+    // Act - Part 5 - Follow the redirect
+    let html_page = app.get_login_html().await;
+    assert!(html_page.contains("<p><i>You have successfully logged out.</i></p>"));
+
+    // Act - Part 6 - Login using the new password
+    let login_body = serde_json::json!({
+        "username": &app.test_user.username,
+        "password": &new_password
+    });
+    let response = app.post_login(&login_body).await;
+    assert_is_redirect_to(&response, "/admin/dashboard");
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+This is the most complex user scenario we have written so far - a grand total of six steps. This is far from being a record - enterprise applications often require tens of steps to execute real world business processes. It takes a lot of work to keep the test suite readable and maintainable in those scenarios.
+</div>
+<div style="margin-top:.625em;">
+The test currently fails at the third step - POST /admin/password panics because we left a todo!() invocation after the preliminary input validation steps. To implement the required functionality we will need to compute the hash of the new password and then store it in the database - we can add a new dedicated routine to our authentication module:
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/authentication.rs
+use argon2::password_hash::SaltString;
+use argon2::{
+    Algorithm, Argon2, Params, PasswordHash, 
+    PasswordHasher, PasswordVerifier, Version
+};
+// [...]
+
+#[tracing::instrument(name = "Change password", skip(password, pool))]
+pub async fn change_password(
+    user_id: uuid::Uuid,
+    password: Secret<String>,
+    pool: &PgPool,
+) -> Result<(), anyhow::Error> {
+    let password_hash = spawn_blocking_with_tracing(
+            move || compute_password_hash(password)
+        )
+        .await?
+        .context("Failed to hash password")?;
+    sqlx::query!(
+        r#"
+        UPDATE users
+        SET password_hash = $1
+        WHERE user_id = $2
+        "#,
+        password_hash.expose_secret(),
+        user_id
+    )
+    .execute(pool)
+    .await
+    .context("Failed to change user's password in the database.")?;
+    Ok(())
+}
+
+fn compute_password_hash(
+    password: Secret<String>
+) -> Result<Secret<String>, anyhow::Error> {
+    let salt = SaltString::generate(&mut rand::thread_rng());
+    let password_hash = Argon2::new(
+        Algorithm::Argon2id,
+        Version::V0x13,
+        Params::new(15000, 2, 1, None).unwrap(),
+    )
+    .hash_password(password.expose_secret().as_bytes(), &salt)?
+    .to_string();
+    Ok(Secret::new(password_hash))
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+For <code>Argon2</code> we used the parameters recommended by OWASP, the same ones we were already using in our test suite.
+We can now plug this function into the request handler:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/password/post.rs
+// [...]
+pub async fn change_password(/* */) -> Result</* */> {
+    // [...]
+    crate::authentication::change_password(user_id, form.0.new_password, &pool)
+        .await
+        .map_err(e500)?;
+    FlashMessage::error("Your password has been changed.").send();
+    Ok(see_other("/admin/password"))
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test should now pass.
+]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">5. Refactoring</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We have added many new endpoints that are restricted to authenticated users. For the sake of speed, we have copy-pasted the same authentication logic across multiple request handlers - it is a good idea to take a step back and try to figure out if we can come up with a better solution.
+</div>
+<div style="margin-top:.625em;">
+Let's look at <code>POST /admin/passwords</code> as an example. We currently have:
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/password/post.rs
+// [...] 
+
+pub async fn change_password(/* */) -> Result<HttpResponse, actix_web::Error> {
+    let user_id = session.get_user_id().map_err(e500)?;
+    if user_id.is_none() {
+        return Ok(see_other("/login"));
+    };
+    let user_id = user_id.unwrap();
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can factor it out as a new reject_anonymous_users function:
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/password/post.rs
+use actix_web::error::InternalError;
+use uuid::Uuid;
+// [...] 
+
+async fn reject_anonymous_users(
+    session: TypedSession
+) -> Result<Uuid, actix_web::Error> {
+    match session.get_user_id().map_err(e500)? {
+        Some(user_id) => Ok(user_id),
+        None => {
+            let response = see_other("/login");
+            let e = anyhow::anyhow!("The user has not logged in");
+            Err(InternalError::from_response(e, response).into())
+        }
+    }
+}
+
+pub async fn change_password(/* */) -> Result<HttpResponse, actix_web::Error> {
+    let user_id = reject_anonymous_users(session).await?;
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Notice how we moved the redirect response on the error path in order to use the <code>?</code> operator in our request handler.
+We could now go and refactor all other <code>/admin/*</code> routes to leverage <code>reject_anonymous_users</code>. Or, if you are feeling adventurous, we could try writing a middleware to handle this for us - let's do it!
+    ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="html" title="5.1. How To Write An actix-web Middleware" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Writing a full-blown middleware in actix-web can be challenging - it requires us to understand their Transform and Service traits.
+Those abstractions are powerful, but power comes at the cost of complexity.
+</div>
+<div style="margin-top:.625em;">
+Our needs are quite simple, we can get away with less: actix_web_lab::from_fn.
+actix_web_lab is a crate used to experiment with future additions to the actix_web framework, with a faster release policy. Let's add it to our dependencies:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dependencies]
+actix-web-lab = "0.16"
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>from_fn</code> takes an asynchronous function as argument and returns an <code>actix-web</code> middleware as output. The asynchronous function must have the following signature and structure:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+use actix_web_lab::middleware::Next;
+use actix_web::body::MessageBody;
+use actix_web::dev::{ServiceRequest, ServiceResponse};
+
+async fn my_middleware(
+    req: ServiceRequest,
+    next: Next<impl MessageBody>,
+) -> Result<ServiceResponse<impl MessageBody>, Error> {
+    // before the handler is invoked 
+
+    // Invoke handler
+    let response = next.call(req).await;
+
+    // after the handler was invoked
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's adapt <code>reject_anonymous_users</code> to follow those requirements - it will live in our authentication module.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/authentication/mod.rs
+mod middleware;
+mod password;
+
+pub use password::{
+    change_password, validate_credentials, 
+    AuthError, Credentials
+};
+
+pub use middleware::reject_anonymous_users;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/authentication/password.rs
+// Copy over **everything** from the old src/authentication.rs
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+This will be our empty canvas:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/authentication/middleware.rs
+use actix_web_lab::middleware::Next;
+use actix_web::body::MessageBody;
+use actix_web::dev::{ServiceRequest, ServiceResponse};
+
+pub async fn reject_anonymous_users(
+    mut req: ServiceRequest,
+    next: Next<impl MessageBody>,
+) -> Result<ServiceResponse<impl MessageBody>, actix_web::Error> {
+    todo!()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+To start out, we need to get our hands on a <code>TypedSession</code> instance. <code>ServiceRequest</code> is nothing more than a wrapper around <code>HttpRequest</code> and <code>Payload</code>, therefore we can leverage our existing implementation of <code>FromRequest</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/authentication/middleware.rs
+use actix_web_lab::middleware::Next;
+use actix_web::body::MessageBody;
+use actix_web::dev::{ServiceRequest, ServiceResponse};
+use actix_web::FromRequest;
+use crate::session_state::TypedSession;
+
+pub async fn reject_anonymous_users(
+    mut req: ServiceRequest,
+    next: Next<impl MessageBody>,
+) -> Result<ServiceResponse<impl MessageBody>, actix_web::Error> {
+    let session = {
+        let (http_request, payload) = req.parts_mut();
+        TypedSession::from_request(http_request, payload).await
+    }?;
+    todo!()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Now that we have the session handler, we can check if the session state contains a user id:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/authentication/middleware.rs
+use actix_web::error::InternalError;
+use crate::utils::{e500, see_other};
+// [...]
+
+pub async fn reject_anonymous_users(
+    mut req: ServiceRequest,
+    next: Next<impl MessageBody>,
+) -> Result<ServiceResponse<impl MessageBody>, actix_web::Error> {
+    let session = {
+        let (http_request, payload) = req.parts_mut();
+        TypedSession::from_request(http_request, payload).await
+    }?;
+
+    match session.get_user_id().map_err(e500)? {
+        Some(_) => next.call(req).await,
+        None => {
+            let response = see_other("/login");
+            let e = anyhow::anyhow!("The user has not logged in");
+            Err(InternalError::from_response(e, response).into())
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+This, as it stands, is already useful - it can be leveraged to protect endpoints that require authentication. <br />
+At the same time, it isn't equivalent to what we had before - how are we going to access the retrieved user id in our endpoints?
+</div>
+<div style="margin-top:.625em;">
+This is a common issue when working with middlewares that extract information out of incoming requests - it is solved via request extensions.
+The middleware inserts the information it wants to pass to downstream request handlers into the type map attached to the incoming request (<code>request.extensions_mut()</code>).
+Request handlers can then access it using the <a href="https://docs.rs/actix-web/4.0.0/actix_web/web/struct.ReqData.html"><code>ReqData</code> extractor</a>.
+</div>
+<div style="margin-top:.625em;">
+Let's start by performing the insertion. <br />
+We will define a new-type wrapper, <code>UserId</code>, to prevent conflicts in the type map:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/authentication/mod.rs
+// [...]
+pub use middleware::UserId;
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/authentication/middleware.rs
+use uuid::Uuid;
+use std::ops::Deref;
+use actix_web::HttpMessage;
+// [...]
+
+#[derive(Copy, Clone, Debug)]
+pub struct UserId(Uuid);
+
+impl std::fmt::Display for UserId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl Deref for UserId {
+    type Target = Uuid;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+pub async fn reject_anonymous_users(/* */) -> Result</* */> {
+    // [...]
+    match session.get_user_id().map_err(e500)? {
+        Some(user_id) => {
+            req.extensions_mut().insert(UserId(user_id));
+            next.call(req).await
+        }
+        None => // [...]
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now access it in <code>change_password</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/password/post.rs
+use crate::authentication::UserId;
+// [...]
+
+pub async fn change_password(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+    // No longer injecting TypedSession!
+    user_id: web::ReqData<UserId>,
+) -> Result<HttpResponse, actix_web::Error> {
+    let user_id = user_id.into_inner();
+    // [...]
+    let username = get_username(*user_id, &pool).await.map_err(e500)?;
+    // [...]
+    crate::authentication::change_password(*user_id, form.0.new_password, &pool)
+        .await
+        .map_err(e500)?;
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+If you run the test suite, you'll be greeted by several failures. If you inspect the logs for one of them, you'll find the following error:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Error encountered while processing the incoming HTTP request: 
+"Missing expected request extension data"
+    ]]>
+    </c:sourceContent>
+
+
 
     <c:comment>
       <c:comment1>
