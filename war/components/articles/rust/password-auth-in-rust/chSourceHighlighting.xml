@@ -38,6 +38,11 @@ Password authentication is often seen as the simplest auth method, but there are
     </c:comment>
   </c:entry>
 
+
+
+
+
+
   <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
     <c:title id="Reproduce-the-connection-reset-by-peer-error">2. Authentication</c:title>
     <c:desc>
@@ -47,7 +52,7 @@ Password authentication is often seen as the simplest auth method, but there are
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
       <![CDATA[
-<div style="margin-top:.625em;">
+<div>
 We need a way to verify <b>who</b> is calling <code>POST /newsletters</code>.
 Only a handful of people, the ones in charge of the content, should be able to send emails out to the entire mailing list.
 </div>
@@ -69,6 +74,557 @@ Each approach has its weaknesses.
 </div>
     ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="2.1.1. Something They Know" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Passwords must be long - short ones are vulnerable to <a href="https://en.wikipedia.org/wiki/Brute-force_attack">brute-force attacks</a>. <br />
+Passwords must be unique - publicly available information (e.g. date of birth, names of family members, etc.) should not give an attacker any chance to "guess" a password. <br />
+Passwords should not be reused across multiple services - if any of them gets compromised you risk granting access to all the other services sharing the same password.
+</div>
+<div style="margin-top:.625em;">
+On average, a person has <a href="https://tech.co/news/average-person-100-passwords">100 or more online accounts</a> - they cannot be asked to remember hundreds of long unique passwords by heart.
+<a href="https://en.wikipedia.org/wiki/Password_manager">Password managers</a> help, but they are not mainstream yet and the user experience is often sub-optimal.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.1.2. Something They Have" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Smartphones and <a href="https://en.wikipedia.org/wiki/Universal_2nd_Factor">U2F keys</a> can be lost, locking the user out of their accounts. <br />
+They can also be stolen or compromised, giving an attacker a window of opportunity to impersonate the victim.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.1.3. Something They Are" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Biometrics, unlike passwords, cannot be changed - you cannot "rotate" your fingerprint or change the pattern of your retina's blood vessel.
+</div>
+<div style="margin-top:.625em;">
+Forging a fingerprint turns out to be easier than most would imagine - it is also information often available to government agencies who might abuse it or lose it.
+<div style="margin-top:.625em;">
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.2. Multi-factor Authentication" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+What should we do then, given that each approach has its own flaws? <br />
+Well, we could combine them!
+</div>
+<div style="margin-top:.625em;">
+That is pretty much what <code>multi-factor authentication</code> (MFA) boils down to - it requires the user to provide at least two different types of authentication factors in order to get access.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">3. Password-based Authentication</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's jump from theory to practice: how do we <code>implement</code> authentication?
+</div>
+<div style="margin-top:.625em;">
+Passwords look like the simplest approach among the three we mentioned.
+How should we pass a username and a password to our API?
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.1. Basic Authentication" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We can use the 'Basic' Authentication Scheme, a standard defined by the Internet Engineering Task Force (IETF) in <a href="https://datatracker.ietf.org/doc/html/rfc2617#section-2">RFC 2617</a> and later updated by <a href="https://datatracker.ietf.org/doc/html/rfc7617">RFC 7617</a>.
+</div>
+<div style="margin-top:.625em;">
+The API must look for the <code>Authorization</code> header in the incoming request, structured as follows:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Authorization: Basic <encoded credentials>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+where <code>&lt;encoded credentials&gt;</code> is the base64-encoding of <code>{username}:{password}</code>.
+</div>
+<div style="margin-top:.625em;">
+According to the specification, we need to partition our API into <a href="https://datatracker.ietf.org/doc/html/rfc7235#section-2.2">protection spaces or <code>realms</code></a> - resources within the same realm are protected using the same authentication scheme and set of credentials.
+We only have a single endpoint to protect - <code>POST /newsletters</code>. We will therefore have a single realm, named <code>publish</code>.
+</div>
+<div style="margin-top:.625em;">
+The API must reject all requests missing the header or using invalid credentials - the response must use the <code>401 Unauthorized</code> status code and include a special header, <code>WWW-Authenticate</code>, containing a <code>challenge</code>.
+The challenge is a string explaining to the API caller what type of authentication scheme we expect to see for the relevant realm. <br />
+In our case, using basic authentication, it should be:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Basic realm="publish"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's implement it!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.1.1. Extracting Credentials" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+  Extracting username and password from the incoming request will be our first milestone.
+</div>
+<div style="margin-top:.625em;">
+Let's start with an unhappy case - an incoming request without an <code>Authorization</code> header is rejected.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/newsletter.rs
+// [...]
+
+#[tokio::test]
+async fn requests_missing_authorization_are_rejected() {
+    // Arrange
+    let app = spawn_app().await;
+
+    let response = reqwest::Client::new()
+        .post(&format!("{}/newsletters", &app.address))
+        .json(&serde_json::json!({
+            "title": "Newsletter title",
+            "content": {
+                "text": "Newsletter body as plain text",
+                "html": "<p>Newsletter body as HTML</p>",
+            }
+        }))
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    // Assert
+    assert_eq!(401, response.status().as_u16());
+    assert_eq!(r#"Basic realm="publish""#, response.headers()["WWW-Authenticate"]);
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It fails at the first assertion:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+thread 'newsletter::requests_missing_authorization_are_rejected' panicked at 
+'assertion failed: `(left == right)`
+  left: `401`,
+ right: `400`'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We must update our handler to fulfill the new requirements. <br />
+We can use the <code>HttpRequest</code> extractor to reach the headers associated with the incoming request:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[//! src/routes/newsletters.rs
+// [...]
+use secrecy::Secret;
+use actix_web::http::{HttpRequest, header::HeaderMap};
+
+pub async fn publish_newsletter(
+    // [...]
+    // New extractor!
+    request: HttpRequest,
+) -> Result<HttpResponse, PublishError> {
+    let _credentials = basic_authentication(request.headers());
+    // [...]
+}
+
+struct Credentials {
+    username: String,
+    password: Secret<String>,
+}
+
+fn basic_authentication(headers: &HeaderMap) -> Result<Credentials, anyhow::Error> {
+    todo!()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+To extract the credentials we will need to deal with the base64 encoding. <br />
+Let's add the base64 crate as a dependency:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/newsletters.rs
+[dependencies]
+# [...]
+base64 = "0.13"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now write down the body of basic_authentication:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/newsletters.rs
+// [...]
+
+fn basic_authentication(headers: &HeaderMap) -> Result<Credentials, anyhow::Error> {
+    // The header value, if present, must be a valid UTF8 string
+    let header_value = headers
+        .get("Authorization")
+        .context("The 'Authorization' header was missing")?
+        .to_str()
+        .context("The 'Authorization' header was not a valid UTF8 string.")?;
+    let base64encoded_segment = header_value
+        .strip_prefix("Basic ")
+        .context("The authorization scheme was not 'Basic'.")?;
+    let decoded_bytes = base64::decode_config(base64encoded_segment, base64::STANDARD)
+        .context("Failed to base64-decode 'Basic' credentials.")?;
+    let decoded_credentials = String::from_utf8(decoded_bytes)
+        .context("The decoded credential string is not valid UTF8.")?;
+
+    // Split into two segments, using ':' as delimiter
+    let mut credentials = decoded_credentials.splitn(2, ':');
+    let username = credentials
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("A username must be provided in 'Basic' auth."))?
+        .to_string();
+    let password = credentials
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("A password must be provided in 'Basic' auth."))?
+        .to_string();
+
+    Ok(Credentials {
+        username,
+        password: Secret::new(password)
+    })
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Take a moment to go through the code, line by line, and fully understand what is happening. Many operations that could go wrong!
+Having the <a href="https://datatracker.ietf.org/doc/html/rfc7617">RFC</a> open, side to side with the book, helps!
+</div>
+<div style="margin-top:.625em;">
+We are not done yet - our test is still failing. <br />
+We need to act on the error returned by <code>basic_authentication</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/newsletters.rs
+// [...]
+
+#[derive(thiserror::Error)]
+pub enum PublishError {
+    // New error variant!
+    #[error("Authentication failed.")]
+    AuthError(#[source] anyhow::Error),
+    #[error(transparent)]
+    UnexpectedError(#[from] anyhow::Error),
+}
+
+impl ResponseError for PublishError {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            PublishError::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            // Return a 401 for auth errors
+            PublishError::AuthError(_) => StatusCode::UNAUTHORIZED,
+        }
+    }
+}
+
+
+pub async fn publish_newsletter(/* */) -> Result<HttpResponse, PublishError> {
+    let _credentials = basic_authentication(request.headers())
+        // Bubble up the error, performing the necessary conversion
+        .map_err(PublishError::AuthError)?;
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Our status code assertion is now happy, the header one not yet:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+thread 'newsletter::requests_missing_authorization_are_rejected' panicked at 
+'no entry found for key "WWW-Authenticate"'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+So far it has been enough to specify which status code to return for each error - now we need something more, a header.
+</div>
+<div style="margin-top:.625em;">
+We need to change our focus from <code>ResponseError::status_code</code> to <code>ResponseError::error_response</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/newsletters.rs
+// [...]
+use actix_web::http::{StatusCode, header};
+use actix_web::http::header::{HeaderMap, HeaderValue};
+
+impl ResponseError for PublishError {
+    fn error_response(&self) -> HttpResponse {
+        match self {
+            PublishError::UnexpectedError(_) => {
+                HttpResponse::new(StatusCode::INTERNAL_SERVER_ERROR)
+            }
+            PublishError::AuthError(_) => {
+                let mut response = HttpResponse::new(StatusCode::UNAUTHORIZED);
+                let header_value = HeaderValue::from_str(r#"Basic realm="publish""#)
+                    .unwrap();
+                response
+                    .headers_mut()
+                    // actix_web::http::header provides a collection of constants
+                    // for the names of several well-known/standard HTTP headers
+                    .insert(header::WWW_AUTHENTICATE, header_value);
+                response
+            }
+        }
+    }
+    
+    // `status_code` is invoked by the default `error_response`
+    // implementation. We are providing a bespoke `error_response` implementation
+    // therefore there is no need to maintain a `status_code` implementation anymore.
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Our authentication test passes! <br />
+A few of the old ones are broken though:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+test newsletter::newsletters_are_not_delivered_to_unconfirmed_subscribers ... FAILED
+test newsletter::newsletters_are_delivered_to_confirmed_subscribers ... FAILED
+
+thread 'newsletter::newsletters_are_not_delivered_to_unconfirmed_subscribers' 
+panicked at 'assertion failed: `(left == right)`
+  left: `401`,
+ right: `200`'
+
+thread 'newsletter::newsletters_are_delivered_to_confirmed_subscribers' 
+panicked at 'assertion failed: `(left == right)`
+  left: `401`,
+ right: `200`'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>POST /newsletters</code> is now rejecting all unauthenticated requests, including the ones we were making in our happy-path black-box tests. <br />
+We can stop the bleeding by providing a random combination of username and password:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/helpers.rs
+// [...]
+
+impl TestApp {
+    pub async fn post_newsletters(&self, body: serde_json::Value) -> reqwest::Response {
+        reqwest::Client::new()
+            .post(&format!("{}/newsletters", &self.address))
+            // Random credentials!
+            // `reqwest` does all the encoding/formatting heavy-lifting for us.
+            .basic_auth(Uuid::new_v4().to_string(), Some(Uuid::new_v4().to_string()))
+            .json(&body)
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+    
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test suite is green again.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.2. Password Verification - Naive Approach" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+An authentication layer that accepts random credentials is... not ideal.
+We need to start validating the credentials we are extracting from the <code>Authorization</code> header - they should be compared to a list of known users.
+</div>
+<div style="margin-top:.625em;">
+We will create a new <code>users</code> Postgres table to store this list:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+$ sqlx migrate add create_users_table
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+A first draft for the schema might look like this:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+-- migrations/20210815112026_create_users_table.sql 
+CREATE TABLE users(
+   user_id uuid PRIMARY KEY,
+   username TEXT NOT NULL UNIQUE,
+   password TEXT NOT NULL
+);
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can then update our handler to query it every time we perform authentication:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/newsletters.rs
+use secrecy::ExposeSecret;
+// [...]
+
+async fn validate_credentials(
+    credentials: Credentials,
+    pool: &PgPool,
+) -> Result<uuid::Uuid, PublishError> {
+    let user_id: Option<_> = sqlx::query!(
+        r#"
+        SELECT user_id
+        FROM users
+        WHERE username = $1 AND password = $2
+        "#,
+        credentials.username,
+        credentials.password.expose_secret()
+    )
+    .fetch_optional(pool)
+    .await
+    .context("Failed to perform a query to validate auth credentials.")
+    .map_err(PublishError::UnexpectedError)?;
+
+    user_id
+        .map(|row| row.user_id)
+        .ok_or_else(|| anyhow::anyhow!("Invalid username or password."))
+        .map_err(PublishError::AuthError)
+}
+
+pub async fn publish_newsletter(/* */) -> Result<HttpResponse, PublishError> {
+    let credentials = basic_authentication(request.headers())
+        .map_err(PublishError::AuthError)?;
+    let user_id = validate_credentials(credentials, &pool).await?;
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
