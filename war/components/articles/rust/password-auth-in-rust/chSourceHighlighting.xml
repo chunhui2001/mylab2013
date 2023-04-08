@@ -624,6 +624,762 @@ pub async fn publish_newsletter(/* */) -> Result<HttpResponse, PublishError> {
 }
     ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It would be a good idea to record who is calling <code>POST /newsletters</code> - let's add a tracing span around our handler:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/newsletters.rs
+// [...]
+
+#[tracing::instrument(
+    name = "Publish a newsletter issue",
+    skip(body, pool, email_client, request),
+    fields(username=tracing::field::Empty, user_id=tracing::field::Empty)
+)]
+pub async fn publish_newsletter(/* */) -> Result<HttpResponse, PublishError> {
+    let credentials = basic_authentication(request.headers())
+        .map_err(PublishError::AuthError)?;
+    tracing::Span::current().record(
+        "username",
+        &tracing::field::display(&credentials.username)
+    );
+    let user_id = validate_credentials(credentials, &pool).await?;
+    tracing::Span::current().record("user_id", &tracing::field::display(&user_id));
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We now need to update our happy-path tests to specify a username-password pair that is accepted by <code>validate_credentials</code>.
+</div>
+<div style="margin-top:.625em;">
+We will generate a test user for every instance of our test application. We have not yet implemented a <code>sign-up</code> flow for <code>newsletter editors</code>, therefore we cannot go for a fully black-box approach - for the time being we will inject the test user details directly into the database:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/helpers.rs
+// [...]
+
+pub async fn spawn_app() -> TestApp {
+    // [...]
+
+    let test_app = TestApp {/* */};
+    add_test_user(&test_app.db_pool).await;
+    test_app
+}
+
+
+async fn add_test_user(pool: &PgPool) {
+    sqlx::query!(
+        "INSERT INTO users (user_id, username, password)
+        VALUES ($1, $2, $3)",
+        Uuid::new_v4(),
+        Uuid::new_v4().to_string(),
+        Uuid::new_v4().to_string(),
+    )
+    .execute(pool)
+    .await
+    .expect("Failed to create test users.");
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>TestApp</code> will provide a helper method to retrieve its username and password
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/helpers.rs
+// [...]
+
+impl TestApp {
+    // [...]
+
+    pub async fn test_user(&self) -> (String, String) {
+        let row = sqlx::query!("SELECT username, password FROM users LIMIT 1",)
+            .fetch_one(&self.db_pool)
+            .await
+            .expect("Failed to create test users.");
+        (row.username, row.password)
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+which we will then be calling from our <code>post_newsletters</code> method, instead of using random credentials:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/helpers.rs
+// [...]
+
+impl TestApp {
+    // [...]
+
+    pub async fn post_newsletters(&self, body: serde_json::Value) -> reqwest::Response {
+        let (username, password) = self.test_user().await;
+        reqwest::Client::new()
+            .post(&format!("{}/newsletters", &self.address))
+            // No longer randomly generated on the spot!
+            .basic_auth(username, Some(password))
+            .json(&body)
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+All our tests are passing now.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.3. Password Storage" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Storing raw user passwords in your database is not a good idea.
+</div>
+<div style="margin-top:.625em;">
+An attacker with access to your stored data can immediately start impersonating your users - both usernames and passwords are ready to go.
+They don't even have to compromise your live database - an unencrypted backup is enough.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.3.1. No Need To Store Raw Passwords" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Why are we even storing passwords in the first place? <br />
+We need to perform an <b>equality check</b> - every time a user tries to authenticate we verify that the password they provided matches the password we were expecting.
+</div>
+<div style="margin-top:.625em;">
+If equality is all we care about, we can start devising a more sophisticated strategy. <br />
+We could, for example, transform the passwords by applying a function before comparing them.
+</div>
+<div style="margin-top:.625em;">
+All deterministic functions return the same output given the same input. <br />
+Let <code>f</code> be our deterministic function: <code>psw_candidate == expected_psw</code> implies <code>f(psw_candidate) == f(expected_psw)</code>.
+This is not enough though - what if <code>f</code> returned <code>hello</code> for every possible input string? Password verification would succeed no matter the input provided.
+</div>
+<div style="margin-top:.625em;">
+We need to go in the opposite direction: if <code>f(psw_candidate) == f(expected_psw)</code> then <code>psw_candidate == expected_psw</code>. <br />
+This is possible assuming that our function <code>f</code> has an additional property: it must be <a href="https://en.wikipedia.org/wiki/Injective_function">injective</a> - if <code>x != y</code> then <code>f(x) != f(y)</code>.
+</div>
+<div style="margin-top:.625em;">
+If we had such a function <code>f</code>, we could avoid storing the raw password altogether: when a user signs up, we compute <code>f(password)</code> and store it in our database. password is discarded. 
+</div>
+<div style="margin-top:.625em;">
+When the same user tries to sign in, we compute <code>f(psw_candidate)</code> and check that it matches the <code>f(password)</code> value we stored during sign-up. The raw password is never persisted.
+</div>
+<div style="margin-top:.625em;">
+Does this actually improve our security posture? <br />
+It depends on <code>f</code>!
+</div>
+<div style="margin-top:.625em;">
+It is not that difficult to define an injective function - the reverse function, <code>f("hello") = "olleh"</code>, satisfies our criteria. It is equally easy to guess how to invert the transformation to recover the original password - it doesn't hinder an attacker.
+</div>
+<div style="margin-top:.625em;">
+We could make the transformation a lot more complicated - complicated enough to make it cumbersome for an attacker to find the inverse transformation.
+</div>
+<div style="margin-top:.625em;">
+Even that might not be enough. It is often sufficient for an attacker to be able to recover some properties of the input (e.g. length) from the output to mount, for example, a targeted brute-force attack.
+</div>
+<div style="margin-top:.625em;">
+We need something stronger - there should be no relationship between how similar two inputs <code>x</code> and <code>y</code> are and how similar the corresponding outputs <code>f(x)</code> and <code>f(y)</code> are.
+</div>
+<div style="margin-top:.625em;">
+We want a <a href="https://en.wikipedia.org/wiki/Cryptographic_hash_function">cryptographic hash function</a>. <br />
+Hash functions map strings from the input space to <code>fixed-length</code> outputs. <br />
+The adjective <code>cryptographic</code> refers to the uniformity property we were just discussing, also known as <code>avalanche effect</code>: a tiny difference in inputs leads to outputs so different to the point of looking uncorrelated.
+</div>
+<div style="margin-top:.625em;">
+There is a caveat: hash functions are not injective, there is a tiny risk of <a href="https://preshing.com/20110504/hash-collision-probabilities/">collisions</a> - if <code>f(x) == f(y)</code> there is a high probability (not 100%!) that <code>x == y</code>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.3.2. Using A Cryptographic Hash" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Enough with the theory - let's update our implementation to hash passwords before storing them.
+</div>
+<div style="margin-top:.625em;">
+There are several cryptographic hash functions out there - <a href="https://en.wikipedia.org/wiki/MD5">MD5</a>, <a href="https://en.wikipedia.org/wiki/SHA-1">SHA-1</a>, <a href="https://en.wikipedia.org/wiki/SHA-2">SHA-2</a>, <a href="https://en.wikipedia.org/wiki/SHA-3">SHA-3</a>, <a href="https://en.wikipedia.org/wiki/SHA-3#KangarooTwelve">KangarooTwelve</a>, etc. <br />
+We are not going to delve deep into the pros and cons of each algorithm - it is pointless when it comes to passwords, for reasons that will become clear in a few pages. <br />
+For the sake of this section, let's move forward with SHA-3, the latest addition to the Secure <a href="https://en.wikipedia.org/wiki/Secure_Hash_Algorithms">Hash Algorithms family</a>.
+</div>
+<div style="margin-top:.625em;">
+On top of the algorithm, we also need to choose the <b>output size</b> - e.g. SHA3-224 uses the SHA-3 algorithm to produce a fixed-sized output of 224 bits. <br />
+The options are <code>224, 256, 384 and 512</code>. The longer the output, the more unlikely we are to experience a collision. On the flip side, we will need more storage and consume more bandwidth by using longer hashes. <br />
+<code>SHA3-256</code> should be more than enough for our usecase.
+</div>
+<div style="margin-top:.625em;">
+The <a href="https://github.com/RustCrypto">Rust Crypto</a> organization provides an implementation of SHA-3, the <code>sha3</code> crate. Let's add it to our dependencies:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+#! Cargo.toml
+#! [...]
+
+[dependencies]
+# [...]
+sha3 = "0.9"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+For clarity, let's rename our <code>password</code> column to <code>password_hash</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+$ sqlx migrate add rename_password_column
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+-- migrations/20210815112028_rename_password_column.sql
+ALTER TABLE users RENAME password TO password_hash;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Our project should stop compiling:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+error: error returned from database: column "password" does not exist
+  --> src/routes/newsletters.rs
+   |
+90 |       let user_id: Option<_> = sqlx::query!(
+   |  ______________________________^
+91 | |         r#"
+92 | |         SELECT user_id
+93 | |         FROM users
+...  |
+97 | |         credentials.password
+98 | |     )
+   | |_____^
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>sqlx::query!</code> spotted that one of our queries is using a column that no longer exists in the current schema.
+Compile-time verification of SQL queries is quite neat, isn't it?
+</div>
+<div style="margin-top:.625em;">
+Our <code>validate_credentials</code> function looks like this:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/newsletters.rs
+//! [...]
+
+async fn validate_credentials(
+    credentials: Credentials,
+    pool: &PgPool,
+) -> Result<uuid::Uuid, PublishError> {
+    let user_id: Option<_> = sqlx::query!(
+        r#"
+        SELECT user_id
+        FROM users
+        WHERE username = $1 AND password = $2
+        "#,
+        credentials.username,
+        credentials.password.expose_secret()
+    )
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's update it to work with hashed passwords:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/newsletters.rs
+//! [...]
+use sha3::Digest;
+
+async fn validate_credentials(/* */) -> Result<uuid::Uuid, PublishError> {
+    let password_hash = sha3::Sha3_256::digest(
+        credentials.password.expose_secret().as_bytes()
+    );
+    let user_id: Option<_> = sqlx::query!(
+        r#"
+        SELECT user_id
+        FROM users
+        WHERE username = $1 AND password_hash = $2
+        "#,
+        credentials.username,
+        password_hash
+    )
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Unfortunately, it will not compile straight away:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+error[E0308]: mismatched types
+  --> src/routes/newsletters.rs:99:9
+   |
+99 |         password_hash
+   |         ^^^^^^^^^^^^^ expected `&str`, found struct `GenericArray`
+   |
+   = note: expected reference `&str`
+                 found struct `GenericArray<u8, UInt<..>>`
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>Digest::digest</code> returns a fixed-length array of bytes, while our <code>password_hash</code> column is of type <code>TEXT</code>, a string.
+We could change the schema of the <code>users</code> table to store <code>password_hash</code> as <a href="https://www.postgresql.org/docs/current/datatype-binary.html">binary</a>. Alternatively, we can encode the bytes returned by <code>Digest::digest</code> in a string using the <a href="https://doc.rust-lang.org/std/fmt/trait.LowerHex.html">hexadecimal format</a>.
+</div>
+<div style="margin-top:.625em;">
+Let's spare ourselves another migration by using the second option:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! [...]
+
+async fn validate_credentials(/* */) -> Result<uuid::Uuid, PublishError> {
+    let password_hash = sha3::Sha3_256::digest(
+        credentials.password.expose_secret().as_bytes()
+    );
+    // Lowercase hexadecimal encoding.
+    let password_hash = format!("{:x}", password_hash);
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The application code should compile now. The test suite, instead, requires a bit more work. <br />
+The <code>test_user</code> helper method was recovering a set of valid credentials by querying the <code>users</code> table - this is no longer viable now that we are storing hashes instead of raw passwords!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/helpers.rs
+//! [...]
+ 
+impl TestApp {
+    // [...]
+    
+    pub async fn test_user(&self) -> (String, String) {
+        let row = sqlx::query!("SELECT username, password FROM users LIMIT 1",)
+            .fetch_one(&self.db_pool)
+            .await
+            .expect("Failed to create test users.");
+        (row.username, row.password)
+    }
+}
+
+pub async fn spawn_app() -> TestApp {
+    // [...]
+    let test_app = TestApp {/* */};
+    add_test_user(&test_app.db_pool).await;
+    test_app
+}
+
+async fn add_test_user(pool: &PgPool) {
+    sqlx::query!(
+        "INSERT INTO users (user_id, username, password)
+        VALUES ($1, $2, $3)",
+        Uuid::new_v4(),
+        Uuid::new_v4().to_string(),
+        Uuid::new_v4().to_string(),
+    )
+    .execute(pool)
+    .await
+    .expect("Failed to create test users.");
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We need <code>TestApp</code> to store the randomly generated password in order for us to access it in our helper methods.
+Let's start by creating a new helper struct, <code>TestUser</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/helpers.rs
+//! [...]
+use sha3::Digest;
+
+pub struct TestUser {
+    pub user_id: Uuid,
+    pub username: String,
+    pub password: String
+}
+
+impl TestUser {
+    pub fn generate() -> Self {
+        Self {
+            user_id: Uuid::new_v4(),
+            username: Uuid::new_v4().to_string(),
+            password: Uuid::new_v4().to_string()
+        }
+    }
+
+    async fn store(&self, pool: &PgPool) {
+        let password_hash = sha3::Sha3_256::digest(
+            credentials.password.expose_secret().as_bytes()
+        );
+        let password_hash = format!("{:x}", password_hash);
+        sqlx::query!(
+            "INSERT INTO users (user_id, username, password_hash)
+            VALUES ($1, $2, $3)",
+            self.user_id,
+            self.username,
+            password_hash,
+        )
+        .execute(pool)
+        .await
+        .expect("Failed to store test user.");
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can then attach an instance of <code>TestUser</code> to <code>TestApp</code>, as a new field:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/helpers.rs
+//! [...]
+
+pub struct TestApp {
+    // [...]
+    test_user: TestUser
+}
+
+pub async fn spawn_app() -> TestApp {
+    // [...]
+    let test_app = TestApp {
+        // [...]
+        test_user: TestUser::generate()
+    };
+    test_app.test_user.store(&test_app.db_pool).await;
+    test_app
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+To finish, let's delete <code>add_test_user</code>, <code>TestApp::test_user</code> and update <code>TestApp::post_newsletters</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/helpers.rs
+//! [...]
+
+impl TestApp {
+    // [..]
+    pub async fn post_newsletters(&self, body: serde_json::Value) -> reqwest::Response {
+        reqwest::Client::new()
+            .post(&format!("{}/newsletters", &self.address))
+            .basic_auth(&self.test_user.username, Some(&self.test_user.password))
+            // [...]
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test suite should now compile and run successfully.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.3.3. Preimage Attack" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Is SHA3-256 enough to protect our users' passwords if an attacker gets their hands on our users table?
+</div>
+<div style="margin-top:.625em;">
+Let's imagine that the attack wants to crack a <b>specific</b> password hash in our database. <br />
+The attacker does not even need to retrieve the original password. To authenticate successfully they just need to find an input string <code>s</code> whose SHA3-256 hash matches the password they are trying to crack - in other words, a collision. <br />
+This is known as a <a href="https://en.wikipedia.org/wiki/Preimage_attack">preimage attack</a>.
+</div>
+<div style="margin-top:.625em;">
+How hard is it?
+</div>
+<div style="margin-top:.625em;">
+The math is a bit tricky, but a brute-force attack has an <b>exponential</b> <a href="https://en.wikipedia.org/wiki/Time_complexity">time complexity</a> - <code>2^n</code>, where n is the hash length in bits.
+If <code>n > 128</code>, it is considered <a href="https://en.wikipedia.org/wiki/Brute-force_attack#Theoretical_limits">unfeasible to compute</a>. <br />
+Unless a vulnerability is found in SHA-3, we do not need to worry about preimage attacks against SHA3-256.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.3.4. Naive Dictionary Attack" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We are not hashing arbitrary inputs though - we can reduce the search space by making some assumptions on the original password: how long was it? What symbols were used?
+</div>
+<div style="margin-top:.625em;">
+Let's imagine we are looking for an alphanumeric password that is shorter than 17 characters.
+</div>
+<div style="margin-top:.625em;">
+We can count the number of password candidates:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+// (26 letters + 10 number symbols) ^ Password Length
+// for all allowed password lengths
+36^1 +
+36^2 +
+... +
+36^16 
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.3.4. Naive Dictionary Attack" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+It sums up to roughly <code>8 * 10^24</code> possibilities.
+I wasn't able to find data specifically on SHA3-256, but <a href="https://www.jstage.jst.go.jp/article/ijnc/9/2/9_370/_pdf">researchers</a> managed to compute ~900 million SHA3-512 hashes per second using a Graphical Processing Unit (GPU).
+</div>
+<div style="margin-top:.625em;">
+Assuming a hash rate of <code>~10^9</code> per second, it would take us <code>~10^15</code> seconds to hash all password candidates. The approximate age of the universe is <code>4 * 10^17</code> seconds.
+</div>
+<div style="margin-top:.625em;">
+Even if we were to parallelise our search using a million GPUs, it would still take <code>~10^9</code> seconds - roughly 30 years.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.3.5. Dictionary Attack" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's go back to what we discussed at the very beginning of this chapter - it is impossible for a person to remember a unique password for hundreds of online services. <br />
+Either they rely on a password manager, or they are re-using one or more passwords across multiple accounts.
+</div>
+<div style="margin-top:.625em;">
+Furthermore, most passwords are far from being random, even when reused - common words, full names, dates, names of popular sport teams, etc. <br />
+An attacker could easily design a simple algorithm to generate thousands of plausible passwords - but they do not have to. They can look at a password dataset from one of the many security <a href="https://arstechnica.com/information-technology/2019/01/hacked-and-dumped-online-773-million-records-with-plaintext-passwords/">breaches</a> from the last decade to find the most common passwords in the wild.
+</div>
+<div style="margin-top:.625em;">
+In a couple of minutes they can pre-compute the SHA3-256 hash of the most commonly used 10 million passwords. Then they start scanning our database looking for a match.
+</div>
+<div style="margin-top:.625em;">
+This is known as <a href="https://en.wikipedia.org/wiki/Dictionary_attack">dictionary attack</a> - and it's extremely effective.
+</div>
+<div style="margin-top:.625em;">
+All the cryptographic hash functions we mentioned so far are designed to be <b>fast</b>. <br />
+Fast enough to enable anybody to pull off a dictionary attack without having to use specialised hardware.
+</div>
+<div style="margin-top:.625em;">
+We need something <b>much slower</b>, but with the same set of mathematical properties of cryptographic hash functions.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.3.6. Argon2" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+The <a href="https://owasp.org/">Open Web Application Security Project (OWASP)</a> provides useful guidance on <a href="https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html">safe password storage</a> - with a whole section on how to choose the correct hashing algorithm:
+</div>
+
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">Use Argon2id with a minimum configuration of 15 MiB of memory, an iteration count of 2, and 1 degree of parallelism.</li>
+  <li style="margin-top:.325em;">If Argon2id is not available, use bcrypt with a work factor of 10 or more and with a password limit of 72 bytes.</li>
+  <li style="margin-top:.325em;">For legacy systems using scrypt, use a minimum CPU/memory cost parameter of (2^16), a minimum block size of 8 (1024 bytes), and a parallelization parameter of 1.</li>
+  <li style="margin-top:.325em;">If FIPS-140 compliance is required, use PBKDF2 with a work factor of 310,000 or more and set with an internal hash function of HMAC-SHA-256.</li>
+  <li style="margin-top:.325em;">Consider using a pepper to provide additional defense in depth (though alone, it provides no additional secure characteristics).</li>
+</ul>
+
+<div style="margin-top:.625em;">
+All these options - Argon2, bcrypt, scrypt, PBKDF2 - are designed to be <b>computationally demanding</b>.
+They also expose configuration parameters (e.g. work factor for bcrypt) to further slow down hash computation: application developers can tune a few knobs to keep up with hardware speed-ups - no need to migrate to newer algorithms every couple of years.
+</div>
+<div style="margin-top:.625em;">
+Let's replace <code>SHA-3</code> with <code>Argon2id</code>, as recommended by OWASP. <br />
+The Rust Crypto organization got us covered once again - they provide a pure-Rust implementation, argon2.
+</div>
+<div style="margin-top:.625em;">
+Let's add it to our dependencies:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+#! Cargo.toml
+#! [...]
+
+[dependencies]
+# [...]
+argon2 = { version = "0.4", features = ["std"] }
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+To hash a password we need to create an <code>Argon2</code> struct instance. <br />
+The <code>new</code> method signature looks like this:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! argon2/lib.rs
+/// [...]
+ 
+impl<'key> Argon2<'key> {
+    /// Create a new Argon2 context.
+    pub fn new(algorithm: Algorithm, version: Version, params: Params) -> Self {
+        // [...]
+    }
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>Algorithm</code> is an enum: it lets us select which variant of Argon2 we want to use - Argon2d, Argon2i, Argon2id. To comply with OWASP's recommendation we will go for <code>Algorithm::Argon2id</code>.
+</div>
+<div style="margin-top:.625em;">
+<code>Version</code> fulfills a similar purpose - we will go for the most recent, <code>Version::V0x13</code>.
+</div>
+<div style="margin-top:.625em;">
+What about <code>Params</code>? <br />
+<code>Params::new</code> specifies all the mandatory parameters we need to provide to build one:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! argon2/params.rs
+// [...]
+
+/// Create new parameters.
+pub fn new(
+    m_cost: u32, 
+    t_cost: u32, 
+    p_cost: u32, 
+    output_len: Option<usize>
+) -> Result<Self> {
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
 
     <c:comment>
       <c:comment1>
