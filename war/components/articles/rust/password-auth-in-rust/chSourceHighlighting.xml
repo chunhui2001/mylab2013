@@ -1380,6 +1380,1284 @@ pub fn new(
 }
     ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>m_cost</code>, <code>t_cost</code> and <code>p_cost</code> map to OWASP's requirements:
+</div>
+
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;"><code>m_cost</code> is the memory size, expressed in kilobytes</li>
+  <li style="margin-top:.325em;"><code>t_cost</code> is the number of iterations;</li>
+  <li style="margin-top:.325em;"><code>p_cost</code> is the degree of parallelism.</li>
+</ul>
+
+<div style="margin-top:.625em;">
+<code>output_len</code>, instead, determines the length of the returned hash - if omitted, it will default to 32 bytes. That is equal to 256 bits, the same hash length we were getting via SHA3-256.
+</div>
+<div style="margin-top:.625em;">
+We know enough, at this point, to build one:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/newsletters.rs
+use argon2::{Algorithm, Argon2, Version, Params};
+// [...]
+
+async fn validate_credentials(
+    credentials: Credentials,
+    pool: &PgPool,
+) -> Result<uuid::Uuid, PublishError> {
+    let hasher = Argon2::new(
+        Algorithm::Argon2id,
+        Version::V0x13,
+        Params::new(15000, 2, 1, None)
+            .context("Failed to build Argon2 parameters")
+            .map_err(PublishError::UnexpectedError)?,
+    );
+    let password_hash = sha3::Sha3_256::digest(
+        credentials.password.expose_secret().as_bytes()
+    );
+   // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>Argon2</code> implements the <code>PasswordHasher</code> trait:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! password_hash/traits.rs
+
+pub trait PasswordHasher {
+    // [...]
+    fn hash_password<'a, S>(
+        &self, 
+        password: &[u8], 
+        salt: &'a S
+    ) -> Result<PasswordHash<'a>>
+    where
+        S: AsRef<str> + ?Sized;
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It is a re-export from the <a href="https://docs.rs/password-hash/0.3.0/password_hash/"><code>password-hash</code> crate</a>, a unified interface to work with password hashes backed by a variety of algorithm (currently Argon2, PBKDF2 and scrypt).
+</div>
+<div style="margin-top:.625em;">
+<code>PasswordHasher::hash_password</code> is a bit different from <code>Sha3_256::digest</code> - it is asking for an additional parameter on top of the raw password, a <code>salt</code>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.3.7. Salting" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Argon2 is a lot slower than SHA-3, but this is not enough to make a dictionary attack unfeasible. It takes longer to hash the most common 10 million passwords, but not prohibitively long.
+</div>
+<div style="margin-top:.625em;">
+What if, though, the attacker had to rehash the whole dictionary <b>for every user in our database</b>?
+It becomes a lot more challenging!
+</div>
+<div style="margin-top:.625em;">
+That is what <b>salting</b> accomplishes. For each user, we generate a <b>unique</b> random string - the salt.
+The salt is prepended to the user password before generating the hash. <code>PasswordHasher::hash_password</code> takes care of the prepending business for us.
+</div>
+<div style="margin-top:.625em;">
+The salt is stored next to the password hash, in our database.
+If an attacker gets their hands on a database backup, they will have access to all salts.
+But they have to compute <code>dictionary_size * n_users</code> hashes instead of <code>dictionary_size</code>. Furthermore, pre-computing the hashes is no longer an option - this buys us time to detect the breach and take action (e.g. force a password reset for all users).
+</div>
+<div style="margin-top:.625em;">
+Let's add a <code>password_salt</code> column to our <code>users</code> table:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+$ sqlx migrate add add_salt_to_users
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+-- migrations/20210815112111_add_salt_to_users.sql 
+ALTER TABLE users ADD COLUMN salt TEXT NOT NULL;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can no longer compute the hash before querying the <code>users</code> table - we need to retrieve the salt first.
+Let's shuffle operations around:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/newsletters.rs
+// [...]
+use argon2::PasswordHasher;
+
+async fn validate_credentials(
+    credentials: Credentials,
+    pool: &PgPool,
+) -> Result<uuid::Uuid, PublishError> {
+    let hasher = argon2::Argon2::new(/* */);
+    let row: Option<_> = sqlx::query!(
+        r#"
+        SELECT user_id, password_hash, salt
+        FROM users
+        WHERE username = $1
+        "#,
+        credentials.username,
+    )
+    .fetch_optional(pool)
+    .await
+    .context("Failed to perform a query to retrieve stored credentials.")
+    .map_err(PublishError::UnexpectedError)?;
+
+    let (expected_password_hash, user_id, salt) = match row {
+        Some(row) => (row.password_hash, row.user_id, row.salt),
+        None => {
+            return Err(PublishError::AuthError(anyhow::anyhow!(
+                "Unknown username."
+            )));
+        }
+    };
+
+    let password_hash = hasher
+        .hash_password(
+            credentials.password.expose_secret().as_bytes(),
+            &salt
+        )
+        .context("Failed to hash password")
+        .map_err(PublishError::UnexpectedError)?;
+    
+    let password_hash = format!("{:x}", password_hash.hash.unwrap());
+
+    if password_hash != expected_password_hash {
+        Err(PublishError::AuthError(anyhow::anyhow!(
+            "Invalid password."
+        )))
+    } else {
+        Ok(user_id)
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Unfortunately, this does not compile:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+error[E0277]: the trait bound 
+`argon2::password_hash::Output: LowerHex` is not satisfied
+   --> src/routes/newsletters.rs
+    |
+125 |     let password_hash = format!("{:x}", password_hash.hash.unwrap());
+    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+    the trait `LowerHex` is not implemented for `argon2::password_hash::Output`
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>Output</code> provides other methods to obtain a string representation - e.g. <code>Output::b64_encode</code>. It would work, as long as we are happy to change the assumed encoding for hashes stored in our database.
+</div>
+<div style="margin-top:.625em;">
+Given that a change is necessary, we can shoot for something better than base64-encoding.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.3.8. PHC String Format" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+To authenticate a user, we need <b>reproducibility</b>: we must run the very same hashing routine every single time. <br />
+Salt and password are just a subset of the inputs for Argon2id. All the other load parameters (<code>t_cost, m_cost, p_cost</code>) are equally important to obtain the same hash given the same pair of salt and password.
+</div>
+<div style="margin-top:.625em;">
+If we store a base64-encoded representation of the hash, we are making a strong implicit assumption: all values stored in the <code>password_hash</code> column have been computed using the same load parameters.
+</div>
+<div style="margin-top:.625em;">
+As we discussed a few sections ago, hardware capabilities evolve over time: application developers are expected to keep up by increasing the computational cost of hashing using higher load parameters. <br />
+What happens when you have to migrate your stored passwords to a newer hashing configuration?
+</div>
+<div style="margin-top:.625em;">
+To keep authenticating old users we <code>must</code> store, next to each hash, the exact set of load parameters used to compute it. <br />
+This allows for a seamless migration between two different load configurations: when an old user authenticates, we verify password validity using the stored load parameters; we then recompute the password hash using the new load parameters and update the stored information accordingly.
+</div>
+<div style="margin-top:.625em;">
+We could go for the naive approach - add three new columns to our <code>users</code> table: <code>t_cost</code>, <code>m_cost</code> and <code>p_cost</code>. <br />
+It would work, as long as the algorithm remains Argon2id.
+</div>
+<div style="margin-top:.625em;">
+What happens if a vulnerability is found in Argon2id and we are forced to migrate away from it? <br />
+We'd probably want to add an <code>algorithm</code> column, as well as new columns to store the load parameters of Argon2id's replacement.
+</div>
+<div style="margin-top:.625em;">
+It can be done, but it is tedious. <br />
+Luckily enough, there is a better solution: the <a href="https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md#specification">PHC string format</a>. The PHC string format provides a standard representation for a password hash: it includes the hash itself, the salt, the algorithm and all its associated parameters.
+</div>
+<div style="margin-top:.625em;">
+Using the PHC string format, an Argon2id password hash looks like this:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+# ${algorithm}${algorithm version}${$-separated algorithm parameters}${hash}${salt}
+$argon2id$v=19$m=65536,t=2,p=1$gZiV/M1gPc22ElAH/Jh1Hw$CWOrkoo7oJBQ/iyh7uJ0LO2aLEfrHwTWllSAxT0zRno
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The <code>argon2</code> crate exposes <code>PasswordHash</code>, a Rust implementation of the PHC format:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! argon2/lib.rs
+// [...]
+
+pub struct PasswordHash<'a> {
+    pub algorithm: Ident<'a>,
+    pub version: Option<Decimal>,
+    pub params: ParamsString,
+    pub salt: Option<Salt<'a>>,
+    pub hash: Option<Output>,
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Storing password hashes in PHC string format spares us from having to initialise the <code>Argon2</code> struct using explicit parameters.
+</div>
+<div style="margin-top:.625em;">
+We can rely on <code>Argon2</code>'s implementation of the <code>PasswordVerifier</code> trait:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+pub trait PasswordVerifier {
+    fn verify_password(
+        &self,
+        password: &[u8],
+        hash: &PasswordHash<'_>
+    ) -> Result<()>;
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+By passing the expected hash via <code>PasswordHash</code>, <code>Argon2</code> can automatically infer what load parameters and salt should be used to verify if the password candidate is a match8.
+</div>
+<div style="margin-top:.625em;">
+Let's update our implementation:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/newsletters.rs
+use argon2::{Argon2, PasswordHash, PasswordVerifier};
+// [...]
+
+
+async fn validate_credentials(
+    credentials: Credentials,
+    pool: &PgPool,
+) -> Result<uuid::Uuid, PublishError> {
+    let row: Option<_> = sqlx::query!(
+        r#"
+        SELECT user_id, password_hash
+        FROM users
+        WHERE username = $1
+        "#,
+        credentials.username,
+    )
+    .fetch_optional(pool)
+    .await
+    .context("Failed to perform a query to retrieve stored credentials.")
+    .map_err(PublishError::UnexpectedError)?;
+
+    let (expected_password_hash, user_id) = match row {
+        Some(row) => (row.password_hash, row.user_id),
+        None => {
+            return Err(PublishError::AuthError(anyhow::anyhow!(
+                "Unknown username."
+            )))
+        }
+    };
+
+    let expected_password_hash = PasswordHash::new(&expected_password_hash)
+        .context("Failed to parse hash in PHC string format.")
+        .map_err(PublishError::UnexpectedError)?;
+
+    Argon2::default()
+        .verify_password(
+             credentials.password.expose_secret().as_bytes(), 
+             &expected_password_hash
+        )
+        .context("Invalid password.")
+        .map_err(PublishError::AuthError)?;
+
+    Ok(user_id)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It compiles successfully.
+</div>
+<div style="margin-top:.625em;">
+You might have also noticed that we no longer deal with the salt directly - PHC string format takes care of it for us, implicitly.
+</div>
+<div style="margin-top:.625em;">
+We can get rid of the <code>salt</code> column entirely:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+$ sqlx migrate add remove_salt_from_users
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+-- migrations/20210815112222_remove_salt_from_users.sql 
+ALTER TABLE users DROP COLUMN salt;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+What about our tests? <br />
+Two of them are failing:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+---- newsletter::newsletters_are_not_delivered_to_unconfirmed_subscribers stdout ----
+'newsletter::newsletters_are_not_delivered_to_unconfirmed_subscribers' panicked at 
+'assertion failed: `(left == right)`
+  left: `500`,
+ right: `200`',
+
+---- newsletter::newsletters_are_delivered_to_confirmed_subscribers stdout ----
+'newsletter::newsletters_are_delivered_to_confirmed_subscribers' panicked at 
+'assertion failed: `(left == right)`
+  left: `500`,
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can look at logs to figure out what is wrong:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+TEST_LOG=true cargo t newsletters_are_not_delivered | bunyan
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+[2021-08-29T20:14:50.367Z] ERROR: [HTTP REQUEST - EVENT] 
+  Error encountered while processing the incoming HTTP request: 
+  Failed to parse hash in PHC string format.
+
+  Caused by:
+     password hash string invalid
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's look at the password generation code for our test user:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/helpers.rs
+// [...]
+
+impl TestUser {
+    // [...]
+    async fn store(&self, pool: &PgPool) {
+        let password_hash = sha3::Sha3_256::digest(
+            credentials.password.expose_secret().as_bytes()
+        );
+        let password_hash = format!("{:x}", password_hash);
+        // [...]
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We are still using SHA-3! <br />
+Let's update it:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/helpers.rs
+use argon2::password_hash::SaltString;
+use argon2::{Argon2, PasswordHasher};
+// [...]
+
+impl TestUser {
+    // [...]
+    async fn store(&self, pool: &PgPool) {
+        let salt = SaltString::generate(&mut rand::thread_rng());
+        // We don't care about the exact Argon2 parameters here
+        // given that it's for testing purposes!
+        let password_hash = Argon2::default()
+            .hash_password(self.password.as_bytes(), &salt)
+            .unwrap()
+            .to_string();
+        // [...]
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test suite should pass now. <br />
+We have removed all mentions of <code>sha3</code> from our project - we can now remove it from the list of dependencies in <code>Cargo.toml</code>.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.4. Do Not Block The Async Executor" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+How long is it taking to verify user credentials when running our integration tests? <br />
+We currently do not have a span around password hashing - let's fix it:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/newsletters.rs
+// [...]
+
+#[tracing::instrument(name = "Validate credentials", skip(credentials, pool))]
+async fn validate_credentials(
+    credentials: Credentials,
+    pool: &PgPool,
+) -> Result<uuid::Uuid, PublishError> {
+    let (user_id, expected_password_hash) = get_stored_credentials(
+            &credentials.username, 
+            &pool
+        )
+        .await
+        .map_err(PublishError::UnexpectedError)?
+        .ok_or_else(|| PublishError::AuthError(anyhow::anyhow!("Unknown username.")))?;
+
+    let expected_password_hash = PasswordHash::new(
+            &expected_password_hash.expose_secret()
+        )
+        .context("Failed to parse hash in PHC string format.")
+        .map_err(PublishError::UnexpectedError)?;
+
+    tracing::info_span!("Verify password hash")
+        .in_scope(|| {
+            Argon2::default()
+                .verify_password(
+                    credentials.password.expose_secret().as_bytes(), 
+                    expected_password_hash
+                )
+        })
+        .context("Invalid password.")
+        .map_err(PublishError::AuthError)?;
+
+    Ok(user_id)
+}
+
+// We extracted the db-querying logic in its own function with its own span.
+#[tracing::instrument(name = "Get stored credentials", skip(username, pool))]
+async fn get_stored_credentials(
+    username: &str,
+    pool: &PgPool,
+) -> Result<Option<(uuid::Uuid, Secret<String>)>, anyhow::Error> {
+    let row = sqlx::query!(
+        r#"
+        SELECT user_id, password_hash
+        FROM users
+        WHERE username = $1
+        "#,
+        username,
+    )
+    .fetch_optional(pool)
+    .await
+    .context("Failed to perform a query to retrieve stored credentials.")?
+    .map(|row| (row.user_id, Secret::new(row.password_hash)));
+    Ok(row)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now look at the logs from one of our integration tests:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+TEST_LOG=true cargo test --quiet --release \
+  newsletters_are_delivered | grep "VERIFY PASSWORD" | bunyan
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+[...]  [VERIFY PASSWORD HASH - END] (elapsed_milliseconds=11, ...)
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Roughly 10ms. <br />
+This is likely to cause issues under load - the infamous <b>blocking</b> problem.
+</div>
+<div style="margin-top:.625em;">
+<code>async/await</code> in Rust is built around a concept called <b>cooperative scheduling</b>.
+</div>
+<div style="margin-top:.625em;">
+How does it work? <br />
+Let's look at an example:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+async fn my_fn() {
+    a().await;
+    b().await;
+    c().await;
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>my_fn</code> returns a <a href="https://doc.rust-lang.org/std/future/trait.Future.html"><code>Future</code></a>. <br />
+When the future is awaited, our async runtime (<code>tokio</code>) enters into the picture: it starts <code><a href="https://doc.rust-lang.org/std/future/trait.Future.html#tymethod.poll">poll</a>ing it</code>.
+</div>
+<div style="margin-top:.625em;">
+How is <code>poll</code> implemented for the <code>Future</code> returned by <code>my_fn</code>? <br />
+You can think of it as a state machine:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+enum MyFnFuture {
+    Initialized,
+    CallingA,
+    CallingB,
+    CallingC,
+    Complete
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Every time <code>poll</code> is called, it tries to make progress by reaching the next state. E.g. if <code>a.await()</code> has returned, we start awaiting <code>b()</code>.
+</div>
+<div style="margin-top:.625em;">
+We have a different state in <code>MyFnFuture</code> for each <code>.await</code> in our async function body. <br />
+This is why <code>.await</code> calls are often named <code>yield points</code> - our future progresses from the previous <code>.await</code> to the next one and then <code>yields</code> control back to the executor.
+</div>
+<div style="margin-top:.625em;">
+The executor can then choose to poll the same future again or to prioritise making progress on another task. This is how async runtimes, like <code>tokio</code>, manage to make progress <code>concurrently</code> on multiple tasks - by continuously parking and resuming each of them.
+In a way, you can think of async runtimes as great jugglers.
+</div>
+<div style="margin-top:.625em;">
+The underlying assumption is that most async tasks are performing some kind of input-output (IO) work - most of their execution time will be spent waiting on something else to happen (e.g. the operating system notifying us that there is data ready to be read on a socket), therefore we can effectively perform many more tasks concurrently than we what we would achieve by dedicating a parallel unit of execution (e.g. one thread per OS core) to each task.
+</div>
+<div style="margin-top:.625em;">
+This model works great assuming tasks <code>cooperate</code> by frequently yielding control back to the executor. <br />
+In other words, <code>poll</code> is expected to be <code>fast</code> - it should return in less than 10-100 microseconds. If a call to <code>poll</code> takes longer (or, even worse, never returns), then the async executor cannot make progress on any other task - this is what people refer to when they say that "a task is blocking the executor/the async thread".
+</div>
+<div style="margin-top:.625em;">
+You should always be on the lookout for CPU-intensive workloads that are likely to take longer than 1ms - password hashing is a perfect example.
+</div>
+<div style="margin-top:.625em;">
+To play nicely with <code>tokio</code>, we must offload our CPU-intensive task to a separate threadpool using <a href="https://docs.rs/tokio/latest/tokio/task/fn.spawn_blocking.html"><code>tokio::task::spawn_blocking</code></a>. Those threads are reserved for blocking operations and do not interfere with the scheduling of async tasks.
+</div>
+<div style="margin-top:.625em;">
+Let's get to work!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/newsletters.rs
+// [...]
+
+#[tracing::instrument(name = "Validate credentials", skip(credentials, pool))]
+async fn validate_credentials(
+    credentials: Credentials,
+    pool: &PgPool,
+) -> Result<uuid::Uuid, PublishError> {
+    // [...]
+    tokio::task::spawn_blocking(move || {
+        tracing::info_span!("Verify password hash").in_scope(|| {
+            Argon2::default()
+                .verify_password(
+                    credentials.password.expose_secret().as_bytes(), 
+                    &expected_password_hash)
+        })
+    })
+    .await
+    // spawn_blocking is fallible - we have a nested Result here!
+    .context("Failed to spawn blocking task.")
+    .map_err(PublishError::UnexpectedError)?
+    .context("Invalid password.")
+    .map_err(PublishError::AuthError)?;
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The borrow checker is not happy:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+error[E0597]: `expected_password_hash` does not live long enough
+   --> src/routes/newsletters.rs
+    |
+117 |     PasswordHash::new(&expected_password_hash)
+    |     ------------------^^^^^^^^^^^^^^^^^^^^^^^-
+    |     |                 |
+    |     |                 borrowed value does not live long enough
+    |     argument requires that `expected_password_hash` is borrowed for `'static`
+...
+134 | }
+    | - `expected_password_hash` dropped here while still borrowed
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We are launching a computation on a separate thread - the thread itself might outlive the async task we are spawning it from. To avoid the issue, <code>spawn_blocking</code> requires its argument to have a <code>'static</code> lifetime - which is preventing us from passing references to the current function context into the closure.
+</div>
+<div style="margin-top:.625em;">
+You might argue - "We are using <code>move || {}</code>, the closure should be taking ownership of <code>expected_password_hash!</code>".
+You would be right! But that is not enough. <br />
+Let's look again at how <code>PasswordHash</code> is defined:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+pub struct PasswordHash<'a> {
+    pub algorithm: Ident<'a>,
+    pub salt: Option<Salt<'a>>,
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It holds a reference to the string it was parsed from. <br />
+We need to move ownership of the original string into our closure, moving the parsing logic into it as well.
+</div>
+<div style="margin-top:.625em;">
+Let's create a separate function, <code>verify_password_hash</code>, for clarity:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/newsletters.rs
+// [...]
+
+#[tracing::instrument(name = "Validate credentials", skip(credentials, pool))]
+async fn validate_credentials(
+    credentials: Credentials,
+    pool: &PgPool,
+) -> Result<uuid::Uuid, PublishError> {
+    // [...]
+    tokio::task::spawn_blocking(move || {
+        verify_password_hash(
+            expected_password_hash, 
+            credentials.password
+        )
+    })
+    .await
+    .context("Failed to spawn blocking task.")
+    .map_err(PublishError::UnexpectedError)??;
+
+    Ok(user_id)
+}
+
+#[tracing::instrument(
+    name = "Verify password hash", 
+    skip(expected_password_hash, password_candidate)
+)]
+fn verify_password_hash(
+    expected_password_hash: Secret<String>,
+    password_candidate: Secret<String>,
+) -> Result<(), PublishError> {
+    let expected_password_hash = PasswordHash::new(
+            expected_password_hash.expose_secret()
+        )
+        .context("Failed to parse hash in PHC string format.")
+        .map_err(PublishError::UnexpectedError)?;
+
+    Argon2::default()
+        .verify_password(
+            password_candidate.expose_secret().as_bytes(),
+            &expected_password_hash
+        )
+        .context("Invalid password.")
+        .map_err(PublishError::AuthError)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It compiles!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.4.1. Tracing Context Is Thread-Local" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's look again at the logs for the <code>verify password hash</code> span:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+TEST_LOG=true cargo test --quiet --release \
+  newsletters_are_delivered | grep "VERIFY PASSWORD" | bunyan
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+[2021-08-30T10:03:07.613Z]  [VERIFY PASSWORD HASH - START] 
+  (file="...", line="...", target="...")
+[2021-08-30T10:03:07.624Z]  [VERIFY PASSWORD HASH - END]
+  (file="...", line="...", target="...")
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We are missing all the properties that are inherited from the root span of the corresponding request - e.g. <code>request_id</code>, <code>http.method</code>, <code>http.route</code>, etc. Why?
+</div>
+<div style="margin-top:.625em;">
+Let's look at <code>tracing</code>'s documentation:
+</div>
+<div style="margin-top:.625em;">
+Spans form a tree structure — unless it is a root span, all spans have a parent, and may have one or more children. When a new span is created, the <code>current span</code> becomes the new span's parent.
+</div>
+<div style="margin-top:.625em;">
+The current span is the one returned by <code>tracing::Span::current()</code> - let's check its documentation:
+</div>
+<div style="margin-top:.625em;">
+Returns a handle to the span considered by the <code>Collector</code> to be the current span.
+</div>
+<div style="margin-top:.625em;">
+If the collector indicates that it does not track the current span, or that <b>the thread from which this function is called is not currently inside a span</b>, the returned span will be disabled.
+</div>
+<div style="margin-top:.625em;">
+"Current span" actually means "active span for the current thread".
+That is why we are not inheriting any property: we are spawning our computation on a separate thread and <code>tracing::info_span</code>! does not find any active <code>Span</code> associated with it when it executes.
+</div>
+<div style="margin-top:.625em;">
+We can work around the issue by explicitly attaching the current span to the newly spawn thread:
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/newsletters.rs
+// [...]
+
+#[tracing::instrument(name = "Validate credentials", skip(credentials, pool))]
+async fn validate_credentials(
+    credentials: Credentials,
+    pool: &PgPool,
+) -> Result<uuid::Uuid, PublishError> {
+    // [...]
+    // This executes before spawning the new thread
+    let current_span = tracing::Span::current();
+    tokio::task::spawn_blocking(move || {
+        // We then pass ownership to it into the closure
+        // and explicitly executes all our computation
+        // within its scope.
+        current_span.in_scope(|| {
+            verify_password_hash(/* */)
+        })
+    })
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+You can verify that it works - we are now getting all the properties we care about. <br />
+It is a bit verbose though - let's write a helper function:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/telemetry.rs
+use tokio::task::JoinHandle;
+// [...]
+
+// Just copied trait bounds and signature from `spawn_blocking`
+pub fn spawn_blocking_with_tracing<F, R>(f: F) -> JoinHandle<R>
+where
+    F: FnOnce() -> R + Send + 'static,
+    R: Send + 'static,
+{
+    let current_span = tracing::Span::current();
+    tokio::task::spawn_blocking(move || current_span.in_scope(f))
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/newsletters.rs
+use crate::telemetry::spawn_blocking_with_tracing;
+// [...]
+
+#[tracing::instrument(name = "Validate credentials", skip(credentials, pool))]
+async fn validate_credentials(
+    credentials: Credentials,
+    pool: &PgPool,
+) -> Result<uuid::Uuid, PublishError> {
+    // [...]
+    spawn_blocking_with_tracing(move || {
+        verify_password_hash(/* */)
+    })
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now easily reach for it every time we need to offload some CPU-intensive computation to a dedicated threadpool.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.5. User Enumeration" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's add a new test case:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/newsletter.rs
+use uuid::Uuid;
+// [...]
+
+#[tokio::test]
+async fn non_existing_user_is_rejected() {
+    // Arrange
+    let app = spawn_app().await;
+    // Random credentials
+    let username = Uuid::new_v4().to_string();
+    let password = Uuid::new_v4().to_string();
+
+    let response = reqwest::Client::new()
+        .post(&format!("{}/newsletters", &app.address))
+        .basic_auth(username, Some(password))
+        .json(&serde_json::json!({
+            "title": "Newsletter title",
+            "content": {
+                "text": "Newsletter body as plain text",
+                "html": "<p>Newsletter body as HTML</p>",
+            }
+        }))
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    // Assert
+    assert_eq!(401, response.status().as_u16());
+    assert_eq!(
+        r#"Basic realm="publish""#,
+        response.headers()["WWW-Authenticate"]
+    );
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.5. User Enumeration" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+The test should pass straight-away. <br />
+How long does it take though?
+</div>
+<div style="margin-top:.625em;">
+Let's look at the logs!
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+TEST_LOG=true cargo test --quiet --release \
+  non_existing_user_is_rejected | grep "HTTP REQUEST" | bunyan
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+# [...] Omitting setup requests
+[...] [HTTP REQUEST - END]
+  (http.route = "/newsletters", elapsed_milliseconds=1, ...)
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Roughly 1ms.
+</div>
+<div style="margin-top:.625em;">
+Let's add another test: this time we pass a valid username with an incorrect password.
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/newsletter.rs
+// [...]
+
+#[tokio::test]
+async fn invalid_password_is_rejected() {
+    // Arrange
+    let app = spawn_app().await;
+    let username = &app.test_user.username;
+    // Random password
+    let password = Uuid::new_v4().to_string();
+    assert_ne!(app.test_user.password, password);
+
+    let response = reqwest::Client::new()
+        .post(&format!("{}/newsletters", &app.address))
+        .basic_auth(username, Some(password))
+        .json(&serde_json::json!({
+            "title": "Newsletter title",
+            "content": {
+                "text": "Newsletter body as plain text",
+                "html": "<p>Newsletter body as HTML</p>",
+            }
+        }))
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    // Assert
+    assert_eq!(401, response.status().as_u16());
+    assert_eq!(
+        r#"Basic realm="publish""#,
+        response.headers()["WWW-Authenticate"]
+    );
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+This one should pass as well. How long does the request take to fail?
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+TEST_LOG=true cargo test --quiet --release \
+  invalid_password_is_rejected | grep "HTTP REQUEST" | bunyan
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+# [...] Omitting setup requests
+[...] [HTTP REQUEST - END]
+  (http.route = "/newsletters", elapsed_milliseconds=11, ...)
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Roughly 10ms - it is one order of magnitude smaller! <br />
+We can use this difference to our advantage to perform a <a href="https://en.wikipedia.org/wiki/Timing_attack">timing attack</a>, a member of the broader class of <a href="https://en.wikipedia.org/wiki/Side-channel_attack">side-channel attacks</a>.
+</div>
+<div style="margin-top:.625em;">
+If an attacker knows at least one valid username, they can inspect the server response times11 to confirm if another username exists or not - we are looking at a potential <a href="https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/03-Identity_Management_Testing/04-Testing_for_Account_Enumeration_and_Guessable_User_Account">user enumeration vulnerability</a>. <br />
+Is this an issue?
+</div>
+<div style="margin-top:.625em;">
+It depends. <br />
+If you are running Gmail, there are plenty of other ways to find out if a <code>@gmail.com</code> email address exists or not. The validity of an email address is not a secret!
+</div>
+<div style="margin-top:.625em;">
+If you are running a SaaS product, the situation might be more nuanced. <br />
+Let's go for a fictional scenario: your SaaS product provides payroll services and uses email addresses as usernames. There are separate employee and admin login pages.
+</div>
+<div style="margin-top:.625em;">
+My goal is to get access to payroll data - I need to compromise an employee with privileged access. We can scrape LinkedIn to get the name and surnames of all employees in the Finance department. Corporate emails follow a predictable structure (<a href="name.surname@payrollaces.com">name.surname@payrollaces.com</a>), so we have a list of candidates. <br />
+We can now perform a timing attack against the admin login page to narrow down the list to those who have access.
+</div>
+<div style="margin-top:.625em;">
+Even in our fictional example, user enumeration is not enough, on its own, to escalate our privileges. <br />
+But it can be used as a stepping stone to narrow down a set of targets for a more precise attack.
+</div>
+<div style="margin-top:.625em;">
+How do we prevent it? <br />
+Two strategies:
+</div>
+
+<ul style="margin-left:2.5em;list-style-type:decimal;margin-top: .325em;">
+  <li style="margin-top:.325em;">Remove the timing difference between an auth failure due to an invalid password and an auth failure due to a non-existent username;
+Limit the number of failed auth attempts for a given IP/username.</li>
+  <li style="margin-top:.325em;">The second is generally valuable as a protection against brute-force attacks, but it requires holding some state - we will leave it for later.</li>
+</ul>
+
+<div style="margin-top:.625em;">
+Let's focus on the first one. <br />
+To eliminate the timing difference, we need to perform the <b>same amount of work</b> in both cases.
+</div>
+<div style="margin-top:.625em;">
+Right now, we follow this recipe:
+</div>
+
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">Fetch stored credentials for given username;</li>
+  <li style="margin-top:.325em;">If they do not exist, return 401;</li>
+  <li style="margin-top:.325em;">If they exist, hash the password candidate and compare with the stored hash.</li>
+</ul>
+
+<div style="margin-top:.625em;">
+We need to remove that early exit - we should have a fallback expected password (with salt and load parameters) that can be compared to the hash of the password candidate.
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/routes/newsletters.rs
+// [...]
+
+#[tracing::instrument(name = "Validate credentials", skip(credentials, pool))]
+async fn validate_credentials(
+    credentials: Credentials,
+    pool: &PgPool,
+) -> Result<uuid::Uuid, PublishError> {
+    let mut user_id = None;
+    let mut expected_password_hash = Secret::new(
+        "$argon2id$v=19$m=15000,t=2,p=1$\
+        gZiV/M1gPc22ElAH/Jh1Hw$\
+        CWOrkoo7oJBQ/iyh7uJ0LO2aLEfrHwTWllSAxT0zRno"
+            .to_string()
+    );
+
+   if let Some((stored_user_id, stored_password_hash)) =
+        get_stored_credentials(&credentials.username, &pool)
+            .await
+            .map_err(PublishError::UnexpectedError)?
+    {
+        user_id = Some(stored_user_id);
+        expected_password_hash = stored_password_hash;
+    }
+
+    spawn_blocking_with_tracing(move || {
+        verify_password_hash(expected_password_hash, credentials.password)
+    })
+    .await
+    .context("Failed to spawn blocking task.")
+    .map_err(PublishError::UnexpectedError)??;
+
+    // This is only set to `Some` if we found credentials in the store
+    // So, even if the default password ends up matching (somehow)
+    // with the provided password, 
+    // we never authenticate a non-existing user.
+    // You can easily add a unit test for that precise scenario.
+    user_id.ok_or_else(|| 
+        PublishError::AuthError(anyhow::anyhow!("Unknown username."))
+    )
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/helpers.rs
+use argon2::{Algorithm, Argon2, Params, PasswordHasher, Version};
+// [...]
+
+impl TestUser {
+    async fn store(&self, pool: &PgPool) {
+        let salt = SaltString::generate(&mut rand::thread_rng());
+        // Match parameters of the default password
+        let password_hash = Argon2::new(
+            Algorithm::Argon2id,
+            Version::V0x13,
+            Params::new(15000, 2, 1, None).unwrap(),
+        )
+        .hash_password(self.password.as_bytes(), &salt)
+        .unwrap()
+        .to_string();
+        // [...]
+    }
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+There should not be any statistically significant timing difference now.
+]]>
+    </c:sourceContent>
 
     <c:comment>
       <c:comment1>
@@ -1387,6 +2665,218 @@ pub fn new(
       </c:comment1>
     </c:comment>
   </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">4. Is it safe?</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We went to great lengths to follow all most common best practices while building our password-based authentication flow.
+</div>
+<div style="margin-top:.625em;">
+Time to ask ourselves: is it safe?
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.1. Transport Layer Security (TLS)" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We are using the 'Basic' Authentication Scheme to pass credentials between the client and the server - username and password are encoded, but not encrypted.
+</div>
+<div style="margin-top:.625em;">
+We <b>must</b> use Transport Layer Security (TLS) to ensure that nobody can eavesdrop the traffic between client and server to compromise the user credentials (a <a href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack">man-in-the-middle attack</a> - MITM).
+</div>
+<div style="margin-top:.625em;">
+Our API is already served via HTTPS, so nothing to do here.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.2. Password Reset" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+What happens if an attacker manages to steal a set of valid user credentials? <br />
+Passwords do not expire - they are long-lived secrets.
+</div>
+<div style="margin-top:.625em;">
+Right now, there is no way for a user to reset their passwords. This is definitely a gap we'd need to fill.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.3. Interaction Types" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+So far we have been fairly vague about <b>who</b> is calling to our API.
+</div>
+<div style="margin-top:.625em;">
+The <b>type of interaction</b> we need to support is a key decision factor when it comes to authentication.
+</div>
+<div style="margin-top:.625em;">
+We will look at three categories of callers:
+</div>
+
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">Other APIs (machine-to-machine);</li>
+  <li style="margin-top:.325em;">A person, via a browser;</li>
+  <li style="margin-top:.325em;">Another API, on behalf of a person.</li>
+</ul>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.4. Machine To Machine" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+The consumer of your API might be a machine (e.g. another API).
+This is often the case in a microservice architecture - your functionality emerges from a variety of services interacting over the network.
+</div>
+<div style="margin-top:.625em;">
+To significantly raise our security profile we'd have to throw in something they have (e.g. request signing) or something they are (e.g. IP range restrictions). <br />
+A popular option, when all service are owned by the same organization, is <a href="https://buoyant.io/mtls-guide/">mutual TLS (mTLS)</a>.
+</div>
+<div style="margin-top:.625em;">
+Both signing and mTLS rely on of public key cryptography - keys must be provisioned, rotated, managed. The overhead is only justified once your system reaches a certain size.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.4.1. Client Credentials via OAuth2" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Another option is using the OAuth2 <a href="https://auth0.com/docs/flows/client-credentials-flow">client credentials flow</a>. We will speak more about OAuth2 later, but let's spend a few words on its tactical pros and cons.
+</div>
+<div style="margin-top:.625em;">
+APIs no longer have to manage passwords (client secrets, in OAuth2 terminology) - the concern is delegated to a centralised authorization server. There are multiple turn-key implementations of an authorization server out there - both OSS and commercial. You can lean on them instead of rolling your own.
+</div>
+<div style="margin-top:.625em;">
+The caller authenticates with the authorization server - if successful, the auth server grants them a set of temporary credentials (a JWT access token) which can be used to call our API.
+</div>
+<div style="margin-top:.625em;">
+Our API can verify the validity of the access token using public key cryptography, without having to keep any state. <b>Our API never sees the actual password</b>, the client secret.
+</div>
+<div style="margin-top:.625em;">
+JWT validation is not without its risks - the specification is riddled with dangerous edge cases. We will speak more about it later.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.5. Person Via Browser" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+What if we are dealing with a person, using a web browser?
+</div>
+<div style="margin-top:.625em;">
+'Basic' Authentication requires the client to present their credentials on <b>every single request</b>. <br />
+We now have a single protected endpoint, but you can easily picture a situation with five or ten pages providing privileged functionality. As it stands, 'Basic' Authentication would force the user to submit their credentials on <b>every single page</b>. Not great.
+</div>
+<div style="margin-top:.625em;">
+We need a way to remember that a user authenticated a few moments ago - i.e. to attach some kind of state to a sequence of requests coming from the same browser. This is accomplished using <b>sessions</b>.
+</div>
+<div style="margin-top:.625em;">
+A user is asked to authenticate once, via a login form: if successful, the server generates a one-time secret - an authenticated session token. The token is stored in the browser as a <a href="https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html#cookies">secure cookie</a>.
+</div>
+<div style="margin-top:.625em;">
+Sessions, unlike passwords, are designed to expire - this reduces the likelihood that a valid session token is compromised (especially if inactive users are automatically logged out). It also prevents the user from having to reset their password if there is a suspicion that their session has been hijacked - a forced log out is much more acceptable than an automated password reset.
+</div>
+<div style="margin-top:.625em;">
+This approach is often referred to as <b>session-based authentication</b>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.5.1. Federated Identity" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+With session-based authentication we still have an authentication step to take care of - the login form. <br />
+We can keep rolling our own - everything we learned about passwords is still relevant, even if we ditch the 'Basic' Authentication scheme.
+</div>
+<div style="margin-top:.625em;">
+Many websites choose to offer their users an additional option: login via a Social profile - e.g. "Log in with Google". This removes friction from the sign up flow (no need to create yet another password!), increasing conversion - a desirable outcome.
+</div>
+<div style="margin-top:.625em;">
+Social logins rely on <a href="https://en.wikipedia.org/wiki/Federated_identity">identity federation</a> - we <b>delegate</b> the authentication step to a third-party <b>identity provider</b>, which in turn shares with us the pieces of information we asked for (e.g. email address, full name and date of birth).
+</div>
+<div style="margin-top:.625em;">
+A common implementation of identity federation relies on <code>OpenID Connect</code>, an identity layer on top of the <code>OAuth2</code> standard.
+</div>    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.6. Machine to machine, on behalf of a person" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+There is one more scenario: a person authorising a machine (e.g. a third-party service) to perform actions against our API on their behalf. <br />
+E.g. a mobile app that provides an alternative UI for Twitter.
+</div>
+<div style="margin-top:.625em;">
+It is important to stress how this differs from the first scenario we reviewed, pure machine-to-machine authentication. <br />
+In this case, the third-party service is not authorised, <b>on its own</b>, to perform any action against our API. The third-party service can only perform actions against our API if a user grants them access, <b>scoped to their set of permissions</b>. <br />
+I can install a mobile app to write tweets on my behalf, but I can't authorise it to tweet on behalf of David Guetta.
+</div>
+<div style="margin-top:.625em;">
+'Basic' authentication would be a very poor fit here: we do not want to share our password with a third-party app. The more parties get to see our password, the more likely it is to be compromised.
+</div>
+<div style="margin-top:.625em;">
+Furthermore, keeping an audit trail with shared credentials is a nightmare. When something goes wrong, it is impossible to determine <b>who</b> did what: was it actually me? Was it one of the twenty apps I shared credentials with? Who takes responsibility?
+</div>
+<div style="margin-top:.625em;">
+This is the textbook scenario for OAuth 2 - the third-party never gets to see our username and password. They receive an opaque access token from the authentication server which our API knows how to inspect to grant (or deny) access.
+</div>
+]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">5. What Should We Do Next</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Browsers are our main target - it's decided. Our authentication strategy needs to evolve accordingly!
+</div>
+<div style="margin-top:.625em;">
+We will first convert our 'Basic' Authentication flow into a login form with session-based auth.
+We will build - from scratch - an admin dashboard. It will include a login form, a logout link and a form to change your password. It will give us an opportunity to discuss a few security challenges (i.e. XSS), introduce new concepts (e.g. cookies, HMAC tags) and try out new tooling (e.g. flash messages, <code>actix-session</code>).
+</div>
+<div style="margin-top:.625em;">
+That is going to be the roadmap for the next episode! See you soon!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
 
 
 </c:component>
