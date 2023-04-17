@@ -5805,8 +5805,207 @@ Error encountered while processing the incoming HTTP request:
 "Missing expected request extension data"
     ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It makes sense - we never registered our middleware against our <code>App</code> instance, therefore the insertion of <code>UserId</code> into the request extensions never takes place. <br />
+Let's fix it. <br />
+Our routing table currently looks like this:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+// [...]
+
+async fn run(/* */) -> Result<Server, anyhow::Error> {
+    // [...]
+    let server = HttpServer::new(move || {
+        App::new()
+            .wrap(message_framework.clone())
+            .wrap(SessionMiddleware::new(
+                redis_store.clone(),
+                secret_key.clone(),
+            ))
+            .wrap(TracingLogger::default())
+            .route("/", web::get().to(home))
+            .route("/login", web::get().to(login_form))
+            .route("/login", web::post().to(login))
+            .route("/health_check", web::get().to(health_check))
+            .route("/subscriptions", web::post().to(subscribe))
+            .route("/subscriptions/confirm", web::get().to(confirm))
+            .route("/admin/dashboard", web::get().to(admin_dashboard))
+            .route("/newsletters", web::post().to(publish_newsletter))
+            .route("/admin/password", web::get().to(change_password_form))
+            .route("/admin/password", web::post().to(change_password))
+            .route("/admin/logout", web::post().to(log_out))
+            .app_data(db_pool.clone())
+            .app_data(email_client.clone())
+            .app_data(base_url.clone())
+    })
+    .listen(listener)?
+    .run();
+    Ok(server)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We want to apply our middleware logic exclusively to <code>/admin/*</code> endpoints, but calling <code>wrap</code> on <code>App</code> would apply the middleware to all our routes. <br />
+Considering that our target endpoints all share the same common base path, we can achieve our objective by introducing a <code>scope</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+// [...]
+
+async fn run(/* */) -> Result<Server, anyhow::Error> {
+    // [...]
+    let server = HttpServer::new(move || {
+        App::new()
+            .wrap(message_framework.clone())
+            .wrap(SessionMiddleware::new(
+                redis_store.clone(),
+                secret_key.clone(),
+            ))
+            .wrap(TracingLogger::default())
+            .route("/", web::get().to(home))
+            .route("/login", web::get().to(login_form))
+            .route("/login", web::post().to(login))
+            .route("/health_check", web::get().to(health_check))
+            .route("/newsletters", web::post().to(publish_newsletter))
+            .route("/subscriptions", web::post().to(subscribe))
+            .route("/subscriptions/confirm", web::get().to(confirm))
+            .service(
+                web::scope("/admin")
+                    .route("/dashboard", web::get().to(admin_dashboard))
+                    .route("/password", web::get().to(change_password_form))
+                    .route("/password", web::post().to(change_password))
+                    .route("/logout", web::post().to(log_out)),
+            )
+            .app_data(db_pool.clone())
+            .app_data(email_client.clone())
+            .app_data(base_url.clone())
+    })
+    .listen(listener)?
+    .run();
+    Ok(server)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now add a middleware restricted to <code>/admin/*</code> by calling wrap on <code>web::scope("admin")</code> instead of the top-level App:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+use crate::authentication::reject_anonymous_users;
+use actix_web_lab::middleware::from_fn;
+// [...]
+
+async fn run(/* */) -> Result<Server, anyhow::Error> {
+    // [...]
+    let server = HttpServer::new(move || {
+        App::new()
+            .wrap(message_framework.clone())
+            .wrap(SessionMiddleware::new(
+                redis_store.clone(),
+                secret_key.clone(),
+            ))
+            .wrap(TracingLogger::default())
+            // [...]
+            .service(
+                web::scope("/admin")
+                    .wrap(from_fn(reject_anonymous_users))
+                    .route("/dashboard", web::get().to(admin_dashboard))
+                    .route("/password", web::get().to(change_password_form))
+                    .route("/password", web::post().to(change_password))
+                    .route("/logout", web::post().to(log_out)),
+            )
+            // [...]
+    })
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+If you run the test suite, it should pass (apart from our idempotency test). <br />
+You can now go through the other <code>/admin/*</code> endpoints and remove the duplicated check-if-logged-in-or-redirect code.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 
 
+
+  <c:entry style="margin-top:0em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">6. Summary</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Take a deep breath - we covered a lot of ground in this chapter. <br />
+We built, from scratch, a large chunk of the machinery that powers authentication in most of the software you interact with on a daily basis.
+</div>
+<div style="margin-top:.625em;">
+API security is an amazingly broad topic - we explored together a selection of key techniques, but this introduction is in no way exhaustive. There are entire areas that we just mentioned but did not have a chance to cover in depth (e.g. OAuth2/OpenID Connect). Look at the bright side - you now learned enough to go and tackle those topics on your own should your applications require them.
+</div>
+<div style="margin-top:.625em;">
+It is easy to forget the bigger picture when you spend a lot of time working close to the details - why did we even start to talk about API security?
+That's right! We had just built a new endpoint to send out newsletter issues and we did not want to give everyone on the Internet a chance to broadcast content to our audience. We added 'Basic' authentication to <code>POST /newsletters</code> early in the chapter but we have not yet ported it over to session-based authentication.
+</div>
+<div style="margin-top:.625em;">
+As an exercise, before engaging with the new chapter, do the following:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+    <li style="margin-top:.325em;">Add a <code>Send a newsletter issue</code> link to the admin dashboard;</li>
+    <li style="margin-top:.325em;">Add an HTML form at <code>GET /admin/newsletters</code> to submit a new issue;</li>
+    <li style="margin-top:.325em;">
+        <div>Adapt <code>POST /newsletters</code> to process the form data:</div>
+        <ul style="margin-left:2.5em;list-style-type:decimal;margin-top: .325em;">
+            <li style="margin-top:.325em;">Change the route to <code>POST /admin/newsletters</code>;</li>
+            <li style="margin-top:.325em;">Migrate from 'Basic' to session-based authentication;</li>
+            <li style="margin-top:.325em;">Use the <code>Form</code> extractor (<code>application/x-www-form-urlencoded</code>) instead of the Json extractor (<code>application/json</code>) to handle the request body;</li>
+            <li style="margin-top:.325em;">Adapt the test suite.</li>
+        </ul>
+    </li>
+</ul>
+<div style="margin-top:.625em;">
+It will take a bit of work but - and that's the key here - you know how to do all these things. We have done them together before - feel free to go back to the relevant sections as you progress through the exercise.
+</div>
+<div style="margin-top:.625em;">
+On GitHub you can find a project snapshot <a href="https://github.com/LukeMathWalker/zero-to-production/tree/root-chapter-10-part2">before</a> and <a href="https://github.com/LukeMathWalker/zero-to-production/tree/root-chapter-10-part3">after</a> fulfilling the exercise requirements. The next chapter assumes that the exercise has been completed - make sure to double-check your solution before moving forward!
+</div>
+<div style="margin-top:.625em;">
+<code>POST /admin/newsletters</code> will be under the spotlight during the next chapter - we will be reviewing our initial implementation under a microscope to understand how it behaves when things break down. It will give us a chance to talk more broadly about fault tolerance, scalability and asynchronous processing.
+</div>
+    ]]>
+    </c:sourceContent>
 
     <c:comment>
       <c:comment1>

@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<div style="font-size:1.1em;line-height:1.625;">
+This article is a sample from <a href="https://zero2prod.com/">Zero To Production In Rust</a>, a book on backend development in Rust.
+You can get a copy of the book on <a href="https://zero2prod.com/">zero2prod.com</a>.
+<a href="https://www.lpalmieri.com/subscribe">Subscribe to the newsletter</a> to be notified when a new episode is published.
+</div>
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">1. Our Driving Example</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+The Foreword stated that
+</div>
+<div style="margin-top:.625em;">
+Zero To Production will focus on the challenges of writing cloud-native applications in a team of four or five engineers with different levels of experience and proficiency.
+</div>
+<div style="margin-top:.625em;">
+How? Well, by actually building one!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="1.1. Problem-based learning" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Choose a problem you want to solve.
+Let the problem drive the introduction of new concepts and techniques.
+</div>
+<div style="margin-top:.625em;">
+It flips the hierarchy you are used to: the material you are studying is not relevant because somebody claims it is, it is relevant because it is <b>useful</b> to get closer to a solution.
+You learn new techniques <b>and</b> when it makes sense to reach for them.
+</div>
+<div style="margin-top:.625em;">
+The devil is in the details: a problem-based learning path can be delightful, yet it is painfully easy to misjudge how challenging each step of the journey is going to be.
+Our driving example needs to be:
+</div>
+
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">small enough for us to tackle in a book without cutting corners;</li>
+  <li style="margin-top:.325em;">complex enough to surface most of the key themes that come up in bigger systems;</li>
+  <li style="margin-top:.325em;">interesting enough to keep readers engaged as they progress.</li>
+</ul>
+<div style="margin-top:.625em;">
+We will go for an <b>email newsletter</b> - the next section will detail the functionality we plan to cover.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="1.2. Course-correcting" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Problem-based learning works best in an interactive environment: the teacher acts as a facilitator, providing more or less support based on the behavioural cues and reactions of the participants.
+</div>
+<div style="margin-top:.625em;">
+A book, published on a website, does not give me the same chance.
+</div>
+<div style="margin-top:.625em;">
+I truly appreciate feedback on the material - please reach out to contact@lpalmieri.com or send me a DM on <a href="https://twitter.com/algo_luca">Twitter</a>.
+Providing feedback is, at this stage, a tangible way to contribute to Zero To Production.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">2. What Should Our Newsletter Do?</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+There are dozens of companies providing services that include or are centered around the idea of managing a list of email addresses.
+</div>
+<div style="margin-top:.625em;">
+While they all share a set of core functionalities (i.e. sending emails), their services are tailored to specific use-cases: UI, marketing spin and pricing will differ significantly between a product targeted at big companies managing hundreds of thousands of addresses with strict security and compliance requirements compared to a SaaS offering geared to indie content creators running their own blogs or small online stores.
+</div>
+<div style="margin-top:.625em;">
+Now, we have no ambition to build the next MailChimp or ConvertKit - the scope would definitely be too broad for us to cover over the course of a book. Furthermore, several features would require applying the same concepts and techniques over and over again - it gets tedious to read after a while.
+</div>
+<div style="margin-top:.625em;">
+We will try to build an email newsletter service that supports what you need to get off the ground if you are willing to add an email subscription page to your blog - nothing more, nothing less.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.1. Capturing requirements" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+The product brief above leaves some room for interpretation - to better scope what our service should support we will leverage user stories. <br />
+The format is fairly simple:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">As a ...,</li>
+  <li style="margin-top:.325em;">I want to ...,</li>
+  <li style="margin-top:.325em;">So that ...</li>
+</ul>
+<div style="margin-top:.625em;">
+A user story helps us to capture who we are building for (as a), the actions they want to perform (want to) as well as their motives (so that).
+</div>
+<div style="margin-top:.625em;">
+We will fulfill three user stories:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">As a blog visitor, I want to subscribe to the newsletter, so that I can receive email updates when new content is published on the blog;</li>
+  <li style="margin-top:.325em;">As the blog author, I want to send an email to all my subscribers, so that I can notify them when new content is published;</li>
+  <li style="margin-top:.325em;">As a subscriber, I want to be able to unsubscribe from the newsletter, so that I can stop receiving email updates from the blog.</li>
+</ul>
+<div style="margin-top:.625em;">
+We will not add features to
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">manage multiple newsletters;</li>
+  <li style="margin-top:.325em;">segment subscribers in multiple audiences;</li>
+  <li style="margin-top:.325em;">track opening and click rates.</li>
+</ul>
+<div style="margin-top:.625em;">
+As said, pretty barebone - nonetheless, enough to satisfy the requirements of most blog authors. It would certainly satisfy mine for Zero To Production itself.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">3. Working In Iterations</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's zoom on one of those user stories:
+</div>
+<div style="margin-top:.625em;">
+As the blog author, <br />
+I want to send an email to all my subscribers, <br />
+So that I can notify them when new content is published.
+</div>
+<div style="margin-top:.625em;">
+What does this mean in practice? What do we need to build?
+As soon as you start looking closer at the problem tons of questions pop up - e.g. how do we ensure that the caller is indeed the blog author? Do we need to introduce an authentication mechanism? Do we support HTML in emails or do we stick to plain text? What about emojis 😱?
+</div>
+<div style="margin-top:.625em;">
+We could easily spend months implementing an extremely polished email delivery system without having even a basic subscribe/unsubscribe functionality in place.
+</div>
+<div style="margin-top:.625em;">
+We might become the best at sending emails, but nobody is going to use our email newsletter service - it does not cover the full journey.
+</div>
+<div style="margin-top:.625em;">
+Instead of going deep on one story, we will try to build enough functionality to satisfy, to an extent, the requirements of all of our stories in our first release. <br />
+We will then go back and improve: add fault-tolerance and retries for email delivery, add a confirmation email for new subscribers, etc.
+</div>
+<div style="margin-top:.625em;">
+<code>We will work in iterations</code>: each iteration takes a fixed amount of time and gives us a slightly better version of the product, improving the experience of our users.
+</div>
+<div style="margin-top:.625em;">
+Worth stressing that we are iterating on product features, not engineering quality: the code produced in each iteration will be tested and properly documented even if it only delivers a tiny, fully functional feature. <br />
+Our code is going to production at the end of each iteration - it needs to be production-quality.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.1. Coming up" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Strategy is clear, we can finally get started: the next chapter will focus on the subscription functionality.
+Getting off the ground will require some initial heavy-lifting: choosing a web framework, setting up the infrastructure for managing database migrations, putting together our application scaffolding as well as our setup for integration testing.
+</div>
+<div style="margin-top:.625em;">
+Expect to spend way more time pair programming with the compiler going forward!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+
+
+
+</c:component>

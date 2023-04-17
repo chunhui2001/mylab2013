@@ -1,0 +1,858 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<div style="font-size:1.1em;line-height:1.625;">
+This article is a sample from <a href="https://zero2prod.com/">Zero To Production In Rust</a>, a book on backend development in Rust.
+You can get a copy of the book on <a href="https://zero2prod.com/">zero2prod.com</a>.
+<a href="https://www.lpalmieri.com/subscribe">Subscribe to the newsletter</a> to be notified when a new episode is published.
+</div>
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">1. Sign Up A New Subscriber</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We spent the whole <a href="https://www.lpalmieri.com/posts/2020-06-21-zero-to-production-2-learn-by-building-an-email-newsletter/">Chapter 2</a> defining what we will be building (an email newsletter!), narrowing down a precise set of requirements. It is now time to roll up our sleeves and get started with it.
+</div>
+<div style="margin-top:.625em;">
+This chapter will take a first stab at implementing this user story:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">As a blog visitor,</li>
+  <li style="margin-top:.325em;">I want to subscribe to the newsletter,</li>
+  <li style="margin-top:.325em;">So that I can receive email updates when new content is published on the blog.</li>
+</ul>
+<div style="margin-top:.625em;">
+We expect our blog visitors to input their email address in a form embedded on a web page.
+The form will trigger an API call to a backend server that will actually process the information, store it and send back a response.
+</div>
+<div style="margin-top:.625em;">
+This chapter will focus on that backend server - we will implement the <code>/subscribe</code> POST endpoint.
+</div>
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="1.1. Our Strategy" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We are starting a new project from scratch - there is a fair amount of upfront heavy-lifting we need to take care of:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">choose a web framework and get familiar with it;</li>
+  <li style="margin-top:.325em;">define our testing strategy;</li>
+  <li style="margin-top:.325em;">choose a crate to interact with our database (we will have to save those emails somewhere!);</li>
+  <li style="margin-top:.325em;">define how we want to manage changes to our database schemas over time (a.k.a. migrations);</li>
+  <li style="margin-top:.325em;">actually write some queries.</li>
+</ul>
+<div style="margin-top:.625em;">
+That is a lot and jumping in head-first might be overwhelming.
+We will add a stepping stone to make the journey more approachable: before tackling <code>/subscribe</code> we will implement a <code>/health_check</code> endpoint. No business logic, but a good opportunity to become friends with our web framework and get an understanding of all its different moving parts.
+</div>
+<div style="margin-top:.625em;">
+We will be relying on our Continuous Integration pipeline to keep us in check throughout the process - if you have not set it up yet, have a quick look at Chapter 1 (or grab one of the <a href="https://www.lpalmieri.com/posts/2020-06-06-zero-to-production-1-setup-toolchain-ides-ci/#5-2-ready-to-go-ci-pipelines">ready-made templates</a>).
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">2. Choosing A Web Framework</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+What web framework should we use to write our Rust API? <br />
+This was supposed to be a section on the pros and cons of the Rust web frameworks currently available. It eventually grew to be so long that it did not make sense to embed it here and I published it as a spin-off article: check out <a href="https://www.lpalmieri.com/posts/2020-07-04-choosing-a-rust-web-framework-2020-edition/">Choosing a Rust web framework, 2020 edition</a> for a deep-dive on <code>actix-web</code>, <code>rocket</code>, <code>tide</code> and <code>warp</code>.
+</div>
+<div style="margin-top:.625em;">
+TL;DR: as of March 2022, <code>actix-web</code> should be your go-to web framework when it comes to Rust APIs aimed for production usage - it has seen extensive usage in the past couple of years, it has a large and healthy community behind it and it runs on <code>tokio</code>, therefore minimising the likelihood of having to deal with incompatibilities/interop between different async runtimes. <br />
+It will thus be our choice for Zero To Production.
+</div>
+<div style="margin-top:.625em;">
+Nonetheless <code>tide</code>, <code>rocket</code> and <code>warp</code> have huge potential and we might end up making a different decision later in 2022 - if you are following along Zero To Production using a different framework I'd be delighted to have a look at your code! Please shoot me an email at contact@lpalmieri.com
+</div>
+<div style="margin-top:.625em;">
+Throughout this chapter and beyond I suggest you to keep a couple of extra browser tabs open: <a href="https://actix.rs/">actix-web's website</a>, <a href="https://docs.rs/actix-web/4.0.1/actix_web/index.html">actix-web's documentation</a> and <a href="https://github.com/actix/examples">actix-web's examples collection</a>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">3. Our First Endpoint: A Basic Health Check</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's try to get off the ground by implementing a health-check endpoint: when we receive a GET request for <code>/health_check</code> we want to return a <code>200 OK</code> response with no body.
+</div>
+<div style="margin-top:.625em;">
+We can use <code>/health_check</code> to verify that the application is up and ready to accept incoming requests. Combine it with a SaaS service like <a href="https://www.pingdom.com/">pingdom.com</a> and you can be <a href="https://www.pingdom.com/product/alerting/#">alerted</a> when your API goes dark - quite a good baseline for an email newsletter that you are running on the side.
+</div>
+<div style="margin-top:.625em;">
+A health-check endpoint can also be handy if you are using a container orchestrator to juggle your application (e.g. <a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-a-liveness-command">Kubernetes</a> or <a href="https://www.nomadproject.io/docs/job-specification/service#service-parameters">Nomad</a>): the orchestrator can call <code>/health_check</code> to detect if the API has become unresponsive and trigger a restart.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.1. Wiring Up actix-web" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Our starting point will be an Hello World! application built with <code>actix-web</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+use actix_web::{web, App, HttpRequest, HttpServer, Responder};
+
+async fn greet(req: HttpRequest) -> impl Responder {
+    let name = req.match_info().get("name").unwrap_or("World");
+    format!("Hello {}!", &name)
+}
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    HttpServer::new(|| {
+        App::new()
+            .route("/", web::get().to(greet))
+            .route("/{name}", web::get().to(greet))
+    })
+    .bind("127.0.0.1:8000")?
+    .run()
+    .await
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's paste it in our main.rs file. <br />
+A quick cargo check:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0432]: unresolved import `actix_web`
+ --> src/main.rs:1:5
+  |
+1 | use actix_web::{web, App, HttpRequest, HttpServer, Responder};
+  |     ^^^^^^^^^ use of undeclared type or module `actix_web`
+
+error[E0433]: failed to resolve: 
+    use of undeclared type or module `tokio`
+ --> src/main.rs:8:3
+  |
+8 | #[tokio::main]
+  |   ^^^^^^^^ use of undeclared type or module `tokio`
+
+error: aborting due to 2 previous errors
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We have not added <code>actix-web</code> and <code>tokio</code> to our list of dependencies, therefore the compiler cannot resolve what we imported. <br />
+We can either fix the situation manually, by adding
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+
+[dependencies]
+actix-web = "4"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+under <code>[dependencies]</code> in our <code>Cargo.toml</code> or we can use <code>cargo add</code> to quickly add the latest version of both crates as a dependency of our project:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ cargo add actix-web@4
+$ cargo add tokio@1 --features macros,rt-multi-thread
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>cargo add</code> is not a default <code>cargo</code> command: it is provided by <code>cargo-edit</code>, a community-maintained <code>cargo</code> extension. You can install it with:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ cargo install cargo-edit
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+If you run <code>cargo check</code> again there should be no errors. <br />
+You can now launch the application with <code>cargo run</code> and perform a quick manual test:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ curl http://127.0.0.1:8000
+> Hello World!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Cool, it's alive! <br />
+You can gracefully shut down the web server with Ctrl+C if you want to.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.2. Anatomy of an actix-web application" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's go back now to have a closer look at what we have just copy-pasted in our <code>main.rs</code> file.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+// [...]
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    HttpServer::new(|| {
+        App::new()
+            .route("/", web::get().to(greet))
+            .route("/{name}", web::get().to(greet))
+    })
+    .bind("127.0.0.1:8000")?
+    .run()
+    .await
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.2.1. Server - HttpServer" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+HttpServer is the backbone supporting our application. It takes care of things like:
+</div>
+
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">where should the application be listening for incoming requests? A TCP socket (e.g. <code>http://127.0.0.1:8000</code>)? A Unix domain socket?</li>
+  <li style="margin-top:.325em;">what is the maximum number of concurrent connections that we should allow? How many new connections per unit of time?</li>
+  <li style="margin-top:.325em;">should we enable transport level security (TLS)?</li>
+  <li style="margin-top:.325em;">etc.</li>
+</ul>
+
+<div style="margin-top:.625em;">
+<code>HttpServer</code>, in other words, handles all transport level concerns. <br />
+What happens afterwards? What does <code>HttpServer</code> do when it has established a new connection with a client of our API and we need to start handling their requests? <br />
+That is where <code>App</code> comes into play!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.2.2. Application - App" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<a href="https://docs.rs/actix-web/4.0.1/actix_web/struct.App.html"><code>App</code></a> is where all your application logic lives: routing, middlewares, request handlers, etc. <br />
+<code>App</code> is the component whose job is to take an incoming request as input and spit out a response. <br />
+Let's zoom in on our code snippet:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+App::new()
+    .route("/", web::get().to(greet))
+    .route("/{name}", web::get().to(greet))
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>App</code> is a practical example of the builder pattern: <code>new()</code> gives us a clean slate to which we can add, one bit at a time, new behaviour using a fluent API (i.e. chaining method calls one after the other). 
+</div>
+<div style="margin-top:.625em;">
+We will cover the majority of <code>App</code>'s API surface on a need-to-know basis over the course of the whole book: by the end of our journey you should have touched most of its methods at least once.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.2.3. Endpoint - Route" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+How do we add a new endpoint to our <code>App</code>?
+The <a href="https://docs.rs/actix-web/4.0.1/actix_web/struct.App.html#method.route"><code>route</code></a> method is probably the simplest way to go about doing it - it is used in a Hello World! example after all!
+</div>
+<div style="margin-top:.625em;">
+<code>route</code> takes two parameters:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;"><code>path</code>, a string, possibly templated (e.g. "<code>/{name}</code>") to accommodate dynamic path segments;</li>
+  <li style="margin-top:.325em;"><code>route</code>, an instance of the <code>Route</code> struct.</li>
+</ul>
+<div style="margin-top:.625em;">
+<a href="https://docs.rs/actix-web/4.0.1/actix_web/struct.Route.html"><code>Route</code></a> combines a handler with a set of guards. <br />
+Guards specify conditions that a request must satisfy in order to "match" and be passed over to the handler. From an implementation standpoint guards are implementors of the <a href="https://docs.rs/actix-web/4.0.1/actix_web/guard/trait.Guard.html">Guard</a> trait: <code>Guard::check</code> is where the magic happens.
+</div>
+<div style="margin-top:.625em;">
+In our snippet we have
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+.route("/", web::get().to(greet))
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>"/"</code> will match all requests without any segment following the base path - i.e. <code>http://localhost:8000/</code>. <br />
+<code>web::get()</code> is a short-cut for <code>Route::new().guard(guard::Get())</code> a.k.a. the request should be passed to the handler if and only if its HTTP method is <code>GET</code>.
+</div>
+<div style="margin-top:.625em;">
+You can start to picture what happens when a new request comes in: <code>App</code> iterates over all registered endpoints until it finds a matching one (both path template and guards are satisfied) and passes over the request object to the handler.
+This is not 100% accurate but it is a good enough mental model for the time being.
+</div>
+<div style="margin-top:.625em;">
+What does a handler look like instead? What is its function signature? <br />
+We only have one example at the moment, <code>greet</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+async fn greet(req: HttpRequest) -> impl Responder {
+    [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>greet</code> is an asynchronous function that takes a <code>HttpRequest</code> as input and returns something that implements the <code>Responder</code> trait. A type implements the <code>Responder</code> trait if it can be converted into a <code>HttpResponse</code> - it is implemented off the shelf for a variety of common types (e.g. strings, status codes, bytes, <code>HttpResponse</code>, etc.) and we can roll our own implementations if needed.
+</div>
+<div style="margin-top:.625em;">
+Do all our handlers need to have the same function signature of <code>greet</code>? <br />
+No! <code>actix-web</code>, channelling some forbidden trait black magic, allows a wide range of different function signatures for handlers, especially when it comes to input arguments. We will get back to it soon enough.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.2.4. Runtime - tokio" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We drilled down from the whole <code>HttpServer</code> to a <code>Route</code>. Let's look again at the whole main function:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+// [...]
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    HttpServer::new(|| {
+        App::new()
+            .route("/", web::get().to(greet))
+            .route("/{name}", web::get().to(greet))
+    })
+    .bind("127.0.0.1:8000")?
+    .run()
+    .await
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+What is <code>#[tokio::main]</code> doing here? Well, let's remove it and see what happens! <code>cargo check</code> screams at us with these errors:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0277]: `main` has invalid return type `impl std::future::Future`
+ --> src/main.rs:8:20
+  |
+8 | async fn main() -> std::io::Result<()> {
+  |                    ^^^^^^^^^^^^^^^^^^^ 
+  | `main` can only return types that implement `std::process::Termination`
+  |
+  = help: consider using `()`, or a `Result`
+
+error[E0752]: `main` function is not allowed to be `async`
+ --> src/main.rs:8:1
+  |
+8 | async fn main() -> std::io::Result<()> {
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  | `main` function is not allowed to be `async`
+
+error: aborting due to 2 previous errors
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We need <code>main</code> to be asynchronous because <code>HttpServer::run</code> is an asynchronous method but <code>main</code>, the entrypoint of our binary, <b>cannot</b> be an asynchronous function. Why is that?
+</div>
+<div style="margin-top:.625em;">
+Asynchronous programming in Rust is built on top of the <a href="https://doc.rust-lang.org/beta/std/future/trait.Future.html"><code>Future</code></a> trait: a future stands for a value that may not be there yet. All futures expose a <a href="https://doc.rust-lang.org/beta/std/future/trait.Future.html#the-poll-method">poll</a> method which has to be called to allow the future to make progress and eventually resolve to its final value. You can think of Rust’s futures as lazy: unless polled, there is no guarantee that they will execute to completion. This has often been described as a pull model compared to the push model adopted by other languages.
+</div>
+<div style="margin-top:.625em;">
+Rust's standard library, by design, does not include an asynchronous runtime: you are supposed to bring one into your project as a dependency, one more crate under <code>[dependencies]</code> in your <code>Cargo.toml</code>. This approach is extremely versatile: you are free to implement your own runtime, optimised to cater for the specific requirements of your usecase (see the <a href="http://smallcultfollowing.com/babysteps/blog/2019/12/09/async-interview-2-cramertj/#async-interview-2-cramertj">Fuchsia project</a> or <a href="https://github.com/bastion-rs/bastion">bastion</a>’s actor framework).
+</div>
+<div style="margin-top:.625em;">
+This explains why <code>main</code> cannot be an asynchronous function: who is in charge to call <code>poll</code> on it? <br />
+There is no special configuration syntax that tells the Rust compiler that one of your dependencies is an asynchronous runtime (e.g. as we do for <a href="https://doc.rust-lang.org/1.9.0/book/custom-allocators.html">allocators</a>) and, to be fair, there is not even a standardised definition of what a runtime is (e.g. an <code>Executor</code> trait).
+</div>
+<div style="margin-top:.625em;">
+You are therefore expected to launch your asynchronous runtime at the top of your <code>main</code> function and then use it to drive your futures to completion.
+You might have guessed by now what is the purpose of <code>#[tokio::main]</code>, but guesses are not enough to satisfy us: we want to see it.
+</div>
+<div style="margin-top:.625em;">
+How? <br />
+<code>tokio::main</code> is a procedural macro and this is a great opportunity to introduce <code>cargo expand</code>, an awesome addition to our Swiss army knife for Rust development:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ cargo install cargo-expand
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Rust macros operate at the token level: they take in a stream of symbols (e.g. in our case, the whole main function) and output a stream of new symbols which then gets passed to the compiler. In other words, the main purpose of Rust macros is <b>code generation</b>. <br />
+How do we debug or inspect what is happening with a particular macro? You inspect the tokens it outputs!
+</div>
+<div style="margin-top:.625em;">
+That is exactly where <code>cargo expand</code> shines: it expands all macros in your code without passing the output to the compiler, allowing you to step through it and understand what is going on. <br />
+Let's use <code>cargo expand</code> to demystify <code>#[tokio::main]</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ cargo expand
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Unfortunately, it fails:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error: the option `Z` is only accepted on the nightly compiler
+error: could not compile `zero2prod`
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We are using the stable compiler to build, test and run our code. <code>cargo-expand</code>, instead, relies on the <code>nightly</code> compiler to expand our macros. <br />
+You can install the <code>nightly</code> compiler by running
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ rustup toolchain install nightly --allow-downgrade
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Some components of the bundle installed by <code>rustup</code> might be broken/missing on the latest <code>nightly</code> release: <code>--allow-downgrade</code> tells <code>rustup</code> to find and install the latest <code>nightly</code> where all the needed components are available.
+</div>
+<div style="margin-top:.625em;">
+You can use <code>rustup default</code> to change the default toolchain used by <code>cargo</code> and the other tools managed by <code>rustup</code>. In our case, we do not want to switch over to <code>nightly</code> - we just need it for <code>cargo-expand</code>. <br />
+Luckily enough, <code>cargo</code></code> allows us to specify the toolchain on a per-command basis:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# Use the nightly toolchain just for this command invocation
+$ cargo +nightly expand
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+/// [...]
+
+fn main() -> std::io::Result<()> {
+    let body = async move {
+        HttpServer::new(|| {
+            App::new()
+                .route("/", web::get().to(greet))
+                .route("/{name}", web::get().to(greet))
+        })
+        .bind("127.0.0.1:8000")?
+        .run()
+        .await
+    };
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .expect("Failed building the Runtime")
+        .block_on(body)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can finally look at the code after macro expansion! <br />
+The <code>main</code> function that gets passed to the Rust compiler after <code>#[tokio::main]</code> has been expanded is indeed synchronous, which explain why it compiles without any issue. <br />
+The key line is this:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+tokio::runtime::Builder::new_multi_thread()
+    .enable_all()
+    .build()
+    .expect("Failed building the Runtime")
+    .block_on(body)
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We are starting <code>tokio</code>'s async runtime and we are using it to drive the future returned by <code>HttpServer::run</code> to completion.
+</div>
+<div style="margin-top:.625em;">
+In other words, the job of <code>#[tokio::main]</code> is to give us the illusion of being able to define an asynchronous main while, under the hood, it just takes our <code>main</code> asynchronous body and writes the necessary boilerplate to make it run on top of <code>tokio</code>'s runtime.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.3. Implementing The Health Check Handler" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We have reviewed all the moving pieces in <code>actix_web</code>'s Hello World! example: <code>HttpServer</code>, <code>App</code>, <code>route</code> and <code>tokio::main</code>.
+We definitely know enough to modify the example to get our health check working as we expect: return a <code>200 OK</code> response with no body when we receive a <code>GET</code> request at <code>/health_check</code>.
+</div>
+<div style="margin-top:.625em;">
+Let's look again at our starting point:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+use actix_web::{web, App, HttpRequest, HttpServer, Responder};
+
+async fn greet(req: HttpRequest) -> impl Responder {
+    let name = req.match_info().get("name").unwrap_or("World");
+    format!("Hello {}!", &name)
+}
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    HttpServer::new(|| {
+        App::new()
+            .route("/", web::get().to(greet))
+            .route("/{name}", web::get().to(greet))
+    })
+    .bind("127.0.0.1:8000")?
+    .run()
+    .await
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+First of all we need a request handler. Mimicking greet we can start with this signature:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+async fn health_check(req: HttpRequest) -> impl Responder {
+    todo!()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We said that <code>Responder</code> is nothing more than a conversion trait into an <code>HttpResponse</code>. Returning an instance of <code>HttpResponse</code> directly should work then!
+</div>
+<div style="margin-top:.625em;">
+Looking at <a href="https://docs.rs/actix-web/4.0.1/actix_web/struct.HttpResponse.html">its documentation</a> we can use <code>HttpResponse::Ok</code> to get a <a href="https://docs.rs/actix-web/4.0.1/actix_web/struct.HttpResponseBuilder.html">HttpResponseBuilder</a> primed with a 200 status code. HttpResponseBuilder exposes a rich fluent API to progressively build out a <code>HttpResponse</code> response, but we do not need it here: we can get a HttpResponse with an empty body by calling <a href="https://docs.rs/actix-web/4.0.1/actix_web/struct.HttpResponseBuilder.html#method.finish"><code>finish</code></a> on the builder. <br />
+Gluing everything together:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+async fn health_check(req: HttpRequest) -> impl Responder {
+    HttpResponse::Ok().finish()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+A quick <code>cargo check</code> confirms that our handler is not doing anything weird. A closer look at <code>HttpResponseBuilder</code> unveils that it implements <code>Responder</code> as well - we can therefore omit our call to <code>finish</code> and shorten our handler to:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+async fn health_check(req: HttpRequest) -> impl Responder {
+    HttpResponse::Ok()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The next step is handler registration - we need to add it to our <code>App</code> via <code>route</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+App::new()
+    .route("/health_check", web::get().to(health_check))
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's look at the full picture:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+
+use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Responder};
+
+async fn health_check(req: HttpRequest) -> impl Responder {
+    HttpResponse::Ok()
+}
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    HttpServer::new(|| App::new().route("/health_check", web::get().to(health_check)))
+        .bind("127.0.0.1:8000")?
+        .run()
+        .await
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>cargo check</code> runs smoothly although it raises one warning:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+warning: unused variable: `req`
+ --> src/main.rs:3:23
+  |
+3 | async fn health_check(req: HttpRequest) -> impl Responder {
+  |                       ^^^ help: if this is intentional, prefix it with an underscore: `_req`
+  |
+  = note: `#[warn(unused_variables)]` on by default
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Our health check response is indeed static and does not use any of the data bundled with the incoming HTTP request (routing aside). We could follow the compiler's advice and prefix <code>req</code> with an underscore... or we could remove that input argument entirely from <code>health_check</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+async fn health_check() -> impl Responder {
+    HttpResponse::Ok()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Surprise surprise, it compiles! <code>actix-web</code> has some pretty advanced type magic going on behind the scenes and it accepts a broad range of signatures as request handlers - more on that later.
+</div>
+<div style="margin-top:.625em;">
+What is left to do? <br />
+Well, a little test!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# Launch the application first in another terminal with `cargo run`
+$ curl -v http://127.0.0.1:8000/health_check
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+*   Trying 127.0.0.1...
+* TCP_NODELAY set
+* Connected to localhost (127.0.0.1) port 8000 (#0)
+> GET /health_check HTTP/1.1
+> Host: localhost:8000
+> User-Agent: curl/7.61.0
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< content-length: 0
+< date: Wed, 05 Aug 2020 22:11:52 GMT
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Congrats, you have just implemented your first working <code>actix_web</code> endpoint!
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+
+</c:component>
