@@ -853,6 +853,992 @@ Congrats, you have just implemented your first working <code>actix_web</code> en
 
 
 
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">4. Our First Integration Test</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+<code>/health_check</code> was our first endpoint and we verified everything was working as expected by launching the application and testing it manually via <code>curl</code>.
+</div>
+<div style="margin-top:.625em;">
+Manual testing is time-consuming, though: as our application gets bigger, it gets more and more expensive to manually check that all our assumptions on its behaviour are still valid every time we perform some changes.
+</div>
+<div style="margin-top:.625em;">
+We'd like to automate as much as possible: those checks should be run in our CI pipeline every time we are committing a change in order to prevent regressions.
+</div>
+<div style="margin-top:.625em;">
+While the behaviour of our health check might not evolve much over the course of our journey, it is a good starting point to get our testing scaffolding properly set up.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.1. How Do You Test An Endpoint?" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+An API is a means to an end: a tool exposed to the outside world to perform some kind of task (e.g. store a document, publish an email, etc.).
+</div>
+<div style="margin-top:.625em;">
+The endpoints we expose in our API define the contract between us and our clients: a shared agreement about the inputs and the outputs of the system, its interface.
+</div>
+<div style="margin-top:.625em;">
+The contract might evolve over time and we can roughly picture two scenarios:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">backwards-compatible changes (e.g. adding a new endpoint);</li>
+  <li style="margin-top:.325em;">breaking changes (e.g. removing an endpoint or dropping a field from the schema of its output).</li>
+</ul>
+<div style="margin-top:.625em;">
+In the first case, existing API clients will keep working as they are. <br />
+In the second case, existing integrations are likely to break if they relied on the violated portion of the contract.
+</div>
+<div style="margin-top:.625em;">
+While we might intentionally deploy breaking changes to our API contract, it is critical that we do not break it accidentally.
+</div>
+<div style="margin-top:.625em;">
+What is the most reliable way to check that we have not introduced a user-visible regression?
+Testing the API by interacting with it in the same exact way a user would: performing HTTP requests against it and verifying our assumptions on the responses we receive.
+</div>
+<div style="margin-top:.625em;">
+This is often referred to as black box testing: we verify the behaviour of a system by examining its output given a set of inputs without having access to the details of its internal implementation.
+</div>
+<div style="margin-top:.625em;">
+Following this principle, we won't be satisfied by tests that call into handler functions directly - for example:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#[cfg(test)]
+mod tests {
+    use crate::health_check;
+
+    #[tokio::test]
+    async fn health_check_succeeds() {
+        let response = health_check().await;
+        // This requires changing the return type of `health_check`
+        // from `impl Responder` to `HttpResponse` to compile
+        assert!(response.status().is_success())
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We have not checked that the handler is invoked on GET requests. <br />
+We have not checked that the handler is invoked with <code>/health_check</code> as path.
+</div>
+<div style="margin-top:.625em;">
+Changing any of these two properties would break our API contract, but our test would still pass - not good enough.
+</div>
+<div style="margin-top:.625em;">
+<code>actix-web</code> provides <a href="https://actix.rs/docs/testing/">some conveniences</a> to interact with an App without skipping the routing logic, but there are severe shortcomings to its approach:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">migrating to another web framework would force us to rewrite our whole integration test suite. As much as possible, we'd like our integration tests to be highly decoupled from the technology underpinning our API implementation (e.g. having framework-agnostic integration tests is life-saving when you are going through a large rewrite or refactoring!);
+    </li>
+  <li style="margin-top:.325em;">due to some <code>actix-web</code>'s limitations, we wouldn't be able to share our App startup logic between our production code and our testing code, therefore undermining our trust in the guarantees provided by our test suite due to the risk of divergence over time.
+</li>
+</ul>
+<div style="margin-top:.625em;">
+We will opt for a fully black-box solution: we will launch our application at the beginning of each test and interact with it using an off-the-shelf HTTP client (e.g. <code>reqwest</code>).
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.2. Where Should I Put My Tests?" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Rust gives you <a href="https://doc.rust-lang.org/book/ch11-03-test-organization.html">three options</a> when it comes to writing tests:
+</div>
+<div style="margin-top:.625em;">
+next to your code in an embedded test module, e.g.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+// Some code I want to test
+
+#[cfg(test)]
+mod tests {
+    // Import the code I want to test
+    use super::*;
+    
+    // My tests
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+in an external tests folder, i.e.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+> ls
+
+src/
+tests/
+Cargo.toml
+Cargo.lock
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+as part of your public documentation (doc tests), e.g.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+/// Check if a number is even.
+/// ```rust
+/// use zero2prod::is_even;
+/// 
+/// assert!(is_even(2));
+/// assert!(!is_even(1));
+/// ```
+pub fn is_even(x: u64) -> bool {
+    x % 2 == 0
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+What is the difference? <br />
+An embedded test module is part of your project, just hidden behind a <a href="https://doc.rust-lang.org/stable/rust-by-example/attribute/cfg.html">configuration conditional check</a>, <code>#[cfg(test)]</code>. Anything under the tests folder and your documentation <code>tests</code>, instead, are compiled in their own separate binaries. <br />
+This has consequences when it comes to visibility rules.
+</div>
+<div style="margin-top:.625em;">
+An embedded test module has privileged access to the code living next to it: it can interact with structs, methods, fields and functions that have not been marked as public and would normally not be available to a user of our code if they were to import it as a dependency of their own project.
+</div>
+<div style="margin-top:.625em;">
+Embedded test modules are quite useful for what I call iceberg projects, i.e. the exposed surface is very limited (e.g. a couple of public functions), but the underlying machinery is much larger and fairly complicated (e.g. tens of routines). It might not be straight-forward to exercise all the possible edge cases via the exposed functions - you can then leverage embedded test modules to write unit tests for private sub-components to increase your overall confidence in the correctness of the whole project.
+</div>
+<div style="margin-top:.625em;">
+Tests in the external <code>tests</code> folder and doc tests, instead, have exactly the same level of access to your code that you would get if you were to add your crate as a dependency in another project. They are therefore used mostly for integration testing, i.e. testing your code by calling it in the same exact way a user would.
+</div>
+<div style="margin-top:.625em;">
+Our email newsletter is not a library, therefore the line is a bit blurry - we are not exposing it to the world as a Rust crate, we are putting it out there as an API accessible over the network.
+</div>
+<div style="margin-top:.625em;">
+Nonetheless we are going to use the <code>tests</code> folder for our API integration tests - it is more clearly separated and it is easier to manage test helpers as sub-modules of an external test binary.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.3. Changing Our Project Structure For Easier Testing" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We have a bit of housekeeping to do before we can actually write our first test under <code>/tests</code>. <br />
+As we said, anything under <code>tests</code> ends up being compiled in its own binary - all our code under test is imported as a crate. But our project, at the moment, is a binary: it is meant to be executed, not to be shared. Therefore we can't import our <code>main</code> function in our tests as it is right now.
+</div>
+<div style="margin-top:.625em;">
+If you won't take my word for it, we can run a quick experiment:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# Create the tests folder
+mkdir -p tests
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Create a new <code>tests/health_check.rs</code> file with
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+
+use zero2prod::main;
+
+#[test]
+fn dummy_test() {
+    main()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>cargo test</code> should fail with something similar to
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0432]: unresolved import `zero2prod`
+ --> tests/health_check.rs:1:5
+  |
+1 | use zero2prod::main;
+  |     ^^^^^^^^^ use of undeclared type or module `zero2prod`
+
+error: aborting due to previous error
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `zero2prod`.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We need to refactor our project into a library and a binary: all our logic will live in the library crate while the binary itself will be just an entrypoint with a very slim <code>main</code> function. <br />
+First step: we need to change our <code>Cargo.toml</code>. <br />
+It currently looks something like this:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+[package]
+name = "zero2prod"
+version = "0.1.0"
+authors = ["Luca Palmieri <contact@lpalmieri.com>"]
+edition = "2022"
+
+[dependencies]
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We are relying on <code>cargo</code>'s default behaviour: unless something is spelled out, it will look for a <code>src/main.rs</code> file as the binary entrypoint and use the <code>package.name</code> field as the binary name. <br />
+Looking at the <a href="https://doc.rust-lang.org/cargo/reference/cargo-targets.html#cargo-targets">manifest target specification</a>, we need to add a <code>lib</code> section to add a library to our project:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+[package]
+name = "zero2prod"
+version = "0.1.0"
+authors = ["Luca Palmieri <contact@lpalmieri.com>"]
+edition = "2022"
+
+[lib]
+# We could use any path here, but we are following the community convention
+# We could specify a library name using the `name` field. If unspecified,
+# cargo will default to `package.name`, which is what we want.
+path = "src/lib.rs"
+
+[dependencies]
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The <code>lib.rs</code> file does not exist yet and cargo won't create it for us:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ cargo check
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error: couldn't read src/lib.rs: No such file or directory (os error 2)
+
+error: aborting due to previous error
+
+error: could not compile `zero2prod`
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's add it then - it can be empty for now.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ touch src/lib.rs
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Everything should be working now: <code>cargo check</code> passes and <code>cargo run</code> still launches our application. <br />
+Although it is working, our <code>Cargo.toml</code> file now does not give you at a glance the full picture: you see a library, but you don't see our binary there. Even if not strictly necessary, I prefer to have everything spelled out as soon as we move out of the auto-generated vanilla configuration:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+[package]
+name = "zero2prod"
+version = "0.1.0"
+authors = ["Luca Palmieri <contact@lpalmieri.com>"]
+edition = "2022"
+
+[lib]
+path = "src/lib.rs"
+
+# Notice the double square brackets: it's an array in TOML's syntax.
+# We can only have one library in a project, but we can have multiple binaries!
+# If you want to manage multiple libraries in the same repository
+# have a look at the workspace feature - we'll cover it later on.
+[[bin]]
+path = "src/main.rs"
+name = "zero2prod"
+
+[dependencies]
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Feeling nice and clean, let's move forward. <br />
+For the time being we can move our <code>main</code> function, as it is, to our library (named <code>run</code> to avoid clashes):
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! main.rs
+
+use zero2prod::run;
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    run().await
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! lib.rs
+
+use actix_web::{web, App, HttpResponse, HttpServer};
+
+async fn health_check() -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+
+// We need to mark `run` as public.
+// It is no longer a binary entrypoint, therefore we can mark it as async
+// without having to use any proc-macro incantation.
+pub async fn run() -> std::io::Result<()> {
+    HttpServer::new(|| App::new().route("/health_check", web::get().to(health_check)))
+        .bind("127.0.0.1:8000")?
+        .run()
+        .await
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Alright, we are ready to write some juicy integration tests!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.4. Implementing Our First Integration Test" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Our spec for the health check endpoint was:
+</div>
+<div style="margin-top:.625em;">
+When we receive a GET request for <code>/health_check</code> we return a <code>200 OK</code> response with no body.
+</div>
+<div style="margin-top:.625em;">
+Let's translate that into a test, filling in as much of it as we can:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+
+// `tokio::test` is the testing equivalent of `tokio::main`.
+// It also spares you from having to specify the `#[test]` attribute.
+//
+// You can inspect what code gets generated using 
+// `cargo expand --test health_check` (<- name of the test file)
+#[tokio::test]
+async fn health_check_works() {
+    // Arrange
+    spawn_app().await.expect("Failed to spawn our app.");
+    // We need to bring in `reqwest` 
+    // to perform HTTP requests against our application.
+    let client = reqwest::Client::new();
+
+    // Act
+    let response = client
+            .get("http://127.0.0.1:8000/health_check")
+            .send()
+            .await
+            .expect("Failed to execute request.");
+
+    // Assert
+    assert!(response.status().is_success());
+    assert_eq!(Some(0), response.content_length());
+}
+
+// Launch our application in the background ~somehow~
+async fn spawn_app() -> std::io::Result<()> {
+    todo!()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+# Dev dependencies are used exclusively when running tests or examples
+# They do not get included in the final application binary!
+[dev-dependencies]
+reqwest = "0.11"
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.4. Implementing Our First Integration Test" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Take a second to really look at this test case. <br />
+<code>spawn_app</code> is the only piece that will, reasonably, depend on our application code. <br />
+Everything else is entirely decoupled from the underlying implementation details - if tomorrow we decide to ditch Rust and rewrite our application in Ruby on Rails we can still use the same test suite to check for regressions in our new stack as long as <code>spawn_app</code> gets replaced with the appropriate trigger (e.g. a bash command to launch the Rails app).
+</div>
+<div style="margin-top:.625em;">
+The test also covers the full range of properties we are interested to check:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">the health check is exposed at <code>/health_check</code>;</li>
+  <li style="margin-top:.325em;">the health check is behind a GET method;</li>
+  <li style="margin-top:.325em;">the health check always returns a 200;</li>
+  <li style="margin-top:.325em;">the health check's response has no body.</li>
+</ul>
+<div style="margin-top:.625em;">
+If this passes we are done.
+</div>
+<div style="margin-top:.625em;">
+The test as it is crashes before doing anything useful: we are missing <code>spawn_app</code>, the last piece of the integration testing puzzle.
+</div>
+<div style="margin-top:.625em;">
+Why don't we just call <code>run</code> in there? I.e.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+// [...]
+
+async fn spawn_app() -> std::io::Result<()> {
+    zero2prod::run().await
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's try it out!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ cargo test
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+     Running target/debug/deps/health_check-fc74836458377166
+
+running 1 test
+test health_check_works ... test health_check_works has been running for over 60 seconds
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+No matter how long you wait, test execution will never terminate. What is going on?
+</div>
+<div style="margin-top:.625em;">
+In <code>zero2prod::run</code> we invoke (and await) <code>HttpServer::run</code>. <code>HttpServer::run</code> returns an instance of <code>Server</code> - when we call <code>.await</code> it starts listening on the address we specified indefinitely: it will handle incoming requests as they arrive, but it will never shutdown or "complete" on its own. <br />
+This implies that <code>spawn_app</code> never returns and our test logic never gets executed.
+</div>
+<div style="margin-top:.625em;">
+We need to run our application as a background task. <br />
+<a href="https://docs.rs/tokio/latest/tokio/fn.spawn.html"><code>tokio::spawn</code></a> comes quite handy here: <code>tokio::spawn</code> takes a future and hands it over to the runtime for polling, without waiting for its completion; it therefore runs concurrently with downstream futures and tasks (e.g. our test logic).
+</div>
+<div style="margin-top:.625em;">
+Let's refactor <code>zero2prod::run</code> to return a <code>Server</code> without awaiting it:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/lib.rs
+
+use actix_web::{web, App, HttpResponse, HttpServer};
+use actix_web::dev::Server;
+
+async fn health_check() -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+
+// Notice the different signature!
+// We return `Server` on the happy path and we dropped the `async` keyword
+// We have no .await call, so it is not needed anymore.
+pub fn run() -> Result<Server, std::io::Error> {
+    let server = HttpServer::new(|| App::new().route("/health_check", web::get().to(health_check)))
+        .bind("127.0.0.1:8000")?
+        .run();
+    // No .await here!
+    Ok(server)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We need to amend our <code>main.rs</code> accordingly:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+
+use zero2prod::run;
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    // Bubble up the io::Error if we failed to bind the address
+    // Otherwise call .await on our Server
+    run()?.await
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+A quick <code>cargo check</code> should reassure us that everything is in order. <br />
+We can now write <code>spawn_app</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+// [...]
+
+// No .await call, therefore no need for `spawn_app` to be async now.
+// We are also running tests, so it is not worth it to propagate errors:
+// if we fail to perform the required setup we can just panic and crash
+// all the things.
+fn spawn_app() {
+    let server = zero2prod::run().expect("Failed to bind address");
+    // Launch the server as a background task
+    // tokio::spawn returns a handle to the spawned future,
+    // but we have no use for it here, hence the non-binding let
+    let _ = tokio::spawn(server);
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Quick adjustment to our test to accommodate the changes in spawn_app's signature:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+// [...]
+
+#[tokio::test]
+async fn health_check_works() {
+    // No .await, no .expect
+    spawn_app();
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It's time, let's run that <code>cargo test</code> command!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ cargo test
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+     Running target/debug/deps/health_check-a1d027e9ac92cd64
+
+running 1 test
+test health_check_works ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Yay! Our first integration test is green! <br />
+Give yourself a pat on the back on my behalf for the second major milestone in the span of a single chapter.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.5. Polishing" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We got it working, now we need to have a second look and improve it, if needed or possible.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.5.1. Clean Up" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+What happens to our app running in the background when the test run ends? Does it shut down? Does it linger as a zombie somewhere?
+</div>
+<div style="margin-top:.625em;">
+Well, running <code>cargo test</code> multiple times in a row always succeeds - a strong hint that our 8000 port is getting released at the end of each run, therefore implying that the application is correctly shut down.
+</div>
+<div style="margin-top:.625em;">
+A second look at <code>tokio::spawn</code>'s documentation supports our hypothesis: when a <code>tokio</code> runtime is shut down all tasks spawned on it are dropped. <code>tokio::test</code> spins up a new runtime at the beginning of each test case and they shut down at the end of each test case.
+</div>
+<div style="margin-top:.625em;">
+In other words, good news - no need to implement any clean up logic to avoid leaking resources between test runs.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.5.2. Choosing A Random Port" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+<code>spawn_app</code> will always try to run our application on port 8000 - not ideal:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">if port 8000 is being used by another program on our machine (e.g. our own application!), tests will fail;</li>
+  <li style="margin-top:.325em;">if we try to run two or more tests in parallel only one of them will manage to bind the port, all others will fail.</li>
+</ul>
+<div style="margin-top:.625em;">
+We can do better: tests should run their background application on a random available port. <br />
+First of all we need to change our <code>run</code> function - it should take the application address as an argument instead of relying on a hard-coded value:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/lib.rs
+// [...]
+
+pub fn run(address: &str) -> Result<Server, std::io::Error> {
+    let server = HttpServer::new(|| App::new().route("/health_check", web::get().to(health_check)))
+        .bind(address)?
+        .run();
+    Ok(server)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+All <code>zero2prod::run()</code> invocations must then be changed to <code>zero2prod::run("127.0.0.1:8000")</code> to preserve the same behaviour and get the project to compile again.
+</div>
+<div style="margin-top:.625em;">
+How do we find a random available port for our tests? <br />
+The operating system comes to the rescue: we will be using <a href="https://www.lifewire.com/port-0-in-tcp-and-udp-818145"><code>port 0</code></a>. <br />
+<code>Port 0</code> is special-cased at the OS level: trying to bind port 0 will trigger an OS scan for an available port which will then be bound to the application.
+</div>
+It is therefore enough to change <code>spawn_app</code> to
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+// [...]
+
+fn spawn_app() {
+    let server = zero2prod::run("127.0.0.1:0").expect("Failed to bind address");
+    let _ = tokio::spawn(server);
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Done - the background app now runs on a random port every time we launch <code>cargo test</code>! <br />
+There is only a small issue... our test is failing!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+running 1 test
+test health_check_works ... FAILED
+
+failures:
+
+---- health_check_works stdout ----
+thread 'health_check_works' panicked at 'Failed to execute request.: reqwest::Error { kind: Request, url: "http://localhost:8000/health_check", source: hyper::Error(Connect, ConnectError("tcp connect error", Os { code: 111, kind: ConnectionRefused, message: "Connection refused" })) }', tests/health_check.rs:10:20
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+Panic in Arbiter thread.
+
+
+failures:
+    health_check_works
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Our HTTP client is still calling <code>127.0.0.1:8000</code> and we really don't know what to put there now: the application port is determined at runtime, we cannot hard code it there. <br />
+We need, somehow, to find out what port the OS has gifted our application and return it from spawn_app.
+</div>
+<div style="margin-top:.625em;">
+There are a few ways to go about it - we will use a <code>std::net::TcpListener</code>. <br />
+Our <code>HttpServer</code> right now is doing double duty: given an address, it will bind it and then start the application. We can take over the first step: we will bind the port on our own with <code>TcpListener</code> and then hand that over to the <code>HttpServer</code> using <code>listen</code>.
+</div>
+<div style="margin-top:.625em;">
+What is the upside? <br />
+<code>TcpListener::local_addr</code> returns a <code>SocketAddr</code> which exposes the actual port we bound via <code>.port()</code>.
+</div>
+<div style="margin-top:.625em;">
+Let's begin with our <code>run</code> function:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/lib.rs
+
+use actix_web::dev::Server;
+use actix_web::{web, App, HttpResponse, HttpServer};
+use std::net::TcpListener;
+
+// [...]
+
+pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
+    let server = HttpServer::new(|| App::new().route("/health_check", web::get().to(health_check)))
+        .listen(listener)?
+        .run();
+    Ok(server)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The change broke both our <code>main</code> and our <code>spawn_app</code> function. I'll leave <code>main</code> to you, let's focus on <code>spawn_app</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+// [...]
+
+fn spawn_app() -> String {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind random port");
+    // We retrieve the port assigned to us by the OS
+    let port = listener.local_addr().unwrap().port();
+    let server = zero2prod::run(listener).expect("Failed to bind address");
+    let _ = tokio::spawn(server);
+    // We return the application address to the caller!
+    format!("http://127.0.0.1:{}", port)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now leverage the application address in our test to point our <code>reqwest::Client</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+// [...]
+
+#[tokio::test]
+async fn health_check_works() {
+    // Arrange
+    let address = spawn_app();
+    let client = reqwest::Client::new();
+
+    // Act
+    let response = client
+        // Use the returned application address
+        .get(&format!("{}/health_check", &address))
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    // Assert
+    assert!(response.status().is_success());
+    assert_eq!(Some(0), response.content_length());
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+All is good - <code>cargo test</code> comes out green. Our setup is much more robust now!
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">5. Next Up</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We covered a fair amount of ground: we have a project skeleton, our integration tests are wired up and we have developed a solid understanding of <code>actix-web</code>'s fundamentals.
+</div>
+<div style="margin-top:.625em;">
+According to our strategy we should now jump straight into the implementation of <code>/subscribe</code>. <br />
+We will instead call it a day - I'll follow the same philosophy I am advocating for: freeze the budget, not the feature set.
+In other words, instead of being adamant on scope (e.g. Chapter 3 has to cover all these topics), I am being firm on timelines (e.g. a new article of Zero To Production should come out every two weeks, on time like a clock).
+</div>
+<div style="margin-top:.625em;">
+In the second half of Chapter 3 you can expect:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">an overview of available libraries to interact with PostgresSQL in the Rust ecosystem;</li>
+  <li style="margin-top:.325em;">a strategy (and tooling) to manage database migrations;</li>
+  <li style="margin-top:.325em;">how to check side-effects in integration tests;</li>
+  <li style="margin-top:.325em;">a demo of newsletter sign-ups using our new <code>/subscribe</code> endpoint.</li>
+</ul>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
 
 
 </c:component>

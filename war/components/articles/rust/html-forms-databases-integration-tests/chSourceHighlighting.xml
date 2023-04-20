@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<div style="font-size:1.1em;line-height:1.625;">
+This article is a sample from <a href="https://zero2prod.com/">Zero To Production In Rust</a>, a book on backend development in Rust.
+You can get a copy of the book on <a href="https://zero2prod.com/">zero2prod.com</a>.
+<a href="https://www.lpalmieri.com/subscribe">Subscribe to the newsletter</a> to be notified when a new episode is published.
+</div>
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">1. Previously On Zero To Production</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+In the first part of Chapter 3 we covered a fair amount of ground - we set out to implement a <code>/health_check</code> endpoint and that gave us the opportunity to learn more about the fundamentals of our web framework, <code>actix-web</code>, as well as the basics of (integration) testing for Rust APIs.
+</div>
+<div style="margin-top:.625em;">
+It is now time to capitalise on what we learned to finally fulfill the <a href="/blog/articles/rust/building-an-email-newsletter.shtml">first user story of our email newsletter project</a>:
+</div>
+<div style="margin-top:.625em;">
+As a blog visitor, <br />
+I want to subscribe to the newsletter, <br />
+So that I can receive email updates when new content is published on the blog.
+</div>
+<div style="margin-top:.625em;">
+We expect our blog visitors to input their email address in a form embedded on a web page.
+The form will trigger a <code>POST /subscriptions</code> call to our backend API that will actually process the information, store it and send back a response.
+</div>
+<div style="margin-top:.625em;">
+We will have to dig into:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">how to read data collected in a HTML form in <code>actix-web</code> (i.e. how do I parse the request body of a POST?);</li>
+  <li style="margin-top:.325em;">what libraries are available to work with a PostgreSQL database in Rust (<code>diesel</code> vs <code>sqlx</code> vs <code>tokio-postgres</code>);</li>
+  <li style="margin-top:.325em;">how to setup and manage migrations for our database;</li>
+  <li style="margin-top:.325em;">how to get our hands on a database connection in our API request handlers;
+  <li style="margin-top:.325em;">how to test for side-effects (a.k.a. stored data) in our integration tests;</li>
+  <li style="margin-top:.325em;">how to avoid weird interactions between tests when working with a database.</li>
+</ul>
+<div style="margin-top:.625em;">
+If all goes well, we should be able to demo the subscription page at the end of the article.
+Let's get started!
+</div>
+<div style="margin-top:.625em;">
+The source code of our email newsletter project is on <a href="https://github.com/LukeMathWalker/zero-to-production/">GitHub</a>! <br />
+If you haven't read the previous chapters yet (or you are not planning to) you can just get started from the code in the <a href="https://github.com/LukeMathWalker/zero-to-production/tree/root-chapter-03-part0">chapter03-0</a> branch.
+The code for this chapter is in the <a href="https://github.com/LukeMathWalker/zero-to-production/tree/root-chapter-03-part1">chapter03-1</a> branch.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">2. Working With HTML forms</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="2.1. Refining Our Requirements" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+What information should we collect from a visitor in order to enroll them as a subscriber of our email newsletter?
+</div>
+<div style="margin-top:.625em;">
+Well, we certainly need their email addresses (it is an email newsletter after all).
+</div>
+<div style="margin-top:.625em;">
+What else?
+</div>
+<div style="margin-top:.625em;">
+This would usually spark a conversation among the engineers on the team as well as the product manager in your typical business setup. In this case, we are both the technical leads and the product owners so we get to call the shots!
+</div>
+<div style="margin-top:.625em;">
+Speaking from personal experience, people generally use throwaway or masked emails when subscribing to newsletters (or, at least, most of you did when <a href="https://www.lpalmieri.com/subscribe/">subscribing to Zero To Production</a>!).
+It would thus be nice to collect a <code>name</code> that we could use for our email greetings (the infamous <code>Hey {{subscriber.name}}!</code>) as well as to spot mutuals or people we know in the list of subscribers.
+</div>
+<div style="margin-top:.625em;">
+We are not cops, we have no interest in the <code>name</code> field being authentic - we will let people input whatever they feel like using as their identifier in our newsletter system: <a href="https://xkcd.com/979/">DenverCoder</a>, we welcome you.
+</div>
+<div style="margin-top:.625em;">
+It is settled then: we want an email address and a name for all new subscribers.
+</div>
+<div style="margin-top:.625em;">
+Given that the data is collected via a HTML form, it will be passed to our backend API in the body of a POST request. How is the body going to be encoded?
+</div>
+<div style="margin-top:.625em;">
+There are a <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/POST">few options available</a> when using HTML forms: <code>application/x-www-form-urlencoded</code> is the most suitable to our usecase. <br />
+Quoting MDN web docs, with <code>application/x-www-form-urlencoded</code>
+</div>
+<div style="margin-top:.625em;">
+the keys and values [in our form] are encoded in key-value tuples separated by '&', with a '=' between the key and the value. Non-alphanumeric characters in both keys and values are percent encoded.
+</div>
+<div style="margin-top:.625em;">
+For example: if the name is <code>Le Guin</code> and the email is <code>ursula_le_guin@gmail.com</code> the <code>POST</code> request body should be <code>name=le%20guin&email=ursula_le_guin%40gmail.com</code> (spaces are replaced by <code>%20</code> while @ becomes <code>%40</code> - a reference conversion table can be found <a href="https://www.w3schools.com/tags/ref_urlencode.ASP">here</a>).
+</div>
+<div style="margin-top:.625em;">
+To summarise:
+</div>
+
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">if a valid pair of name and email is supplied using the <code>application/x-www-form-urlencoded</code> format the backend should return a <code>200 OK</code>;</li>
+  <li style="margin-top:.325em;">if either name or email are missing the backend should return a <code>400 BAD REQUEST</code>.</li>
+</ul>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+</c:component>
