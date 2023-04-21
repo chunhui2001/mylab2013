@@ -119,6 +119,632 @@ To summarise:
 </ul>
     ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="2.2. Capturing Our Requirements As Tests" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Now that we understand better what needs to happen, let's encode our expectations in a couple of integration tests.
+</div>
+<div style="margin-top:.625em;">
+Let's add the new tests to the existing <a href="https://github.com/LukeMathWalker/zero-to-production/blob/master/chapter03-0/tests/health_check.rs">tests/health_check.rs</a> file - we will re-organise our test suite folder structure afterwards.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+use zero2prod::run;
+use std::net::TcpListener;
+
+/// Spin up an instance of our application 
+/// and returns its address (i.e. http://localhost:XXXX)
+fn spawn_app() -> String {
+    [...]
+}
+
+#[tokio::test]
+async fn health_check_works() {
+    [...]
+}
+
+#[tokio::test]
+async fn subscribe_returns_a_200_for_valid_form_data() {
+    // Arrange
+    let app_address = spawn_app();
+    let client = reqwest::Client::new();
+
+    // Act
+    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+    let response = client
+        .post(&format!("{}/subscriptions", &app_address))
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(body)
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    // Assert
+    assert_eq!(200, response.status().as_u16());
+}
+
+
+#[tokio::test]
+async fn subscribe_returns_a_400_when_data_is_missing() {
+    // Arrange
+    let app_address = spawn_app();
+    let client = reqwest::Client::new();
+    let test_cases = vec![
+        ("name=le%20guin", "missing the email"),
+        ("email=ursula_le_guin%40gmail.com", "missing the name"),
+        ("", "missing both name and email")
+    ];
+
+    for (invalid_body, error_message) in test_cases {
+        // Act
+        let response = client
+            .post(&format!("{}/subscriptions", &app_address))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(invalid_body)
+            .send()
+            .await
+            .expect("Failed to execute request.");
+
+        // Assert
+        assert_eq!(
+            400,
+            response.status().as_u16(),
+            // Additional customised error message on test failure
+            "The API did not fail with 400 Bad Request when the payload was {}.",
+            error_message
+        );
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>subscribe_returns_a_400_when_data_is_missing</code> is an example of <a href="https://github.com/golang/go/wiki/TableDrivenTests">table-driven test</a> also known as parametrised test.
+It is particularly helpful when dealing with bad inputs - instead of duplicating test logic several times we can simply run the same assertion against a collection of known invalid bodies that we expect to fail in the same way.
+</div>
+<div style="margin-top:.625em;">
+With parametrised tests it is important to have good error messages on failures: <code>assertion failed on line XYZ</code> is not great if you cannot tell which specific input is broken! On the flip side, that parametrised test is covering a lot of ground so it makes sense to invest a bit more time in generating a nice failure message.
+</div>
+<div style="margin-top:.625em;">
+Test frameworks in other languages sometimes have native support for this testing style (e.g. <a href="https://docs.pytest.org/en/stable/parametrize.html">parametrised tests in pytest</a> or <a href="https://andrewlock.net/creating-parameterised-tests-in-xunit-with-inlinedata-classdata-and-memberdata/">InlineData in xUnit for C#</a>) - there are a few crates in the Rust ecosystem that extend the basic test framework with similar features, but unfortunately they do not interop very well with the <code>#[tokio::test]</code> macro that we need to write asynchronous tests idiomatically (see <code>rstest</code> or <code>test-case</code>).
+</div>
+<div style="margin-top:.625em;">
+Let's run our test suite now:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+---- health_check::subscribe_returns_a_200_for_valid_form_data stdout ----
+thread 'health_check::subscribe_returns_a_200_for_valid_form_data' 
+panicked at 'assertion failed: `(left == right)`
+  left: `200`,
+ right: `404`: 
+
+---- health_check::subscribe_returns_a_400_when_data_is_missing stdout ----
+thread 'health_check::subscribe_returns_a_400_when_data_is_missing' 
+panicked at 'assertion failed: `(left == right)`
+  left: `400`,
+ right: `404`: 
+ The API did not fail with 400 Bad Request when the payload was missing the email.'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+As expected, all our new tests are failing. <br />
+You can immediately spot a limitation of "roll-your-own" parametrised tests: as soon as one test case fails, the execution stops and we do not know the outcome for the following tests cases.
+</div>
+<div style="margin-top:.625em;">
+Let's get started on the implementation.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.3. Parsing Form Data From A POST Request" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+All tests are failing because the application returns a <code>404 NOT FOUND</code> for POST requests hitting <code>/subscriptions</code>. Legitimate behaviour: we do not have a handler registered for that path.
+</div>
+<div style="margin-top:.625em;">
+Let's fix it by adding a matching route to our <code>App</code> in <code>src/lib.rs</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/lib.rs
+use actix_web::dev::Server;
+use actix_web::{web, App, HttpResponse, HttpServer};
+use std::net::TcpListener;
+
+// We were returning `impl Responder` at the very beginning.
+// We are now spelling out the type explicitly given that we have become more familiar with `actix-web`.
+// There is no performance difference! Just a stylistic choice :)
+async fn health_check() -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+
+// Let's start simple: we always return a 200 OK
+async fn subscribe() -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+
+pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
+    let server = HttpServer::new(|| {
+        App::new()
+            .route("/health_check", web::get().to(health_check))
+            // A new entry in our routing table for POST /subscriptions requests
+            .route("/subscriptions", web::post().to(subscribe))
+    })
+    .listen(listener)?
+    .run();
+    Ok(server)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Running our test suite again:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+running 3 tests
+test health_check::health_check_works ... ok
+test health_check::subscribe_returns_a_200_for_valid_form_data ... ok
+test health_check::subscribe_returns_a_400_when_data_is_missing ... FAILED
+
+failures:
+
+---- health_check::subscribe_returns_a_400_when_data_is_missing stdout ----
+thread 'health_check::subscribe_returns_a_400_when_data_is_missing' 
+panicked at 'assertion failed: `(left == right)`
+  left: `400`,
+ right: `200`: 
+ The API did not fail with 400 Bad Request when the payload was missing the email.'
+
+failures:
+    health_check::subscribe_returns_a_400_when_data_is_missing
+
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>subscribe_returns_a_200_for_valid_form_data</code> now passes: well, our handler accepts all incoming data as valid, no surprises there. <br />
+<code>subscribe_returns_a_400_when_data_is_missing</code>, instead, is still red.
+</div>
+<div style="margin-top:.625em;">
+Time to do some real parsing on that request body. What does <code>actix-web</code> offer us?
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.3.1. Extractors" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Quite prominent on <a href="https://actix.rs/docs/">actix-web's User Guide</a> is the <a href="https://actix.rs/docs/extractors/">Extractors' section</a>. <br />
+Extractors are used, as the name implies, to tell the framework to extract certain pieces of information from an incoming request. <br />
+<code>actix-web</code> provides several extractors out of the box to cater for the most common usecases:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;"><code>Path</code> to get dynamic path segments from a request's path;</li>
+  <li style="margin-top:.325em;"><code>Query</code> for query parameters;</li>
+  <li style="margin-top:.325em;"><code>Json</code> to parse a JSON-encoded request body;</li>
+  <li style="margin-top:.325em;">etc.</li>
+</ul>
+<div style="margin-top:.625em;">
+</div>
+<div style="margin-top:.625em;">
+Luckily enough, there is an extractor that serves exactly our usecase: <a href="https://docs.rs/actix-web/4.0.1/actix_web/web/struct.Form.html">Form</a>. <br />
+Reading straight from its documentation:
+</div>
+<div style="margin-top:.625em;">
+Form data helper (<code>application/x-www-form-urlencoded</code>). <br />
+Can be used to extract url-encoded data from the request body, or send url-encoded data as the response.
+</div>
+<div style="margin-top:.625em;">
+That's music to my ears. <br />
+How do we use it?
+</div>
+<div style="margin-top:.625em;">
+Looking at <code>actix-web</code>'s User Guide:
+</div>
+<div style="margin-top:.625em;">
+An extractor can be accessed as an argument to a handler function. Actix-web supports up to 10 extractors per handler function. Argument position does not matter.
+</div>
+<div style="margin-top:.625em;">
+Example:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+use actix_web::web;
+
+#[derive(serde::Deserialize)]
+struct FormData {
+    username: String,
+}
+
+/// Extract form data using serde.
+/// This handler get called only if content type is *x-www-form-urlencoded*
+/// and content of the request could be deserialized to a `FormData` struct
+fn index(form: web::Form<FormData>) -> String {
+    format!("Welcome {}!", form.username)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+So, basically... you just slap it there as an argument of your handler and <code>actix-web</code>, when a request comes in, will somehow do the heavy-lifting for you. Let's ride along for now and we will circle back later to understand what is happening under the hood.
+</div>
+<div style="margin-top:.625em;">
+Our <code>subscribe</code> handler currently looks like this:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/lib.rs
+// Let's start simple: we always return a 200 OK
+async fn subscribe() -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Using the example as a blueprint, we probably want something along these lines:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/lib.rs
+// [...]
+
+#[derive(serde::Deserialize)]
+struct FormData {
+    email: String,
+    name: String
+}
+
+async fn subscribe(_form: web::Form<FormData>) -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>cargo check</code> is not happy:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0433]: failed to resolve: use of undeclared type or module `serde`
+ --> src/lib.rs:9:10
+  |
+9 | #[derive(serde::Deserialize)]
+  |          ^^^^^ use of undeclared type or module `serde`
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Fair enough: we need to add <code>serde</code> to our dependencies. Let's add a new line to our <code>Cargo.toml</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+[dependencies]
+# We need the optional `derive` feature to use `serde`'s procedural macros: 
+# `#[derive(Serialize)]` and `#[derive(Deserialize)]`.
+# The feature is not enabled by default to avoid pulling in 
+# unnecessary dependencies for projects that do not need it.
+serde = { version = "1", features = ["derive"]}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>cargo check</code> should succeed now. What about <code>cargo test</code>?
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+running 3 tests
+test health_check_works ... ok
+test subscribe_returns_a_200_for_valid_form_data ... ok
+test subscribe_returns_a_400_when_data_is_missing ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+They are all green!
+</div>
+<div style="margin-top:.625em;">
+But why?
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.3.2. Form and FromRequest" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's go straight to the source: what does <cdoe>Form</code> look like? <br />
+You can find its source <a href="https://github.com/actix/actix-web/blob/be986d96b387f9a040904a6385e9500a4eb5bb8f/actix-web/src/types/form.rs">code</a> here.
+</div>
+<div style="margin-top:.625em;">
+The definition seems fairly innocent:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+pub struct Form<T>(pub T);
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It is nothing more than a wrapper: it is generic over a type T which is then used to populate <code>Form</code>'s only field.
+Not much to see here. <br />
+Where does the extraction magic take place?
+</div>
+<div style="margin-top:.625em;">
+An extractor is a type that implements the <code>FromRequest</code> trait. <br />
+<code>FromRequest</code>'s definition is a bit noisy because Rust does not yet support <code>async fn</code> in trait definitions. Reworking it slightly, it boils down to something that looks more or less like this:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+/// Trait implemented by types that can be extracted from request.
+///
+/// Types that implement this trait can be used with `Route` handlers.
+pub trait FromRequest: Sized {
+    type Error = Into<actix_web::Error>;
+
+    async fn from_request(req: &HttpRequest, payload: &mut Payload) -> Result<Self, Self::Error>;
+    
+    /// Omitting some ancillary methods that actix-web implements 
+    /// out of the box for you and supporting associated types
+    ///  [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>from_request</code> takes as inputs the head of the incoming HTTP request (i.e. <code>HttpRequest</code>) and the bytes of its payload (i.e. <code>Payload</code>). It then returns Self, if the extraction succeeds, or an error type that can be converted into <code>actix_web::Error</code>. <br />
+All arguments in the signature of a route handler must implement the <code>FromRequest</code> trait: <code>actix-web</code> will <a href="https://github.com/actix/actix-web/blob/01cbef700fd9d7ce20f44bed06c649f6b238b9bb/src/handler.rs#L212">invoke from_request</a> for each argument and, if the extraction succeeds for all of them, it will then run the actual handler function. <br />
+If one of the extractions fails, the corresponding error is returned to the caller and the handler is never invoked (<code>actix_web::Error</code> can be converted to a <code>HttpResponse</code>).
+</div>
+<div style="margin-top:.625em;">
+This is extremely convenient: your handler does not have to deal with the raw incoming request and can instead work directly with strongly-typed information, significantly simplifying the code that you need to write to handle a request.
+</div>
+<div style="margin-top:.625em;">
+Let's look at <code>Form</code>'s <code>FromRequest</code> implementation: what does it do? <br />
+Once again, I slightly reshaped the <a href="https://github.com/actix/actix-web/blob/01cbef700fd9d7ce20f44bed06c649f6b238b9bb/src/types/form.rs#L112">actual code</a> to highlight the key elements and ignore the nitty-gritty implementation details.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+impl<T> FromRequest for Form<T>
+where
+    T: DeserializeOwned + 'static,
+{
+    type Error = actix_web::Error;
+
+    async fn from_request(req: &HttpRequest, payload: &mut Payload) -> Result<Self, Self::Error> {
+        // Omitted stuff around extractor configuration (e.g. payload size limits)
+
+        match UrlEncoded::new(req, payload).await {
+            Ok(item) => Ok(Form(item)),
+            // The error handler can be customised.
+            // The default one will return a 400, which is what we want.
+            Err(e) => Err(error_handler(e))
+        }       
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+All the heavy-lifting seems to be happening inside that <code>UrlEncoded</code> struct.
+</div>
+<div style="margin-top:.625em;">
+<code>UrlEncoded</code> does a lot: it transparently handles compressed and uncompressed payloads, it deals with the fact that the request body arrives a chunk at a time as a stream of bytes, etc.
+</div>
+<div style="margin-top:.625em;">
+The <a href="https://github.com/actix/actix-web/blob/01cbef700fd9d7ce20f44bed06c649f6b238b9bb/src/types/form.rs#L358">key passage</a>, after all those things have been taken care of, is:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+serde_urlencoded::from_bytes::<T>(&body).map_err(|_| UrlencodedError::Parse)
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<a href="https://docs.rs/serde_urlencoded/0.6.1/serde_urlencoded/">serde_urlencoded</a> provides (de)serialisation support for the <code>application/x-www-form-urlencoded</code> data format. <br />
+<code>from_bytes</code> takes as input a contiguous slice of bytes and it deserialises an instance of type <code>T</code> from it according to rules of the URL-encoded format: the keys and values are encoded in key-value tuples separated by <code>&amp;</code>, with a <code>=</code> between the key and the value; non-alphanumeric characters in both keys and values are percent encoded.
+</div>
+<div style="margin-top:.625em;">
+How does it know how to do it for a generic type T? <br />
+It is because T implements the <code>DeserializedOwned</code> trait from <code>serde</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+impl<T> FromRequest for Form<T>
+where
+    T: DeserializeOwned + 'static,
+{
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+To understand what is actually going under the hood we need to take a closer look at <code>serde</code> itself.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.3.3. Serialisation in Rust: serde" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+This section on <code>serde</code> touches on a couple of advanced Rust topics. <br />
+It's fine if not everything falls into place the first time you read it! <br />
+Come back to it once you have played with Rust and <code>serde</code> a bit more to deep-dive on the toughest bits of it.
+</div>
+<div style="margin-top:.625em;">
+Why do we need <code>serde</code>? What does <code>serde</code> actually do for us? <br />
+Quoting from <a href="https://serde.rs/">its guide</a>:
+</div>
+<div style="margin-top:.625em;">
+Serde is a framework for <b>ser</b>ializing and <b>de</b>serializing Rust data structures efficiently and generically.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.3.3.1. Generically" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+<code>serde</code> does not, by itself, provide support for (de)serialisation from/to any specific data format: you will not find any code inside <code>serde</code> that deals with the specifics of JSON, Avro or MessagePack. If you need support for a specific data format, you need to pull in another crate (e.g. <code>serde_json</code> for JSON or <code>avro-rs</code> for Avro). <br />
+<code>serde</code> defines a set of interfaces or, as they themselves call it, a <a href="https://serde.rs/data-model.html">data model</a>.
+</div>
+<div style="margin-top:.625em;">
+If you want to implement a library to support serialisation for a new data format, you have to provide an implementation of the <a href="https://docs.serde.rs/serde/trait.Serializer.html">Serializer</a> trait. <br />
+Each method on the Serializer trait corresponds to one of the <a href="https://serde.rs/data-model.html">29 types</a> that form <code>serde</code>'s data model - your implementation of <code>Serializer</code> specifies how each of those types maps to your specific data format. 
+</div>
+<div style="margin-top:.625em;">
+For example, if you were adding support for JSON serialisation, your <code>serialize_seq</code> implementation would output an opening square bracket <code>[</code> and return a type which can be used to serialize sequence elements.
+</div>
+<div style="margin-top:.625em;">
+On the other side, you have the <a href="https://docs.serde.rs/serde/ser/trait.Serialize.html">Serialize</a> trait: your implementation of <code>Serialize::serialize</code> for a Rust type is meant to specify how to decompose it according to <code>serde</code>'s data model using the methods available on the <code>Serializer</code> trait. 
+</div>
+<div style="margin-top:.625em;">
+Using again the sequence example, this is how <code>Serialize</code> is implemented for a Rust vector:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+use serde::ser::{Serialize, Serializer, SerializeSeq};
+
+impl<T> Serialize for Vec<T>
+where
+    T: Serialize,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(Some(self.len()))?;
+        for element in self {
+            seq.serialize_element(element)?;
+        }
+        seq.end()
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+That is what allows <code>serde</code> to be agnostic with respect to data formats: once your type implements <code>Serialize</code>, you are then free to use any concrete implementation of <code>Serializer</code> to actually perform the serialisation step - i.e. you can serialize your type to any format for which there is an available <code>Serializer</code> implementation on <code>crates.io</code> (spoiler: almost all commonly used data formats).
+</div>
+<div style="margin-top:.625em;">
+The same is true for deserialisation, via <code>Deserialize</code> and <code>Deserializer</code>, with a few additional details around lifetimes to support zero-copy deserialisation.
+</div>
+    ]]>
+    </c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
