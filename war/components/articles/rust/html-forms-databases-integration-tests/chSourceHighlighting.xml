@@ -745,6 +745,2059 @@ The same is true for deserialisation, via <code>Deserialize</code> and <code>Des
 </div>
     ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="2.3.3.2. Efficiently" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+What about speed? <br />
+Is <code>serde</code> slower due to the fact that it is generic over the underlying data formats?
+</div>
+<div style="margin-top:.625em;">
+No, thanks to a process called <a href="https://doc.rust-lang.org/book/ch10-01-syntax.html">monomorphization</a>. <br />
+Every time a generic function is called with a concrete set of types, the Rust compiler will create a copy of the function body replacing the generic type parameters with the concrete types. This allows the compiler to optimize each instance of the function body with respect to the concrete types involved: the result is no different from what we would have achieved writing down separate functions for each type, without using generics or traits. In other words, we do not pay any runtime costs for using generics.
+</div>
+<div style="margin-top:.625em;">
+This concept is extremely powerful and it’s often referred to as zero-cost abstraction: using higher-level language constructs results in the same machine code you would have obtained with uglier/more "hand-rolled" implementations. We can therefore write code that is easier to read for a human (as it’s supposed be!) without having to compromise on the quality of the final artifact.
+</div>
+<div style="margin-top:.625em;">
+<code>serde</code> is also extremely careful when it comes to memory usage: the intermediate data model that we spoke about is implicitly defined via trait methods, there is no real intermediate serialised struct. If you want to learn more about it, Josh Mcguigan wrote an amazing deep-dive titled <a href="https://www.joshmcguigan.com/blog/understanding-serde/">Understanding Serde</a>.
+</div>
+<div style="margin-top:.625em;">
+It is also worth pointing out that all information required to (de)serialize a specific type for a specific data format are available at compile-time, there is no runtime overhead.
+</div>
+<div style="margin-top:.625em;">
+<b>De</b>serializers in other languages often leverage runtime reflection to fetch information about the type you want to <b>de</b>serialize (e.g. the list of their field names). <code>Rust does not provide runtime reflection</code> and everything has to be specified upfront.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.3.3.3. Conveniently" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+This is where <code>#[derive(Serialize)]</code> and <code>#[derive(Deserialize)]</code> come into the picture. <br />
+You really do not want to spell out, manually, how serialisation should be performed for every single type defined in your project. It is tedious, error-prone and it takes time away from the application-specific logic that you are supposed to be focused on.
+</div>
+<div style="margin-top:.625em;">
+Those two procedural macros, bundled with <code>serde</code> behind the <code>derive</code> feature flag, will parse the definition of your type and automatically generate for you the right <code>Serialize/Deserialize</code> implementation.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.3.4. Putting everything together" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Given everything we learned so far, let's take a second look at our subscribe handler:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#[derive(serde::Deserialize)]
+pub struct FormData {
+    email: String,
+    name: String,
+}
+
+// Let's start simple: we always return a 200 OK
+async fn subscribe(_form: web::Form<FormData>) -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.3.4. Putting everything together" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We now have a good picture of what is happening:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">before calling <code>subscribe</code> <code>actix-web</code> invokes the <code>from_request</code> method for all <code>subscribe</code>'s input arguments: in our case, <code>Form::from_request</code>;</li>
+  <li style="margin-top:.325em;"><code>Form::from_request</code> tries to deserialise the body into <code>FormData</code> according to the rules of URL-encoding leveraging <code>serde_urlencoded</code> and the <code>Deserialize</code> implementation of <code>FormData</code>, automatically generated for us by <code>#[derive(serde::Deserialize)]</code>;</li>
+  <li style="margin-top:.325em;">if <code>Form::from_request</code> fails, a <code>400 BAD REQUEST</code> is returned to the caller. If it succeeds, <code>subscribe</code> is invoked and we return a 200 OK.</li>
+</ul>
+<div style="margin-top:.625em;">
+Take a moment to be amazed: it looks so deceptively simple, yet there is so much going on in there - we are leaning heavily on Rust's strength as well as some of the most polished crates in its ecosystem.
+</div>
+
+
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">3. Storing Data: Databases</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Our <code>POST /subscriptions</code> endpoint passes our tests but its usefulness is fairly limited: we are not storing valid emails and names anywhere. 
+</div>
+<div style="margin-top:.625em;">
+There is no permanent record of the information that we collected from our HTML form. <br />
+How do we fix it?
+</div>
+<div style="margin-top:.625em;">
+When we defined <a href="https://www.lpalmieri.com/posts/2020-05-24-zero-to-production-0-foreword/">what Cloud-native stands for</a> we listed some of the emergent behaviour that we expect to see in our system: in particular, we want it to achieve high availability while running in a fault-prone environment. Our application is therefore forced to be <code>distributed</code> - there should be multiple instances of it running on multiple machines in order to survive hardware failures.
+</div>
+<div style="margin-top:.625em;">
+This has consequences when it comes to data persistence: we cannot rely on the filesystem of our host as a storage layer for incoming data. 
+</div>
+<div style="margin-top:.625em;">
+Anything that we save on disk would only be available to one of the many replicas of our application. Furthermore, it would probably disappear if the underlying host crashed.
+</div>
+<div style="margin-top:.625em;">
+This explains why Cloud-native applications are usually stateless: their persistence needs are delegated to specialised external systems - <b>databases</b>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.1. Choosing A Database" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+What database should we use for our newsletter project?
+</div>
+<div style="margin-top:.625em;">
+I will lay down my personal rule-of-thumb, which might sound controversial:
+</div>
+<div style="margin-top:.625em;">
+If you are uncertain about your persistence requirements, use a relational database. <br />
+If you have no reason to expect <code>massive</code> scale, use <a href="https://www.postgresql.org/">PostgreSQL</a>.
+</div>
+<div style="margin-top:.625em;">
+The offering when it comes to databases has exploded in the last twenty years. <br />
+From a data-model perspective, the NoSQL movement has brought us document-stores (e.g. <a href="https://www.mongodb.com/">MongoDB</a>), key-value stores (e.g. <a href="https://aws.amazon.com/dynamodb/">AWS DynamoDB</a>), graph databases (e.g. <a href="https://neo4j.com/">Neo4J</a>), etc.
+</div>
+<div style="margin-top:.625em;">
+We have databases that use RAM as their primary storage (e.g. <a href="https://redis.io/">Redis</a>). <br />
+We have databases that are optimised for analytical queries via columnar storage (e.g. <a href="https://aws.amazon.com/redshift/">AWS RedShift</a>).
+</div>
+<div style="margin-top:.625em;">
+There is a world of possibilities and you should definitely leverage this richness when designing systems. <br />
+Nonetheless, it is much easier to design yourself into a corner by using a specialised data storage solution when you still do not have a clear picture of the data access patterns used by your application.
+</div>
+<div style="margin-top:.625em;">
+Relational databases are reasonably good as jack-of-all-trades: they will often be a good choice when building the first version of your application, supporting you along the way while you explore the constraints of your domain.
+</div>
+<div style="margin-top:.625em;">
+Even when it comes to relational databases there is plenty of choice. <br />
+Alongside classics like <code>PostgreSQL</code> and <a href="https://www.mysql.com/">MySQL</a> you will find some exciting new entries like <a href="https://aws.amazon.com/rds/aurora/">AWS Aurora</a>, <a href="https://cloud.google.com/spanner">Google Spanner</a> and <a href="https://www.cockroachlabs.com/">CockroachDB</a>.
+</div>
+<div style="margin-top:.625em;">
+What do they all have in common?
+</div>
+<div style="margin-top:.625em;">
+They are built to scale. Way beyond what traditional SQL databases were supposed to be able to handle. <br />
+If scale is a problem of yours, by all means, take a look there. If it isn't, you do not need to take onboard the additional complexity.
+</div>
+<div style="margin-top:.625em;">
+This is how we end up with <code>PostgreSQL</code>: a battle-tested piece of technology, widely supported across all cloud providers if you need a managed offering, opensource, exhaustive documentation, easy to run locally and in CI via Docker, well-supported within the Rust ecosystem.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.2. Choosing A Database Crate" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+As of August 2020, there are three top-of-mind options when it comes to interacting with PostgreSQL in a Rust project: <code>tokio-postgres</code>, <code>sqlx</code>, <code>diesel</code>.
+</div>
+<div style="margin-top:.625em;">
+All three are massively popular projects that have seen significant adoption with a fair share of production usage. How do you pick one?
+</div>
+<div style="margin-top:.625em;">
+It boils down to how you feel about three topics:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">compile-time safety;</li>
+  <li style="margin-top:.325em;">SQL-first vs a DSL for query building;</li>
+  <li style="margin-top:.325em;">async vs sync interface.</li>
+</ul>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.2.1. Compile-time Safety" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+When interacting with a relational database it is fairly easy to make mistakes - we might, for example:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">have a typo in the name of a column or a table mentioned in our query;</li>
+  <li style="margin-top:.325em;">try to perform operations that are rejected by the database engine (e.g. summing a string and a number or joining two tables on the wrong column);</li>
+  <li style="margin-top:.325em;">expect to have a certain field in the returned data that is actually not there.</li>
+</ul>
+<div style="margin-top:.625em;">
+The key question is: when do we realise we made a mistake?
+</div>
+<div style="margin-top:.625em;">
+In most programming languages, it will be <b>at runtime</b>: when we try to execute our query the database will reject it and we will get an error or an exception. This is what happens when using <code>tokio-postgres</code>.
+</div>
+<div style="margin-top:.625em;">
+<code>diesel</code> and <code>sqlx</code> try to speed up the feedback cycle by detecting <b>at compile-time</b> most of these mistakes. <br />
+<code>diesel</code> leverages <a href="https://github.com/diesel-rs/diesel/tree/master/diesel_cli">its CLI</a> to generate <a href="https://docs.diesel.rs/diesel/macro.table.html">a representation of the database schema</a> as Rust code, which is then used to check assumptions on all of your queries. <br />
+<code>sqlx</code>, instead, uses procedural macros to connect to a database at compile-time and check if the provided query is indeed sound.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.2.2. Query Interface" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Both <code>tokio-postgres</code> and <code>sqlx</code> expect you to use SQL directly to write your queries.
+</div>
+<div style="margin-top:.625em;">
+<code>diesel</code>, instead, provides its own query builder: queries are represented as Rust types and you add filters, perform joins and similar operations by calling methods on them. This is often referred to with the name of <b>D</b>omain <b>S</b>pecific <b>L</b>anguage (<code>DSL</code>).
+</div>
+<div style="margin-top:.625em;">
+Which one is better? <br />
+As always, it depends.
+</div>
+<div style="margin-top:.625em;">
+SQL is extremely portable - you can use it in any project where you have to interact with a relational database, regardless of the programming language or the framework the application is written with. 
+</div>
+<div style="margin-top:.625em;">
+<code>diesel</code>'s DSL, instead, is only relevant when working with <code>diesel</code>: you have to pay an upfront learning cost to become fluent with it and it only pays off if you stick to <code>diesel</code> for your current and future projects. It is also worth pointing out that expressing complex queries using <code>diesel</code>'s DSL can be difficult and you might end up having to <a href="http://diesel.rs/guides/extending-diesel/">write raw SQL anyway</a>.
+</div>
+<div style="margin-top:.625em;">
+On the flip side, <code>diesel</code>'s DSL makes it easier to write <a href="http://diesel.rs/guides/composing-applications/">reusable components</a>: you can split your complex queries into smaller units and leverage them in multiple places, as you would do with a normal Rust function.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.2.3. Async Support" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+I remember reading somewhere a killer explanation of async IO that more or less sounded like this:
+</div>
+<div style="margin-top:.625em;">
+Threads are for working in parallel, async is for waiting in parallel.
+</div>
+<div style="margin-top:.625em;">
+Your database is not sitting next to your application on the same physical machine host: to run queries you have to perform network calls. 
+</div>
+<div style="margin-top:.625em;">
+An asynchronous database driver will not reduce how long it takes to process a single query, but it will enable your application to leverage all CPU cores to perform other meaningful work (e.g. serve another HTTP request) while waiting for the database to return results.
+</div>
+<div style="margin-top:.625em;">
+Is this a significant enough benefit to take onboard the additional complexity introduced by asynchronous code? 
+</div>
+<div style="margin-top:.625em;">
+It depends on the performance requirements of your application. <br />
+Generally speaking, running queries on a separate threadpool should be more than enough for most usecases. At the same time, if your web framework is already asynchronous, using an asynchronous database driver will actually give you less headaches.
+</div>
+<div style="margin-top:.625em;">
+Both <code>sqlx</code> and <code>tokio-postgres</code> provide an asynchronous interface, while <code>diesel</code> is synchronous and <a href="https://github.com/diesel-rs/diesel/issues/399">does not plan</a> to roll out async support in the near future.
+</div>
+<div style="margin-top:.625em;">
+It is also worth mentioning that <code>tokio-postgres</code> is, at the moment, the only crate that supports <a href="https://docs.rs/tokio-postgres/0.5.5/tokio_postgres/index.html#pipelining">query pipelining</a>. The feature is still at the <a href="https://github.com/launchbadge/sqlx/issues/408">design stage</a> for <code>sqlx</code> while I could not find it mentioned anywhere in <code>diesel</code>'s docs or issue tracker.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.2.4. Summary" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's summarise everything we covered in a comparison matrix:
+</div>
+
+<table style="color:currentcolor;margin:.5em 0;line-height:1.3em;width:100%;">
+    <tbody>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;
+          border-top: solid 1px black;border-style: dashed;">
+            <td style="padding: 0 0 0 1em;margin: 0;text-align: left;font-weight: normal;width:20%">Crate</td>
+            <td style="padding: 0 0 0 1em;margin: 0;text-align: left;padding:.5em 0;width:120px;">Compile-time safety</td>
+            <td style="padding: 0 0 0 1em;margin: 0;text-align: left;padding:.5em 0;width:240px;">Query interface</td>
+            <td style="padding: 0 0 0 1em;margin: 0;text-align: left;padding:.5em 0;width:120px;">Async</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;">
+            <td style="vertical-align: middle;padding:.5em 0 .5em 1em;margin: 0;text-align:left;font-weight: normal;">tokio-postgres</td>
+            <td style="vertical-align: middle;margin: 0;text-align: left;">No</td>
+            <td style="margin: 0;text-align: left;vertical-align: middle;">SQL</td>
+            <td style="vertical-align: middle;margin: 0;text-align: left;">Yes</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;">
+            <td style="vertical-align: middle;padding:.5em 0 .5em 1em;margin: 0;text-align:left;font-weight: normal;">sqlx</td>
+            <td style="vertical-align: middle;margin: 0;text-align: left;">Yes</td>
+            <td style="margin: 0;text-align: left;vertical-align: middle;">SQL</td>
+            <td style="vertical-align: middle;margin: 0;text-align: left;">Yes</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px black;border-style: dashed;">
+            <td style="vertical-align: middle;padding:.5em 0 .5em 1em;margin: 0;text-align:left;font-weight: normal;">diesel</td>
+            <td style="vertical-align: middle;margin: 0;text-align: left;">Yes</td>
+            <td style="margin: 0;text-align: left;vertical-align: middle;">DSL</td>
+            <td style="vertical-align: middle;margin: 0;text-align: left;">No</td>
+        </tr>
+    </tbody>
+</table>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.2.5. Our Pick: sqlx" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+For Zero To Production we will use <code>sqlx</code>: its asynchronous support simplifies the integration with <code>actix-web</code> without forcing us to compromise on compile-time guarantees. It also limits the API surface that we have to cover and become proficient with thanks to its usage of raw SQL for queries.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.3. Integration Testing With Side-effects" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+What do we want to accomplish? <br />
+Let's look again at our "happy case" test:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+// [...]
+
+#[tokio::test]
+async fn subscribe_returns_a_200_for_valid_form_data() {
+    // Arrange
+    let app_address = spawn_app();
+    let client = reqwest::Client::new();
+
+    // Act
+    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+    let response = client
+        .post(&format!("{}/subscriptions", &app_address))
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(body)
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    // Assert
+    assert_eq!(200, response.status().as_u16());
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The assertion we have there is not enough. <br />
+We have no way to tell, just by looking at the API response, if the desired business outcome has been achieved - we are interested to know if a <code>side-effect</code> has taken place, i.e. data storage.
+</div>
+<div style="margin-top:.625em;">
+We want to check if the details of our new subscriber have actually been persisted. <br />
+How do we go about it?
+</div>
+<div style="margin-top:.625em;">
+We have two options:
+</div>
+
+<ul style="margin-left:2.5em;list-style-type:decimal;margin-top: .325em;">
+  <li style="margin-top:.325em;">leverage another endpoint of our public API to inspect the application state;</li>
+  <li style="margin-top:.325em;">query directly the database in our test case.</li>
+</ul>
+
+<div style="margin-top:.625em;">
+<b>Option 1</b> should be your go-to when possible: your tests remain oblivious to the implementation details of the API (e.g. the underlying database technology and its schema) and are therefore less likely to be disrupted by future refactorings.
+</div>
+<div style="margin-top:.625em;">
+Unfortunately we do not have any public endpoint on our API that allows us to verify if a subscriber exists. <br />
+We could add a <code>GET /subscriptions</code> endpoint to fetch the list of existing subscribers, but we would then have to worry about securing it: we do not want to have the names and emails of our subscribers exposed on the public internet without any form of authentication.
+</div>
+<div style="margin-top:.625em;">
+We will probably end up writing a <code>GET /subscriptions</code> endpoint down the line (i.e. we do not want to log into our production database to check the list of our subscribers), but we should not start writing a new feature just to test the one we are working on.
+</div>
+<div style="margin-top:.625em;">
+Let's bite the bullet and write a small query in our test. We will remove it down the line when a better testing strategy becomes available.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.4. Database Setup" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+To run queries in our test suite we need:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">a running Postgres instance;</li>
+  <li style="margin-top:.325em;">a table to store our subscribers data.</li>
+</ul>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.4.1. Docker" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+To run Postgres we will use Docker - before launching our test suite we will launch a new Docker container using <a href="https://hub.docker.com/_/postgres">Postgres' official Docker image</a>.
+You can follow the <a href="https://www.docker.com/get-started">instructions on Docker's website</a> to install it on your machine.
+</div>
+<div style="margin-top:.625em;">
+Let's create a small bash script for it, <code>scripts/init_db.sh</code>, with a few knobs to customise Postgres' default settings:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#!/usr/bin/env bash
+set -x
+set -eo pipefail
+
+# Check if a custom user has been set, otherwise default to 'postgres'
+DB_USER=${POSTGRES_USER:=postgres}
+# Check if a custom password has been set, otherwise default to 'password'
+DB_PASSWORD="${POSTGRES_PASSWORD:=password}"
+# Check if a custom database name has been set, otherwise default to 'newsletter'
+DB_NAME="${POSTGRES_DB:=newsletter}"
+# Check if a custom port has been set, otherwise default to '5432'
+DB_PORT="${POSTGRES_PORT:=5432}"
+
+# Launch postgres using Docker
+docker run \
+  -e POSTGRES_USER=${DB_USER} \
+  -e POSTGRES_PASSWORD=${DB_PASSWORD} \
+  -e POSTGRES_DB=${DB_NAME} \
+  -p "${DB_PORT}":5432 \
+  -d postgres \
+  postgres -N 1000
+  # ^ Increased maximum number of connections for testing purposes
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's make it executable:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ chmod +x scripts/init_db.sh
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can then launch Postgres with
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ ./scripts/init_db.sh
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+If you run <code>docker ps</code> you should see something along the lines of
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+IMAGE            PORTS                   STATUS 
+postgres   127.0.0.1:5432->5432/tcp   Up 12 seconds   [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.4.2. Database Migrations" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+To store our subscribers details we need to create our first table.<br />
+To add a new table to our database we need to change its <a href="https://www.postgresql.org/docs/9.5/ddl-schemas.html">schema</a> - this is commonly referred to as a database migration.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.4.2.1. sqlx-cli" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<code>sqlx</code> provides a command-line interface, <code>sqlx-cli</code>, to manage database migrations. <br />
+We can install the CLI with
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# We only need support for Postgres
+$ cargo install --version=0.6.0 sqlx-cli --no-default-features --features postgres
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Run <code>sqlx --help</code> to check that everything is working as expected.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.4.2.2. Database Creation" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+The first command we will usually want to run is <code>sqlx database create</code>. According to the help docs:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ sqlx-database-create
+Creates the database specified in your DATABASE_URL
+
+USAGE:
+    sqlx database create
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+In our case, this is not strictly necessary: our Postgres Docker instance already comes with a default database named <code>newsletter</code>, thanks to the settings we specified when launching it using environment variables. Nonetheless, you will have to go through the creation step in your CI pipeline and in your production environment, so worth covering it anyway.
+</div>
+<div style="margin-top:.625em;">
+As the help docs imply, <code>sqlx database create</code> relies on the <code>DATABASE_URL</code> environment variable to know what to do.
+<code>DATABASE_URL</code> is expected to be a valid Postgres connection string - the format is as follows:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can therefore add a couple more lines to our <code>scripts/init_db.sh</code> script:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# [...]
+
+export DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@localhost:${DB_PORT}/${DB_NAME}
+sqlx database create
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+You might run into an annoying issue from time to time: the Postgres container will not be ready to accept connections when we try to run <code>sqlx database create</code>.
+</div>
+<div style="margin-top:.625em;">
+It happened to me often enough to look for a workaround: we need to wait for Postgres to be healthy before starting to run commands against it. Let's update our script to:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#!/usr/bin/env bash
+set -x
+set -eo pipefail
+
+DB_USER=${POSTGRES_USER:=postgres}
+DB_PASSWORD="${POSTGRES_PASSWORD:=password}"
+DB_NAME="${POSTGRES_DB:=newsletter}"
+DB_PORT="${POSTGRES_PORT:=5432}"
+
+docker run \
+  -e POSTGRES_USER=${DB_USER} \
+  -e POSTGRES_PASSWORD=${DB_PASSWORD} \
+  -e POSTGRES_DB=${DB_NAME} \
+  -p "${DB_PORT}":5432 \
+  -d postgres \
+  postgres -N 1000
+
+# Keep pinging Postgres until it's ready to accept commands
+until PGPASSWORD="${DB_PASSWORD}" psql -h "localhost" -U "${DB_USER}" -p "${DB_PORT}" -d "postgres" -c '\q'; do
+  >&2 echo "Postgres is still unavailable - sleeping"
+  sleep 1
+done
+
+>&2 echo "Postgres is up and running on port ${DB_PORT}!"
+
+export DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@localhost:${DB_PORT}/${DB_NAME}
+sqlx database create
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Problem solved! <br />
+The health check uses psql, the command line client for Postgres. Check <a href="https://www.timescale.com/blog/how-to-install-psql-on-mac-ubuntu-debian-windows/">these instructions</a> on how to install it on your OS.
+</div>
+<div style="margin-top:.625em;">
+Scripts do not come bundled with a manifest to declare their dependencies: it's unfortunately very common to launch a script without having installed all the prerequisites. This will usually result in the script crashing mid-execution, sometimes leaving stuff in our system in a half-broken state.
+</div>
+<div style="margin-top:.625em;">
+We can do better in our initialization script: let's check that both <code>psql</code> and <code>sqlx-cli</code> are installed at the very beginning.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+set -x
+set -eo pipefail
+
+if ! [ -x "$(command -v psql)" ]; then
+  echo >&2 "Error: psql is not installed."
+  exit 1
+fi
+
+if ! [ -x "$(command -v sqlx)" ]; then
+  echo >&2 "Error: sqlx is not installed."
+  echo >&2 "Use:"
+  echo >&2 "    cargo install --version=0.6.0 sqlx-cli --no-default-features --features postgres"
+  echo >&2 "to install it."
+  exit 1
+fi
+
+# The rest of the script
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.4.2.3. Adding A Migration" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's create our first migration now with
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# Assuming you used the default parameters to launch Postgres in Docker!
+export DATABASE_URL=postgres://postgres:password@127.0.0.1:5432/newsletter
+sqlx migrate add create_subscriptions_table
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+A new top-level directory should have now appeared in your project - <code>migrations</code>. This is where all migrations for our project will be stored by <code>sqlx</code>'s CLI.
+</div>
+<div style="margin-top:.625em;">
+Under <code>migrations</code> you should already have one file called <code>{timestamp}_create_subscriptions_table.sql</code> - this is where we have to write the SQL code for our first migration.
+</div>
+<div style="margin-top:.625em;">
+Let's quickly sketch the query we need:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+-- migrations/{timestamp}_create_subscriptions_table.sql
+-- Create Subscriptions Table
+CREATE TABLE subscriptions(
+   id uuid NOT NULL,
+   PRIMARY KEY (id),
+   email TEXT NOT NULL UNIQUE,
+   name TEXT NOT NULL,
+   subscribed_at timestamptz NOT NULL
+);
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+There is a <a href="https://www.mssqltips.com/sqlservertip/5431/surrogate-key-vs-natural-key-differences-and-when-to-use-in-sql-server/">endless debate</a> when it comes to <a href="https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-PRIMARY-KEYS">primary keys</a>: some people prefer to use columns with a business meaning (e.g. email, a natural key), others feel safer with a synthetic key without any business meaning (e.g. <code>id</code>, a randomly generated UUID, a surrogate key).
+</div>
+<div style="margin-top:.625em;">
+I generally default to a synthetic identifier unless I have a very compelling reason not to - feel free to disagree with me here.
+</div>
+<div style="margin-top:.625em;">
+A couple of other things to make a note of:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">we are keeping track of when a subscription is created with <code>subscribed_at</code> (<a href="https://www.postgresqltutorial.com/postgresql-timestamp/">timestamptz</a> is a time-zone aware date and time type);</li>
+  <li style="margin-top:.325em;">we are enforcing email uniqueness at the database-level with a <a href="https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-UNIQUE-CONSTRAINTS">UNIQUE constraint</a>;</li>
+  <li style="margin-top:.325em;">we are enforcing that all fields should be populated with a <a href="https://www.postgresql.org/docs/current/ddl-constraints.html#id-1.5.4.6.6">NOT NULL constraint</a> on each column;</li>
+  <li style="margin-top:.325em;">we are using <a href="https://www.postgresql.org/docs/current/datatype-character.html">TEXT</a> for <code>email</code> and <code>name</code> because we do not have any restriction on their maximum lengths.</li>
+</ul>
+<div style="margin-top:.625em;">
+Database constraints are useful as a last line of defence from application bugs but they come at a cost - the database has to ensure all checks pass before writing new data into the table. Therefore constraints impact our write-throughput, i.e. the number of rows we can <code>INSERT</code> per unit of time in a table.
+</div>
+<div style="margin-top:.625em;">
+<code>UNIQUE</code>, in particular, introduces an additional B-tree index on our <code>email</code> column: the index has to be updated on every <code>INSERT/UPDATE/DELETE</code> query and it takes space on disk.
+</div>
+<div style="margin-top:.625em;">
+In our specific case, I would not be too worried: our mailing list would have to be incredibly popular for us to encounter issues with our write throughput. Definitely a good problem to have, if it comes to that.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.4.2.4. Running Migrations" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We can run migrations against our database with
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ sqlx migrate run
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It has the same behaviour of <code>sqlx database create</code> - it will look at the <code>DATABASE_URL</code> environment variable to understand what database needs to be migrated.
+</div>
+<div style="margin-top:.625em;">
+Let's add it to our <code>scripts/init_db.sh</code> script:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#!/usr/bin/env bash
+set -x
+set -eo pipefail
+
+if ! [ -x "$(command -v psql)" ]; then
+  echo >&2 "Error: psql is not installed."
+  exit 1
+fi
+
+if ! [ -x "$(command -v sqlx)" ]; then
+  echo >&2 "Error: sqlx is not installed."
+  echo >&2 "Use:"
+  echo >&2 "    cargo install --version=0.6.0 sqlx-cli --no-default-features --features postgres"
+  echo >&2 "to install it."
+  exit 1
+fi
+
+DB_USER=${POSTGRES_USER:=postgres}
+DB_PASSWORD="${POSTGRES_PASSWORD:=password}"
+DB_NAME="${POSTGRES_DB:=newsletter}"
+DB_PORT="${POSTGRES_PORT:=5432}"
+
+# Allow to skip Docker if a dockerized Postgres database is already running
+if [[ -z "${SKIP_DOCKER}" ]]
+then
+  docker run \
+      -e POSTGRES_USER=${DB_USER} \
+      -e POSTGRES_PASSWORD=${DB_PASSWORD} \
+      -e POSTGRES_DB=${DB_NAME} \
+      -p "${DB_PORT}":5432 \
+      -d postgres \
+      postgres -N 1000
+fi
+
+until PGPASSWORD="${DB_PASSWORD}" psql -h "localhost" -U "${DB_USER}" -p "${DB_PORT}" -d "postgres" -c '\q'; do
+  >&2 echo "Postgres is still unavailable - sleeping"
+  sleep 1
+done
+
+>&2 echo "Postgres is up and running on port ${DB_PORT} - running migrations now!"
+
+export DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@localhost:${DB_PORT}/${DB_NAME}
+sqlx database create
+sqlx migrate run
+
+>&2 echo "Postgres has been migrated, ready to go!"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We have put the <code>docker run</code> command behind a <code>SKIP_DOCKER</code> flag to make it easy to run migrations against an existing Postgres instance without having to tear it down manually and re-create it with <code>scripts/init_db.sh</code>. It will also be useful in CI, if Postgres is not spun up by our script.
+</div>
+<div style="margin-top:.625em;">
+We can now migrate the database with
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ SKIP_DOCKER=true ./scripts/init_db.sh
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+You should be able to spot, in the output, something like
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
++ sqlx migrate run
+20200823135036/migrate create subscriptions table (7.563944ms)
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+If you check your database using <a href="https://www.pgadmin.org/">your favourite graphic interface</a> for Postgres you will now see a <code>subscriptions</code> table alongside a brand new <code>_sqlx_migrations</code> table: this is where <code>sqlx</code> keeps track of what migrations have been run against your database - it should contain a single row now for our <code>create_subscriptions_table</code> migration.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.5. Writing Our First Query" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We have a migrated database up and running. How do we talk to it?
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.5.1. Sqlx Feature Flags" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We installed <code>sqlx-cli</code>, but we have actually not yet added sqlx itself as a dependency of our application. <br />
+Let's append a new line to our <code>Cargo.toml</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+[dependencies]
+# [...]
+
+# Using table-like toml syntax to avoid a super-long line!
+[dependencies.sqlx]
+version = "0.6"
+default-features = false
+features = [
+    "runtime-actix-rustls", 
+    "macros", 
+    "postgres", 
+    "uuid", 
+    "chrono", 
+    "migrate"
+]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Yeah, there are a lot of feature flags. Let's go through all of them one by one:
+</div>
+
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;"><code>runtime-actix-rustls</code> tells <code>sqlx</code> to use the <code>actix</code> runtime for its futures and <code>rustls</code> as TLS backend;</li>
+  <li style="margin-top:.325em;"><code>macros</code> gives us access to <code>sqlx::query!</code> and <code>sqlx::query_as!</code>, which will be using extensively;</li>
+  <li style="margin-top:.325em;"><code>postgres</code> unlocks Postgres-specific functionality (e.g. non-standard SQL types);</li>
+  <li style="margin-top:.325em;"><code>uuid</code> adds support for mapping SQL UUIDs to the <code>Uuid</code> type from the <code>uuid</code> crate. We need it to work with our id column;</li>
+  <li style="margin-top:.325em;"><code>chrono</code> adds support for mapping SQL <code>timestamptz</code> to the <code>DateTime&lt;T&gt;</code> type from the chrono crate. We need it to work with our <code>subscribed_at</code> column;</li>
+  <li style="margin-top:.325em;"><code>migrate</code> gives us access to the same functions used under the hood by <code>sqlx-cli</code> to manage migrations. It will turn out to be useful for our test suite.</li>
+</ul>
+
+<div style="margin-top:.625em;">
+These should be enough for what we need to do in this chapter.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.5.2. Configuration Management" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+The simplest entrypoint to connect to a Postgres database is <code>PgConnection</code>. <br />
+<code>PgConnection</code> implements the <a href="https://docs.rs/sqlx/0.5.1/sqlx/prelude/trait.Connection.html">Connection</a> trait which provides us with a <a href="https://docs.rs/sqlx/0.5.1/sqlx/prelude/trait.Connection.html#method.connect">connect</a> method: it takes as input a connection string and returns us, asynchronously, a <code>Result&lt;PostgresConnection, sqlx::Error&gt;</code>.
+</div>
+<div style="margin-top:.625em;">
+Where do we get a connection string?
+</div>
+<div style="margin-top:.625em;">
+We could hard-code one in our application and then use it for our tests as well.<br />
+Or we could choose to introduce immediately some basic mechanism of configuration management.
+</div>
+<div style="margin-top:.625em;">
+It is simpler than it sounds and it will save us the cost of tracking down a bunch of hard-coded values across the whole application.
+</div>
+<div style="margin-top:.625em;">
+The <a href="https://docs.rs/config/">config</a> crate is Rust's swiss-army knife when it comes to configuration: it supports multiple file formats and it lets you combine different sources hierarchically (e.g. environment variables, configuration files, etc.) to easily customise the behaviour of your application for each deployment environment.
+</div>
+<div style="margin-top:.625em;">
+We do not need anything fancy for the time being: a single configuration file will do.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.5.2.1. Making Space" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Right now all our application code lives in a single file, <code>lib.rs</code>. <br />
+Let's quickly split it into multiple sub-modules to avoid chaos now that we are adding new functionality. We want to land on this folder structure:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+src/
+  configuration.rs
+  lib.rs
+  main.rs
+  routes/
+    mod.rs
+    health_check.rs
+    subscriptions.rs
+  startup.rs
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Our <code>lib.rs</code> file becomes
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/lib.rs
+pub mod configuration;
+pub mod routes;
+pub mod startup;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>startup.rs</code> will host our <code>run</code> function, <code>health_check</code> goes into <code>routes/health_check.rs</code>, <code>subscribe</code> and <code>FormData</code> into <code>routes/subscriptions.rs</code>, <code>configuration.rs</code> starts empty. Both handlers are re-exported in <code>routes/mod.rs</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/mod.rs
+mod health_check;
+mod subscriptions;
+
+pub use health_check::*;
+pub use subscriptions::*;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+You might have to add a few pub visibility modifiers here and there, as well as performing a few corrections to <code>use</code> statements in <code>main.rs</code> and <code>tests/health_check.rs</code>.
+</div>
+<div style="margin-top:.625em;">
+Make sure <code>cargo test</code> comes out green before moving forward.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.5.2.2. Reading A Configuration File" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+To manage configuration with config we must represent our application settings as a Rust type that implements serde's Deserialize trait.
+</div>
+<div style="margin-top:.625em;">
+Let's create a new Settings struct:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+#[derive(serde::Deserialize)]
+pub struct Settings {}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We have two groups of configuration values at the moment:
+</div>
+
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">the application port, where actix-web is listening for incoming requests (currently hard-coded to <code>8000</code> in <code>main.rs</code>);</li>
+  <li style="margin-top:.325em;">the database connection parameters.</li>
+</ul>
+
+<div style="margin-top:.625em;">
+Let's add a field for each of them to <code>Settings</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+#[derive(serde::Deserialize)]
+pub struct Settings {
+    pub database: DatabaseSettings,
+    pub application_port: u16
+}
+
+#[derive(serde::Deserialize)]
+pub struct DatabaseSettings {
+    pub username: String,
+    pub password: String,
+    pub port: u16,
+    pub host: String,
+    pub database_name: String,
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We need <code>#[derive(serde::Deserialize)]</code> on top of <code>DatabaseSettings</code> otherwise the compiler will complain with
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0277]: the trait bound 
+`configuration::DatabaseSettings: configuration::_::_serde::Deserialize<'_>` 
+is not satisfied
+ --> src/configuration.rs:3:5
+  |
+3 |     pub database: DatabaseSettings,
+  |     ^^^ the trait `configuration::_::_serde::Deserialize<'_>` 
+  |         is not implemented for `configuration::DatabaseSettings`
+  |
+  = note: required by `configuration::_::_serde::de::SeqAccess::next_element`
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It makes sense: all fields in a type have to be deserialisable in order for the type as a whole to be deserialisable.</div>
+<div style="margin-top:.625em;">
+We have our configuration type, what now?
+</div>
+<div style="margin-top:.625em;">
+First of all, let's add config to our dependencies with
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dependencies]
+config = "0.13"
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We want to read our application settings from a configuration file named <code>configuration.yaml</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+// [...]
+
+pub fn get_configuration() -> Result<Settings, config::ConfigError> {
+    // Initialise our configuration reader
+    let settings = config::Config::builder()
+        // Add configuration values from a file named `configuration.yaml`.
+        .add_source(config::File::new("configuration.yaml", config::FileFormat::Yaml))
+        .build()?;
+    // Try to convert the configuration values it read into
+    // our Settings type
+    settings.try_deserialize::<Settings>()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's modify our <code>main</code> function to read configuration as its first step:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+use std::net::TcpListener;
+use zero2prod::startup::run;
+use zero2prod::configuration::get_configuration;
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    // Panic if we can't read configuration
+    let configuration = get_configuration().expect("Failed to read configuration.");
+    // We have removed the hard-coded `8000` - it's now coming from our settings!
+    let address = format!("127.0.0.1:{}", configuration.application_port);
+    let listener = TcpListener::bind(address)?;
+    run(listener)?.await
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+If you try to launch the application with <code>cargo run</code> it should crash:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Running `target/debug/zero2prod`
+
+thread 'main' panicked at 'Failed to read configuration.: 
+configuration file "configuration" not found', src/main.rs:7:25
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+Panic in Arbiter thread.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's fix it by adding a configuration file. <br />
+We can use any file format for it, as long as <code>config</code> knows how to deal with it: we will go for YAML.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# configuration.yaml
+application_port: 8000
+database:
+  host: "127.0.0.1"
+  port: 5432
+  username: "postgres"
+  password: "password"
+  database_name: "newsletter"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>cargo run</code> should now execute smoothly.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.5.3. Connecting To Postgres" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<code>PgConnection::connect</code> wants a single connection string as input, while <code>DatabaseSettings</code> provides us with granular access to all the connection parameters. Let's add a convenient <code>connection_string</code> method to do it:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+// [...]
+
+impl DatabaseSettings {
+   pub fn connection_string(&self) -> String {
+      format!(
+         "postgres://{}:{}@{}:{}/{}",
+         self.username, self.password, self.host, self.port, self.database_name
+      )
+   }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We are finally ready to connect! <br />
+Let's tweak our happy case test:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+use sqlx::{PgConnection, Connection};
+use zero2prod::configuration::get_configuration;
+// [...]
+
+#[tokio::test]
+async fn subscribe_returns_a_200_for_valid_form_data() {
+    // Arrange
+    let app_address = spawn_app();
+    let configuration = get_configuration().expect("Failed to read configuration");
+    let connection_string = configuration.database.connection_string();
+    // The `Connection` trait MUST be in scope for us to invoke
+    // `PgConnection::connect` - it is not an inherent method of the struct!
+    let connection = PgConnection::connect(&connection_string)
+        .await
+        .expect("Failed to connect to Postgres.");
+    let client = reqwest::Client::new();
+   
+    // Act
+    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+    let response = client
+        .post(&format!("{}/subscriptions", &app_address))
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(body)
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    // Assert
+    assert_eq!(200, response.status().as_u16());
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+And... <code>cargo test</code> works! <br />
+We just confirmed that we can successfully connect to Postgres from our tests! <br />
+A small step for the world, a huge leap forward for us.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.5.4. Our Test Assertion" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Now that we are connected, we can finally write the test assertions we have been dreaming about for the past 10 pages.
+We will use <code>sqlx</code>'s <code>query!</code> macro:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#[tokio::test]
+async fn subscribe_returns_a_200_for_valid_form_data() {
+    // [...]
+    // The connection has to be marked as mutable!
+    let mut connection = ...
+
+    // Assert
+    assert_eq!(200, response.status().as_u16());
+
+    let saved = sqlx::query!("SELECT email, name FROM subscriptions",)
+        .fetch_one(&mut connection)
+        .await
+        .expect("Failed to fetch saved subscription.");
+
+    assert_eq!(saved.email, "ursula_le_guin@gmail.com");
+    assert_eq!(saved.name, "le guin");
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+What is the type of <code>saved</code>? The <code>query!</code> macro returns an anonymous record type: a struct definition is generated at compile-time after having verified that the query is valid, with a member for each column on the result (i.e. <code>saved.email</code> for the email <code>column</code>).
+</div>
+<div style="margin-top:.625em;">
+If we try to run <code>cargo test</code> we will get an error:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error: `DATABASE_URL` must be set to use query macros
+  --> tests/health_check.rs:59:17
+   |
+59 |     let saved = sqlx::query!("SELECT email, name FROM subscriptions",)
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this error originates in a macro (in Nightly builds, 
+     run with -Z macro-backtrace for more info)
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+As we discussed before, <code>sqlx</code> reaches out to Postgres at compile-time to check that queries are well-formed. Just like <code>sqlx-cli</code> commands, it relies on the <code>DATABASE_URL</code> environment variable to know where to find the database.
+</div>
+<div style="margin-top:.625em;">
+We could export <code>DATABASE_URL</code> manually, but we would then run in the same issue every time we boot our machine and start working on this project. Let's take <a href="https://github.com/launchbadge/sqlx#compile-time-verification">the advice of sqlx's authors</a> - we'll add a top-level <code>.env</code> file
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+DATABASE_URL="postgres://postgres:password@localhost:5432/newsletter"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>sqlx</code> will read <code>DATABASE_URL</code> from it and save us the hassle of re-exporting the environment variable every single time.
+</div>
+<div style="margin-top:.625em;">
+It feels a bit dirty to have the database connection parameters in two places (<code>.env</code> and <code>configuration.yaml</code>), but it is not a major problem: <code>configuration.yaml</code> can be used to alter the runtime behaviour of the application after it has been compiled, while <code>.env</code> is only relevant for our development process, build and test steps.
+</div>
+<div style="margin-top:.625em;">
+Commit the <code>.env</code> file to version control - we will need it in CI soon enough!
+</div>
+<div style="margin-top:.625em;">
+Let's try to run <code>cargo test</code> again:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+running 3 tests
+test health_check_works ... ok
+test subscribe_returns_a_400_when_data_is_missing ... ok
+test subscribe_returns_a_200_for_valid_form_data ... FAILED
+
+failures:
+
+---- subscribe_returns_a_200_for_valid_form_data stdout ----
+thread 'subscribe_returns_a_200_for_valid_form_data' panicked at 
+'Failed to fetch saved subscription.: RowNotFound', tests/health_check.rs:59:17
+
+failures:
+    subscribe_returns_a_200_for_valid_form_data
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It failed, which is exactly what we wanted! <br />
+We can now focus on patching the application to turn it green.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.5.5. Updating Our CI Pipeline" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+If you check on it, you will notice that your CI pipeline is now failing to perform most of the checks we introduced at the beginning of our journey.
+Our tests now rely on a running Postgres database to be executed properly. All our build commands (<code>cargo check</code>, <code>cargo lint</code>, <code>cargo build</code>), due to sqlx's compile-time checks, need an up-and-running database!
+</div>
+<div style="margin-top:.625em;">
+We do not want to venture further with a broken CI.
+You can find an updated version of the GitHub Actions setup <a href="https://github.com/LukeMathWalker/zero-to-production/blob/root-chapter-03-part1/.github/workflows/general.yml">here</a>. Only <code>general.yml</code> needs to be updated.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.6. Persisting A New Subscriber" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Just as we wrote a <code>SELECT</code> query to inspect what subscriptions had been persisted to the database in our test, we now need to write an <code>INSERT</code> query to actually store the details of a new subscriber when we receive a valid POST <code>/subscriptions</code> request.
+</div>
+<div style="margin-top:.625em;">
+Let's have a look at our request handler:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs 
+use actix_web::{web, HttpResponse};
+
+#[derive(serde::Deserialize)]
+pub struct FormData {
+    email: String,
+    name: String,
+}
+
+// Let's start simple: we always return a 200 OK
+pub async fn subscribe(_form: web::Form<FormData>) -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+To execute a query within <code>subscribe</code> we need to get our hands on a database connection. <br />
+Let's figure out how to get one.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.6.1. Application State In actix-web" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+So far our application has been entirely stateless: our handlers work solely with the data from the incoming request. <br />
+<code>actix-web</code> gives us the possibility to attach to the application other pieces of data that are not related to the lifecycle of a single incoming request - the so-called application state.
+</div>
+<div style="margin-top:.625em;">
+You can add information to the application state using the <code>app_data</code> method on <code>App</code>.
+</div>
+<div style="margin-top:.625em;">
+Let's try to use <code>app_data</code> to register a <code>PgConnection</code> as part of our application state. We need to modify our <code>run</code> method to accept a <code>PgConnection</code> alongside the <code>TcpListener</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+ 
+use crate::routes::{health_check, subscribe};
+use actix_web::dev::Server;
+use actix_web::{web, App, HttpServer};
+use sqlx::PgConnection;
+use std::net::TcpListener;
+
+pub fn run(
+    listener: TcpListener, 
+    // New parameter!
+    connection: PgConnection
+) -> Result<Server, std::io::Error> {
+    let server = HttpServer::new(|| {
+        App::new()
+            .route("/health_check", web::get().to(health_check))
+            .route("/subscriptions", web::post().to(subscribe))
+            // Register the connection as part of the application state
+            .app_data(connection)
+    })
+    .listen(listener)?
+    .run();
+    Ok(server)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>cargo check</code> is screaming at us:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0277]: the trait bound `PgConnection: std::clone::Clone` 
+is not satisfied in `[closure@src/startup.rs:8:34: 13:6 PgConnection]`
+  --> src/startup.rs:8:18
+   |
+8  |       let server = HttpServer::new(|| {
+   |  __________________^^^^^^^^^^^^^^^_-
+   | |                  |
+   | |                  within `[closure@src/startup.rs:8:34: 13:6 PgConnection]`, 
+   | |                  the trait `std::clone::Clone` is not implemented 
+   | |                  for `PgConnection`
+9  | |         App::new()
+10 | |             .route("/health_check", web::get().to(health_check))
+11 | |             .route("/subscriptions", web::post().to(subscribe))
+12 | |             .app_data(connection)
+13 | |     })
+   | |_____- within this `[closure@src/startup.rs:8:34: 13:6 PgConnection]`
+   |
+   = note: required because it appears within the type 
+           `[closure@src/startup.rs:8:34: 13:6 PgConnection]`
+   = note: required by `actix_web::server::HttpServer::<F, I, S, B>::new`
+
+error[E0277]: the trait bound `PgConnection: std::clone::Clone` 
+is not satisfied in `[closure@src/startup.rs:8:34: 13:6 PgConnection]`
+  --> src/startup.rs:8:18
+   |
+8  |        let server = HttpServer::new(|| {
+   |   __________________^_______________-
+   |  |__________________|
+   | ||
+9  | ||         App::new()
+10 | ||             .route("/health_check", web::get().to(health_check))
+11 | ||             .route("/subscriptions", web::post().to(subscribe))
+12 | ||             .app_data(connection)
+13 | ||     })
+   | ||_____- within this `[closure@src/startup.rs:8:34: 13:6 ::PgConnection]`
+14 | |      .listen(listener)?
+   | |_______________________^ 
+   |    within `[closure@src/startup.rs:8:34: 13:6 ::PgConnection]`, 
+   |    the trait `std::clone::Clone` is not implemented for `PgConnection`
+   |
+   |
+56 |        F: Fn() -> I + Send + Clone + 'static,
+   |                              ----- 
+   |    required by this bound in `actix_web::server::HttpServer`
+   |
+   = note: required because it appears within the type
+           `[closure@src/startup.rs:8:34: 13:6 PgConnection]`
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>HttpServer</code> expects <code>PgConnection</code> to be cloneable, which unfortunately is not the case.
+Why does it need to implement <code>Clone</code> in the first place though?
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.6.2. actix-web Workers" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's zoom in on our invocation of <code>HttpServer::new</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+let server = HttpServer::new(|| {
+    App::new()
+        .route("/health_check", web::get().to(health_check))
+        .route("/subscriptions", web::post().to(subscribe))
+})
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.6.1. Application State In actix-web" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+<code>HttpServer::new</code> does not take <code>App</code> as argument - it wants a closure that returns an App struct. <br />
+This is to support <code>actix-web</code>'s runtime model: <code>actix-web</code> will spin up a worker process for each available core on your machine. <br />
+Each worker runs its own copy of the application built by <code>HttpServer</code> calling the very same closure that <code>HttpServer::new</code> takes as argument.
+</div>
+<div style="margin-top:.625em;">
+That is why <code>connection</code> has to be cloneable - we need to have one for every copy of <code>App</code>. <br />
+But, as we said, <code>PgConnection</code> does not implement <code>Clone</code> because it sits on top of a non-cloneable system resource, a TCP connection with Postgres. What do we do?
+</div>
+<div style="margin-top:.625em;">
+We can use <a href="https://docs.rs/actix-web/4.0.1/actix_web/web/struct.Data.html">web::Data</a>, another <code>actix-web</code> extractor. <br />
+<code>web::Data</code> wraps our connection in an <b>A</b>tomic <b>R</b>eference <b>C</b>ounted pointer, an <a href="https://doc.rust-lang.org/std/sync/struct.Arc.html">Arc</a>: each instance of the application, instead of getting a raw copy of a <code>PgConnection</code>, will get a pointer to one. <br />
+<code>Arc&lt;T&gt;</code> is always cloneable, no matter who T is: cloning an <code>Arc</code> increments the number of active references and hands over a new copy of the memory address of the wrapped value.
+</div>
+<div style="margin-top:.625em;">
+Handlers can then access the application state using the same extractor.
+</div>
+<div style="margin-top:.625em;">
+Let's give it a try:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+use crate::routes::{health_check, subscribe};
+use actix_web::dev::Server;
+use actix_web::{web, App, HttpServer};
+use sqlx::PgConnection;
+use std::net::TcpListener;
+
+pub fn run(
+    listener: TcpListener, 
+    connection: PgConnection
+) -> Result<Server, std::io::Error> {
+    // Wrap the connection in a smart pointer
+    let connection = web::Data::new(connection);
+    // Capture `connection` from the surrounding environment
+    let server = HttpServer::new(move || {
+        App::new()
+            .route("/health_check", web::get().to(health_check))
+            .route("/subscriptions", web::post().to(subscribe))
+            // Get a pointer copy and attach it to the application state
+            .app_data(connection.clone())
+    })
+    .listen(listener)?
+    .run();
+    Ok(server)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It doesn't compile yet, but we just need to do a bit of house-keeping:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0061]: this function takes 2 arguments but 1 argument was supplied
+  --> src/main.rs:11:5
+   |
+11 |     run(listener)?.await
+   |     ^^^ -------- supplied 1 argument
+   |     |
+   |     expected 2 arguments
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's fix the issue real quick:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+use zero2prod::configuration::get_configuration;
+use zero2prod::startup::run;
+use sqlx::{Connection, PgConnection};
+use std::net::TcpListener;
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    let configuration = get_configuration().expect("Failed to read configuration.");
+    let connection = PgConnection::connect(&configuration.database.connection_string())
+        .await
+        .expect("Failed to connect to Postgres.");
+    let address = format!("127.0.0.1:{}", configuration.application_port);
+    let listener = TcpListener::bind(address)?;
+    run(listener, connection)?.await
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Perfect, it compiles.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.6.3. The Data Extractor" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We can now get our hands on an <code>Arc&lt;PgConnection&gt;</code> in our request handler, <code>subscribe</code>, using the <code>web::Data</code> extractor:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+use sqlx::PgConnection;
+// [...]
+
+pub async fn subscribe(
+    _form: web::Form<FormData>,
+    // Retrieving a connection from the application state!
+    _connection: web::Data<PgConnection>,
+) -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We called <code>Data</code> an extractor, but what is it extracting a <code>PgConnection</code> from? <br />
+<code>actix-web</code> uses a type-map to represent its application state: a <a href="https://doc.rust-lang.org/std/collections/struct.HashMap.html">HashMap</a> that stores arbitrary data (using the <a href="https://doc.rust-lang.org/std/any/trait.Any.html">Any</a> type) against their unique type identifier (obtained via <a href="https://doc.rust-lang.org/std/any/struct.TypeId.html">TypeId::of</a>).
+</div>
+<div style="margin-top:.625em;">
+<code>web::Data</code>, when a new request comes in, computes the <code>TypeId</code> of the type you specified in the signature (in our case <code>PgConnection</code>) and checks if there is a record corresponding to it in the type-map. If there is one, it casts the retrieved <code>Any</code> value to the type you specified (<code>TypeId</code> is unique, nothing to worry about) and passes it to your handler. <br />
+It is an interesting technique to perform what in other language ecosystems might be referred to as <code>dependency injection</code>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.6.4. The INSERT Query" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We finally have a connection in <code>subscribe</code>: let's try to persist the details of our new subscriber. <br />
+We will use again the <code>query!</code> macro that we leveraged in our happy-case test.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+use chrono::Utc;
+use uuid::Uuid;
+// [...]
+
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    connection: web::Data<PgConnection>,
+) -> HttpResponse {
+    sqlx::query!(
+        r#"
+        INSERT INTO subscriptions (id, email, name, subscribed_at)
+        VALUES ($1, $2, $3, $4)
+        "#,
+        Uuid::new_v4(),
+        form.email,
+        form.name,
+        Utc::now()
+    )
+    // We use `get_ref` to get an immutable reference to the `PgConnection`
+    // wrapped by `web::Data`.  
+    .execute(connection.get_ref())
+    .await;
+    HttpResponse::Ok().finish()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Let's unpack what is happening:
+</div>
+
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">we are binding dynamic data to our <code>INSERT</code> query. <code>$1</code> refers to the first argument passed to <code>query!</code> after the query itself, <code>$2</code> to the second and so forth. <code>query!</code> verifies at compile-time that the provided number of arguments matches what the query expects as well as that their types are compatible (e.g. you can't pass a number as <code>id</code>);</li>
+  <li style="margin-top:.325em;">we are generating a random <code>Uuid</code> for <code>id</code>;</li>
+  <li style="margin-top:.325em;">we are using the current timestamp in the Utc timezone for <code>subscribed_at</code>.</li>
+</ul>
+
+<div style="margin-top:.625em;">
+We have to add two new dependencies as well to our <code>Cargo.toml</code> to fix the obvious compiler errors:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+[dependencies]
+# [...]
+uuid = { version = "1", features = ["v4"] }
+chrono = "0.4.15"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+What happens if we try to compile it again?
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0277]: the trait bound `&PgConnection: sqlx_core::executor::Executor<'_>` 
+              is not satisfied
+  --> src/routes/subscriptions.rs:29:14
+   |
+29 |     .execute(connection.get_ref().deref())
+   |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+   |              the trait `sqlx_core::executor::Executor<'_>` 
+   |              is not implemented for `&PgConnection`
+   |
+   = help: the following implementations were found:
+             <&'c mut PgConnection as sqlx_core::executor::Executor<'c>>
+   = note: `sqlx_core::executor::Executor<'_>` is implemented for 
+           `&mut PgConnection`, but not for `&PgConnection`
+
+error: aborting due to previous error
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>execute</code> wants an argument that implements <code>sqlx</code>'s <a href="https://docs.rs/sqlx/0.5.7/sqlx/trait.Executor.html">Executor</a> trait and it turns out, as we should have probably remembered from the query we wrote in our test, that <code>&PgConnection</code> does not implement <code>Executor</code> - only <code>&mut PgConnection</code> does.
+</div>
+<div style="margin-top:.625em;">
+Why is that the case?
+</div>
+<div style="margin-top:.625em;">
+<code>sqlx</code> has an asynchronous interface, but it does not allow you to run multiple queries concurrently over the same database connection.
+</div>
+<div style="margin-top:.625em;">
+Requiring a mutable reference allows them to enforce this guarantee in their API. You can think of a mutable reference as a unique reference: the compiler guarantees to <code>execute</code> that they have indeed exclusive access to that <code>PgConnection</code> because there cannot be two active mutable references to the same value at the same time in the whole program. Quite neat.
+</div>
+<div style="margin-top:.625em;">
+Nonetheless it might look like we designed ourselves into a corner: <code>web::Data</code> will never give us mutable access to the application state.
+</div>
+<div style="margin-top:.625em;">
+We could leverage <a href="https://doc.rust-lang.org/book/ch15-05-interior-mutability.html">interior mutability</a> - e.g. putting our <code>PgConnection</code> behind a lock (e.g. a <a href="https://docs.rs/tokio/1.17.0/tokio/sync/struct.Mutex.html">Mutex</a>) would allow us to synchronise access to the underlying TCP socket and get a mutable reference to the wrapped connection once the lock has been acquired.
+</div>
+<div style="margin-top:.625em;">
+We could make it work, but it would not be ideal: we would be constrained to run at most one query at a time. Not great.
+</div>
+<div style="margin-top:.625em;">
+Let's take a second look at the <a href="https://docs.rs/sqlx/0.5.1/sqlx/trait.Executor.html">documentation for sqlx's Executor trait</a>: what else implements Executor apart from <code>&mut PgConnection</code>? <br />
+Bingo: a shared reference to <code>PgPool</code>.
+</div>
+<div style="margin-top:.625em;">
+<code>PgPool</code> is a pool of connections to a Postgres database. How does it bypass the concurrency issue that we just discussed for <code>PgConnection</code>?
+</div>
+<div style="margin-top:.625em;">
+There is still interior mutability at play, but of a different kind: when you run a query against a <code>&PgPool</code>, <code>sqlx</code> will borrow a <code>PgConnection</code> from the pool and use it to execute the query; if no connection is available, it will create a new one or wait until one frees up.
+</div>
+<div style="margin-top:.625em;">
+This increases the number of concurrent queries that our application can run and it also improves its resiliency: a single slow query will not impact the performance of all incoming requests by creating contention on the connection lock.
+</div>
+<div style="margin-top:.625em;">
+Let's refactor <code>run</code>, <code>main</code> and <code>subscribe</code> to work with a <code>PgPool</code> instead of a single <code>PgConnection</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+use zero2prod::configuration::get_configuration;
+use zero2prod::startup::run;
+use sqlx::PgPool;
+use std::net::TcpListener;
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    let configuration = get_configuration().expect("Failed to read configuration.");
+    // Renamed!
+    let connection_pool = PgPool::connect(&configuration.database.connection_string())
+        .await
+        .expect("Failed to connect to Postgres.");
+    let address = format!("127.0.0.1:{}", configuration.application_port);
+    let listener = TcpListener::bind(address)?;
+    run(listener, connection_pool)?.await
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+use crate::routes::{health_check, subscribe};
+use actix_web::dev::Server;
+use actix_web::{web, App, HttpServer};
+use sqlx::PgPool;
+use std::net::TcpListener;
+
+pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Error> {
+    // Wrap the pool using web::Data, which boils down to an Arc smart pointer
+    let db_pool = web::Data::new(db_pool);
+    let server = HttpServer::new(move || {
+        App::new()
+            .route("/health_check", web::get().to(health_check))
+            .route("/subscriptions", web::post().to(subscribe))
+            .app_data(db_pool.clone())
+    })
+    .listen(listener)?
+    .run();
+    Ok(server)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// No longer importing PgConnection!
+use sqlx::PgPool;
+// [...]
+
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>, // Renamed!
+) -> HttpResponse {
+    sqlx::query!(/* */)
+    // Using the pool as a drop-in replacement  
+    .execute(pool.get_ref())
+    .await;
+    HttpResponse::Ok().finish()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The compiler is almost happy: <code>cargo check</code> has a warning for us.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+warning: unused `Result` that must be used
+  --> src/routes/subscriptions.rs:13:5
+   |
+13 | /     sqlx::query!(
+14 | |         r#"
+15 | |     INSERT INTO subscriptions (id, email, name, subscribed_at)
+16 | |     VALUES ($1, $2, $3, $4)
+...  |
+23 | |     .execute(pool.get_ref())
+24 | |     .await;
+   | |___________^
+   |
+   = note: `#[warn(unused_must_use)]` on by default
+   = note: this `Result` may be an `Err` variant, which should be handled
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>sqlx::query</code> may fail - it returns a <code>Result</code>, Rust's way to model fallible functions. <br />
+The compiler is reminding us to handle the error case - let's follow the advice:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn subscribe(/* */) -> HttpResponse {
+    // `Result` has two variants: `Ok` and `Err`.
+    // The first for successes, the second for failures.
+    // We use a `match` statement to choose what to do based
+    // on the outcome.
+    // We will talk more about `Result` going forward!
+    match sqlx::query!(/* */)
+    .execute(pool.get_ref())
+    .await
+    {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(e) => {
+            println!("Failed to execute query: {}", e);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>cargo check</code> is satisfied, but the same cannot be said for <code>cargo test</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0061]: this function takes 2 arguments but 1 argument was supplied
+  --> tests/health_check.rs:10:18
+   |
+10 |     let server = run(listener).expect("Failed to bind address");
+   |                  ^^^ -------- supplied 1 argument
+   |                  |
+   |                  expected 2 arguments
+
+error: aborting due to previous error
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.7. Updating Our Tests" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+The error is in our <code>spawn_app</code> helper function:
+    ]]>
+    </c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
