@@ -1302,6 +1302,393 @@ If we launch the application again with <code>RUST_LOG=trace</code> and try a <c
 We can clearly see how many times the query future has been polled by the executor before completing. How cool is that!?
     ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="5.5. tracing's Subscriber" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We embarked in this migration from <code>log</code> to <code>tracing</code> because we needed a better abstraction to instrument our code effectively. We wanted, in particular, to attach <code>request_id</code> to all logs associated to the same incoming HTTP request. <br/>
+Although I promised <code>tracing</code> was going to solve our problem, look at those logs: <code>request_id</code> is only printed on the very first log statement where we attach it explicitly to the span context. <br />
+Why is that?
+</div>
+<div style="margin-top:.625em;">
+Well, we haven't completed our migration yet. <br />
+Although we moved all our instrumentation code from <code>log</code> to <code>tracing</code> we are still using <code>env_logger</code> to process everything!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+//! [...]
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    env_logger::from_env(Env::default().default_filter_or("info")).init();
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="5.5. tracing's Subscriber" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+<code>env_logger</code>'s logger implements <code>log</code>'s Log trait - it knows nothing about the rich structure exposed by <code>tracing</code>'s <code>Span</code>!
+<code>tracing</code>'s compatibility with <code>log</code></code> was great to get off the ground, but it is now time to replace <code>env_logger</code> with a <code>tracing</code>-native solution.
+</div>
+<div style="margin-top:.625em;">
+The <code>tracing</code> crate follows the same facade pattern used by <code>log</code> - you can freely use its macros to instrument your code, but applications are in charge to spell out how that span telemetry data should be processed.
+</div>
+<div style="margin-top:.625em;">
+<a href="https://docs.rs/tracing/0.1.19/tracing/trait.Subscriber.html">Subscriber</a> is the <code>tracing</code> counterpart of <code>log</code>'s <code>Log</code>: an implementation of the Subscriber trait exposes a variety of methods to manage every stage of the lifecycle of a <code>Span</code> - creation, enter/exit, closure, etc.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! `tracing`'s source code
+
+pub trait Subscriber: 'static {
+    fn new_span(&self, span: &span::Attributes<'_>) -> span::Id;
+    fn event(&self, event: &Event<'_>);
+    fn enter(&self, span: &span::Id);
+    fn exit(&self, span: &span::Id);
+    fn clone_span(&self, id: &span::Id) -> span::Id;
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The quality of <code>tracing</code>'s documentation is breath-taking - I strongly invite you to have a look for yourself at <a href="https://docs.rs/tracing/0.1.19/tracing/trait.Subscriber.html">Subscriber's docs</a> to properly understand what each of those methods does.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="5.6. tracing-subscriber" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+<code>tracing</code> does not provide any subscriber out of the box.
+</div>
+<div style="margin-top:.625em;">
+We need to look into <a href="https://docs.rs/tracing-subscriber">tracing-subscriber</a>, another crate maintained in-tree by the <code>tracing</code> project, to find a few basic subscribers to get off the ground. Let's add it to our dependencies:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+[dependencies]
+# ...
+tracing-subscriber = { version = "0.3", features = ["registry", "env-filter"] }
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>tracing-subscriber</code> does much more than providing us with a few handy subscribers. <br />
+It introduces another key trait into the picture, <a href="https://docs.rs/tracing-subscriber/0.2.12/tracing_subscriber/layer/trait.Layer.html">Layer</a>. <br />
+<code>Layer</code> makes it possible to build a processing pipeline for spans data: we are not forced to provide an all-encompassing subscriber that does everything we want; we can instead combine multiple smaller layers to obtain the processing pipeline we need.
+</div>
+<div style="margin-top:.625em;">
+This substantially reduces duplication across in tracing ecosystem: people are focused on adding new capabilities by churning out new layers rather than trying to build the best-possible-batteries-included subscriber.
+</div>
+<div style="margin-top:.625em;">
+The cornerstone of the layering approach is <a href="https://docs.rs/tracing-subscriber/0.2.12/tracing_subscriber/struct.Registry.html">Registry</a>. <br />
+<code>Registry</code> implements the <code>Subscriber</code> trait and takes care of all the difficult stuff:
+</div>
+<div style="margin-top:.625em;">
+<code>Registry</code> does not actually record traces itself: instead, it collects and stores span data that is exposed to any layer wrapping it [...]. The <code>Registry</code> is responsible for storing span metadata, recording relationships between spans, and tracking which spans are active and which are closed.
+</div>
+<div style="margin-top:.625em;">
+Downstream layers can piggyback on <code>Registry</code>'s functionality and focus on their purpose: filtering what spans should be processed, formatting span data, shipping span data to remote systems, etc.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="5.7. tracing-bunyan-formatter" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We'd like to put together a subscriber that has feature-parity with the good old env_logger.
+We will get there by combining three layers:
+</div>
+
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;"><a href="https://docs.rs/tracing-subscriber/0.2.12/tracing_subscriber/struct.EnvFilter.html">tracing_subscriber::filter::EnvFilter</a> discards spans based on their log levels and their origins, just as we did in <code>env_logger</code> via the <code>RUST_LOG</code> environment variable;</li>
+  <li style="margin-top:.325em;"><a href="https://docs.rs/tracing-bunyan-formatter/0.1.6/tracing_bunyan_formatter/struct.JsonStorageLayer.html">tracing_bunyan_formatter::JsonStorageLayer</a> processes spans data and stores the associated metadata in an easy-to-consume JSON format for downstream layers. It does, in particular, propagate context from parent spans to their children;</li>
+  <li style="margin-top:.325em;"><a href="https://docs.rs/tracing-bunyan-formatter/0.1.6/tracing_bunyan_formatter/struct.BunyanFormattingLayer.html">tracing_bunyan_formatter::BunyanFormatterLayer</a> builds on top of <code>JsonStorageLayer</code> and outputs log records in <a href="https://github.com/trentm/node-bunyan">bunyan</a>-compatible JSON format.</li>
+</ul>
+
+<div style="margin-top:.625em;">
+Let's add <a href="https://docs.rs/tracing-bunyan-formatter/0.1.6/tracing_bunyan_formatter/">tracing_bunyan_formatter</a> to our dependencies:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+[dependencies]
+# ...
+tracing-bunyan-formatter = "0.3"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now tie everything together in our main function:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+//! [...]
+use tracing::subscriber::set_global_default;
+use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
+use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    // We removed the `env_logger` line we had before!
+
+    // We are falling back to printing all spans at info-level or above 
+    // if the RUST_LOG environment variable has not been set.
+    let env_filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("info"));
+    let formatting_layer = BunyanFormattingLayer::new(
+        "zero2prod".into(), 
+        // Output the formatted spans to stdout. 
+        std::io::stdout
+    );
+    // The `with` method is provided by `SubscriberExt`, an extension
+    // trait for `Subscriber` exposed by `tracing_subscriber`
+    let subscriber = Registry::default()
+        .with(env_filter)
+        .with(JsonStorageLayer)
+        .with(formatting_layer);
+    // `set_global_default` can be used by applications to specify 
+    // what subscriber should be used to process spans.  
+    set_global_default(subscriber).expect("Failed to set subscriber");
+    
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+If you launch the application with cargo run and fire a request you'll see these logs (pretty-printed here to be easier on the eye):
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+{
+  "msg": "[ADDING A NEW SUBSCRIBER - START]",
+  "subscriber_name": "le guin",
+  "request_id": "30f8cce1-f587-4104-92f2-5448e1cc21f6",
+  "subscriber_email": "ursula_le_guin@gmail.com"
+  ...
+}
+{
+  "msg": "[SAVING NEW SUBSCRIBER DETAILS IN THE DATABASE - START]",
+  "subscriber_name": "le guin",
+  "request_id": "30f8cce1-f587-4104-92f2-5448e1cc21f6",
+  "subscriber_email": "ursula_le_guin@gmail.com"
+  ...
+}
+{
+  "msg": "[SAVING NEW SUBSCRIBER DETAILS IN THE DATABASE - END]",
+  "elapsed_milliseconds": 4,
+  "subscriber_name": "le guin",
+  "request_id": "30f8cce1-f587-4104-92f2-5448e1cc21f6",
+  "subscriber_email": "ursula_le_guin@gmail.com"
+  ...
+}
+{
+  "msg": "[ADDING A NEW SUBSCRIBER - END]",
+  "elapsed_milliseconds": 5
+  "subscriber_name": "le guin",
+  "request_id": "30f8cce1-f587-4104-92f2-5448e1cc21f6",
+  "subscriber_email": "ursula_le_guin@gmail.com",
+  ...
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We made it: everything we attached to the original context has been propagated to all its sub-spans. <br />
+<code>tracing-bunyan-formatter</code> also provides duration out-of-the-box: every time a span is closed a JSON message is printed to the console with an <code>elapsed_millisecond</code> property attached to it.
+</div>
+<div style="margin-top:.625em;">
+The JSON format is extremely friendly when it comes to searching: an engine like ElasticSearch can easily ingest all these records, infer a schema and index the <code>request_id</code>, <code>name</code> and <code>email</code> fields. It unlocks the full power of a querying engine to sift through our logs!
+</div>
+<div style="margin-top:.625em;">
+This is exponentially better than we had before: to perform complex searches we would have had to use custom-built regexes, therefore limiting considerably the range of questions that we could easily ask to our logs.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="5.8. tracing-log" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+If you take a closer look you will realise we lost something along the way: our terminal is only showing logs that were directly emitted by our application. What happened to <code>actix-web</code>'s log records?
+</div>
+<div style="margin-top:.625em;">
+<code>tracing</code>'s <code>log</code> feature flag ensures that a log record is emitted every time a <code>tracing</code> event happens, allowing <code>log</code>'s loggers to pick them up. <br />
+The opposite does not hold true: log does not emit <code>tracing</code> events out of the box and does not provide a feature flag to enable this behaviour.
+</div>
+<div style="margin-top:.625em;">
+If we want it, we need to explicitly register a logger implementation to redirect logs to our <code>tracing</code> subscriber for processing.
+</div>
+<div style="margin-top:.625em;">
+We can use <a href="https://docs.rs/tracing-log/0.1.1/tracing_log/struct.LogTracer.html">LogTracer</a>, provided by the <a href="https://docs.rs/tracing-log">tracing-log</a> crate.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dependencies]
+tracing-log = "0.1"
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's edit our main as required:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+//! [...]
+use tracing::subscriber::set_global_default;
+use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
+use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
+use tracing_log::LogTracer;
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    // Redirect all `log`'s events to our subscriber
+    LogTracer::init().expect("Failed to set logger");
+
+    let env_filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("info"));
+    let formatting_layer = BunyanFormattingLayer::new(
+        "zero2prod".into(), 
+        std::io::stdout
+    );
+    let subscriber = Registry::default()
+        .with(env_filter)
+        .with(JsonStorageLayer)
+        .with(formatting_layer);
+    set_global_default(subscriber).expect("Failed to set subscriber");
+    
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+All <code>actix-web</code>'s logs should once again be available in our console.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="5.9. Removing Unused Dependencies" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+If you quickly scan through all our files you will realise that we are not using log or env_logger anywhere at this point. We should remove them from our Cargo.toml file.
+</div>
+<div style="margin-top:.625em;">
+In a large project it is very difficult to spot that a dependency has become unused after a refactoring.
+Luckily enough, tooling comes to the rescue once again - let's install cargo-udeps (unused dependencies):
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ cargo install cargo-udeps
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>cargo-udeps</code> scans your <code>Cargo.toml</code> file and checks if all the crates listed under <code>[dependencies]</code> have actually been used in the project. Check <a href="https://github.com/est31/cargo-udeps#trophy-case">cargo-deps' trophy case</a> for a long list of popular Rust projects where <code>cargo-udeps</code> was able to spot unused dependencies and cut down build times.
+</div>
+<div style="margin-top:.625em;">
+Let's run it on our project!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# cargo-udeps requires the nightly compiler.
+# We add +nightly to our cargo invocation
+# to tell cargo explicitly what toolchain we want to use.
+cargo +nightly udeps
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The output should be
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+zero2prod
+  dependencies
+    "env-logger"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Unfortunately it does not pick up log. <br />
+Let's strike both out of our Cargo.toml file.
+    ]]>
+    </c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
