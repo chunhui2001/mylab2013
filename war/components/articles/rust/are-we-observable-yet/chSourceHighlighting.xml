@@ -1,0 +1,1314 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<div style="font-size:1.1em;line-height:1.625;">
+This article is a sample from <a href="https://zero2prod.com/">Zero To Production In Rust</a>, a book on backend development in Rust.
+You can get a copy of the book on <a href="https://zero2prod.com/">zero2prod.com</a>.
+<a href="https://www.lpalmieri.com/subscribe">Subscribe to the newsletter</a> to be notified when a new episode is published.
+</div>
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">0. Previously On Zero To Production</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+In Chapter 3 we managed to put together a first implementation of <code>POST /subscriptions</code> to fulfill one of the user stories of our email newsletter project:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">As a blog visitor,</li>
+  <li style="margin-top:.325em;">I want to subscribe to the newsletter,</li>
+  <li style="margin-top:.325em;">So that I can receive email updates when new content is published on the blog.</li>
+</ul>
+<div style="margin-top:.625em;">
+We have not yet created a web page with a HTML form to actually test the end-to-end flow, but we have a few black-box integration tests that cover the two basic scenarios we care about at this stage:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">if valid form data is submitted (i.e. both name and email have been provided), the data is saved in our database;</li>
+  <li style="margin-top:.325em;">if the submitted form is incomplete (e.g. the email is missing, the name is missing or both), the API returns a 400.</li>
+</ul>
+<div style="margin-top:.625em;">
+Should we be satisfied and rush to deploy the first version of our application on the coolest cloud provider out there?
+Not yet - we are not yet equipped to properly run our software in a production environment.
+We are blind: the application is not <code>instrumented</code> yet and we are not collecting any <code>telemetry data</code>, making us vulnerable to <code>unknown unknowns</code>.
+</div>
+<div style="margin-top:.625em;">
+If most of the previous sentence makes little to no sense to you, do not worry: getting to the bottom of it is going to be the main focus of this chapter.
+</div>
+<div style="margin-top:.625em;">
+Discuss the article on <a href="https://news.ycombinator.com/item?id=24608100">HackerNews</a> or <a href="https://www.reddit.com/r/rust/comments/j0uo0t/are_we_observable_yet_an_introduction_to_rust/">r/rust.</a>
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">1. Unknown Unknowns</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We have a few tests. Tests are good, they make us more confident in our software, in its correctness. <br />
+Nonetheless, a test suite is not proof of the correctness of our application. We would have to explore significantly different approaches to prove that something is correct (e.g. <a href="https://lamport.azurewebsites.net/tla/formal-methods-amazon.pdf">formal methods</a>).
+</div>
+<div style="margin-top:.625em;">
+At runtime we will encounter scenarios that we have not tested for or even thought about when designing the application in the first place.
+</div>
+<div style="margin-top:.625em;">
+I can point at a few blind spots based on the work we have done so far and my past experiences:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">what happens if we lose connection to the database? Does <code>sqlx::PgPool</code> try to automatically recover or will all database interactions fail from that point onwards until we restart the application?</li>
+  <li style="margin-top:.325em;">what happens if an attacker tries to pass malicious payloads in the body of the <code>POST /subscriptions</code> request (i.e. extremely large payloads, attempts to perform <a href="https://en.wikipedia.org/wiki/SQL_injection">SQL injection</a>, etc.)?</li>
+</ul>
+<div style="margin-top:.625em;">
+These are often referred to as <b>known unknowns</b>: shortcomings that we are aware of and we have not yet managed to investigate or we have deemed to be not relevant enough to spend time on.
+</div>
+<div style="margin-top:.625em;">
+Given enough time and effort, we could get rid of most known unknowns.
+</div>
+<div style="margin-top:.625em;">
+Unfortunately there are issues that we have not seen before and we are not expecting, <b>unknown unknowns</b>.
+</div>
+<div style="margin-top:.625em;">
+Sometimes experience is enough to transform an unknown unknown into a known unknown: if you had never worked with a database before you might have not thought about what happens when we lose connection; once you have seen it happen once, it becomes a familiar failure mode to look out for.
+</div>
+<div style="margin-top:.625em;">
+More often than not, unknown unknowns are peculiar failure modes of the specific system we are working on.
+They are problems at the crossroads between our software components, the underlying operating systems, the hardware we are using, our development process peculiarities and that huge source of randomness known as "the outside world".
+</div>
+<div style="margin-top:.625em;">
+They might emerge when:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">the system is pushed outside of its usual operating conditions (e.g. an unusual spike of traffic);</li>
+  <li style="margin-top:.325em;">multiple components experience failures at the same time (e.g. a SQL transaction is left hanging while the database is going through a <a href="https://www.postgresql.org/docs/current/warm-standby-failover.html">master-replica failover</a>);</li>
+  <li style="margin-top:.325em;">a change is introduced that moves the system equilibrium (e.g. tuning a retry policy);</li>
+  <li style="margin-top:.325em;">no changes have been introduced for a long time (e.g. applications have not been restarted for weeks and you start to see all sorts of memory leaks);</li>
+  <li style="margin-top:.325em;">etc.</li>
+</ul>
+<div style="margin-top:.625em;">
+All these scenarios share one key similarity: they are often impossible to reproduce outside of the live environment.
+What can we do to prepare ourselves to deal with an outage or a bug caused by an unknown unknown?
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">2. Observability</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We must assume that we will not be there when an unknown unknown issue arises: it might be late at night, we might be working on something else, etc.
+</div>
+<div style="margin-top:.625em;">
+Even if we were paying attention at the very same moment something starts to go wrong, it often isn't possible or practical to attach a debugger to a process running in production (assuming you even know in the first place which process you should be looking at) and the degradation might affect multiple systems at once.
+</div>
+<div style="margin-top:.625em;">
+The only thing we can rely on to understand and debug an unknown unknown is <code>telemetry data</code>: information about our running applications that is collected automatically and can be later inspected to answer questions about the state of the system at a certain point in time.
+</div>
+<div style="margin-top:.625em;">
+What questions? <br />
+Well, if it is an unknown unknown we do not really know in advance what questions we might need to ask to isolate its root cause - that's the whole point. <br />
+The goal is to have an <b>observable application</b>.
+</div>
+<div style="margin-top:.625em;">
+Quoting from <a href="https://www.honeycomb.io/what-is-observability/">Honeycomb's observability guide</a>
+</div>
+<div style="margin-top:.625em;">
+Observability is about being able to ask arbitrary questions about your environment without — and this is the key part — having to know ahead of time what you wanted to ask.
+</div>
+<div style="margin-top:.625em;">
+"arbitrary" is a strong word - as all absolute statements, it might require an unreasonable investment of both time and money if we are to interpret it literally.
+</div>
+<div style="margin-top:.625em;">
+In practice we will also happily settle for an application that is sufficiently observable to enable us to deliver the level of service we promised to our users.
+</div>
+<div style="margin-top:.625em;">
+In a nutshell, to build an observable system we need:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">to instrument our application to collect high-quality telemetry data;</li>
+  <li style="margin-top:.325em;">access to tools and systems to efficiently slice, dice and manipulate the data to find answers to our questions.</li>
+</ul>
+<div style="margin-top:.625em;">
+We will touch upon some of the options available to fulfill the second point, but an exhaustive discussion is outside of the scope of this book. <br />
+Let's focus on the first for the rest of this chapter.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">3. Logging</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Logs are the most common type of telemetry data. <br />
+Even developers who have never heard of observability have an intuitive understanding of the usefulness of logs: logs are what you look at when stuff goes south to understand what is happening, crossing your fingers extra hard hoping you captured enough information to troubleshoot effectively.
+</div>
+<div style="margin-top:.625em;">
+What are logs though? <br />
+The format varies, depending on the epoch, the platform and the technologies you are using. <br />
+Nowadays a <b>log record</b> is usually a bunch of text data, with a line break to separate the current record from the next one. For example
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The application is starting on port 8080
+Handling a request to /index
+Handling a request to /index
+Returned a 200 OK
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+are four perfectly valid log records for a web server.
+</div>
+<div style="margin-top:.625em;">
+What does the Rust ecosystem have to offer us when it comes to logging?
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.1. The log Crate" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+The go-to crate for logging in Rust is <a href="https://docs.rs/log/latest/log/">log</a>.
+</div>
+<div style="margin-top:.625em;">
+<code>log</code> provides five macros: <a href="https://docs.rs/log/0.4.11/log/macro.trace.html">trace</a>, <a href="https://docs.rs/log/0.4.11/log/macro.debug.html">debug</a>, <a href="https://docs.rs/log/0.4.11/log/macro.info.html">info</a>, <a href="https://docs.rs/log/0.4.11/log/macro.warn.html">warn</a> and <a href="https://docs.rs/log/0.4.11/log/macro.error.html">error</a>. <br />
+They all do the same thing - emit a log a record - but each of them uses a different <code>log level</code>, as the naming implies. <br />
+trace is the lowest level: trace-level logs are often extremely verbose and have a low signal-to-noise ratio (e.g. emit a trace-level log record every time a TCP packet is received by a web server).
+</div>
+<div style="margin-top:.625em;">
+We then have, in increasing order of severity, <code>debug</code>, <code>info</code>, <code>warn</code> and <code>error</code>. <br />
+Error-level logs are used to report serious failures that might have user impact (e.g. we failed to handle an incoming request or a query to the database timed out).
+</div>
+<div style="margin-top:.625em;">
+Let's look at a quick usage example:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+fn fallible_operation() -> Result<String, String> { ... }
+
+pub fn main() {
+    match fallible_operation() {
+        Ok(success) => {
+            log::info!("Operation succeeded: {}", success);
+        }
+        Err(err) => {
+            log::error!("Operation failed: {}", err);
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We are trying to perform an operation that might fail. <br />
+If it succeeds, we emit an info-level log record. <br />
+If it doesn't, we emit an error-level log record. <br />
+</div>
+<div style="margin-top:.625em;">
+Notice as well how <code>log</code>'s macros support the same interpolation syntax provided by <code>println/print</code> in the standard library.
+</div>
+<div style="margin-top:.625em;">
+We can use <code>log</code>'s macros to instrument our codebase. <br />
+Choosing what information should be logged about the execution of a particular function is often a local decision: it is enough to look at the function to decide what deserves to be captured in a log record. This enables libraries to be instrumented effectively, extending the reach of our telemetry outside the boundaries of the code we have written first-hand.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.2. actix-web's Logger Middleware" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<code>actix_web</code> provides a <a href="https://docs.rs/actix-web/4.0.1/actix_web/middleware/struct.Logger.html">Logger middleware</a>. It emits a log record for every incoming request. <br />
+Let's add it to our application.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+use crate::routes::{health_check, subscribe};
+use actix_web::dev::Server;
+use actix_web::web::Data;
+use actix_web::{web, App, HttpServer};
+use actix_web::middleware::Logger;
+use sqlx::PgPool;
+use std::net::TcpListener;
+
+pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Error> {
+    let db_pool = Data::new(db_pool);
+    let server = HttpServer::new(move || {
+        App::new()
+            // Middlewares are added using the `wrap` method on `App`
+            .wrap(Logger::default())
+            .route("/health_check", web::get().to(health_check))
+            .route("/subscriptions", web::post().to(subscribe))
+            .app_data(db_pool.clone())
+    })
+    .listen(listener)?
+    .run();
+    Ok(server)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now launch the application using <code>cargo run</code> and fire a quick request with <code>curl -v http://127.0.0.1:8000/health_check</code>. <br />
+The request comes back with a 200 but... nothing happens on the terminal we used to launch our application.
+No logs. Nothing. Blank screen.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.3. The Facade Pattern" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We said that instrumentation is a local decision. <br />
+There is instead a global decision that applications are uniquely positioned to do: what are we supposed to do with all those log records?
+</div>
+<div style="margin-top:.625em;">
+Should we append them to a file? Should we print them to the terminal? Should we send them to a remote system over HTTP (e.g. <a href="https://www.elastic.co/elasticsearch/">ElasticSearch</a>)?
+</div>
+<div style="margin-top:.625em;">
+The <code>log</code> crate leverages the <a href="https://en.wikipedia.org/wiki/Facade_pattern">facade pattern</a> to handle this duality. <br />
+It gives you the tools you need to emit log records, but it does not prescribe how those log records should be processed. It provides, instead, a <a href="https://docs.rs/log/0.4.11/log/trait.Log.html">Log trait</a>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! From `log`'s source code - src/lib.rs
+
+/// A trait encapsulating the operations required of a logger.
+pub trait Log: Sync + Send {
+    /// Determines if a log message with the specified metadata would be
+    /// logged.
+    ///
+    /// This is used by the `log_enabled!` macro to allow callers to avoid
+    /// expensive computation of log message arguments if the message would be
+    /// discarded anyway.
+    fn enabled(&self, metadata: &Metadata) -> bool;
+
+    /// Logs the `Record`.
+    ///
+    /// Note that `enabled` is *not* necessarily called before this method.
+    /// Implementations of `log` should perform all necessary filtering
+    /// internally.
+    fn log(&self, record: &Record);
+
+    /// Flushes any buffered records.
+    fn flush(&self);
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+At the beginning of your <code>main</code> function you can call the <a href="https://docs.rs/log/0.4.11/log/fn.set_logger.html">set_logger function</a> and pass an implementation of the <code>Log</code> trait: every time a log record is emitted <code>Log::log</code> will be called on the logger you provided, therefore making it possible to perform whatever form of processing of log records you deem necessary.
+</div>
+<div style="margin-top:.625em;">
+If you do not call <code>set_logger</code>, then all log records will simply be discarded. Exactly what happened to our application.
+Let's initialise our logger this time.
+</div>
+<div style="margin-top:.625em;">
+There are a few <code>Log</code> implementations available on <a href="https://crates.io/">crates.io</a> - the most popular options are listed in the documentation of log itself.
+We will use <a href="https://docs.rs/env_logger">env_logger</a> - it works nicely if, as in our case, the main goal is printing all logs records to the terminal.
+</div>
+<div style="margin-top:.625em;">
+Let's add it as a dependency with
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dependencies]
+env_logger = "0.9"
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>env_logger::Logger</code> prints log records to the terminal, using the following format:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+[<timestamp> <level> <module path>] <log message>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It looks at the <code>RUST_LOG</code> environment variable to determine what logs should be printed and what logs should be filtered out. <br />
+<code>RUST_LOG=debug cargo run</code>, for example, will surface all logs at debug-level or higher emitted by our application or the crates we are using. <code>RUST_LOG=zero2prod</code>, instead, would filter out all records emitted by our dependencies.
+</div>
+<div style="margin-top:.625em;">
+Let's modify our <code>main.rs</code> file as required:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+// [...]
+use env_logger::Env;
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    // `init` does call `set_logger`, so this is all we need to do.
+    // We are falling back to printing all logs at info-level or above 
+    // if the RUST_LOG environment variable has not been set.
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's try to launch the application again using <code>cargo run</code> (equivalent to <code>RUST_LOG=info cargo run</code> given our defaulting logic). Two log records should show up on your terminal (using a new line break with indentation to make them fit within the page margins)
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+[2020-09-21T21:28:40Z INFO  actix_server::builder] Starting 12 workers
+[2020-09-21T21:28:40Z INFO  actix_server::builder] Starting 
+    "actix-web-service-127.0.0.1:8000" service on 127.0.0.1:8000
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+If we make a request with <code>curl http://127.0.0.1:8000/health_check</code> you should see another log record, emitted by the <code>Logger</code> middleware we added a few paragraphs ago
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+[2020-09-21T21:28:43Z INFO  actix_web::middleware::logger] 127.0.0.1:47244 
+    "GET /health_check HTTP/1.1" 200 0 "-" "curl/7.61.0" 0.000225
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Logs are also an awesome tool to explore how the software we are using works. <br />
+Try setting <code>RUST_LOG</code> to <code>trace</code> and launching the application again.
+</div>
+<div style="margin-top:.625em;">
+You should see a bunch of <code>registering with poller</code> log records coming from <a href="https://docs.rs/mio">mio</a>, a low-level library for non-blocking IO, as well as a couple of startup log records for each worker spawned up by <code>actix-web</code> (one for each physical core available on your machine!). <br />
+Insightful things can be learned by playing around with trace-level logs.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">4. Instrumenting POST /subscriptions</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's use what we learned about <code>log</code> to instrument our handler for <code>POST /subscriptions</code> requests. It currently looks like this:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...] 
+
+pub async fn subscribe(/* */) -> HttpResponse {
+    match sqlx::query!(/* */)
+        .execute(pool.get_ref())
+        .await
+    {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(e) => {
+            // Using `println!` to capture information about the error
+            // in case things don't work out as expected
+            println!("Failed to execute query: {}", e);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's add log as a dependency:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dependencies]
+log = "0.4"
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+What should we capture in log records?
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.1. Interactions With External Systems" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's start with a tried-and-tested rule of thumb: any interaction with external systems over the network should be closely monitored. We might experience networking issues, the database might be unavailable, queries might get slower over time as the <code>subscribers</code> table gets longer, etc.
+</div>
+<div style="margin-top:.625em;">
+Let's add two logs records: one before query execution starts and one immediately after its completion.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn subscribe(/* */) -> HttpResponse {
+    log::info!("Saving new subscriber details in the database");
+    match sqlx::query!(/* */)
+        .execute(pool.get_ref())
+        .await
+    {
+        Ok(_) => {
+            log::info!("New subscriber details have been saved");
+            HttpResponse::Ok().finish()
+        },
+        Err(e) => {
+            println!("Failed to execute query: {}", e);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+As it stands, we would only be emitting a log record when the query succeeds. To capture failures we need to convert that <code>println</code> statement into an error-level log:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn subscribe(/* */) -> HttpResponse {
+    log::info!("Saving new subscriber details in the database");
+    match sqlx::query!(/* */)
+        .execute(pool.get_ref())
+        .await
+    {
+        Ok(_) => {
+            log::info!("New subscriber details have been saved");
+            HttpResponse::Ok().finish()
+        },
+        Err(e) => {
+            log::error!("Failed to execute query: {:?}", e);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Much better - we have that query somewhat covered now.
+</div>
+<div style="margin-top:.625em;">
+Pay attention to a small but crucial detail: we are using <code>{:?}</code>, the <code>std::fmt::Debug</code> format, to capture the query error.
+Operators are the main audience of logs - we should extract as much information as possible about whatever malfunction occurred to ease troubleshooting. Debug gives us that raw view, while <code>std::fmt::Display</code> (<code>{}</code>) will return a nicer error message that is more suitable to be shown directly to our end users.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.2. Think Like A User" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+What else should we capture?
+</div>
+<div style="margin-top:.625em;">
+Previously we stated that
+</div>
+<div style="margin-top:.625em;">
+We will happily settle for an application that is sufficiently observable to enable us to deliver the level of service we promised to our users.
+</div>
+<div style="margin-top:.625em;">
+What does this mean in practice?
+</div>
+<div style="margin-top:.625em;">
+We need to change our reference system. <br />
+Forget, for a second, that we are the authors of this piece of software. <br />
+Put yourself in the shoes of one of your users, a person landing on your website that is interested in the content you publish and wants to subscribe to your newsletter.
+</div>
+<div style="margin-top:.625em;">
+What does a failure look like for them? <br />
+The story might play out like this:
+</div>
+<div style="margin-top:.625em;">
+Hey! <br />
+I tried subscribing to your newsletter using my main email address, thomas_mann@hotmail.com, but the website failed with a weird error. Any chance you could look into what happened?
+</div>
+<div style="margin-top:.625em;">
+Best, <br />
+Tom
+</div>
+<div style="margin-top:.625em;">
+P.S. Keep it up, your blog rocks!
+</div>
+<div style="margin-top:.625em;">
+Tom landed on our website and received "a weird error" when he pressed the Submit button.
+</div>
+<div style="margin-top:.625em;">
+Our application is sufficiently observable if we can triage the issue from the breadcrumbs of information he has provided us - i.e. the email address he entered.
+</div>
+<div style="margin-top:.625em;">
+Can we do it?
+</div>
+<div style="margin-top:.625em;">
+Let's, first of all, confirm the issue: is Tom registered as a subscriber? <br />
+We can connect to the database and run a quick query to double-check that there is no record with <code>thomas_mann@hotmail.com</code> as email in our <code>subscribers</code> table.
+The issue is confirmed. What now?
+</div>
+<div style="margin-top:.625em;">
+None of our logs include the subscriber email address, so we cannot search for it. Dead end. <br />
+We could ask Tom to provide additional information: all our log records have a timestamp, maybe if he remembers around what time he tried to subscribe we can dig something out?
+</div>
+<div style="margin-top:.625em;">
+This is a clear indication that our current logs are not good enough. <br />
+Let's improve them:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+//! ..
+
+pub async fn subscribe(/* */) -> HttpResponse {
+    // We are using the same interpolation syntax of `println`/`print` here!
+    log::info!(
+        "Adding '{}' '{}' as a new subscriber.",
+        form.email,
+        form.name
+    );
+    log::info!("Saving new subscriber details in the database");
+    match sqlx::query!(/* */)
+        .execute(pool.get_ref())
+        .await
+    {
+        Ok(_) => {
+            log::info!("New subscriber details have been saved");
+            HttpResponse::Ok().finish()
+        },
+        Err(e) => {
+            log::error!("Failed to execute query: {:?}", e);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Much better - we now have a log line that is capturing both name and email. <br />
+Is it enough to troubleshoot Tom's issue?
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.3. Logs Must Be Easy To Correlate" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Going forward I will omit logs emitted by <code>sqlx</code> from the reported terminal output to keep the examples concise. <code>sqlx</code>'s logs use the <code>INFO</code> level by default - we will tune it down to <code>TRACE</code> in Chapter 5.
+</div>
+<div style="margin-top:.625em;">
+If we had a single copy of our web server running at any point in time and that copy was only capable of handling a single request at a time, we might imagine logs showing up in our terminal more or less like this:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# First request
+[.. INFO zero2prod] Adding 'thomas_mann@hotmail.com' 'Tom' as a new subscriber
+[.. INFO zero2prod] Saving new subscriber details in the database
+[.. INFO zero2prod] New subscriber details have been saved
+[.. INFO actix_web] .. "POST /subscriptions HTTP/1.1" 200 ..
+# Second request
+[.. INFO zero2prod] Adding 's_erikson@malazan.io' 'Steven' as a new subscriber
+[.. ERROR zero2prod] Failed to execute query: connection error with the database
+[.. ERROR actix_web] .. "POST /subscriptions HTTP/1.1" 500 ..
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.3. Logs Must Be Easy To Correlate" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+You can clearly see where a single request begins, what happened while we tried to fulfill it, what we returned as a response, where the next request begins, etc.
+</div>
+<div style="margin-top:.625em;">
+It is easy to follow. <br />
+But this is not what it looks like when you are handling multiple requests concurrently:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+[.. INFO zero2prod] Receiving request for POST /subscriptions
+[.. INFO zero2prod] Receiving request for POST /subscriptions
+[.. INFO zero2prod] Adding 'thomas_mann@hotmail.com' 'Tom' as a new subscriber
+[.. INFO zero2prod] Adding 's_erikson@malazan.io' 'Steven' as a new subscriber
+[.. INFO zero2prod] Saving new subscriber details in the database
+[.. ERROR zero2prod] Failed to execute query: connection error with the database
+[.. ERROR actix_web] .. "POST /subscriptions HTTP/1.1" 500 ..
+[.. INFO zero2prod] Saving new subscriber details in the database
+[.. INFO zero2prod] New subscriber details have been saved
+[.. INFO actix_web] .. "POST /subscriptions HTTP/1.1" 200 ..
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+What details did we fail to save though? <code>thomas_mann@hotmail.com</code> or <code>s_erikson@malazan.io</code>? <br />
+Impossible to say from the logs.
+</div>
+<div style="margin-top:.625em;">
+We need a way to correlate all logs related to the same request. <br />
+This is usually achieved using a <b>request id</b> (also known as <b>correlation id</b>): when we start to process an incoming request we generate a random identifier (e.g. a <a href="https://en.wikipedia.org/wiki/Universally_unique_identifier">UUID</a>) which is then associated to all logs concerning the fulfilling of that specific request.
+</div>
+<div style="margin-top:.625em;">
+Let's add one to our handler:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+//! ..
+
+pub async fn subscribe(/* */) -> HttpResponse {
+    // Let's generate a random unique identifier
+    let request_id = Uuid::new_v4();
+    log::info!(
+        "request_id {} - Adding '{}' '{}' as a new subscriber.",
+        request_id,
+        form.email,
+        form.name
+    );
+    log::info!(
+        "request_id {} - Saving new subscriber details in the database",
+        request_id
+    );
+    match sqlx::query!(/* */)
+        .execute(pool.get_ref())
+        .await
+    {
+        Ok(_) => {
+            log::info!(
+                "request_id {} - New subscriber details have been saved",
+                request_id
+            );
+            HttpResponse::Ok().finish()
+        },
+        Err(e) => {
+            log::error!(
+                "request_id {} - Failed to execute query: {:?}",
+                request_id,
+                e
+            );
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Logs for an incoming request will now look like this:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+curl -i -X POST -d 'email=thomas_mann@hotmail.com&name=Tom' \
+    http://127.0.0.1:8000/subscriptions
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+[.. INFO  zero2prod] request_id 9ebde7e9-1efe-40b9-ab65-86ab422e6b87 - Adding 
+    'thomas_mann@hotmail.com' 'Tom' as a new subscriber.
+[.. INFO  zero2prod] request_id 9ebde7e9-1efe-40b9-ab65-86ab422e6b87 - Saving 
+    new subscriber details in the database
+[.. INFO  zero2prod] request_id 9ebde7e9-1efe-40b9-ab65-86ab422e6b87 - New 
+    subscriber details have been saved
+[.. INFO  actix_web] .. "POST /subscriptions HTTP/1.1" 200 .. 
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We can now search for <code>thomas_mann@hotmail.com</code> in our logs, find the first record, grab the <code>request_id</code> and then pull down all the other log records associated with that request.
+</div>
+<div style="margin-top:.625em;">
+Well, almost all the logs: <code>request_id</code> is created in our <code>subscribe</code> handler, therefore <code>actix_web</code>'s <code>Logger</code> middleware is completely unaware of it. 
+</div>
+<div style="margin-top:.625em;">
+That means that we will not know what status code our application has returned to the user when they tried to subscribe to our newsletter.
+</div>
+<div style="margin-top:.625em;">
+What should we do? <br />
+We could bite the bullet, remove <code>actix_web</code>'s <code>Logger</code>, write a middleware to generate a random request identifier for every incoming request and then write our own logging middleware that is aware of the identifier and includes it in all log lines.
+</div>
+<div style="margin-top:.625em;">
+Could it work? Yes. <br />
+Should we do it? Probably not.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">5. Structured Logging</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+To ensure that <code>request_id</code> is included in all log records we would have to:
+</div>
+
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">rewrite all upstream components in the request processing pipeline (e.g. <code>actix-web</code>'s <code>Logger</code>);</li>
+  <li style="margin-top:.325em;">change the signature of all downstream functions we are calling from the <code>subscribe</code> handler; if they are emitting a log statement, they need to include the <code>request_id</code>, which therefore needs to be passed down as an argument.</li>
+</ul>
+
+<div style="margin-top:.625em;">
+What about log records emitted by the crates we are importing into our project? Should we rewrite those as well? <br />
+It is clear that <b>this approach cannot scale</b>.
+</div>
+<div style="margin-top:.625em;">
+Let's take a step back: what does our code look like? <br />
+We have an over-arching task (an HTTP request), which is broken down in a set of sub-tasks (e.g. parse input, make a query, etc.), which might in turn be broken down in smaller sub-routines recursively.
+</div>
+<div style="margin-top:.625em;">
+Each of those units of work has a duration (i.e. a beginning and an end).
+</div>
+<div style="margin-top:.625em;">
+Each of those units of work has a context associated to it (e.g. name and email of a new subscriber, request_id) that is naturally shared by all its sub-units of work.
+</div>
+<div style="margin-top:.625em;">
+No doubt we are struggling: log statements are isolated events happening at a defined moment in time that we are stubbornly trying to use to represent a tree-like processing pipeline. <br />
+<b>Logs are the wrong abstraction</b>.
+</div>
+<div style="margin-top:.625em;">
+What should we use then?
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="5.1. The tracing Crate" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+The <a href="https://docs.rs/tracing">tracing crate</a> comes to the rescue:
+</div>
+<div style="margin-top:.625em;">
+<code>tracing</code> expands upon logging-style diagnostics by allowing libraries and applications to record structured events with additional information about temporality and causality — unlike a log message, a span in tracing has a beginning and end time, may be entered and exited by the flow of execution, and may exist within a nested tree of similar spans.
+</div>
+<div style="margin-top:.625em;">
+That is music to our ears. <br />
+What does it look like in practice?
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="5.2. Migrating From log To tracing" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+There is only one way to find out - let's convert our <code>subscribe</code> handler to use <code>tracing</code> instead of <code>log</code> for instrumentation. Let's add <code>tracing</code></code> to our dependencies:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+
+[dependencies]
+tracing = { version = "0.1", features = ["log"] }
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The first migration step is as straight-forward as it gets: search and replace all occurrences of the <code>log</code> string in our function body with <code>tracing</code>.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn subscribe(/* */) -> HttpResponse {
+    let request_id = Uuid::new_v4();
+    tracing::info!(
+        "request_id {} - Adding '{}' '{}' as a new subscriber.",
+        request_id,
+        form.email,
+        form.name
+    );
+    tracing::info!(
+        "request_id {} - Saving new subscriber details in the database",
+        request_id
+    );
+    match sqlx::query!(/* */)
+        .execute(pool.get_ref())
+        .await
+    {
+        Ok(_) => {
+            tracing::info!(
+                "request_id {} - New subscriber details have been saved",
+                request_id
+            );
+            HttpResponse::Ok().finish()
+        },
+        Err(e) => {
+            tracing::error!(
+                "request_id {} - Failed to execute query: {:?}",
+                request_id,
+                e
+            );
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+That's it. <br />
+If you run the application and fire a <code>POST /subscriptions</code> request you will see exactly the same logs in your console. Identical. <br />
+Pretty cool, isn't it?
+</div>
+<div style="margin-top:.625em;">
+This works thanks to <a href="https://docs.rs/tracing/0.1.19/tracing/index.html#log-compatibility">tracing's log feature flag</a>, which we enabled in <code>Cargo.toml</code>. It ensures that every time an event or a span are created using <code>tracing</code>'s macros a corresponding log event is emitted, allowing <code>log</code>'s loggers to pick up on it (<code>env_logger</code>, in our case).
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="5.3. tracing's Span" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We can now start to leverage <code>tracing</code>'s <a href="https://docs.rs/tracing/0.1.19/tracing/span/index.html">Span</a> to better capture the structure of our program. <br />
+We want to create a span that represents the whole HTTP request:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn subscribe(/* */) -> HttpResponse {
+    let request_id = Uuid::new_v4();
+    // Spans, like logs, have an associated level
+    // `info_span` creates a span at the info-level
+    let request_span = tracing::info_span!(
+        "Adding a new subscriber.",
+        %request_id,
+        subscriber_email = %form.email,
+        subscriber_name = %form.name
+    );
+    // Using `enter` in an async function is a recipe for disaster!
+    // Bear with me for now, but don't do this at home.
+    // See the following section on `Instrumenting Futures`
+    let _request_span_guard = request_span.enter();
+    
+    // [...]
+    // `_request_span_guard` is dropped at the end of `subscribe`
+    // That's when we "exit" the span
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+There is a lot going on here - let's break it down.
+</div>
+<div style="margin-top:.625em;">
+We are using the <code>info_span!</code> macro to create a new span and attach some values to its context: <code>request_id</code>, <code>form.email</code> and <code>form.name</code>. 
+</div>
+<div style="margin-top:.625em;">
+We are not using string interpolation anymore: <code>tracing</code> allows us to associate structured information to our spans as a collection of key-value pairs. We can explicitly name them (e.g. <code>subscriber_email</code> for <code>form.email</code>) or implicitly use the variable name as key (e.g. the isolated <code>request_id</code> is equivalent to <code>request_id = request_id</code>).
+</div>
+<div style="margin-top:.625em;">
+Notice that we prefixed all of them with a <code>%</code> symbol: we are telling <code>tracing</code> to use their <code>Display</code> implementation for logging purposes. You can find more details on the other available options in <a href="https://docs.rs/tracing/0.1.19/tracing/#recording-fields">their documentation</a>.
+</div>
+<div style="margin-top:.625em;">
+<code>info_span</code> returns the newly created span, but we have to explicit step into it using the <code>.enter()</code> method to activate it.
+</div>
+<div style="margin-top:.625em;">
+<code>.enter()</code> returns an instance of <a href="https://docs.rs/tracing/0.1.19/tracing/span/struct.Entered.html">Entered</a>, a guard: as long the guard variable is not dropped all downstream spans and log events will be registered as children of the entered span. This is a <a href="https://doc.rust-lang.org/stable/rust-by-example/scope/raii.html">typical Rust pattern</a>, often referred to as <b>R</b>esource <b>A</b>cquisition <b>I</b>s <b>I</b>nitialization (<code>RAII</code>): the compiler keeps track of the lifetime of all variables and when they go out of scope it inserts a call to their destructor, <code>Drop::drop</code>.
+</div>
+<div style="margin-top:.625em;">
+The default implementation of the <code>Drop</code> trait simply takes care of releasing the resources owned by that variable. We can, though, specify a custom <code>Drop</code> implementation to perform other cleanup operations on drop - e.g. exiting from a span when the <code>Entered</code> guard gets dropped:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! `tracing`'s source code
+
+impl<'a> Drop for Entered<'a> {
+    #[inline]
+    fn drop(&mut self) {
+        // Dropping the guard exits the span.
+        //
+        // Running this behaviour on drop rather than with an explicit function
+        // call means that spans may still be exited when unwinding.
+        if let Some(inner) = self.span.inner.as_ref() {
+            inner.subscriber.exit(&inner.id);
+        }
+
+        if_log_enabled! {{
+            if let Some(ref meta) = self.span.meta {
+                self.span.log(
+                    ACTIVITY_LOG_TARGET, 
+                    log::Level::Trace, 
+                    format_args!("<- {}", meta.name())
+                );
+            }
+        }}
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Inspecting the source code of your dependencies can often expose some gold nuggets - we just found out that if the <code>log</code> feature flag is enabled <code>tracing</code> will emit a trace-level log when a span exits. <br />
+Let's give it a go immediately:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+RUST_LOG=trace cargo run
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+[.. INFO  zero2prod] Adding a new subscriber.; request_id=f349b0fe.. 
+    subscriber_email=ursulale_guin@gmail.com subscriber_name=le guin
+[.. TRACE zero2prod] -> Adding a new subscriber.
+[.. INFO  zero2prod] request_id f349b0fe.. - Saving new subscriber details 
+    in the database
+[.. INFO  zero2prod] request_id f349b0fe.. - New subscriber details have 
+    been saved
+[.. TRACE zero2prod] <- Adding a new subscriber.
+[.. TRACE zero2prod] -- Adding a new subscriber.
+[.. INFO  actix_web] .. "POST /subscriptions HTTP/1.1" 200 ..
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Notice how all the information we captured in the span's context is reported in the emitted log line.
+We can closely follow the lifetime of our span using the emitted logs:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;"><code>Adding a new subscriber</code> is logged when the span is created;</li>
+  <li style="margin-top:.325em;">We enter the span (<code>-&gt;</code>);</li>
+  <li style="margin-top:.325em;">We execute the INSERT query;</li>
+  <li style="margin-top:.325em;">We exit the span (<code>&lt;-</code>);</li>
+  <li style="margin-top:.325em;">We finally close the span (<code>--</code>).</li>
+</ul>
+<div style="margin-top:.625em;">
+Wait, what is the difference between exiting and closing a span? <br />
+Glad you asked!
+</div>
+<div style="margin-top:.625em;">
+You can enter (and exit) a span multiple times. Closing, instead, is final: it happens when the span itself is dropped.
+This comes pretty handy when you have a unit of work that can be paused and then resumed - e.g. an asynchronous task!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="5.4. Instrumenting Futures" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's use our database query as an example. <br />
+The executor might have to <a href="https://doc.rust-lang.org/beta/std/future/trait.Future.html#tymethod.poll">poll its future</a> more than once to drive it to completion - while that future is idle, we are going to make progress on other futures.
+</div>
+<div style="margin-top:.625em;">
+This can clearly cause issues: how do we make sure we don't mix their respective spans? <br />
+The best way would be to closely mimic the future's lifecycle: we should enter into the span associated to our future every time it is polled by the executor and exit every time it gets parked.
+</div>
+<div style="margin-top:.625em;">
+That's where <a href="https://docs.rs/tracing/latest/tracing/trait.Instrument.html">Instrument</a> comes into the picture. It is an extension trait for futures. <code>Instrument::instrument</code> does exactly what we want: enters the span we pass as argument every time <code>self</code>, the future, is polled; it exits the span every time the future is parked.
+</div>
+<div style="margin-top:.625em;">
+Let's try it out on our query:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+use tracing::Instrument;
+// [...]
+
+pub async fn subscribe(/* */) -> HttpResponse {
+    let request_id = Uuid::new_v4();
+    let request_span = tracing::info_span!(
+        "Adding a new subscriber.",
+        %request_id,
+        subscriber_email = %form.email,
+        subscriber_name = %form.name
+    );
+    let _request_span_guard = request_span.enter();
+
+    // We do not call `.enter` on query_span!
+    // `.instrument` takes care of it at the right moments
+    // in the query future lifetime
+    let query_span = tracing::info_span!(
+        "Saving new subscriber details in the database"
+    );
+    match sqlx::query!(/* */)
+        .execute(pool.get_ref())
+        // First we attach the instrumentation, then we `.await` it
+        .instrument(query_span)
+        .await
+    {
+        Ok(_) => {
+            HttpResponse::Ok().finish()
+        },
+        Err(e) => {
+            // Yes, this error log falls outside of `query_span`
+            // We'll rectify it later, pinky swear!
+            tracing::error!("Failed to execute query: {:?}", e);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+If we launch the application again with <code>RUST_LOG=trace</code> and try a <code>POST /subscriptions</code> request we will see logs that look somewhat similar to these:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+[.. INFO  zero2prod] Adding a new subscriber.; request_id=f349b0fe.. 
+    subscriber_email=ursulale_guin@gmail.com subscriber_name=le guin
+[.. TRACE zero2prod] -> Adding a new subscriber.
+[.. INFO  zero2prod] Saving new subscriber details in the database
+[.. TRACE zero2prod] -> Saving new subscriber details in the database
+[.. TRACE zero2prod] <- Saving new subscriber details in the database
+[.. TRACE zero2prod] -> Saving new subscriber details in the database
+[.. TRACE zero2prod] <- Saving new subscriber details in the database
+[.. TRACE zero2prod] -> Saving new subscriber details in the database
+[.. TRACE zero2prod] <- Saving new subscriber details in the database
+[.. TRACE zero2prod] -> Saving new subscriber details in the database
+[.. TRACE zero2prod] -> Saving new subscriber details in the database
+[.. TRACE zero2prod] <- Saving new subscriber details in the database
+[.. TRACE zero2prod] -- Saving new subscriber details in the database
+[.. TRACE zero2prod] <- Adding a new subscriber.
+[.. TRACE zero2prod] -- Adding a new subscriber.
+[.. INFO  actix_web] .. "POST /subscriptions HTTP/1.1" 200 ..
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can clearly see how many times the query future has been polled by the executor before completing. How cool is that!?
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+</c:component>
