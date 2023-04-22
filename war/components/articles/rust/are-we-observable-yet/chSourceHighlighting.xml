@@ -1685,8 +1685,1062 @@ zero2prod
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
       <![CDATA[
-Unfortunately it does not pick up log. <br />
-Let's strike both out of our Cargo.toml file.
+Unfortunately it does not pick up <code>log</code>. <br />
+Let's strike both out of our <code>Cargo.toml</code> file.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="5.10. Cleaning Up Initialisation" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We relentlessly pushed forward to improve the observability posture of our application.
+Let's now take a step back and look at the code we wrote to see if we can improve in any meaningful way.
+</div>
+<div style="margin-top:.625em;">
+Let's start from our <code>main</code> function:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+use zero2prod::configuration::get_configuration;
+use zero2prod::startup::run;
+use sqlx::postgres::PgPool;
+use std::net::TcpListener;
+use tracing::subscriber::set_global_default;
+use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
+use tracing_log::LogTracer;
+use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+
+    LogTracer::init().expect("Failed to set logger");
+
+    let env_filter = EnvFilter::try_from_default_env()
+        .unwrap_or(EnvFilter::new("info"));
+    
+    let formatting_layer = BunyanFormattingLayer::new(
+        "zero2prod".into(), 
+        std::io::stdout
+    );
+
+    let subscriber = Registry::default()
+        .with(env_filter)
+        .with(JsonStorageLayer)
+        .with(formatting_layer);
+
+    set_global_default(subscriber).expect("Failed to set subscriber");
+
+    let configuration = get_configuration().expect("Failed to read configuration.");
+    let connection_pool = PgPool::connect(&configuration.database.connection_string())
+        .await
+        .expect("Failed to connect to Postgres.");
+
+    let address = format!("127.0.0.1:{}", configuration.application_port);
+    let listener = TcpListener::bind(address)?;
+
+    run(listener, connection_pool)?.await?;
+
+    Ok(())
+
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+There is a lot going on in that <code>main</code> function right now. <br />
+Let's break it down a bit:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+use zero2prod::configuration::get_configuration;
+use zero2prod::startup::run;
+use sqlx::postgres::PgPool;
+use std::net::TcpListener;
+use tracing::{Subscriber, subscriber::set_global_default};
+use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
+use tracing_log::LogTracer;
+use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
+
+/// Compose multiple layers into a `tracing`'s subscriber.
+///
+/// # Implementation Notes
+///
+/// We are using `impl Subscriber` as return type to avoid having to 
+/// spell out the actual type of the returned subscriber, which is 
+/// indeed quite complex.
+/// We need to explicitly call out that the returned subscriber is 
+/// `Send` and `Sync` to make it possible to pass it to `init_subscriber`
+/// later on.
+pub fn get_subscriber(
+    name: String, 
+    env_filter: String
+) -> impl Subscriber + Send + Sync {
+    let env_filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new(env_filter));
+    let formatting_layer = BunyanFormattingLayer::new(
+        name, 
+        std::io::stdout
+    );
+    Registry::default()
+        .with(env_filter)
+        .with(JsonStorageLayer)
+        .with(formatting_layer)
+}
+
+/// Register a subscriber as global default to process span data.
+///
+/// It should only be called once!
+pub fn init_subscriber(subscriber: impl Subscriber + Send + Sync) {
+    LogTracer::init().expect("Failed to set logger");
+    set_global_default(subscriber).expect("Failed to set subscriber");
+}
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    let subscriber = get_subscriber("zero2prod".into(), "info".into());
+    init_subscriber(subscriber);
+
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now move <code>get_subscriber</code> and <code>init_subscriber</code> to a module within our <code>zero2prod</code> library, <code>telemetry</code>.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/lib.rs
+pub mod configuration;
+pub mod routes;
+pub mod startup;
+pub mod telemetry;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/telemetry.rs
+use tracing::subscriber::set_global_default;
+use tracing::Subscriber;
+use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
+use tracing_log::LogTracer;
+use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
+
+pub fn get_subscriber(
+    name: String, 
+    env_filter: String
+) -> impl Subscriber + Sync + Send {
+    // [...]
+}
+
+pub fn init_subscriber(subscriber: impl Subscriber + Sync + Send) {
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+use zero2prod::configuration::get_configuration;
+use zero2prod::startup::run;
+use zero2prod::telemetry::{get_subscriber, init_subscriber};
+use sqlx::postgres::PgPool;
+use std::net::TcpListener;
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    let subscriber = get_subscriber("zero2prod".into(), "info".into());
+    init_subscriber(subscriber);
+    
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Awesome.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="5.11. Logs For Integration Tests" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We are not just cleaning up for aesthetic/readability reasons - we are moving those two functions to the zero2prod library to make them available to our test suite!
+</div>
+<div style="margin-top:.625em;">
+As a rule of thumb, everything we use in our application should be reflected in our integration tests.
+Structured logging, in particular, can significantly speed up our debugging when an integration test fails: we might not have to attach a debugger, more often than not the logs can tell us where something went wrong. It is also a good benchmark: if you cannot debug it from logs, imagine how difficult would it be to debug in production!
+</div>
+<div style="margin-top:.625em;">
+Let's change our <code>spawn_app</code> helper function to take care of initialising our <code>tracing</code> stack:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+
+use zero2prod::configuration::{get_configuration, DatabaseSettings};
+use zero2prod::startup::run;
+use zero2prod::telemetry::{get_subscriber, init_subscriber};
+use sqlx::{Connection, Executor, PgConnection, PgPool};
+use std::net::TcpListener;
+use uuid::Uuid;
+
+pub struct TestApp {
+    pub address: String,
+    pub db_pool: PgPool,
+}
+
+async fn spawn_app() -> TestApp {
+    let subscriber = get_subscriber("test".into(), "debug".into());
+    init_subscriber(subscriber);
+
+    let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind random port");
+    let port = listener.local_addr().unwrap().port();
+    let address = format!("http://127.0.0.1:{}", port);
+
+    let mut configuration = get_configuration().expect("Failed to read configuration.");
+    configuration.database.database_name = Uuid::new_v4().to_string();
+    let connection_pool = configure_database(&configuration.database).await;
+
+    let server = run(listener, connection_pool.clone()).expect("Failed to bind address");
+    let _ = tokio::spawn(server);
+    TestApp {
+        address,
+        db_pool: connection_pool,
+    }
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+If you try to run <code>cargo test</code> you will be greeted by one success and a long series of test failures:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+failures:
+---- subscribe_returns_a_400_when_data_is_missing stdout ----
+thread 'subscribe_returns_a_400_when_data_is_missing' panicked at 
+'Failed to set logger: SetLoggerError(())'
+Panic in Arbiter thread.
+
+---- subscribe_returns_a_200_for_valid_form_data stdout ----
+thread 'subscribe_returns_a_200_for_valid_form_data' panicked at 
+'Failed to set logger: SetLoggerError(())'
+Panic in Arbiter thread.
+
+
+failures:
+    subscribe_returns_a_200_for_valid_form_data
+    subscribe_returns_a_400_when_data_is_missing
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>init_subscriber</code> should only be called once, but it is being invoked by all our tests. <br />
+We can use <code>once_cell</code> to rectify it:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dev-dependencies]
+once_cell = "1"
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+// [...]
+use once_cell::sync::Lazy;
+
+// Ensure that the `tracing` stack is only initialised once using `once_cell`
+static TRACING: Lazy<()> = Lazy::new(|| {
+    let subscriber = get_subscriber("test".into(), "debug".into());
+    init_subscriber(subscriber);
+});
+
+pub struct TestApp {
+    pub address: String,
+    pub db_pool: PgPool,
+}
+
+async fn spawn_app() -> TestApp {
+    // The first time `initialize` is invoked the code in `TRACING` is executed.
+    // All other invocations will instead skip execution.
+    Lazy::force(&TRACING);
+    
+    // [...]
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>cargo test</code> is green again. <br />
+The output, though, is very noisy: we have several log lines coming out of each test case. <br />
+We want our tracing instrumentation to be exercised in every test, but we do not want to look at those logs every time we run our test suite.
+</div>
+<div style="margin-top:.625em;">
+<code>cargo test</code> solves the very same problem for <code>println/print</code> statements. By default, it swallows everything that is printed to console. You can explicitly opt in to look at those print statements using <code>cargo test -- --nocapture</code>.
+</div>
+<div style="margin-top:.625em;">
+We need an equivalent strategy for our <code>tracing</code> instrumentation. <br />
+Let's add a new parameter to <code>get_subscriber</code> to allow customisation of what sink logs should be written to:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/telemetry.rs
+use tracing_subscriber::fmt::MakeWriter;
+// [...]
+
+pub fn get_subscriber<Sink>(
+    name: String,
+    env_filter: String,
+    sink: Sink,
+) -> impl Subscriber + Sync + Send
+    where
+        // This "weird" syntax is a higher-ranked trait bound (HRTB)
+        // It basically means that Sink implements the `MakeWriter`
+        // trait for all choices of the lifetime parameter `'a`
+        // Check out https://doc.rust-lang.org/nomicon/hrtb.html
+        // for more details.
+        Sink: for<'a> MakeWriter<'a> + Send + Sync + 'static,
+{
+    // [...]
+    let formatting_layer = BunyanFormattingLayer::new(name, sink);
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can then adjust our <code>main</code> function to use <code>stdout</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+// [...]
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    let subscriber = get_subscriber("zero2prod".into(), "info".into(), std::io::stdout);
+    
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+In our test suite we will choose the sink dynamically according to an environment variable, <code>TEST_LOG</code>. If <code>TEST_LOG</code> is set, we use <code>std::io::stdout</code>.
+</div>
+<div style="margin-top:.625em;">
+If <code>TEST_LOG</code> is not set, we send all logs into the void using <code>std::io::sink</code>. <br />
+Our own home-made version of the <code>--nocapture</code> flag.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+//! ...
+
+// Ensure that the `tracing` stack is only initialised once using `once_cell`
+static TRACING: Lazy<()> = Lazy::new(|| {
+    let default_filter_level = "info".to_string();
+    let subscriber_name = "test".to_string();
+    // We cannot assign the output of `get_subscriber` to a variable based on the value of `TEST_LOG`
+    // because the sink is part of the type returned by `get_subscriber`, therefore they are not the
+    // same type. We could work around it, but this is the most straight-forward way of moving forward.
+    if std::env::var("TEST_LOG").is_ok() {
+        let subscriber = get_subscriber(subscriber_name, default_filter_level, std::io::stdout);
+        init_subscriber(subscriber);
+    } else {
+        let subscriber = get_subscriber(subscriber_name, default_filter_level, std::io::sink);
+        init_subscriber(subscriber);
+    };
+});
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+When you want to see all logs coming out of a certain test case to debug it you can run
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# We are using the `bunyan` CLI to prettify the outputted logs
+# The original `bunyan` requires NPM, but you can install a Rust-port with
+# `cargo install bunyan`
+TEST_LOG=true cargo test health_check_works | bunyan
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+and sift through the output to understand what is going on. <br />
+Neat, isn't it?
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="5.12. Cleaning Up Instrumentation Code - tracing::instrument" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We refactored our initialisation logic. Let's have a look at our instrumentation code now. <br />
+Time to bring <code>subscribe</code> back once again.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    let request_id = Uuid::new_v4();
+    let request_span = tracing::info_span!(
+        "Adding a new subscriber",
+        %request_id,
+        subscriber_email = %form.email,
+        subscriber_name = %form.name
+    );
+    let _request_span_guard = request_span.enter();
+    let query_span = tracing::info_span!(
+        "Saving new subscriber details in the database"
+    );
+    match sqlx::query!(/* */)
+        .execute(pool.get_ref())
+        .instrument(query_span)
+        .await
+    {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(e) => {
+            tracing::error!("Failed to execute query: {:?}", e);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It is fair to say logging has added some noise to our <code>subscribe</code> function. <br />
+Let's see if we can cut it down a bit.
+</div>
+<div style="margin-top:.625em;">
+We will start with <code>request_span</code>: we'd like all operations within <code>subscribe</code> to happen within the context of <code>request_span</code>. <br />
+In other words, we'd like to wrap the <code>subscribe</code> function in a span.
+</div>
+<div style="margin-top:.625em;">
+This requirement is fairly common: extracting each sub-task in its own function is a common way to structure routines to improve readability and make it easier to write tests; therefore we will often want to attach a span to a function declaration.
+</div>
+<div style="margin-top:.625em;">
+<code>tracing</code> caters for this specific usecase with its <code>tracing::instrument</code> procedural macro. Let's see it in action:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+#[tracing::instrument(
+    name = "Adding a new subscriber",
+    skip(form, pool),
+    fields(
+        request_id = %Uuid::new_v4(),
+        subscriber_email = %form.email,
+        subscriber_name = %form.name
+    )
+)]
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    let query_span = tracing::info_span!(
+        "Saving new subscriber details in the database"
+    );
+    match sqlx::query!(/* */)
+        .execute(pool.get_ref())
+        .instrument(query_span)
+        .await
+    {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(e) => {
+            tracing::error!("Failed to execute query: {:?}", e);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>#[tracing::instrument]</code> creates a span at the beginning of the function invocation and automatically attaches all arguments passed to the function to the context of the span - in our case, <code>form</code> and <code>pool</code>. Often function arguments won't be displayable on log records (e.g. <code>pool</code>) or we'd like to specify more explicitly what should/how they should be captured (e.g. naming each field of <code>form</code>) - we can explicitly tell <code>tracing</code> to ignore them using the <code>skip</code> directive.
+</div>
+<div style="margin-top:.625em;">
+<code>name</code> can be used to specify the message associated to the function span - if omitted, it defaults to the function name.
+</div>
+<div style="margin-top:.625em;">
+We can also enrich the span's context using the <code>fields</code> directive. It leverages the same syntax we have already seen for the <code>info_span!</code> macro.
+</div>
+<div style="margin-top:.625em;">
+The result is quite nice: all instrumentation concerns are visually separated by execution concerns - the first are dealt with in a procedural macro that "decorates" the function declaration, while the function body focuses on the actual business logic.
+</div>
+<div style="margin-top:.625em;">
+It is important to point out that <code>tracing::instrument</code> takes care as well to use <code>Instrument::instrument</code> if it is applied to an asynchronous function.
+</div>
+<div style="margin-top:.625em;">
+Let's extract the query in its own function and use <code>tracing::instrument</code> to get rid of <code>query_span</code> and the call to the <code>.instrument</code> method:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+#[tracing::instrument(
+    name = "Adding a new subscriber",
+    skip(form, pool),
+    fields(
+        request_id = %Uuid::new_v4(),
+        subscriber_email = %form.email,
+        subscriber_name = %form.name
+    )
+)]
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    match insert_subscriber(&pool, &form).await
+    {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(_) => HttpResponse::InternalServerError().finish()
+    }
+}
+
+#[tracing::instrument(
+    name = "Saving new subscriber details in the database",
+    skip(form, pool)
+)]
+pub async fn insert_subscriber(
+    pool: &PgPool,
+    form: &FormData,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"
+    INSERT INTO subscriptions (id, email, name, subscribed_at)
+    VALUES ($1, $2, $3, $4)
+            "#,
+        Uuid::new_v4(),
+        form.email,
+        form.name,
+        Utc::now()
+    )
+    .execute(pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to execute query: {:?}", e);
+        e
+    // Using the `?` operator to return early 
+    // if the function failed, returning a sqlx::Error
+    // We will talk about error handling in depth later!    
+    })?;
+    Ok(())
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The error event does now fall within the query span and we have a better separation of concerns:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;"><code>insert_subscriber</code> takes care of the database logic and it has no awareness of the surrounding web framework - i.e. we are not passing <code>web::Form</code> or <code>web::Data</code> wrappers as input types;</li>
+  <li style="margin-top:.325em;"><code>subscribe</code> orchestrates the work to be done by calling the required routines and translates their outcome into the proper response according to the rules and conventions of the HTTP protocol.</li>
+</ul>
+<div style="margin-top:.625em;">
+I must confess my unbounded love for <code>tracing::instrument</code>: it significantly lowers the effort required to instrument your code.
+It pushes you in the <b>pit of success</b>: the right thing to do is the easiest thing to do.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="5.13. Protect Your Secrets - secrecy" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+There is actually one element of <code>#[tracing::instrument]</code> that I am not fond of: it automatically attaches all arguments passed to the function to the context of the span - you have to <b>opt-out</b> of logging function inputs (via <code>skip</code>) rather than <b>opt-in</b>.
+</div>
+<div style="margin-top:.625em;">
+You do not want secrets (e.g. a password) or personal identifiable information (e.g. the billing address of an end user) in your logs.
+</div>
+<div style="margin-top:.625em;">
+Opt-out is a dangerous default - every time you add a new input to a function using <code>#[tracing::instrument]</code> you need to ask yourself: is it safe to log this? Should I <code>skip</code> it?
+Give it enough time and somebody will forget - you now have a security incident to deal with.
+</div>
+<div style="margin-top:.625em;">
+You can prevent this scenario by introducing a wrapper type that <code>explicitly</code> marks which fields are considered to be sensitive - <code>secrecy::Secret</code>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dependencies]
+secrecy = { version = "0.8", features = ["serde"] }
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's check out its definition:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+/// Wrapper type for values that contains secrets, which attempts to limit
+/// accidental exposure and ensure secrets are wiped from memory when dropped.
+/// (e.g. passwords, cryptographic keys, access tokens or other credentials)
+///
+/// Access to the secret inner value occurs through the [...] 
+/// `expose_secret()` method [...]
+pub struct Secret<S>
+    where
+        S: Zeroize,
+{
+    /// Inner secret value
+    inner_secret: S,
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Memory wiping, provided by the <code>Zeroize</code> trait, is a nice-to-have. <br />
+The key property we are looking for is <code>Secret</code>'s masked Debug implementation: <code>println!("{:?}", my_secret_string)</code> outputs <code>Secret([REDACTED String])</code> instead of the actual secret value. This is exactly what we need to prevent accidental leakage of sensitive material via <code>#[tracing::instrument]</code> or other logging statements.
+</div>
+<div style="margin-top:.625em;">
+There is an additional upside to an explicit wrapper type: it serves as documentation for new developers who are being introduced to the codebase. It nails down what is considered sensitive in your domain/according to the relevant regulation.
+</div>
+<div style="margin-top:.625em;">
+The only secret value we need to worry about, right now, is the database password. Let's wrap it up:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+use secrecy::Secret;
+// [..]
+
+#[derive(serde::Deserialize)]
+pub struct DatabaseSettings {
+    // [...]
+    pub password: Secret<String>,
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>Secret</code> does not interfere with deserialization - <code>Secret</code> implements <code>serde::Deserialize</code> by delegating to the deserialization logic of the wrapped type (if you enable the <code>serde</code> feature flag, as we did).
+</div>
+<div style="margin-top:.625em;">
+The compiler is not happy:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0277]: `Secret<std::string::String>` doesn't implement `std::fmt::Display`
+--> src/configuration.rs:29:28
+|
+|             self.username, self.password, self.host, self.port
+|                            ^^^^^^^^^^^^^ 
+| `Secret<std::string::String>` cannot be formatted with the default formatter
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+That is a feature, not a bug - <code>secret::Secret</code> does not implement Display therefore we need to explicitly allow the exposure of the wrapped secret. The compiler error is a great prompt to notice that the entire database connection string should be marked as <code>Secret</code> as well given that it embeds the database password:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+use secrecy::ExposeSecret;
+// [...]
+
+impl DatabaseSettings {
+    pub fn connection_string(&self) -> Secret<String> {
+        Secret::new(format!(
+            "postgres://{}:{}@{}:{}/{}",
+            // [...]
+            self.password.expose_secret(),
+            // [...]
+        ))
+    }
+
+    pub fn connection_string_without_db(&self) -> Secret<String> {
+        Secret::new(format!(
+            "postgres://{}:{}@{}:{}",
+            // [...]
+            self.password.expose_secret(),
+            // [...]
+        ))
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+use secrecy::ExposeSecret;
+// [...]
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    // [...]
+    let connection_pool =
+        PgPool::connect(&configuration.database.connection_string().expose_secret())
+            .await
+            .expect("Failed to connect to Postgres.");
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+use secrecy::ExposeSecret;
+// [...]
+
+pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
+    let mut connection =
+        PgConnection::connect(&config.connection_string_without_db().expose_secret())
+            .await
+            .expect("Failed to connect to Postgres");
+    // [...]
+    let connection_pool = PgPool::connect(&config.connection_string().expose_secret())
+        .await
+        .expect("Failed to connect to Postgres.");
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+This is it for the time being - going forward we will make sure to wrap sensitive values into <code>Secret</code> as soon as they are introduced.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="5.14. Request Id" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div style="margin-top:.625em;">
+We have one last job to do: ensure all logs for a particular request, in particular the record with the returned status code, are enriched with a <code>request_id</code> property. How?
+</div>
+<div style="margin-top:.625em;">
+If our goal is to avoid touching <code>actix_web::Logger</code> the easiest solution is adding another middleware, <code>RequestIdMiddleware</code>, that is in charge of:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">generating a unique request identifier;</li>
+  <li style="margin-top:.325em;">creating a new span with the request identifier attached as context;</li>
+  <li style="margin-top:.325em;">wrapping the rest of the middleware chain in the newly created span.</li>
+</ul>
+<div style="margin-top:.625em;">
+We would be leaving a lot on the table though: <code>actix_web::Logger</code> does not give us access to its rich information (status code, processing time, caller IP, etc.) in the same structured JSON format we are getting from other logs - we would have to parse all that information out of its message string.
+We are better off, in this case, by bringing in a solution that is tracing-aware.
+</div>
+<div style="margin-top:.625em;">
+Let's add <code>tracing-actix-web</code> as one of our dependencies:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dependencies]
+tracing-actix-web = "0.6"
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It is designed as a drop-in replacement of <code>actix-web</code>'s <code>Logger</code>, just based on <code>tracing</code> instead of <code>log</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+use crate::routes::{health_check, subscribe};
+use actix_web::dev::Server;
+use actix_web::web::Data;
+use actix_web::{web, App, HttpServer};
+use sqlx::PgPool;
+use std::net::TcpListener;
+use tracing_actix_web::TracingLogger;
+
+pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Error> {
+    let db_pool = Data::new(db_pool);
+    let server = HttpServer::new(move || {
+        App::new()
+            // Instead of `Logger::default`
+            .wrap(TracingLogger::default())
+            .route("/health_check", web::get().to(health_check))
+            .route("/subscriptions", web::post().to(subscribe))
+            .app_data(db_pool.clone())
+    })
+    .listen(listener)?
+    .run();
+    Ok(server)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+If you launch the application and fire a request you should see a <code>request_id</code> on all logs as well as <code>request_path</code> and a few other useful bits of information.
+</div>
+<div style="margin-top:.625em;">
+We are almost done - there is one outstanding issue we need to take care of.
+Let's take a closer look at the emitted log records for a <code>POST /subscriptions</code> request:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+{
+    "msg": "[REQUEST - START]", 
+    "request_id": "21fec996-ace2-4000-b301-263e319a04c5", 
+    ...
+}
+{
+    "msg": "[ADDING A NEW SUBSCRIBER - START]", 
+    "request_id":"aaccef45-5a13-4693-9a69-5",
+    ...
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We have two different request_id for the same request! <br />
+The bug can be traced back to the #[tracing::instrument] annotation on our subscribe function:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+#[tracing::instrument(
+    name = "Adding a new subscriber",
+    skip(form, pool),
+    fields(
+        request_id = %Uuid::new_v4(),
+        subscriber_email = %form.email,
+        subscriber_name = %form.name
+    )
+)]
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    // [...]
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We are still generating a <code>request_id</code> at the function-level which overrides the <code>request_id</code> coming from <code>TracingLogger</code>.
+Let's get rid of it to fix the issue:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+#[tracing::instrument(
+    name = "Adding a new subscriber",
+    skip(form, pool),
+    fields(
+        subscriber_email = %form.email,
+        subscriber_name = %form.name
+    )
+)]
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    // [...]
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+All good now - we have one consistent <code>request_id</code> for each endpoint of our application.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="5.15. Leveraging The tracing Ecosystem" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We covered a lot of what tracing has to offer - it has significantly improved the quality of the telemetry data we are collecting as well as the clarity of our instrumentation code.
+</div>
+<div style="margin-top:.625em;">
+At the same time, we have barely touched upon the richness of the whole <code>tracing</code> ecosystem when it comes to subscriber layers. <br />
+Just to mention a few more of those readily available:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;"><code>tracing-actix-web</code> is OpenTelemetry-compatible. If you plug-in <a href="https://docs.rs/tracing-opentelemetry">tracing-opentelemetry</a> you can ship spans to an <a href="https://opentelemetry.io/">OpenTelemetry</a>-compatible service (e.g. <a href="https://www.jaegertracing.io/">Jaeger</a> or <a href="https://honeycomb.io/">Honeycomb.io</a>) for further analysis;</li>
+  <li style="margin-top:.325em;"><a href="https://docs.rs/tracing-error">tracing-error</a> enriches our error types with a <a href="https://docs.rs/tracing-error/0.1.2/tracing_error/struct.SpanTrace.html">SpanTrace</a> to ease troubleshooting.</li>
+</ul>
+<div style="margin-top:.625em;">
+It is not an exaggeration to state that <code>tracing</code> is a foundational crate in the Rust ecosystem. While <code>log</code> is the minimum common denominator, <code>tracing</code> is now established as the modern backbone of the whole diagnostics and instrumentation ecosystem.
+</div>
     ]]>
     </c:sourceContent>
     <c:comment>
@@ -1695,6 +2749,37 @@ Let's strike both out of our Cargo.toml file.
       </c:comment1>
     </c:comment>
   </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">6. Next On Zero To Production</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We started from a completely silent <code>actix-web</code> application and we ended up with high-quality telemetry data. It is now time to take this newsletter API live!
+</div>
+<div style="margin-top:.625em;">
+In the next chapter we will build a basic deployment pipeline for our Rust project.
+</div>
+<div style="margin-top:.625em;">
+As always, all the code we wrote in this chapter can be found on <a href="https://github.com/LukeMathWalker/zero-to-production/">GitHub</a> - toss a star to your witcher, o' valley of plenty!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
 
 
 
