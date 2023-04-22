@@ -2798,6 +2798,447 @@ error: aborting due to previous error
 The error is in our <code>spawn_app</code> helper function:
     ]]>
     </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+use zero2prod::startup::run;
+use std::net::TcpListener;
+// [...]
+
+fn spawn_app() -> String {
+    let listener = TcpListener::bind("127.0.0.1:0")
+        .expect("Failed to bind random port");
+    // We retrieve the port assigned to us by the OS
+    let port = listener.local_addr().unwrap().port();
+    let server = run(listener).expect("Failed to bind address");
+    let _ = tokio::spawn(server);
+    // We return the application address to the caller!
+    format!("http://127.0.0.1:{}", port)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We need to pass a connection pool to run.
+</div>
+<div style="margin-top:.625em;">
+Given that we are then going to need that very same connection pool in <code>subscribe_returns_a_200_for_valid_form_data</code> to perform our <code>SELECT</code> query, it makes sense to generalise spawn_app: instead of returning a raw <code>String</code>, we will give the caller a struct, TestApp. <code>TestApp</code> will hold both the address of our test application instance and a handle to the connection pool, simplifying the arrange steps in our test cases.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+use zero2prod::configuration::get_configuration;
+use zero2prod::startup::run;
+use sqlx::PgPool;
+use std::net::TcpListener;
+
+pub struct TestApp {
+    pub address: String,
+    pub db_pool: PgPool,
+}
+
+// The function is asynchronous now!
+async fn spawn_app() -> TestApp {
+    let listener = TcpListener::bind("127.0.0.1:0")
+        .expect("Failed to bind random port");
+    let port = listener.local_addr().unwrap().port();
+    let address = format!("http://127.0.0.1:{}", port);
+
+    let configuration = get_configuration().expect("Failed to read configuration.");
+    let connection_pool = PgPool::connect(&configuration.database.connection_string())
+        .await
+        .expect("Failed to connect to Postgres.");
+    
+    let server = run(listener, connection_pool.clone())
+        .expect("Failed to bind address");
+    let _ = tokio::spawn(server);
+    TestApp {
+        address,
+        db_pool: connection_pool,
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+All test cases have then to be updated accordingly - an off-screen exercise that I leave to you, my dear reader.
+</div>
+<div style="margin-top:.625em;">
+Let's just have a look together at what <code>subscribe_returns_a_200_for_valid_form_data</code> looks like after the required changes:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+// [...]
+#[tokio::test]
+async fn subscribe_returns_a_200_for_valid_form_data() {
+    // Arrange
+    let app = spawn_app().await;
+    let client = reqwest::Client::new();
+
+    // Act
+    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+    let response = client
+        .post(&format!("{}/subscriptions", &app.address))
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(body)
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    // Assert
+    assert_eq!(200, response.status().as_u16());
+
+    let saved = sqlx::query!("SELECT email, name FROM subscriptions",)
+        .fetch_one(&app.db_pool)
+        .await
+        .expect("Failed to fetch saved subscription.");
+
+    assert_eq!(saved.email, "ursula_le_guin@gmail.com");
+    assert_eq!(saved.name, "le guin");
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The test intent is much clearer now that we got rid of most of the boilerplate related to establishing the connection with the database.
+</div>
+<div style="margin-top:.625em;">
+<code>TestApp</code> is foundation we will be building on going forward to pull out supporting functionality that is useful to most of our integration tests.
+</div>
+<div style="margin-top:.625em;">
+The moment of truth has finally come: is our updated <code>subscribe</code> implementation enough to turn <code>subscribe_returns_a_200_for_valid_form_data</code> green?
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+running 3 tests
+test health_check_works ... ok
+test subscribe_returns_a_400_when_data_is_missing ... ok
+test subscribe_returns_a_200_for_valid_form_data ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Yesssssssss! <br />
+Success!
+</div>
+<div style="margin-top:.625em;">
+Let's run it again to bathe in the light of this glorious moment!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ cargo test
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+running 3 tests
+test health_check_works ... ok
+Failed to execute query: error returned from database: 
+duplicate key value violates unique constraint "subscriptions_email_key"
+thread 'subscribe_returns_a_200_for_valid_form_data' 
+       panicked at 'assertion failed: `(left == right)`
+  left: `200`,
+ right: `500`', tests/health_check.rs:66:5
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+Panic in Arbiter thread.
+test subscribe_returns_a_400_when_data_is_missing ... ok
+test subscribe_returns_a_200_for_valid_form_data ... FAILED
+
+failures:
+
+failures:
+    subscribe_returns_a_200_for_valid_form_data
+
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Wait, no, what the fuck! Don't do this to us!
+</div>
+<div style="margin-top:.625em;">
+Ok, I lied - I knew this was going to happen. <br />
+I am sorry, I let you taste the sweet flavour of victory and then I threw you back into the mud. <br />
+There is an important lesson to be learned here, trust me.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.7.1. Test Isolation" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Your database is a gigantic global variable: all your tests are interacting with it and whatever they leave behind will be available to other tests in the suite as well as to the following test runs.
+</div>
+<div style="margin-top:.625em;">
+This is precisely what happened to us a moment ago: our first test run commanded our application to register a new subscriber with <code>ursula_le_guin@gmail.com</code> as their email; the application obliged.
+</div>
+<div style="margin-top:.625em;">
+When we re-ran our test suite we tried again to perform another <code>INSERT</code> using the same email, but our <code>UNIQUE</code> constraint on the email column raised a <code>unique key violation</code> and rejected the query, forcing the application to return us a <code>500 INTERNAL_SERVER_ERROR</code>.
+</div>
+<div style="margin-top:.625em;">
+You really do not want to have any kind of interaction between your tests: it makes your test runs non-deterministic and it leads down the line to spurious test failures that are extremely tricky to hunt down and fix.
+</div>
+<div style="margin-top:.625em;">
+There are two techniques I am aware of to ensure test isolation when interacting with a relational database in a test:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">wrap the whole test in a SQL transaction and rollback at the end of it;</li>
+  <li style="margin-top:.325em;">spin up a brand-new logical database for each integration test.</li>
+</ul>
+<div style="margin-top:.625em;">
+The first is clever and will generally be faster: rolling back a SQL transaction takes less time than spinning up a new logical database. It works quite well when writing unit tests for your queries but it is tricky to pull off in an integration test like ours: our application will borrow a <code>PgConnection</code> from a <code>PgPool</code> and we have no way to "capture" that connection in a SQL transaction context.
+Which leads us to the second option: potentially slower, yet much easier to implement.
+</div>
+<div style="margin-top:.625em;">
+How? <br />
+Before each test run, we want to:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">create a new logical database with a unique name;</li>
+  <li style="margin-top:.325em;">run database migrations on it.</li>
+</ul>
+<div style="margin-top:.625em;">
+The best place to do this is <code>spawn_app</code>, before launching our <code>actix-web</code> test application. <br />
+Let's look at it again:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+use zero2prod::configuration::get_configuration;
+use zero2prod::startup::run;
+use sqlx::PgPool;
+use std::net::TcpListener;
+use uuid::Uuid;
+
+pub struct TestApp {
+    pub address: String,
+    pub db_pool: PgPool,
+}
+
+// The function is asynchronous now!
+async fn spawn_app() -> TestApp {
+
+    let listener = TcpListener::bind("127.0.0.1:0")
+        .expect("Failed to bind random port");
+
+    let port = listener.local_addr().unwrap().port();
+    let address = format!("http://127.0.0.1:{}", port);
+
+    let configuration = get_configuration().expect("Failed to read configuration.");
+    let connection_pool = PgPool::connect(&configuration.database.connection_string())
+        .await
+        .expect("Failed to connect to Postgres.");
+    
+    let server = run(listener, connection_pool.clone())
+        .expect("Failed to bind address");
+
+    let _ = tokio::spawn(server);
+
+    TestApp {
+        address,
+        db_pool: connection_pool,
+    }
+
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>configuration.database.connection_string()</code> uses the <code>database_name</code> specified in our <code>configuration.yaml</code> file - the same for all tests.
+</div>
+<div style="margin-top:.625em;">
+Let's randomise it with
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+let mut configuration = get_configuration().expect("Failed to read configuration.");
+configuration.database.database_name = Uuid::new_v4().to_string();
+
+let connection_pool = PgPool::connect(&configuration.database.connection_string())
+    .await
+    .expect("Failed to connect to Postgres.");
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>cargo test</code> will fail: there is no database ready to accept connections using the name we generated.
+</div>
+<div style="margin-top:.625em;">
+Let's add a <code>connection_string_without_db</code> method to our <code>DatabaseSettings</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+// [...]
+
+impl DatabaseSettings {
+
+    pub fn connection_string(&self) -> String {
+        format!(
+            "postgres://{}:{}@{}:{}/{}",
+            self.username, self.password, self.host, self.port, self.database_name
+        )
+    }
+
+    pub fn connection_string_without_db(&self) -> String {
+        format!(
+            "postgres://{}:{}@{}:{}",
+            self.username, self.password, self.host, self.port
+        )
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Omitting the database name we connect to the Postgres instance, not a specific logical database.
+</div>
+<div style="margin-top:.625em;">
+We can now use that connection to create the database we need and run migrations on it:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+// [...]
+use sqlx::{Connection, Executor, PgConnection, PgPool};
+use zero2prod::configuration::{get_configuration, DatabaseSettings};
+
+async fn spawn_app() -> TestApp {
+    // [...]
+    let mut configuration = get_configuration().expect("Failed to read configuration.");
+    configuration.database.database_name = Uuid::new_v4().to_string();
+    let connection_pool = configure_database(&configuration.database).await;
+    // [...]
+}
+
+pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
+
+    // Create database
+    let mut connection = PgConnection::connect(&config.connection_string_without_db())
+        .await
+        .expect("Failed to connect to Postgres");
+
+    connection
+        .execute(format!(r#"CREATE DATABASE "{}";"#, config.database_name).as_str())
+        .await
+        .expect("Failed to create database.");
+
+    // Migrate database
+    let connection_pool = PgPool::connect(&config.connection_string())
+        .await
+        .expect("Failed to connect to Postgres.");
+
+    sqlx::migrate!("./migrations")
+        .run(&connection_pool)
+        .await
+        .expect("Failed to migrate the database");
+
+    connection_pool
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>sqlx::migrate!</code> is the same macro used by <code>sqlx-cli</code> when executing <code>sqlx migrate run</code> - no need to throw bash scripts into the mix to achieve the same result.
+</div>
+<div style="margin-top:.625em;">
+Let's try again to run <code>cargo test</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+running 3 tests
+test subscribe_returns_a_200_for_valid_form_data ... ok
+test subscribe_returns_a_400_when_data_is_missing ... ok
+test health_check_works ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It works, this time for good.
+</div>
+<div style="margin-top:.625em;">
+You might have noticed that we do not perform any clean-up step at the end of our tests - the logical databases we create are not being deleted. This is intentional: we could add a clean-up step, but our Postgres instance is used only for test purposes and it's easy enough to restart it if, after hundreds of test runs, performance starts to suffer due to the number of lingering (almost empty) databases.
+</div>
+    ]]>
+    </c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
