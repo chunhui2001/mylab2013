@@ -1,0 +1,2385 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<div style="font-size:1.1em;line-height:1.625;">
+This article is a sample from <a href="https://zero2prod.com/">Zero To Production In Rust</a>, a book on backend development in Rust.
+You can get a copy of the book on <a href="https://zero2prod.com/">zero2prod.com</a>.
+<a href="https://www.lpalmieri.com/subscribe">Subscribe to the newsletter</a> to be notified when a new episode is published.
+</div>
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">1. We Must Talk About Deployments</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Everybody loves to talk about how important it is to deploy software to production as often as possible (and I put myself in that bunch!).
+</div>
+<div style="margin-top:.625em;">
+"Get customer feedback early!" <br />
+"Ship often and iterate on the product!" <br />
+</div>
+<div style="margin-top:.625em;">
+But nobody shows you how.
+</div>
+<div style="margin-top:.625em;">
+Pick a random book on web development or an introduction to framework XYZ. <br />
+Most will not dedicate more than a paragraph to the topic of deployments. <br />
+A few will have a chapter about it - usually towards the end of the book, the part you never get to actually read. <br />
+A handful actually give it the space it deserves, as early as they reasonably can.
+</div>
+<div style="margin-top:.625em;">
+Why?
+</div>
+<div style="margin-top:.625em;">
+Because deployments are (still) a messy business. <br />
+There are many vendors, most are not straight-forward to use and what is considered state-of-art or best-practice tends to change really quickly.
+Why?
+</div>
+<div style="margin-top:.625em;">
+That is why most authors steer away from the topic: it takes many pages and it is painful to write something down to realise, one or two years later, that it is already out of date.
+</div>
+<div style="margin-top:.625em;">
+Nonetheless deployments are a prominent concern in the daily life of a software engineer - e.g. it is difficult to talk about database schema migrations, domain validation and API evolution without taking into account your deployment process.
+</div>
+<div style="margin-top:.625em;">
+We simply cannot ignore the topic in a book called Zero To Production.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">2. Choosing Our Tools</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+The purpose of this chapter is to get you to experience, first hand, what it means to actually deploy on every commit to your <code>main</code> branch.
+</div>
+<div style="margin-top:.625em;">
+That is why we are talking about deployment as early as chapter five: to give you the chance to practice this muscle for the rest of the book, as you would actually be doing if this was a real commercial project.
+</div>
+<div style="margin-top:.625em;">
+We are particularly interested, in fact, on how the engineering practice of continuous deployment influences our design choices and development habits.
+</div>
+<div style="margin-top:.625em;">
+At the same time, building the perfect continuous deployment pipeline is not the focus of the book - it deserves a book on its own, probably a whole company.
+</div>
+<div style="margin-top:.625em;">
+We have to be pragmatic and strike a balance between intrinsic usefulness (i.e. learn a tool that is valued in the industry) and developer experience.
+</div>
+<div style="margin-top:.625em;">
+And even if we spent the time to hack together the "best" setup, you are still likely to end up choosing different tools and different vendors due to the specific constraints of your organisation.
+</div>
+<div style="margin-top:.625em;">
+What matters is the underlying philosophy and getting you to try continuous deployment as a practice.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.1. Virtualisation: Docker" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Our local development environment and our production environment serve two very different purposes. <br />
+Browsers, IDEs, our music playlists - they can co-exist on our local machine. It is a multi-purpose workstation.
+</div>
+<div style="margin-top:.625em;">
+Production environments, instead, have a much narrower focus: running our software to make it available to our users. Anything that is not strictly related to that goal is either a waste of resources, at best, or a security liability, at worst.
+</div>
+<div style="margin-top:.625em;">
+This discrepancy has historically made deployments fairly troublesome, leading to the now meme-fied complaint "It works on my machine!".
+</div>
+<div style="margin-top:.625em;">
+It is not enough to copy the source code to our production servers. Our software is likely to make assumptions on the capabilities exposed by the underlying operating system (e.g. a native Windows application will not run on Linux), on the availability of other software on the same machine (e.g. a certain version of the Python interpreter) or on its configuration (e.g. do I have root permissions?).
+</div>
+<div style="margin-top:.625em;">
+Even if we started with two identical environments we would, over time, run into troubles as versions drift and subtle inconsistencies come up to haunt our nights and weekends.
+</div>
+<div style="margin-top:.625em;">
+The easiest way to ensure that our software runs correctly is to tightly control the environment it is being executed into.
+</div>
+<div style="margin-top:.625em;">
+This is the fundamental idea behind virtualisation technology: what if, instead of shipping code to production, you could ship a self-contained environment that included your application?!
+</div>
+<div style="margin-top:.625em;">
+It would work great for both sides: less Friday-night surprises for you, the developer; a consistent abstraction to build on top of for those in charge of the production infrastructure.
+Bonus points if the environment itself can be specified as code to ensure reproducibility.
+</div>
+<div style="margin-top:.625em;">
+The nice thing about virtualisation is that it exists and it has been mainstream for almost a decade now. <br />
+As for most things in technology, you have a few options to choose from depending on your needs: virtual machines, containers (e.g. Docker) and a few others (e.g. Firecracker).
+</div>
+<div style="margin-top:.625em;">
+We will go with the mainstream and ubiquitous option - Docker containers.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="2.2. Hosting: DigitalOcean" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+<a href="https://aws.amazon.com/">AWS</a>, <a href="https://cloud.google.com/">Google Cloud</a>, <a href="https://azure.microsoft.com/en-gb/">Azure</a>, <a href="https://www.digitalocean.com/">Digital Ocean</a>, <a href="https://www.clever-cloud.com/en/">Clever Cloud</a>, <a href="https://www.heroku.com/">Heroku</a>, <a href="https://www.qovery.com/">Qovery</a>... <br />
+The list of vendors you can pick from to host your software goes on and on. 
+</div>
+<div style="margin-top:.625em;">
+People have made a successful business out of recommending the best cloud tailored to your specific needs and usecases - not my job (yet) or the purpose of this book.
+</div>
+<div style="margin-top:.625em;">
+We are looking for something that is easy to use (great developer experience, minimal unnecessary complexity) and fairly established. 
+</div>
+<div style="margin-top:.625em;">
+In November 2020, the intersection of those two requirements seems to be Digital Ocean, in particular their newly launched App Platform proposition.
+</div>
+<div style="margin-top:.625em;">
+Disclaimer: Digital Ocean is not paying me to promote their services here.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">3. A Dockerfile For Our Application</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+DigitalOcean's App Platform has <a href="https://www.digitalocean.com/docs/app-platform/languages-frameworks/docker/">native support for deploying containerised applications</a>.
+</div>
+<div style="margin-top:.625em;">
+This is going to be our first task: we have to write a Dockerfile to build and execute our application as a Docker container.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.1. Dockerfiles" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+A Dockerfile is a recipe for your application environment. <br />
+They are organised in layers: you start from a base image (usually an OS enriched with a programming language toolchain) and execute a series of commands (<code>COPY</code>, <code>RUN</code>, etc.), one after the other, to build the environment you need.
+</div>
+<div style="margin-top:.625em;">
+Let's have a look at the simplest possible Dockerfile for a Rust project:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# We use the latest Rust stable release as base image
+FROM rust:1.59.0
+
+# Let's switch our working directory to `app` (equivalent to `cd app`)
+# The `app` folder will be created for us by Docker in case it does not 
+# exist already.
+WORKDIR /app
+# Install the required system dependencies for our linking configuration
+RUN apt update && apt install lld clang -y
+# Copy all files from our working environment to our Docker image 
+COPY . .
+# Let's build our binary!
+# We'll use the release profile to make it faaaast
+RUN cargo build --release
+# When `docker run` is executed, launch the binary!
+ENTRYPOINT ["./target/release/zero2prod"]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Save it in a file named <code>Dockerfile</code> in the root directory of our git repository:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+zero2prod/
+  .github/
+  migrations/
+  scripts/
+  src/
+  tests/
+  .gitignore
+  Cargo.lock
+  Cargo.toml
+  configuration.yaml
+  Dockerfile
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The process of executing those commands to get an image is called building. <br />
+Using the Docker CLI:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# Build a docker image tagged as "zero2prod" according to the recipe
+# specified in `Dockerfile`
+docker build --tag zero2prod --file Dockerfile .
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+What does the <code>.</code> at the end of the command stand for?
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.2. Build Context" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+<code>docker build</code> generates an image starting from a recipe (the Dockerfile) and a build context. <br />
+You can picture the Docker image you are building as its own fully isolated environment.
+</div>
+<div style="margin-top:.625em;">
+The only point of contact between the image and your local machine are commands like <code>COPY</code> or <code>ADD</code>: the build context determines what files on your host machine are visible inside the Docker container to <code>COPY</code> and its friends.
+</div>
+<div style="margin-top:.625em;">
+Using <code>.</code> we are telling Docker to use the current directory as the build context for this image; <code>COPY . app</code> will therefore copy all files from the current directory (including our source code!) into the <code>app</code> directory of our Docker image.
+</div>
+<div style="margin-top:.625em;">
+Using <code>.</code> as build context implies, for example, that Docker will not allow <code>COPY</code> to see files from the parent directory or from arbitrary paths on your machine into the image.
+</div>
+<div style="margin-top:.625em;">
+You could use a different path or even a URL (!) as build context depending on your needs.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.3. Sqlx Offline Mode" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+If you were eager enough, you might have already launched the build command... just to realise it doesn't work!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ docker build --tag zero2prod --file Dockerfile .
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# [...]
+Step 4/5 : RUN cargo build --release
+# [...]
+error: error communicating with the server: 
+Cannot assign requested address (os error 99)
+  --> src/routes/subscriptions.rs:35:5
+   |
+35 | /     sqlx::query!(
+36 | |         r#"
+37 | |     INSERT INTO subscriptions (id, email, name, subscribed_at)
+38 | |     VALUES ($1, $2, $3, $4)
+...  |
+43 | |         Utc::now()
+44 | |     )
+   | |_____^
+   |
+   = note: this error originates in a macro
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+What is going on? <br />
+<code>sqlx</code> calls into our database at compile-time to ensure that all queries can be successfully executed considering the schemas of our tables.
+</div>
+<div style="margin-top:.625em;">
+When running <code>cargo build</code> inside our Docker image, though, <code>sqlx</code> fails to establish a connection with the database that the <code>DATABASE_URL</code> environment variable in the <code>.env</code> file points to.
+</div>
+<div style="margin-top:.625em;">
+How do we fix it?
+</div>
+<div style="margin-top:.625em;">
+We could allow our image to talk to a database running on our local machine at build time using the <code>--network</code> flag. This is the strategy we follow in our CI pipeline given that we need the database anyway to run our integration tests.
+</div>
+<div style="margin-top:.625em;">
+Unfortunately it is somewhat troublesome to pull off for Docker builds due to how Docker networking is implemented on different operating systems (e.g. MacOS) and would significantly compromise how reproducible our builds are.
+</div>
+<div style="margin-top:.625em;">
+A better option is to use the newly-introduced offline mode for <code>sqlx</code>. <br />
+Let's add the <code>offline</code> feature to <code>sqlx</code> in our <code>Cargo.toml</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+
+# Using table-like toml syntax to avoid a super-long line!
+[dependencies.sqlx]
+version = "0.6"
+default-features = false
+features = [
+   "runtime-actix-rustls",
+   "macros",
+   "postgres",
+   "uuid",
+   "chrono",
+   "migrate",
+   "offline"
+]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The next step relies on <code>sqlx</code>'s CLI. The command we are looking for is <code>sqlx prepare</code>. Let's look at its help message:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ sqlx prepare --help
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+sqlx-prepare
+Generate query metadata to support offline compile-time verification.
+
+Saves metadata for all invocations of `query!` and related macros to 
+`sqlx-data.json` in the current directory, overwriting if needed.
+
+During project compilation, the absence of the `DATABASE_URL` environment 
+variable or the presence of `SQLX_OFFLINE` will constrain the compile-time 
+verification to only read from the cached query metadata.
+
+USAGE:
+    sqlx prepare [FLAGS] [-- <args>...]
+
+ARGS:
+    <args>...
+            Arguments to be passed to `cargo rustc ...`
+
+FLAGS:
+        --check
+            Run in 'check' mode. Exits with 0 if the query metadata is up-to-date. 
+            Exits with 1 if the query metadata needs updating
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+In other words, <code>prepare</code> performs the same work that is usually done when <code>cargo build</code> is invoked but it saves the outcome of those queries to a metadata file (<code>sqlx-data.json</code>) which can later be detected by <code>sqlx</code> itself and used to skip the queries altogether and perform an offline build.
+</div>
+<div style="margin-top:.625em;">
+Let's invoke it!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# It must be invoked as a cargo subcommand
+# All options after `--` are passed to cargo itself
+# We need to point it at our library since it contains
+# all our SQL queries. 
+cargo sqlx prepare -- --lib
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+query data written to `sqlx-data.json` in the current directory;  
+please check this into version control
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We will indeed commit the file to version control, as the command output suggests.
+</div>
+<div style="margin-top:.625em;">
+Let's set the <code>SQLX_OFFLINE</code> environment variable to <code>true</code> in our Dockerfile to force <code>sqlx</code> to look at the saved metadata instead of trying to query a live database:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+FROM rust:1.59.0
+
+WORKDIR /app
+RUN apt update && apt install lld clang -y
+COPY . .
+ENV SQLX_OFFLINE true
+RUN cargo build --release
+ENTRYPOINT ["./target/release/zero2prod"]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's try again to build our Docker container:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ docker build --tag zero2prod --file Dockerfile .
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+There should be no errors this time! <br />
+We have a problem though: how do we ensure that <code>sqlx-data.json</code> does not go out of sync (e.g. when the schema of our database changes or when we add new queries)?
+</div>
+<div style="margin-top:.625em;">
+We can use the <code>--check</code> flag in our CI pipeline to ensure that it stays up-to-date - check the updated pipeline definition in the <a href="https://github.com/LukeMathWalker/zero-to-production">book GitHub repository</a> as a reference.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.4. Running An Image" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+When building our image we attached a tag to it, <code>zero2prod</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ docker build --tag zero2prod --file Dockerfile .
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can use the tag to refer to the image in other commands. In particular, to run it:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ docker run zero2prod
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>docker run</code> will trigger the execution of the command we specified in our <code>ENTRYPOINT</code> statement:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+ENTRYPOINT ["./target/release/zero2prod"]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+In our case, it will execute our binary therefore launching our API. <br />
+Let's launch our image then!
+</div>
+<div style="margin-top:.625em;">
+You should immediately see an error:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+thread 'main' panicked at 
+  'Failed to connect to Postgres: 
+   Io(Os { 
+     code: 99, 
+     kind: AddrNotAvailable, 
+     message: "Cannot assign requested address" 
+   })'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+This is coming from this line in our <code>main</code> function:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+//! [...]
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    // [...]
+    let connection_pool = PgPool::connect(
+            &configuration.database.connection_string().expose_secret()
+        )
+        .await
+        .expect("Failed to connect to Postgres.");
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can relax our requirements by using <a href="https://docs.rs/sqlx/0.5.7/sqlx/struct.Pool.html#method.connect_lazy">connect_lazy</a> - it will only try to establish a connection when the pool is used for the first time.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+//! [...]
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    // [...]
+    // No longer async, given that we don't actually try to connect!
+    let connection_pool = PgPool::connect_lazy(
+            &configuration.database.connection_string().expose_secret()
+        )
+        .expect("Failed to create Postgres connection pool.");
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now re-build the Docker image and run it again: you should immediately see a couple of log lines! Let's open another terminal and try to make a request to our health check endpoint:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ curl http://127.0.0.1:8000/health_check
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+curl: (7) Failed to connect to 127.0.0.1 port 8000: Connection refused
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Not great.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.5. Networking" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+By default, Docker images do not expose their ports to the underlying host machine. We need to do it explicitly using the <code>-p</code> flag. <br />
+Let's kill our running image to launch it again using:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ docker run -p 8000:8000 zero2prod
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Trying to hit the health check endpoint will trigger the same error message. <br />
+We need to dig into our <code>main.rs</code> file to understand why:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+use zero2prod::configuration::get_configuration;
+use zero2prod::startup::run;
+use zero2prod::telemetry::{get_subscriber, init_subscriber};
+use sqlx::postgres::PgPool;
+use std::net::TcpListener;
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    let subscriber = get_subscriber("zero2prod".into(), "info".into(), std::io::stdout);
+    init_subscriber(subscriber);
+
+    let configuration = get_configuration().expect("Failed to read configuration.");
+    let connection_pool = PgPool::connect_lazy(
+            &configuration.database.connection_string().expose_secret()
+        )
+        .expect("Failed to create Postgres connection pool.");
+
+    let address = format!("127.0.0.1:{}", configuration.application_port);
+    let listener = TcpListener::bind(address)?;
+    run(listener, connection_pool)?.await?;
+    Ok(())
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We are using <code>127.0.0.1</code> as our host in <code>address</code> - we are instructing our application to only accept connections coming from the same machine.
+</div>
+<div style="margin-top:.625em;">
+However, we are firing a GET request to <code>/health_check</code> from the host machine, which is not seen as local by our Docker image, therefore triggering the <code>Connection refused</code> error we have just seen.
+</div>
+<div style="margin-top:.625em;">
+We need to use <code>0.0.0.0</code> as host to instruct our application to accept connections from any network interface, not just the local one.
+</div>
+<div style="margin-top:.625em;">
+We should be careful though: using <code>0.0.0.0</code> significantly increases the "audience" of our application, with <a href="https://github.com/sinatra/sinatra/issues/1369">some security implications</a>.
+</div>
+<div style="margin-top:.625em;">
+The best way forward is to make the host portion of our <code>address</code> configurable - we will keep using <code>127.0.0.1</code> for our local development and set it to <code>0.0.0.0</code> in our Docker images.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.6. Hierarchical Configuration" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Our <code>Settings</code> struct currently looks like this:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+// [...]
+
+#[derive(serde::Deserialize)]
+pub struct Settings {
+    pub database: DatabaseSettings,
+    pub application_port: u16,
+}
+
+#[derive(serde::Deserialize)]
+pub struct DatabaseSettings {
+    pub username: String,
+    pub password: Secret<String>,
+    pub port: u16,
+    pub host: String,
+    pub database_name: String,
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.6. Hierarchical Configuration" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's introduce another struct, <code>ApplicationSettings</code>, to group together all configuration values related to our application address:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#[derive(serde::Deserialize)]
+pub struct Settings {
+    pub database: DatabaseSettings,
+    pub application: ApplicationSettings,
+}
+
+#[derive(serde::Deserialize)]
+pub struct ApplicationSettings {
+    pub port: u16,
+    pub host: String,
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We need to update our <code>configuration.yml</code> file to match the new structure:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! configuration.yml
+application:
+  port: 8000
+  host: 127.0.0.1
+database:
+  # [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+as well as our <code>main.rs</code>, where we will leverage the new configurable <code>host</code> field:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+// [...]
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    // [...]
+    let address = format!(
+        "{}:{}",
+        configuration.application.host, configuration.application.port
+    );
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The host is now read from configuration, but how do we use a different value for different environments? <br />
+We need to make our configuration hierarchical.
+</div>
+<div style="margin-top:.625em;">
+Let's have a look at <code>get_configuration</code>, the function in charge of loading our <code>Settings</code> struct:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+// [...]
+
+pub fn get_configuration() -> Result<Settings, config::ConfigError> {
+    // Initialise our configuration reader
+    let settings = config::Config::builder()
+        // Add configuration values from a file named `configuration.yaml`.
+        .add_source(config::File::new("configuration.yaml", config::FileFormat::Yaml))
+        .build()?;
+    // Try to convert the configuration values it read into
+    // our Settings type
+    settings.try_deserialize::<Settings>()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We are reading from a file named <code>configuration</code> to populate <code>Settings</code>'s fields. There is no further room for tuning the values specified in our <code>configuration.yaml</code>.
+</div>
+<div style="margin-top:.625em;">
+Let's take a more refined approach. We will have:
+</div>
+
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">A base configuration file, for values that are shared across our local and production environment (e.g. database name);</li>
+  <li style="margin-top:.325em;">A collection of environment-specific configuration files, specifying values for fields that require customisation on a per-environment basis (e.g. host);</li>
+  <li style="margin-top:.325em;">An environment variable, <code>APP_ENVIRONMENT</code>, to determine the running environment (e.g. <code>production</code> or <code>local</code>).</li>
+</ul>
+
+<div style="margin-top:.625em;">
+All configuration files will live in the same top-level directory, <code>configuration</code>.
+</div>
+<div style="margin-top:.625em;">
+The good news is that <code>config</code>, the crate we are using, supports all the above out of the box! <br />
+Let's put it together:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+// [...]
+
+pub fn get_configuration() -> Result<Settings, config::ConfigError> {
+    let base_path = std::env::current_dir().expect("Failed to determine the current directory");
+    let configuration_directory = base_path.join("configuration");
+
+    // Detect the running environment.
+    // Default to `local` if unspecified.
+    let environment: Environment = std::env::var("APP_ENVIRONMENT")
+        .unwrap_or_else(|_| "local".into())
+        .try_into()
+        .expect("Failed to parse APP_ENVIRONMENT.");
+    let environment_filename = format!("{}.yaml", environment.as_str());
+    let settings = config::Config::builder()
+        .add_source(config::File::from(configuration_directory.join("base.yaml")))
+        .add_source(config::File::from(configuration_directory.join(&environment_filename)))
+        .build()?;
+    
+    settings.try_deserialize::<Settings>()
+}
+
+/// The possible runtime environment for our application.
+pub enum Environment {
+    Local,
+    Production,
+}
+
+impl Environment {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Environment::Local => "local",
+            Environment::Production => "production",
+        }
+    }
+}
+
+impl TryFrom<String> for Environment {
+    type Error = String;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        match s.to_lowercase().as_str() {
+            "local" => Ok(Self::Local),
+            "production" => Ok(Self::Production),
+            other => Err(format!(
+                "{} is not a supported environment. Use either `local` or `production`.",
+                other
+            )),
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Let's refactor our configuration file to match the new structure.
+</div>
+<div style="margin-top:.625em;">
+We have to get rid of <code>configuration.yaml</code> and create a new <code>configuration</code> directory with <code>base.yaml</code>, <code>local.yaml</code> and <code>production.yaml</code> inside.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! configuration/base.yaml
+application:
+  port: 8000
+database:
+  host: "localhost"
+  port: 5432
+  username: "postgres"
+  password: "password"
+  database_name: "newsletter"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! configuration/local.yaml
+application:
+  host: 127.0.0.1
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! configuration/production.yaml
+application:
+  host: 0.0.0.0
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now instruct the binary in our Docker image to use the production configuration by setting the <code>APP_ENVIRONMENT</code> environment variable with an <code>ENV</code> instruction:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+FROM rust:1.59.0
+WORKDIR /app
+RUN apt update && apt install lld clang -y
+COPY . .
+ENV SQLX_OFFLINE true
+RUN cargo build --release
+ENV APP_ENVIRONMENT production
+ENTRYPOINT ["./target/release/zero2prod"]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's rebuild our image and launch it again:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ docker build --tag zero2prod --file Dockerfile .
+$ docker run -p 8000:8000 zero2prod
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+One of the first log lines should be something like
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+{ 
+    "name":"zero2prod",
+    "msg":"Starting \"actix-web-service-0.0.0.0:8000\" service on 0.0.0.0:8000",
+    ...
+} 
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+If it is, good news - our configuration works as expected! <br />
+Let's try again to hit the health check endpoint:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ curl -v http://127.0.0.1:8000/health_check
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ curl -v http://127.0.0.1:8000/health_check
+
+> GET /health_check HTTP/1.1
+> Host: 127.0.0.1:8000
+> User-Agent: curl/7.61.0
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< content-length: 0
+< date: Sun, 01 Nov 2020 17:32:19 GMT
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It works, awesome!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.7. Database Connectivity" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+What about <code>POST /subscriptions</code>?
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ curl --request POST --data 'name=le%20guin&email=ursula_le_guin%40gmail.com' 127.0.0.1:8000/subscriptions --verbose
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+A long wait, then a 500! <br />
+Let's look at the application logs (useful, aren't they?)
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+{
+    "msg": "[SAVING NEW SUBSCRIBER DETAILS IN THE DATABASE - EVENT] \
+            Failed to execute query: PoolTimedOut",
+    ...
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+This should not come as a surprise - we swapped <code>connect</code> with <code>connect_lazy</code> to avoid dealing with the database straight away.
+</div>
+<div style="margin-top:.625em;">
+It took us half a minute to see a 500 coming back - that is because 30 seconds is the default timeout to acquire a connection from the pool in <code>sqlx</code>. <br />
+Let's fail a little faster by using a shorter timeout:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+use sqlx::postgres::PgPoolOptions;
+// [...]
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    // [...]
+    let connection_pool = PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_secs(2))
+        .connect_lazy(
+            &configuration.database.connection_string().expose_secret()
+        )
+        .expect("Failed to create Postgres connection pool.");
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+There are various ways to get a working local setup using Docker containers:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">Run the application container with <code>--network=host</code>, as we are currently doing for the Postgres container;</li>
+  <li style="margin-top:.325em;">Use <a href="https://docs.docker.com/compose/">docker-compose</a>;</li>
+  <li style="margin-top:.325em;">Create a <a href="https://www.tutorialworks.com/container-networking/">user-defined network</a>.</li>
+</ul>
+<div style="margin-top:.625em;">
+A working local setup does not get us any closer to having a working database connection when deployed on Digital Ocean. We will therefore let it be for now.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.8. Optimising Our Docker Image" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+As far as our Docker image is concerned, it seems to work as expected - time to deploy it! <br />
+Well, not yet.
+</div>
+<div style="margin-top:.625em;">
+There are two optimisations we can make to our Dockerfile to make our life easier going forward:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">smaller image size for faster usage;</li>
+  <li style="margin-top:.325em;">Docker layer caching for faster builds.</li>
+</ul>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.8.1. Docker Image Size" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We will not be running <code>docker build</code> on the machines hosting our application. They will be using <code>docker pull</code> to download our Docker image without going through the process of building it from scratch.
+</div>
+<div style="margin-top:.625em;">
+This is extremely convenient: it can take quite a long time to build our image (and it certainly does in Rust!) and we only need to pay that cost once.
+</div>
+<div style="margin-top:.625em;">
+To actually use the image we only need to pay for its download cost which is directly related to its size.
+</div>
+<div style="margin-top:.625em;">
+How big is our image?
+</div>
+<div style="margin-top:.625em;">
+We can find out using
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ docker images zero2prod
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+REPOSITORY          TAG             SIZE
+zero2prod           latest          2.31GB
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Is that big or small? <br />
+Well, our final image cannot be any smaller than the image we used as base - rust:1.59.0. How big is that?
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+docker images rust:1.59.0
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+REPOSITORY          TAG             SIZE
+rust                1.59.0          1.29GB
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Ok, our final image is almost twice as heavy as our base image. <br />
+We can do much better than that!
+</div>
+<div style="margin-top:.625em;">
+Our first line of attack is reducing the size of the Docker build context by excluding files that are not needed to build our image.
+</div>
+<div style="margin-top:.625em;">
+Docker looks for a specific file in our project to determine what should be ignored - <code>.dockerignore</code> <br />
+Let's create one in the root directory with the following content:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+.env
+target/
+tests/
+Dockerfile
+scripts/
+migrations/
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+All files that match the patterns specified in <code>.dockerignore</code> are not sent by Docker as part of the build context to the image, which means they will not be in scope for <code>COPY</code> instructions.
+</div>
+<div style="margin-top:.625em;">
+This will massively speed up our builds (and reduce the size of the final image) if we get to ignore heavy directories (e.g. the <code>target</code> folder for Rust projects).
+</div>
+<div style="margin-top:.625em;">
+The next optimisation, instead, leverages one of Rust's unique strengths. <br />
+Rust's binaries are statically linked - we do not need to keep the source code or intermediate compilation artifacts around to run the binary, it is entirely self-contained.
+</div>
+<div style="margin-top:.625em;">
+This plays nicely with multi-stage builds, a useful Docker feature. We can split our build in two stages:
+</div>
+
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">a <code>builder</code> stage, to generate a compiled binary;</li>
+  <li style="margin-top:.325em;">a <code>runtime</code> stage, to run the binary.</li>
+</ul>
+
+<div style="margin-top:.625em;">
+The modified Dockerfile looks like this:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# Builder stage
+FROM rust:1.59.0 AS builder
+
+WORKDIR /app
+RUN apt update && apt install lld clang -y
+COPY . .
+ENV SQLX_OFFLINE true
+RUN cargo build --release
+
+# Runtime stage
+FROM rust:1.59.0 AS runtime
+
+WORKDIR /app
+# Copy the compiled binary from the builder environment 
+# to our runtime environment
+COPY --from=builder /app/target/release/zero2prod zero2prod
+# We need the configuration file at runtime!
+COPY configuration configuration
+ENV APP_ENVIRONMENT production
+ENTRYPOINT ["./zero2prod"]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>runtime</code> is our final image. <br />
+The <code>builder</code> stage does not contribute to its size - it is an intermediate step and it is discarded at the end of the build. 
+</div>
+<div style="margin-top:.625em;">The only piece of the <code>builder</code> stage that is found in the final artifact is what we explicitly copy over - the compiled binary!
+</div>
+<div style="margin-top:.625em;">
+What is the image size using the above Dockerfile?
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ docker images zero2prod
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+REPOSITORY          TAG             SIZE
+zero2prod           latest          1.3GB
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Just 20 MBs bigger than the size of our base image, much better!
+</div>
+<div style="margin-top:.625em;">
+We can go one step further: instead of using <code>rust:1.59.0</code> for our <code>runtime</code> stage we can switch to <code>rust:1.59.0-slim</code>, a smaller image using the same underlying OS.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# [...]
+# Runtime stage
+FROM rust:1.59.0-slim as runtime
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ docker images zero2prod
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+REPOSITORY          TAG             SIZE
+zero2prod           latest          681MB
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+That is 4x smaller than what we had at the beginning - not bad at all!
+</div>
+<div style="margin-top:.625em;">
+We can go even smaller by shaving off the weight of the whole Rust toolchain and machinery (i.e. <code>rustc</code>, <code>cargo</code>, etc) - none of that is needed to run our binary.
+</div>
+<div style="margin-top:.625em;">
+We can use the bare operating system as base image (<code>debian:bullseye-slim</code>) for our runtime stage:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# [...]
+# Runtime stage
+FROM debian:bullseye-slim AS runtime
+WORKDIR /app
+# Install OpenSSL - it is dynamically linked by some of our dependencies
+# Install ca-certificates - it is needed to verify TLS certificates
+# when establishing HTTPS connections
+RUN apt-get update -y \
+    && apt-get install -y --no-install-recommends openssl ca-certificates \
+    # Clean up
+    && apt-get autoremove -y \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /app/target/release/zero2prod zero2prod
+COPY configuration configuration
+ENV APP_ENVIRONMENT production
+ENTRYPOINT ["./zero2prod"]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ docker images zero2prod
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+REPOSITORY          TAG             SIZE
+zero2prod           latest          88.1MB
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Less than a 100 MBs - ~25x smaller than our initial attempt.
+</div>
+<div style="margin-top:.625em;">
+We could go even smaller by using <code>rust:1.59.0-alpine</code>, but we would have to cross-compile to the <code>linux-musl</code> target - out of scope for now. Check out <a href="https://github.com/emk/rust-musl-builder">rust-musl-builder</a> if you are interested in generating tiny Docker images.
+</div>
+<div style="margin-top:.625em;">
+Another option to reduce the size of our binary further is stripping symbols from it - you can find more information about it <a href="https://github.com/johnthagen/min-sized-rust#strip-symbols-from-binary">here</a>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.8.2. Caching For Rust Docker Builds" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Rust shines at runtime, consistently delivering great performance, but it comes at a cost: compilation times. They have been consistently among the top answers in the <a href="https://blog.rust-lang.org/2020/04/17/Rust-survey-2019.html#rust-adoption---a-closer-look">Rust annual survey</a> when it comes to the biggest challenges or problems for the Rust project.
+</div>
+<div style="margin-top:.625em;">
+Optimised builds (<code>--release</code>), in particular, can be gruesome - up to 15/20 minutes on medium projects with several dependencies. Quite common on web development projects like ours that are pulling in many foundational crates from the async ecosystem (tokio, actix-web, sqlx, etc.).
+</div>
+<div style="margin-top:.625em;">
+Unfortunately, <code>--release</code> is what we use in our <code>Dockerfile</code> to get top-performance in our production environment. How can we mitigate the pain?
+</div>
+<div style="margin-top:.625em;">
+We can leverage another Docker feature: layer caching.
+</div>
+<div style="margin-top:.625em;">
+Each <code>RUN</code>, <code>COPY</code> and <code>ADD</code> instruction in a Dockerfile creates a layer: a diff between the previous state (the layer above) and the current state after having executed the specified command.
+</div>
+<div style="margin-top:.625em;">
+Layers are cached: if the starting point of an operation has not changed (e.g. the base image) and the command itself has not changed (e.g. the checksum of the files copied by <code>COPY</code>) Docker does not perform any computation and directly retrieves a copy of the result from the local cache.
+</div>
+<div style="margin-top:.625em;">
+Docker layer caching is fast and can be leveraged to massively speed up Docker builds. <br />
+The trick is optimising the order of operations in your Dockerfile: anything that refers to files that are changing often (e.g. source code) should appear as late as possible, therefore maximising the likelihood of the previous step being unchanged and allowing Docker to retrieve the result straight from the cache.
+</div>
+<div style="margin-top:.625em;">
+The expensive step is usually compilation. <br />
+Most programming languages follow the same playbook: you <code>COPY</code> a lock-file of some kind first, build your dependencies, <code>COPY</code> over the rest of your source code and then build your project.
+</div>
+<div style="margin-top:.625em;">
+This guarantees that most of the work is cached as long as your dependency tree does not change between one build and the next.
+</div>
+<div style="margin-top:.625em;">
+In a Python project, for example, you might have something along these lines:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+FROM python:3
+COPY requirements.txt
+RUN pip install -r requirements.txt
+COPY src/ /app
+WORKDIR /app
+ENTRYPOINT ["python", "app"]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>cargo</code>, unfortunately, does not provide a mechanism to build your project dependencies starting from its Cargo.lock file (e.g. <code>cargo build --only-deps</code>).
+Once again, we can rely on a community project to expand <code>cargo</code>'s default capability: <code>cargo-chef</code>.
+</div>
+<div style="margin-top:.625em;">
+Let's modify our Dockerfile as suggested in <code>cargo-chef</code>'s <code>README</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+FROM lukemathwalker/cargo-chef:latest-rust-1.59.0 as chef
+WORKDIR /app
+RUN apt update && apt install lld clang -y
+
+FROM chef as planner
+COPY . .
+# Compute a lock-like file for our project
+RUN cargo chef prepare  --recipe-path recipe.json
+
+FROM chef as builder
+COPY --from=planner /app/recipe.json recipe.json
+# Build our project dependencies, not our application!
+RUN cargo chef cook --release --recipe-path recipe.json
+# Up to this point, if our dependency tree stays the same,
+# all layers should be cached. 
+COPY . .
+ENV SQLX_OFFLINE true
+# Build our project
+RUN cargo build --release --bin zero2prod
+
+FROM debian:bullseye-slim AS runtime
+WORKDIR /app
+RUN apt-get update -y \
+    && apt-get install -y --no-install-recommends openssl ca-certificates \
+    # Clean up
+    && apt-get autoremove -y \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /app/target/release/zero2prod zero2prod
+COPY configuration configuration
+ENV APP_ENVIRONMENT production
+ENTRYPOINT ["./zero2prod"]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We are using three stages: the first computes the recipe file, the second caches our dependencies and then builds our binary, the third is our runtime environment. As long as our dependencies do not change the <code>recipe.json</code> file will stay the same, therefore the outcome of <code>cargo chef cook --release --recipe-path recipe.json</code> will be cached, massively speeding up our builds.
+</div>
+<div style="margin-top:.625em;">
+We are taking advantage of how Docker layer caching interacts with multi-stage builds: the <code>COPY . .</code> statement in the <code>planner</code> stage will invalidate the cache for the <code>planner</code> container, but it will not invalidate the cache for the <code>builder</code> container as long as the checksum of the <code>recipe.json</code> returned by <code>cargo chef prepare</code> does not change.
+</div>
+<div style="margin-top:.625em;">
+You can think of each stage as its own Docker image with its own caching - they only interact with each other when using the <code>COPY --from</code> statement.
+</div>
+<div style="margin-top:.625em;">
+This will save us a massive amount of time in the next section.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">4. Deploy To DigitalOcean Apps Platform</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We have built a (damn good) containerised version of our application. Let's deploy it now!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.1. Setup" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+You have to sign up on <a href="https://cloud.digitalocean.com/registrations/new">Digital Ocean's website</a>. <br />
+Once you have an account install <code>doctl</code>, Digital Ocean's CLI - you can find instructions <a href="https://www.digitalocean.com/docs/apis-clis/doctl/how-to/install/">here</a>.
+</div>
+<div style="margin-top:.625em;">
+Hosting on Digital Ocean's App Platform is not free - keeping our app and its associated database up and running costs roughly 20 USD/month. <br />
+I suggest you to destroy the app at the end of each session - it should keep your spend way below 1 USD.  <br />
+I spent 0.20 USD while playing around with it to write this chapter!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.2. App Specification" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Digital Ocean's App Platform uses a declarative configuration file to let us specify what our application deployment should look like - they call it <a href="https://www.digitalocean.com/docs/app-platform/concepts/app-spec/">App Spec</a>.
+</div>
+<div style="margin-top:.625em;">
+Looking at the <a href="https://www.digitalocean.com/docs/app-platform/references/app-specification-reference/">reference documentation</a>, as well as some of their examples, we can piece together a first draft of what our App Spec looks like.
+</div>
+<div style="margin-top:.625em;">
+Let's put this manifest, <code>spec.yaml</code>, at the root of our project directory.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! spec.yaml
+name: zero2prod
+# Check https://www.digitalocean.com/docs/app-platform/#regional-availability 
+# for a list of all the available options.
+# You can get region slugs from 
+# https://www.digitalocean.com/docs/platform/availability-matrix/
+# They must specified lowercased.
+# `fra` stands for Frankfurt (Germany - EU)
+region: fra
+services:
+  - name: zero2prod
+    # Relative to the repository root
+    dockerfile_path: Dockerfile
+    source_dir: .
+    github:
+      # Depending on when you created the repository, 
+      # the default branch on GitHub might have been named `master`
+      branch: main
+      # Deploy a new version on every commit to `main`! 
+      # Continuous Deployment, here we come!
+      deploy_on_push: true
+      # !!! Fill in with your details
+      # e.g. LukeMathWalker/zero-to-production
+      repo: <YOUR USERNAME>/<YOUR REPOSITORY NAME>
+    # Active probe used by DigitalOcean's to ensure our application is healthy
+    health_check:
+      # The path to our health check endpoint! 
+      # It turned out to be useful in the end!
+      http_path: /health_check
+    # The port the application will be listening on for incoming requests
+    # It should match what we specified in our configuration/production.yaml file!
+    http_port: 8000
+    # For production workloads we'd go for at least two!
+    # But let's try to keep the bill under control for now...
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    # All incoming requests should be routed to our app
+    routes:
+      - path: /
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Take your time to go through all the specified values and understand what they are used for. <br />
+We can use their CLI, doctl, to create the application for the first time:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ doctl apps create --spec spec.yaml
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Error: Unable to initialize DigitalOcean API client: access token is required. 
+(hint: run 'doctl auth init')
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Well, we have to authenticate first. <br />
+Let's follow their suggestion:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ doctl auth init
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Please authenticate doctl for use with your DigitalOcean account. 
+You can generate a token in the control panel at 
+https://cloud.digitalocean.com/account/api/tokens
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Once you have provided your token we can try again:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ doctl apps create --spec spec.yaml
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Error: POST
+https://api.digitalocean.com/v2/apps: 400 GitHub user not
+authenticated
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+OK, follow <a href="https://www.digitalocean.com/docs/app-platform/how-to/troubleshoot-app/#review-github-permissions">their instructions</a> to link your GitHub account. <br />
+Third time's a charm, let's try again!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ doctl apps create --spec spec.yaml
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Notice: App created
+ID        Spec Name    Default Ingress    Active Deployment ID    In Progress Deployment ID    
+e80...    zero2prod                                                                            
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It worked! <br />
+You can check your app status with
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ doctl apps list                                                                          
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+or by looking at <a href="https://cloud.digitalocean.com/apps/">DigitalOcean's dashboard</a>.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Although the app has been successfully created it is not running yet! <br />
+Check the <code>Deployment</code> tab on their dashboard - it is probably building the Docker image.
+</div>
+<div style="margin-top:.625em;">
+Looking at <a href="https://www.digitalocean.com/community/questions/docker-build-too-slow-in-app-platform-does-the-speed-depend-on-the-app-resources-used">a few recent issues on their bug tracker</a> it might take a while - more than a few people have reported they experienced slow builds. Digital Ocean's support engineers suggested to leverage Docker layer caching to mitigate the issue - we already covered all the bases there!
+</div>
+<div style="margin-top:.625em;">
+If you experience an out-of-memory error when building your Docker image on DigitalOcean, check out this <a href="https://github.com/LukeMathWalker/zero-to-production/issues/71">GitHub issue</a>.
+</div>
+<div style="margin-top:.625em;">
+Wait for these lines to show up in their dashboard build logs:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+zero2prod | 00:00:20 => Uploaded the built image to the container registry
+zero2prod | 00:00:20 => Build complete
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Deployed successfully! <br />
+You should be able to see the health check logs coming in every ten seconds or so when Digital Ocean's platform pings our application to ensure it is running.
+</div>
+<div style="margin-top:.625em;">
+With
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ doctl apps list
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+you can retrieve the public facing URI of your application. Something along the lines of
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+https://zero2prod-aaaaa.ondigitalocean.app
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Try firing off a health check request now, it should come back with a <code>200 OK</code>! <br />
+Notice that DigitalOcean took care for us to set up HTTPS by provisioning a certificate and redirecting HTTPS traffic to the port we specified in the application specification. One less thing to worry about.
+</div>
+<div style="margin-top:.625em;">
+The <code>POST /subscriptions</code> endpoint is still failing, in the very same way it did locally: we do not have a live database backing our application in our production environment. <br />
+Let's provision one.
+</div>
+<div style="margin-top:.625em;">
+Add this segment to your <code>spec.yaml</code> file:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+databases:
+  # PG = Postgres
+  - engine: PG
+    # Database name
+    name: newsletter
+    # Again, let's keep the bill lean
+    num_nodes: 1
+    size: db-s-dev-database
+    # Postgres version - using the latest here
+    version: "12"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Then update your app specification:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# You can retrieve your app id using `doctl apps list`
+doctl apps update YOUR-APP-ID --spec=spec.yaml
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It will take some time for DigitalOcean to provision a Postgres instance. <br />
+In the meantime we need to figure out how to point our application at the database in production.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.3. How To Inject Secrets Using Environment Variables" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+The connection string will contain values that we do not want to commit to version control - e.g. the username and the password of our database root user.
+</div>
+<div style="margin-top:.625em;">
+Our best option is to use environment variables as a way to inject secrets at runtime into the application environment. DigitalOcean's apps, for example, can refer to the <code>DATABASE_URL</code> environment variable (or <a href="https://www.digitalocean.com/docs/app-platform/how-to/use-environment-variables/">a few others for a more granular view</a>) to get the database connection string at runtime.
+</div>
+<div style="margin-top:.625em;">
+We need to upgrade our <code>get_configuration</code> function (again) to fulfill our new requirements.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+// [...]
+
+pub fn get_configuration() -> Result<Settings, config::ConfigError> {
+
+    let base_path = std::env::current_dir().expect("Failed to determine the current directory");
+    let configuration_directory = base_path.join("configuration");
+
+    // Detect the running environment.
+    // Default to `local` if unspecified.
+    let environment: Environment = std::env::var("APP_ENVIRONMENT")
+        .unwrap_or_else(|_| "local".into())
+        .try_into()
+        .expect("Failed to parse APP_ENVIRONMENT.");
+
+    let environment_filename = format!("{}.yaml", environment.as_str());
+
+    let settings = config::Config::builder()
+        .add_source(config::File::from(configuration_directory.join("base.yaml")))
+        .add_source(config::File::from(configuration_directory.join(&environment_filename)))
+        // Add in settings from environment variables (with a prefix of APP and '__' as separator)
+        // E.g. `APP_APPLICATION__PORT=5001 would set `Settings.application.port`
+        .add_source(config::Environment::with_prefix("APP").prefix_separator("_").separator("__"))
+        .build()?;
+    
+    settings.try_deserialize::<Settings>()
+
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+This allows us to customize <code>any</code> value in our Settings struct using environment variables, overriding what is specified in our configuration files.
+</div>
+<div style="margin-top:.625em;">
+Why is that convenient?
+It makes it possible to inject values that are too dynamic (i.e. not known a priori) or too sensitive to be stored in version control.
+</div>
+<div style="margin-top:.625em;">
+It also makes it fast to change the behaviour of our application: we do not have to go through a full re-build if we want to tune one of those values (e.g. the database port). For languages like Rust, where a fresh build can take ten minutes or more, this can make the difference between a short outage and a substantial service degradation with customer-visible impact.
+</div>
+<div style="margin-top:.625em;">
+Before we move on let's take care of an annoying detail: environment variables are strings for the <code>config</code> crate and it will fail to pick up integers if using the standard deserialization routine from <code>serde</code>.
+</div>
+<div style="margin-top:.625em;">
+Luckily enough, we can specify a custom deserialization function. <br />
+Let's add a new dependency, <code>serde-aux</code> (<code>serde aux</code>iliary):
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dependencies]
+serde-aux = "3"
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+and let's modify both <code>ApplicationSettings</code> and <code>DatabaseSettings</code>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+// [...]
+use serde_aux::field_attributes::deserialize_number_from_string;
+// [...]
+
+#[derive(serde::Deserialize)]
+pub struct ApplicationSettings {
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub port: u16,
+    // [...]
+}
+
+#[derive(serde::Deserialize)]
+pub struct DatabaseSettings {
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub port: u16,
+    // [...]
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.4. Connecting To Digital Ocean's Postgres Instance" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's have a look at the connection string of our database using DigitalOcean's dashboard (Components -> Database):
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+postgresql://newsletter:<PASSWORD>@<HOST>:<PORT>/newsletter?sslmode=require
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Our current <code>DatabaseSettings</code> does not handle SSL mode - it was not relevant for local development, but it is more than desirable to have transport-level encryption for our client/database communication in production.
+</div>
+<div style="margin-top:.625em;">
+Before trying to add new functionality, let's make room for it by refactoring <code>DatabaseSettings</code>. <br />
+The current version looks like this:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+// [...]
+
+#[derive(serde::Deserialize)]
+pub struct DatabaseSettings {
+    pub username: String,
+    pub password: Secret<String>,
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub port: u16,
+    pub host: String,
+    pub database_name: String,
+}
+
+impl DatabaseSettings {
+    pub fn connection_string(&self) -> Secret<String> {
+       // [...]
+    }
+
+    pub fn connection_string_without_db(&self) -> Secret<String> {
+       // [...]
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We will change its two methods to return a <code>PgConnectOptions</code> instead of a connection string: it will make it easier to manage all these moving parts.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+use sqlx::postgres::PgConnectOptions;
+// [...]
+
+impl DatabaseSettings {
+    // Renamed from `connection_string_without_db`
+    pub fn without_db(&self) -> PgConnectOptions {
+        PgConnectOptions::new()
+            .host(&self.host)
+            .username(&self.username)
+            .password(&self.password.expose_secret())
+            .port(self.port)
+    }
+    
+    // Renamed from `connection_string`
+    pub fn with_db(&self) -> PgConnectOptions {
+        self.without_db().database(&self.database_name)
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We'll also have to update <code>src/main.rs</code> and <code>tests/health_check.rs</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+// [...]
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    // [...]
+    let connection_pool = PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_secs(2))
+        // `connect_lazy_with` instead of `connect_lazy`
+        .connect_lazy_with(configuration.database.with_db());
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+// [...]
+
+pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
+
+    // Create database
+    let mut connection = PgConnection::connect_with(&config.without_db())
+        .await
+        .expect("Failed to connect to Postgres");
+
+    connection
+        .execute(format!(r#"CREATE DATABASE "{}";"#, config.database_name).as_str())
+        .await
+        .expect("Failed to create database.");
+
+    // Migrate database
+    let connection_pool = PgPool::connect_with(config.with_db())
+        .await
+        .expect("Failed to connect to Postgres.");
+
+    sqlx::migrate!("./migrations")
+        .run(&connection_pool)
+        .await
+        .expect("Failed to migrate the database");
+
+    connection_pool
+
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Use <code>cargo test</code> to make sure everything is still working as expected.<br />
+Let's now add the <code>require_ssl</code> property we need to <code>DatabaseSettings</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+use sqlx::postgres::PgSslMode;
+// [...]
+
+#[derive(serde::Deserialize)]
+pub struct DatabaseSettings {
+    // [...]
+    // Determine if we demand the connection to be encrypted or not
+    pub require_ssl: bool,
+}
+
+impl DatabaseSettings {
+    pub fn without_db(&self) -> PgConnectOptions {
+        let ssl_mode = if self.require_ssl {
+            PgSslMode::Require
+        } else {
+            // Try an encrypted connection, fallback to unencrypted if it fails
+            PgSslMode::Prefer
+        };
+        PgConnectOptions::new()
+            .host(&self.host)
+            .username(&self.username)
+            .password(&self.password.expose_secret())
+            .port(self.port)
+            .ssl_mode(ssl_mode)
+    }
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We want <code>require_ssl</code> to be <code>false</code> when we run the application locally (and for our test suite), but <code>true</code> in our production environment. <br />
+Let's amend our configuration files accordingly:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! configuration/local.yaml
+application:
+  host: 127.0.0.1
+database:
+  # New entry!
+  require_ssl: false
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! configuration/production.yaml
+application:
+  host: 0.0.0.0
+database:
+  # New entry!
+  require_ssl: true
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can take the opportunity - now that we are using <code>PgConnectOptions</code> - to tune <code>sqlx</code>'s instrumentation: lower their logs from <code>INFO</code> to <code>TRACE</code> level. <br />
+This will eliminate the noise we noticed in the previous chapter.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+use sqlx::ConnectOptions;
+// [...]
+
+impl DatabaseSettings {
+    // [...]
+    pub fn with_db(&self) -> PgConnectOptions {
+        let mut options = self.without_db().database(&self.database_name);
+        options.log_statements(tracing::log::LevelFilter::Trace);
+        options
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.5. Environment Variables In The App Spec" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+One last step: we need to amend our <code>spec.yaml</code> manifest to inject the environment variables we need.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! spec.yaml
+name: zero2prod
+region: fra
+services:
+  - name: zero2prod
+    # [...]
+    envs:
+      - key: APP_DATABASE__USERNAME
+        scope: RUN_TIME
+        value: ${newsletter.USERNAME}
+      - key: APP_DATABASE__PASSWORD
+        scope: RUN_TIME
+        value: ${newsletter.PASSWORD}
+      - key: APP_DATABASE__HOST
+        scope: RUN_TIME
+        value: ${newsletter.HOSTNAME}
+      - key: APP_DATABASE__PORT
+        scope: RUN_TIME
+        value: ${newsletter.PORT}
+      - key: APP_DATABASE__DATABASE_NAME
+        scope: RUN_TIME
+        value: ${newsletter.DATABASE}
+databases:
+  - name: newsletter
+    # [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The scope is set to <code>RUN_TIME</code> to distinguish between environment variables needed during our Docker build process and those needed when the Docker image is launched.
+</div>
+<div style="margin-top:.625em;">
+We are populating the values of the environment variables by interpolating what is exposed by the Digital Ocean's platform (e.g. <code>${newsletter.PORT}</code>) - refer to <a href="https://www.digitalocean.com/docs/app-platform/how-to/use-environment-variables/">their documentation</a> for more details.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.6. One Last Push" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's apply the new spec
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# You can retrieve your app id using `doctl apps list`
+doctl apps update YOUR-APP-ID --spec=spec.yaml
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+and push our change up to GitHub to trigger a new deployment. <br />
+We now need to migrate the database:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+DATABASE_URL=YOUR-DIGITAL-OCEAN-DB-CONNECTION-STRING sqlx migrate run
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We are ready to go! <br />
+Let's fire off a <code>POST</code> request to <code>/subscriptions</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ curl --request POST \
+    --data 'name=le%20guin&email=ursula_le_guin%40gmail.com' \
+    https://zero2prod-adqrw.ondigitalocean.app/subscriptions \
+    --verbose
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The server should respond with a <code>200 OK</code>. <br />
+Congrats, you have just deployed your first Rust application! <br />
+And <a href="https://en.wikipedia.org/wiki/Ursula_K._Le_Guin">Ursula Le Guin</a> just subscribed to your email newsletter (allegedly)!
+</div>
+<div style="margin-top:.625em;">
+If you have come this far, I'd love to get a screenshot of your Digital Ocean's dashboard showing off that running application! <br />
+Email it over at <code>rust@lpalmieri.com</code> or share it on Twitter tagging the Zero To Production In Rust account, <a href="https://twitter.com/zero2prod">@zero2prod</a>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+</c:component>
