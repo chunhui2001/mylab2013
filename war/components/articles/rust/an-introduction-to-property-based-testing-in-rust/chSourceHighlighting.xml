@@ -1,0 +1,1319 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<div style="font-size:1.1em;line-height:1.625;">
+This article is a sample from <a href="https://zero2prod.com/">Zero To Production In Rust</a>, a book on backend development in Rust.
+You can get a copy of the book on <a href="https://zero2prod.com/">zero2prod.com</a>.
+<a href="https://www.lpalmieri.com/subscribe">Subscribe to the newsletter</a> to be notified when a new episode is published.
+</div>
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">TL;DR</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We need to verify a user-provided email address. We'll use this as an opportunity to explore the tools available in the Rust ecosystem to perform property-based testing.
+</div>
+<div style="margin-top:.625em;">
+We will start with <a href="https://crates.io/crates/fake">fake</a>, a Rust crate to generate randomised test data.
+</div>
+<div style="margin-top:.625em;">
+We will then combine fake with <a href="https://crates.io/crates/quickcheck">quickcheck</a> to generate multiple samples on every <code>cargo test</code> invocation using its <a href="https://docs.rs/quickcheck/0.9.2/quickcheck/trait.Arbitrary.html">Arbitrary</a> trait.
+</div>
+<div style="margin-top:.625em;">
+At the beginning of <a href="/blog/articles/rust/domain-modelling.shtml">chapter six</a> we wrote an integration test to stress how poor our user input validation was - let's look at it again:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+//! [...]
+
+#[tokio::test]
+async fn subscribe_returns_a_400_when_fields_are_present_but_invalid() {
+   // Arrange
+   let app = spawn_app().await;
+   let client = reqwest::Client::new();
+   let test_cases = vec![
+      ("name=&email=ursula_le_guin%40gmail.com", "empty name"),
+      ("name=Ursula&email=", "empty email"),
+      ("name=Ursula&email=definitely-not-an-email", "invalid email"),
+   ];
+
+   for (body, description) in test_cases {
+      // Act
+      let response = client
+              .post(&format!("{}/subscriptions", &app.address))
+              .header("Content-Type", "application/x-www-form-urlencoded")
+              .body(body)
+              .send()
+              .await
+              .expect("Failed to execute request.");
+
+      // Assert
+      assert_eq!(
+         400,
+         response.status().as_u16(),
+         "The API did not return a 400 Bad Request when the payload was {}.",
+         description
+      );
+   }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We have then worked to introduce input validation into our newsletter project: the subscriber name in the payload of our <a href="https://www.lpalmieri.com/posts/2020-08-31-zero-to-production-3-5-html-forms-databases-integration-tests/">POST /subscriptions endpoint</a> is now thoroughly inspected before any saving or processing takes place.
+</div>
+<div style="margin-top:.625em;">
+That is how we got the <code>empty name</code> case to pass, but we are still failing on the <code>empty email</code> one:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+--- subscribe_returns_a_400_when_fields_are_present_but_invalid stdout ----
+thread 'subscribe_returns_a_400_when_fields_are_present_but_invalid' 
+panicked at 'assertion failed: `(left == right)`
+  left: `400`,
+ right: `200`: 
+ The API did not return a 400 Bad Request when the payload was empty email.', 
+tests/health_check.rs:167:9
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Turning this test green will be our focus for today.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">The Email Format</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We are all intuitively familiar with the common structure of an email address - <code>XXX@YYY.ZZZ</code> - but the subject quickly gets more complicated if you desire to be rigorous and avoid bouncing email addresses that are actually valid.
+</div>
+<div style="margin-top:.625em;">
+How do we establish if an email address is "valid"? <br />
+There are a few Request For Comments (RFC) by the Internet Engineering Task Force (IETF) outlining the expected structure of an email address - <a href="https://tools.ietf.org/html/rfc6854">RFC 6854</a>, <a href="https://tools.ietf.org/html/rfc5322">RFC 5322</a>, <a href="https://tools.ietf.org/html/rfc2822">RFC 2822</a>. We would have to read them, digest the material and then come up with an <code>is_valid_email</code> function that matches the specification.
+</div>
+<div style="margin-top:.625em;">
+Unless you have a keen interest in understanding the subtle nuances of the email address format, I would suggest you to take a step back: it is quite messy. So messy that even the <a href="https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address">HTML specification is willfully non-compliant</a> with the RFCs we just linked.
+</div>
+<div style="margin-top:.625em;">
+Our best shot is to look for an existing library that has stared long and hard at the problem to provide us with a plug-and-play solution. Luckily enough, there is at least one in the Rust ecosystem - the <a href="https://crates.io/crates/validator">validator</a> crate
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="The SubscriberEmail Type" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We will follow the <a href="https://www.lpalmieri.com/posts/2020-12-11-zero-to-production-6-domain-modelling/#3-validation-is-a-leaky-cauldron">same strategy we used for name validation</a> - encode our invariant ("this string represents a valid email") in a new <code>SubscriberEmail</code> type.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Breaking The Domain Sub-Module" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Before we get started though, let's make some space - let's break our <code>domain</code> sub-module (<code>domain.rs</code>) into multiple smaller files, one for each type, similarly to what we did for routes back in Chapter 3. Our current folder structure (under <code>src</code>) is:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+src/
+  routes/
+    [...]
+  domain.rs
+  [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We want to have
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+src/
+  routes/
+    [...]
+  domain/
+    mod.rs
+    subscriber_name.rs
+    subscriber_email.rs
+    new_subscriber.rs
+  [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Unit tests should be in the same file of the type they refer to. We will end up with:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain/mod.rs
+
+mod subscriber_name;
+mod subscriber_email;
+mod new_subscriber;
+
+pub use subscriber_name::SubscriberName;
+pub use new_subscriber::NewSubscriber;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain/subscriber_name.rs
+
+use unicode_segmentation::UnicodeSegmentation;
+
+#[derive(Debug)]
+pub struct SubscriberName(String);
+
+impl SubscriberName {
+   // [...]
+}
+
+impl AsRef<str> for SubscriberName {
+   // [...]
+}
+
+#[cfg(test)]
+mod tests {
+   // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain/subscriber_email.rs
+
+// Still empty, ready for us to get started!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain/new_subscriber.rs
+
+use crate::domain::subscriber_name::SubscriberName;
+
+pub struct NewSubscriber {
+   pub email: String,
+   pub name: SubscriberName,
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+No changes should be required to other files in our project - the API of our module has not changed thanks to our <code>pub use</code> statements in <code>mod.rs</code>.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Skeleton Of A New Type" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's add a barebone <code>SubscriberEmail</code> type: no validation, just a wrapper around a <code>String</code> and a convenient <code>AsRef</code> implementation:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain/subscriber_email.rs
+
+#[derive(Debug)]
+pub struct SubscriberEmail(String);
+
+impl SubscriberEmail {
+   pub fn parse(s: String) -> Result<SubscriberEmail, String> {
+      // TODO: add validation!
+      Ok(Self(s))
+   }
+}
+
+impl AsRef<str> for SubscriberEmail {
+   fn as_ref(&self) -> &str {
+      &self.0
+   }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain/mod.rs
+
+mod new_subscriber;
+mod subscriber_email;
+mod subscriber_name;
+
+pub use new_subscriber::NewSubscriber;
+pub use subscriber_email::SubscriberEmail;
+pub use subscriber_name::SubscriberName;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We start with tests this time: let's come up with a few examples of invalid emails that should be rejected.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain/subscriber_email.rs
+
+#[derive(Debug)]
+pub struct SubscriberEmail(String);
+
+// [...]
+
+#[cfg(test)]
+mod tests {
+   use super::SubscriberEmail;
+   use claim::assert_err;
+
+   #[test]
+   fn empty_string_is_rejected() {
+      let email = "".to_string();
+      assert_err!(SubscriberEmail::parse(email));
+   }
+
+   #[test]
+   fn email_missing_at_symbol_is_rejected() {
+      let email = "ursuladomain.com".to_string();
+      assert_err!(SubscriberEmail::parse(email));
+   }
+
+   #[test]
+   fn email_missing_subject_is_rejected() {
+      let email = "@domain.com".to_string();
+      assert_err!(SubscriberEmail::parse(email));
+   }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Running <code>cargo test domain</code> confirms that all test cases are failing:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+failures:
+    domain::subscriber_email::tests::email_missing_at_symbol_is_rejected
+    domain::subscriber_email::tests::email_missing_subject_is_rejected
+    domain::subscriber_email::tests::empty_string_is_rejected
+
+test result: FAILED. 6 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Time to bring <code>validator</code> in:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dependencies]
+validator = "0.14"
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Our <code>parse</code> method will just delegate all the heavy-lifting to <a href="https://docs.rs/validator/0.12.0/validator/fn.validate_email.html">validator::validate_email</a>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain/subscriber_email.rs
+
+use validator::validate_email;
+
+#[derive(Debug)]
+pub struct SubscriberEmail(String);
+
+impl SubscriberEmail {
+   pub fn parse(s: String) -> Result<SubscriberEmail, String> {
+      if validate_email(&s) {
+         Ok(Self(s))
+      } else {
+         Err(format!("{} is not a valid subscriber email.", s))
+      }
+   }
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+As simple as that - all our tests are green now! <br />
+There is a caveat - all our tests cases are checking for invalid emails. We should also have at least one test checking that valid emails are going through.
+</div>
+<div style="margin-top:.625em;">
+We could hard-code a known valid email address in a test and check that it is parsed successfully - e.g. <code>ursula@domain.com</code>. 
+</div>
+<div style="margin-top:.625em;">
+What value would we get from that test case though? It would only re-assure us that a specific email address is correctly parsed as valid.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Property-based Testing</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We could use another approach to test our parsing logic: instead of verifying that a certain set of inputs is correctly parsed, we could build a random generator that produces valid values and check that our parser does not reject them.
+</div>
+<div style="margin-top:.625em;">
+In other words, we verify that our implementation displays a certain property - "No valid email address is rejected".
+</div>
+<div style="margin-top:.625em;">
+This approach is often referred to as property-based testing.
+</div>
+<div style="margin-top:.625em;">
+If we were working with time, for example, we could repeatedly sample three random integers
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;"><code>H</code>, between <code>0</code> and <code>23</code> (inclusive);</li>
+  <li style="margin-top:.325em;"><code>M</code>, between <code>0</code> and <code>59</code> (inclusive);</li>
+  <li style="margin-top:.325em;"><code>S</code>, between <code>0</code> and <code>59</code> (inclusive);</li>
+</ul>
+<div style="margin-top:.625em;">
+and verify that <code>H:M:S</code> is always correctly parsed.
+</div>
+<div style="margin-top:.625em;">
+Property-based testing significantly increases the range of inputs that we are validating, and therefore our confidence in the correctness of our code, but it does not prove that our parser is correct - it does not exhaustively explore the input space (except for tiny ones).
+</div>
+<div style="margin-top:.625em;">
+Let's see what property testing would look like for our <code>SubscriberEmail</code>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="How To Generate Random Test Data With fake" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+First and foremost, we need a random generator of valid emails. <br />
+We could write one, but this a great opportunity to introduce the <a href="https://crates.io/crates/fake">fake</a> crate.
+</div>
+<div style="margin-top:.625em;">
+<code>fake</code> provides generation logic for both primitive data types (<code>integers</code>, <code>floats</code>, <code>strings</code>) and higher-level objects (<code>IP addresses</code>, <code>country codes</code>, etc.) - in particular, emails! Let's add <code>fake</code> as a development dependency of our project:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# Cargo.toml
+# [...]
+
+[dev-dependencies]
+# [...]
+# We are not using fake >= 2.4 because it relies on rand 0.8
+# which has been recently released and it is not yet used by
+# quickcheck (solved in its upcoming 1.0 release!)
+fake = "~2.3"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's use it in a new test:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain/subscriber_email.rs
+
+// [...]
+
+#[cfg(test)]
+mod tests {
+    // We are importing the `SafeEmail` faker!
+    // We also need the `Fake` trait to get access to the 
+    // `.fake` method on `SafeEmail`
+    use fake::faker::internet::en::SafeEmail;
+    use fake::Fake;
+    // [...]
+    
+    #[test]
+    fn valid_emails_are_parsed_successfully() {
+        let email = SafeEmail().fake();
+        claim::assert_ok!(SubscriberEmail::parse(email));
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Every time we run our test suite, <code>SafeEmail().fake()</code> generates a new random valid email which we then use to test our parsing logic.
+</div>
+<div style="margin-top:.625em;">
+This is already a major improvement compared to a hard-coded valid email, but we would have to run our test suite several times to catch an issue with an edge case. A fast-and-dirty solution would be to add a <code>for</code> loop to the test, but, once again, we can use this as an occasion to delve deeper and explore one of the available testing crates designed around property-based testing.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="quickcheck Vs proptest" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+There are two mainstream options for property-based testing in the Rust ecosystem: <a href="https://crates.io/crates/quickcheck">quickcheck</a> and <a href="https://crates.io/crates/proptest">proptest</a>. <br />
+Their domains overlap, although each shines in its own niche - check their READMEs for all the nitty gritty details.
+</div>
+<div style="margin-top:.625em;">
+For our project we will go with <code>quickcheck</code> - it is fairly simple to get started with and it does not use too many macros, which makes for a pleasant IDE experience.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Getting Started With quickcheck" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's have a look at one of their examples to get the gist of how it works:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+/// The function we want to test.
+fn reverse<T: Clone>(xs: &[T]) -> Vec<T> {
+   let mut rev = vec!();
+   for x in xs.iter() {
+      rev.insert(0, x.clone())
+   }
+   rev
+}
+
+#[cfg(test)]
+mod tests {
+   #[quickcheck_macros::quickcheck]
+   fn prop(xs: Vec<u32>) -> bool {
+       /// A property that is always true, regardless
+       /// of the vector we are applying the function to:
+       /// reversing it twice should return the original input.
+      xs == reverse(&reverse(&xs))
+   }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>quickcheck</code> calls <code>prop</code> in a loop with a configurable number of iterations (100 by default): on every iteration, it generates a new <code>Vec<u32></code> and checks that <code>prop</code> returned <code>true</code>.
+</div>
+<div style="margin-top:.625em;">
+If <code>prop</code> returns <code>false</code>, it tries to <code>shrink</code> the generated input to the smallest possible failing example (the shortest failing vector) to help us debug what went wrong.
+</div>
+<div style="margin-top:.625em;">
+In our case, we'd like to have something along these lines:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#[quickcheck_macros::quickcheck]
+fn valid_emails_are_parsed_successfully(valid_email: String) -> bool {
+   SubscriberEmail::parse(valid_email).is_ok()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Unfortunately, if we ask for a <code>String</code> type as input we are going to get all sorts of garbage which will fail validation.
+How do we customise the generation routine?
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Implementing The Arbitrary Trait" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's go back to the previous example - how does <code>quickcheck</code> know how to generate a <code>Vec<u32></code>? <br />
+Everything is built on top of <code>quickcheck</code>'s <a href="https://docs.rs/quickcheck/0.9.2/quickcheck/trait.Arbitrary.html">Arbitrary</a> trait:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+pub trait Arbitrary: Clone + Send + 'static {
+   fn arbitrary<G: Gen>(g: &mut G) -> Self;
+
+   fn shrink(&self) -> Box<dyn Iterator<Item=Self>> {
+      empty_shrinker()
+   }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We have two methods:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;"><code>arbitrary</code>: given a source of randomness (<code>g</code>) it returns an instance of the type;</li>
+  <li style="margin-top:.325em;"><code>shrink</code>: it returns a sequence of progressively "smaller" instances of the type to help <code>quickcheck</code> find the smallest possible failure case.</li>
+</ul>
+<div style="margin-top:.625em;">
+<code>Vec&lt;u32&gt;</code> implements <code>Arbitrary</code>, therefore <code>quickcheck</code> knows how to generate random <code>u32</code> vectors. <br />
+We need to create our own type, let's call it <code>ValidEmailFixture</code>, and implement <code>Arbitrary</code> for it. <br />
+If you look at <code>Arbitrary</code>'s trait definition, you'll notice that shrinking is optional: there is a default implementation (using <code>empty_shrinker</code>) which results in <code>quickcheck</code> outputting the first failure encountered, without trying to make it any smaller or nicer. Therefore we only need to provide an implementation of <code>Arbitrary::arbitrary</code> for our <code>ValidEmailFixture</code>.
+</div>
+<div style="margin-top:.625em;">
+Let's add both <code>quickcheck</code> and <code>quickcheck-macros</code> as development dependencies:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+
+[dev-dependencies]
+# [...]
+quickcheck = "0.9.2"
+quickcheck_macros = "0.9.1"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Then
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain/subscriber_email.rs
+// [...]
+
+#[cfg(test)]
+mod tests {
+   // We have removed the `assert_ok` import.
+   use claim::assert_err;
+   // [...]
+
+   // Both `Clone` and `Debug` are required by `quickcheck`
+   #[derive(Debug, Clone)]
+   struct ValidEmailFixture(pub String);
+
+   impl quickcheck::Arbitrary for ValidEmailFixture {
+      fn arbitrary<G: quickcheck::Gen>(g: &mut G) -> Self {
+         let email = SafeEmail().fake_with_rng(g);
+         Self(email)
+      }
+   }
+
+   #[quickcheck_macros::quickcheck]
+   fn valid_emails_are_parsed_successfully(valid_email: ValidEmailFixture) -> bool {
+      SubscriberEmail::parse(valid_email.0).is_ok()
+   }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+This is an amazing example of the interoperability you gain by sharing key traits across the Rust ecosystem. <br />
+How do we get <code>fake</code> and <code>quickcheck</code> to play nicely together?
+</div>
+<div style="margin-top:.625em;">
+In <code>Arbitrary::arbitrary</code> we get <code>g</code> as input, an argument of type <code>G</code>. <br />
+<code>G</code> is constrained by a trait bound, <code>G: quickcheck::Gen</code>, therefore it must implement the <a href="https://docs.rs/quickcheck/0.9.2/quickcheck/trait.Gen.html">Gen</a> trait in <code>quickcheck</code>, where <code>Gen</code> stands for "generator".
+How is <code>Gen</code> defined?
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+pub trait Gen: RngCore {
+   fn size(&self) -> usize;
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Anything that implements <code>Gen</code> must also implement the <a href="https://docs.rs/rand_core/0.6.0/rand_core/trait.RngCore.html">RngCore</a> trait from <a href="https://crates.io/crates/rand-core">rand-core</a>.
+</div>
+<div style="margin-top:.625em;">
+Let's examine the <code>SafeEmail</code> faker: it implements the <code>Fake</code> trait. <br />
+<code>Fake</code> gives us a <code>fake</code> method, which we have already tried out, but it also exposes a <code>fake_with_rng</code> method, where "rng" stands for "random number generator". <br />
+What does <code>fake</code> accept as a valid random number generator?
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+pub trait Fake: Sized {
+   //[...]
+
+   fn fake_with_rng<U, R>(&self, rng: &mut R) -> U where
+       R: Rng + ?Sized,
+       Self: FakeBase<U>;
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+You read that right - any type that implements the <a href="https://docs.rs/rand/0.8.0/rand/trait.Rng.html">Rng</a> trait from <a href="https://crates.io/crates/rand">rand</a>, which is automatically implemented by all types implementing <code>RngCore</code>!
+We can just pass g from <code>Arbitrary::arbitrary</code> as the random number generator for <code>fake_with_rng</code> and everything just works!
+</div>
+<div style="margin-top:.625em;">
+Maybe the maintainers of the two crates are aware of each other, maybe they aren't, but a community-sanctioned set of traits in <code>rand-core</code> gives us painless interoperability. Pretty sweet!
+</div>
+<div style="margin-top:.625em;">
+You can now run <code>cargo test domain</code> - it should come out green, re-assuring us that our email validation check is indeed not overly prescriptive.
+</div>
+<div style="margin-top:.625em;">
+If you want to see the random inputs that are being generated, add a <code>dbg!(&valid_email.0);</code> statement to the test and run <code>cargo test valid_emails -- --nocapture</code> - tens of valid emails should pop up in your terminal!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Payload Validation</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+If you run <code>cargo test</code>, without restricting the set of tests being run to <code>domain</code>, you will see that our integration test with invalid data is still red.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+--- subscribe_returns_a_400_when_fields_are_present_but_invalid stdout ----
+thread 'subscribe_returns_a_400_when_fields_are_present_but_invalid' 
+panicked at 'assertion failed: `(left == right)`
+  left: `400`,
+ right: `200`: 
+ The API did not return a 400 Bad Request when the payload was empty email.', 
+tests/health_check.rs:167:9
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Let's integrate our shiny <code>SubscriberEmail</code> into the application to benefit from its validation in our <code>/subscriptions</code> endpoint. <br />
+We need to start from <code>NewSubscriber</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain/new_subscriber.rs
+ 
+use crate::domain::SubscriberName;
+use crate::domain::SubscriberEmail;
+
+pub struct NewSubscriber {
+    // We are not using `String` anymore!
+    pub email: SubscriberEmail,
+    pub name: SubscriberName,
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Hell should break loose if you try to compile the project now. <br />
+Let's start with the first error reported by <code>cargo check</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0308]: mismatched types
+  --> src/routes/subscriptions.rs:28:16
+   |
+28 |         email: form.0.email,
+   |                ^^^^^^^^^^^^ 
+   |                expected struct `SubscriberEmail`, 
+   |                found struct `std::string::String`
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It is referring to a line in our request handler, <code>subscribe</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+#[tracing::instrument([...])]
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    let name = match SubscriberName::parse(form.0.name) {
+        Ok(name) => name,
+        Err(_) => return HttpResponse::BadRequest().finish(),
+    };
+    let new_subscriber = NewSubscriber {
+        // We are trying to assign a string to a field of type SubscriberEmail!
+        email: form.0.email,
+        name,
+    };
+    match insert_subscriber(&pool, &new_subscriber).await {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We need to mimic what we are already doing for the <code>name</code> field: first we parse <code>form.0.email</code> then we assign the result (if successful) to <code>NewSubscriber.email</code>.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+ 
+// We added `SubscriberEmail`!
+use crate::domain::{NewSubscriber, SubscriberEmail, SubscriberName};
+// [...]
+
+#[tracing::instrument([...])]
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+  let name = match SubscriberName::parse(form.0.name) {
+    Ok(name) => name,
+    Err(_) => return HttpResponse::BadRequest().finish(),
+  };
+    let email = match SubscriberEmail::parse(form.0.email) {
+        Ok(email) => email,
+        Err(_) => return HttpResponse::BadRequest().finish(),
+    };
+    let new_subscriber = NewSubscriber { email, name };
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Time to move to the second error:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0308]: mismatched types
+  --> src/routes/subscriptions.rs:50:9
+   |
+50 |         new_subscriber.email,
+   |         ^^^^^^^^^^^^^^ 
+   |         expected `&str`, 
+   |         found struct `SubscriberEmail`
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+This is in our <code>insert_subscriber</code> function, where we perform a SQL INSERT query to store the details of the new subscriber:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+
+// [...]
+
+#[tracing::instrument([...])]
+pub async fn insert_subscriber(
+    pool: &PgPool,
+    new_subscriber: &NewSubscriber,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"
+    INSERT INTO subscriptions (id, email, name, subscribed_at)
+    VALUES ($1, $2, $3, $4)
+            "#,
+        Uuid::new_v4(),
+        // It expects a `&str` but we are passing it 
+        // a `SubscriberEmail` value
+        new_subscriber.email,
+        new_subscriber.name.as_ref(),
+        Utc::now()
+    )
+    .execute(pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to execute query: {:?}", e);
+        e
+    })?;
+    Ok(())
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The solution is right there, on the line below - we just need to borrow the inner field of SubscriberEmail as a string slice using our implementation of AsRef&lt;str&gt;.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+
+// [...]
+
+#[tracing::instrument([...])]
+pub async fn insert_subscriber(
+    pool: &PgPool,
+    new_subscriber: &NewSubscriber,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"
+    INSERT INTO subscriptions (id, email, name, subscribed_at)
+    VALUES ($1, $2, $3, $4)
+            "#,
+        Uuid::new_v4(),
+        // Using `as_ref` now!
+        new_subscriber.email.as_ref(),
+        new_subscriber.name.as_ref(),
+        Utc::now()
+    )
+    .execute(pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to execute query: {:?}", e);
+        e
+    })?;
+    Ok(())
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+That's it - it compiles now! <br />
+What about our integration test?
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ cargo test
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+running 4 tests
+test subscribe_returns_a_400_when_data_is_missing ... ok
+test health_check_works ... ok
+test subscribe_returns_a_400_when_fields_are_present_but_invalid ... ok
+test subscribe_returns_a_200_for_valid_form_data ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+All green! We made it!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Refactoring With TryFrom" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Before we move on let's spend a few paragraphs to refactor the code we just wrote. <br />
+I am referring to our request handler, <code>subscribe</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+#[tracing::instrument([...])]
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    let name = match SubscriberName::parse(form.0.name) {
+        Ok(name) => name,
+        Err(_) => return HttpResponse::BadRequest().finish(),
+    };
+    let email = match SubscriberEmail::parse(form.0.email) {
+        Ok(email) => email,
+        Err(_) => return HttpResponse::BadRequest().finish(),
+    };
+    let new_subscriber = NewSubscriber { email, name };
+    match insert_subscriber(&pool, &new_subscriber).await {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can extract the first two statements in a <code>parse_subscriber</code> function:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub fn parse_subscriber(form: FormData) -> Result<NewSubscriber, String> {
+    let name = SubscriberName::parse(form.name)?;
+    let email = SubscriberEmail::parse(form.email)?;
+    Ok(NewSubscriber { email, name })
+}
+
+#[tracing::instrument([...])]
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    let new_subscriber = match parse_subscriber(form.0) {
+    Ok(subscriber) => subscriber,
+    Err(_) => return HttpResponse::BadRequest().finish(),
+  };
+    match insert_subscriber(&pool, &new_subscriber).await {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The refactoring gives us a clearer separation of concerns:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;"><code>parse_subscriber</code> takes care of the conversion from our wire format (the url-decoded data collected from a HTML form) to our domain model (<code>NewSubscriber</code>);</li>
+  <li style="margin-top:.325em;"><code>subscribe</code> remains in charge of generating the HTTP response to the incoming HTTP request.</li>
+</ul>
+<div style="margin-top:.625em;">
+The Rust standard library provides a few traits to deal with conversions in its <code>std::convert</code> sub-module. That is where <code>AsRef</code> comes from!
+</div>
+<div style="margin-top:.625em;">
+Is there any trait there that captures what we are trying to do with <code>parse_subscriber</code>?
+</div>
+<div style="margin-top:.625em;">
+<code>AsRef</code> is not a good fit for what we are dealing with here: a fallible conversion between two types which <b>consumes</b> the input value.
+We need to look at <a href="https://doc.rust-lang.org/std/convert/trait.TryFrom.html">TryFrom</a>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+pub trait TryFrom<T>: Sized {
+    /// The type returned in the event of a conversion error.
+    type Error;
+
+    /// Performs the conversion.
+    fn try_from(value: T) -> Result<Self, Self::Error>;
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Replace <code>T</code> with FormData, <code>Self</code> with <code>NewSubscriber</code> and <code>Self::Error</code> with <code>String</code> - there you have it, the signature of our <code>parse_subscriber</code> function!
+</div>
+<div style="margin-top:.625em;">
+Let's try it out:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// No need to import the TryFrom trait, it is included
+// in Rust's prelude since edition 2021!
+// [...]
+
+impl TryFrom<FormData> for NewSubscriber {
+    type Error = String;
+    
+    fn try_from(value: FormData) -> Result<Self, Self::Error> {
+        let name = SubscriberName::parse(value.name)?;
+        let email = SubscriberEmail::parse(value.email)?;
+        Ok(Self { email, name })
+    }
+} 
+
+#[tracing::instrument([...])]
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    let new_subscriber = match form.0.try_into() {
+        Ok(form) => form,
+        Err(_) => return HttpResponse::BadRequest().finish(),
+    };
+    match insert_subscriber(&pool, &new_subscriber).await {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We implemented <code>TryFrom</code>, but we are calling <code>.try_into</code>? What is happening there? <br />
+There is another conversion trait in the standard library, called <code>TryInto</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+pub trait TryInto<T> {
+    type Error;
+    fn try_into(self) -> Result<T, Self::Error>;
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Its signature mirrors the one of <code>TryFrom</code> - the conversion just goes in the other direction! <br />
+If you provide a <code>TryFrom</code> implementation, your type automatically gets the corresponding <code>TryInto</code> implementation, for free.
+</div>
+<div style="margin-top:.625em;">
+<code>try_into</code> takes <code>self</code> as first argument, which allows us to do <code>form.0.try_into()</code> instead of going for <code>NewSubscriber::try_from(form.0)</code> - matter of taste, if you want.
+</div>
+<div style="margin-top:.625em;">
+Generally speaking, what do we gain by implementing <code>TryFrom/TryInto</code>? <br />
+Nothing shiny, no new functionality - we are "just" making our intent clearer. <br />
+We are spelling out "This is a type conversion!".
+</div>
+<div style="margin-top:.625em;">
+Why does it matter? It helps others! <br />
+When another developer with some Rust exposure jumps in our codebase they will immediately spot the conversion pattern because we are using a trait that they are already familiar with.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Summary</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Validating that the email in the payload of <code>POST /subscriptions</code> complies with the expected format is good, but it is not enough.
+</div>
+<div style="margin-top:.625em;">
+We now have an email that is syntactically valid but we are still uncertain about its existence: does anybody actually use that email address? Is it reachable?
+</div>
+<div style="margin-top:.625em;">
+We have no idea and there is only one way to find out: sending an actual email.
+</div>
+<div style="margin-top:.625em;">
+Confirmation emails (and how to write a HTTP client!) will be the topic of the next chapter.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+</c:component>

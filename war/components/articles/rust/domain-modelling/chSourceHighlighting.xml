@@ -1,0 +1,2026 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<div style="font-size:1.1em;line-height:1.625;">
+This article is a sample from <a href="https://zero2prod.com/">Zero To Production In Rust</a>, a book on backend development in Rust.
+You can get a copy of the book on <a href="https://zero2prod.com/">zero2prod.com</a>.
+<a href="https://www.lpalmieri.com/subscribe">Subscribe to the newsletter</a> to be notified when a new episode is published.
+</div>
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Rejecting Invalid Subscribers</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Our newsletter API is live, hosted on a Cloud provider. <br />
+We have a basic set of instrumentation to troubleshoot issues that might arise. <br />
+There is an exposed endpoint (<code>POST /subscriptions</code>) to subscribe to our content.
+</div>
+<div style="margin-top:.625em;">
+We have come a long way!
+</div>
+<div style="margin-top:.625em;">
+But we have cut a few corners along the way: <code>POST /subscriptions</code> is fairly... permissive. <br />
+Our input validation is extremely limited: we just ensure that both the name and the email fields are provided, nothing else.
+</div>
+<div style="margin-top:.625em;">
+We can add a new integration test to probe our API with some "troublesome" inputs:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+// [...]
+
+#[tokio::test]
+async fn subscribe_returns_a_200_when_fields_are_present_but_empty() {
+    // Arrange
+    let app = spawn_app().await;
+    let client = reqwest::Client::new();
+    let test_cases = vec![
+        ("name=&email=ursula_le_guin%40gmail.com", "empty name"),
+        ("name=Ursula&email=", "empty email"),
+        ("name=Ursula&email=definitely-not-an-email", "invalid email"),
+    ];
+
+    for (body, description) in test_cases {
+        // Act
+        let response = client
+            .post(&format!("{}/subscriptions", &app.address))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(body)
+            .send()
+            .await
+            .expect("Failed to execute request.");
+
+        // Assert
+        assert_eq!(
+            200,
+            response.status().as_u16(),
+            "The API did not return a 200 OK when the payload was {}.",
+            description 
+        );
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The new test, unfortunately, passes. <br />
+Although all those payloads are clearly invalid, our API is gladly accepting them, returning a <code>200 OK</code>.
+</div>
+<div style="margin-top:.625em;">
+Those troublesome subscriber details end up straight in our database, ready to give us problems down the line when it is time to deliver a newsletter issue.
+</div>
+<div style="margin-top:.625em;">
+We are asking for two pieces of information when subscribing to our newsletter: a name and an email. <br />
+This chapter will focus on name validation: what should we look out for?
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">1. Requirements</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="1.1. Domain Constraints" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+It turns out that names are complicated. <br />
+Trying to nail down what makes a name valid is a fool's errand. Remember that we chose to collect a name to use it in the opening line of our emails - we do not need it to match the real identity of a person, whatever that means in their geography. It would be totally unnecessary to inflict the pain of incorrect or overly prescriptive validation on our users.
+</div>
+<div style="margin-top:.625em;">
+We could thus settle on simply requiring the name field to be non-empty (as in, it must contain at least a non-whitespace character).
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="1.2. Security Constraints" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Unfortunately, not all people on the Internet are good people. <br />
+Given enough time, especially if our newsletter picks up traction and becomes successful, we are bound to capture the attention of malicious visitors.
+</div>
+<div style="margin-top:.625em;">
+Forms and user inputs are a primary attack target - if they are not properly sanitised, they might allow an attacker to mess with our database (<a href="https://en.wikipedia.org/wiki/SQL_injection">SQL injection</a>), execute code on our servers, crash our service and other nasty stuff. <br />
+Thanks, but no thanks.
+</div>
+<div style="margin-top:.625em;">
+What is likely to happen in our case? What should we brace for in the wild range of possible attacks? <br />
+We are building an email newsletter, which leads us to focus on:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">denial of service - e.g. trying to take our service down to prevent other people from signing up. A common threat for basically any online service;</li>
+  <li style="margin-top:.325em;">data theft - e.g. steal a huge list of email addresses;</li>
+  <li style="margin-top:.325em;">phishing - e.g. use our service to send what looks like a legitimate email to a victim to trick them into clicking on some links or perform other actions.</li>
+</ul>
+<div style="margin-top:.625em;">
+Should we try to tackle all these threats in our validation logic? <br />
+Absolutely not!
+</div>
+<div style="margin-top:.625em;">
+But it is good practice to have a layered security approach: by having mitigations to reduce the risk for those threats at multiple levels in our stack (e.g. input validation, parametrised queries to avoid SQL injection, escaping parametrised input in emails, etc.) we are less likely to be vulnerable should any of those checks fail us or be removed later down the line.
+</div>
+<div style="margin-top:.625em;">
+We should always keep in mind that software is a living artifact: holistic understanding of a system is the first victim of the passage of time.
+</div>
+<div style="margin-top:.625em;">
+You have the whole system in your head when writing it down for the first time, but the next developer touching it will not - at least not from the get-go. It is therefore possible for a load-bearing check in an obscure corner of the application to disappear (e.g. HTML escaping) leaving you exposed to a class of attacks (e.g. phishing). <br />
+Redundancy reduces risk.
+</div>
+<div style="margin-top:.625em;">
+Let's get to the point - what validation should we perform on names to improve our security posture given the class of threats we identified? <br />
+I suggest:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">Enforcing a maximum length. We are using <code>TEXT</code> as type for our email in Postgres, which is virtually unbounded - well, until disk storage starts to run out. Names come in all shapes and forms, but 256 characters should be enough for the greatest majority of our users - if not, we will politely ask them to enter a nickname.</li>
+  <li style="margin-top:.325em;">Reject names containing troublesome characters. <code>/()"<>\{}</code> are fairly common in URLs, SQL queries and HTML fragments - not as much in names5. Forbidding them raises the complexity bar for SQL injection and phishing attempts.</li>
+</ul>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">2. First Implementation</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="1.1. Domain Constraints" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's have a look at our request handler, as it stands right now:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+use actix_web::{web, HttpResponse};
+use chrono::Utc;
+use sqlx::PgPool;
+use uuid::Uuid;
+
+#[derive(serde::Deserialize)]
+pub struct FormData {
+    email: String,
+    name: String,
+}
+
+#[tracing::instrument(
+    name = "Adding a new subscriber",
+    skip(form, pool),
+    fields(
+        subscriber_email = %form.email,
+        subscriber_name = %form.name
+    )
+)]
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    match insert_subscriber(&pool, &form).await {
+    Ok(_) => HttpResponse::Ok().finish(),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+  }
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Where should our new validation live? <br />
+A first sketch could look somewhat like this:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+ 
+// An extension trait to provide the `graphemes` method 
+// on `String` and `&str`
+use unicode_segmentation::UnicodeSegmentation;
+// [...]
+
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    if !is_valid_name(&form.name) {
+        return HttpResponse::BadRequest().finish();
+    }
+    match insert_subscriber(&pool, &form).await {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
+}
+
+/// Returns `true` if the input satisfies all our validation constraints 
+/// on subscriber names, `false` otherwise.
+pub fn is_valid_name(s: &str) -> bool {
+    // `.trim()` returns a view over the input `s` without trailing 
+    // whitespace-like characters.
+    // `.is_empty` checks if the view contains any character.
+    let is_empty_or_whitespace = s.trim().is_empty();
+
+    // A grapheme is defined by the Unicode standard as a "user-perceived" 
+    // character: `å` is a single grapheme, but it is composed of two characters 
+    // (`a` and `̊`).
+    //
+    // `graphemes` returns an iterator over the graphemes in the input `s`.
+    // `true` specifies that we want to use the extended grapheme definition set,
+    // the recommended one.
+    let is_too_long = s.graphemes(true).count() > 256;
+
+    // Iterate over all characters in the input `s` to check if any of them matches 
+    // one of the characters in the forbidden array.
+    let forbidden_characters = ['/', '(', ')', '"', '<', '>', '\\', '{', '}'];
+    let contains_forbidden_characters = s.chars().any(|g| forbidden_characters.contains(&g));
+
+
+    // Return `false` if any of our conditions have been violated 
+    !(is_empty_or_whitespace || is_too_long || contains_forbidden_characters)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+To compile the new function successfully we will have to add the <code>unicode-segmentation</code> crate to our dependencies:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dependencies]
+unicode-segmentation = "1"
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+While it looks like a perfectly fine solution (assuming we add a bunch of tests), functions like <code>is_valid_name</code> give us a false sense of safety.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">3. Validation Is A Leaky Cauldron</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's shift our attention to <code>insert_subscriber</code>. <br />
+Let's imagine, for a second, that it requires <code>form.name</code> to be non-empty otherwise something horrible is going to happen (e.g. a panic!).
+</div>
+<div style="margin-top:.625em;">
+Can <code>insert_subscriber</code> safely assume that <code>form.name</code> will be non-empty? <br />
+Just by looking at its type, it cannot: <code>form.name</code> is a <code>String</code>. There is no guarantee about its content.
+</div>
+<div style="margin-top:.625em;">
+If you were to look at our program in its entirety you might say: we are checking that it is non-empty at the edge, in the request handler, therefore we can safely assume that <code>form.name</code> will be non-empty every time <code>insert_subscriber</code> is invoked.
+</div>
+<div style="margin-top:.625em;">
+But we had to shift from a local approach (let's look at this function's parameters) to a global approach (let's scan the whole codebase) to make such a claim.
+</div>
+<div style="margin-top:.625em;">
+And while it might be feasible for a small project such as ours, examining all the calling sites of a function (<code>insert_subscriber</code>) to ensure that a certain validation step has been performed beforehand quickly becomes unfeasible on larger projects.
+</div>
+<div style="margin-top:.625em;">
+If we are to stick with <code>is_valid_name</code>, the only viable approach is validating again form.name inside insert_subscriber - and every other function that requires our name to be non-empty.
+</div>
+<div style="margin-top:.625em;">
+That is the only way we can actually make sure that our invariant is in place where we need it.
+</div>
+<div style="margin-top:.625em;">
+What happens if <code>insert_subscriber</code> becomes too big and we have to split it out in multiple sub-functions? If they need the invariant, each of those has to perform validation to be certain it holds. <br />
+As you can see, this approach does not scale.
+</div>
+<div style="margin-top:.625em;">
+The issue here is that <code>is_valid_name</code> is a validation function: it tells us that, at a certain point in the execution flow of our program, a set of conditions is verified.
+</div>
+<div style="margin-top:.625em;">
+But this information about the additional structure in our input data <b>is not stored anywhere</b>. It is immediately lost. <br />
+Other parts of our program cannot reuse it effectively - they are forced to perform another point-in-time check leading to a crowded codebase with noisy (and wasteful) input checks at every step.
+</div>
+<div style="margin-top:.625em;">
+What we need is a parsing function - a routine that accepts unstructured input and, if a set of conditions holds, returns us a <b>more structured output</b>, an output that structurally guarantees that the invariants we care about hold from that point onwards.
+</div>
+<div style="margin-top:.625em;">
+How? <br />
+Using types!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">4. Type-Driven Development</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's add a new module to our project, <code>domain</code>, and define a new struct inside it, <code>SubscriberName</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/lib.rs
+pub mod configuration;
+// New module!
+pub mod domain;
+pub mod routes;
+pub mod startup;
+pub mod telemetry;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain.rs
+
+pub struct SubscriberName(String);
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>SubscriberName</code> is a <a href="https://doc.rust-lang.org/book/ch05-01-defining-structs.html#using-tuple-structs-without-named-fields-to-create-different-types">tuple struct</a> - a new type, with a single (unnamed) field of type <code>String</code>.
+</div>
+<div style="margin-top:.625em;">
+<code>SubscriberName</code> is a proper new type, not just an alias - it does not inherit any of the methods available on <code>String</code> and trying to assign a <code>String</code> to a variable of type <code>SubscriberName</code> will trigger a compiler error - e.g.:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+let name: SubscriberName = "A string".to_string();
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0308]: mismatched types
+   |     let name: SubscriberName = "A string".to_string();
+   |               --------------   ^^^^^^^^^^^^^^^^^^^^^^ 
+   |               |                expected struct `SubscriberName`, 
+   |               |                found struct `std::string::String`
+   |               |
+   |               expected due to this
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The inner field of <code>SubscriberName</code>, according to our current definition, is private: it can only be accessed from code within our <code>domain</code> module according to <a href="https://doc.rust-lang.org/reference/visibility-and-privacy.html">Rust's visibility rules</a>.
+</div>
+<div style="margin-top:.625em;">
+As always, trust but verify: what happens if we try to build a <code>SubscriberName</code> in our <code>subscribe</code> request handler?
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+/// [...]
+
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    let subscriber_name = crate::domain::SubscriberName(form.name.clone());
+    /// [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The compiler complains with
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0603]: tuple struct constructor `SubscriberName` is private
+  --> src/routes/subscriptions.rs:25:42
+   |
+25 |     let subscriber_name = crate::domain::SubscriberName(form.name.clone());
+   |                                          ^^^^^^^^^^^^^^ 
+   |                                          private tuple struct constructor
+   |
+  ::: src/domain.rs:1:27
+   |
+1  | pub struct SubscriberName(String);
+   |                           ------ a constructor is private if 
+   |                                  any of the fields is private
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It is therefore <code>impossible</code> (as it stands now) to build a <code>SubscriberName</code> instance outside of our <code>domain</code> module. <br />
+Let's add a new method to <code>SubscriberName</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain.rs
+use unicode_segmentation::UnicodeSegmentation;
+
+pub struct SubscriberName(String);
+
+impl SubscriberName {
+    /// Returns an instance of `SubscriberName` if the input satisfies all 
+    /// our validation constraints on subscriber names.  
+    /// It panics otherwise.
+    pub fn parse(s: String) -> SubscriberName {
+        // `.trim()` returns a view over the input `s` without trailing 
+        // whitespace-like characters.
+        // `.is_empty` checks if the view contains any character.
+        let is_empty_or_whitespace = s.trim().is_empty();
+
+        // A grapheme is defined by the Unicode standard as a "user-perceived" 
+        // character: `å` is a single grapheme, but it is composed of two characters 
+        // (`a` and `̊`).
+        //
+        // `graphemes` returns an iterator over the graphemes in the input `s`.
+        // `true` specifies that we want to use the extended grapheme definition set,
+        // the recommended one.
+        let is_too_long = s.graphemes(true).count() > 256;
+
+        // Iterate over all characters in the input `s` to check if any of them matches 
+        // one of the characters in the forbidden array.
+        let forbidden_characters = ['/', '(', ')', '"', '<', '>', '\\', '{', '}'];
+        let contains_forbidden_characters = s.chars().any(|g| forbidden_characters.contains(&g));
+
+        if is_empty_or_whitespace || is_too_long || contains_forbidden_characters {
+            panic!("{} is not a valid subscriber name.", s)
+        } else {
+            Self(s)
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Yes, you are right - that is a shameless copy-paste of what we had in <code>is_valid_name</code>.
+</div>
+<div style="margin-top:.625em;">
+There is one key difference though: the return type. <br />
+While <code>is_valid_name</code> gave us back a boolean, the <code>parse</code> method returns a <code>SubscriberName</code> if all checks are successful.
+</div>
+<div style="margin-top:.625em;">
+There is more! <br />
+<code>parse</code> is the only way to build an instance of <code>SubscriberName</code> outside of the <code>domain</code> module - we checked this was the case a few paragraphs ago. 
+</div>
+<div style="margin-top:.625em;">
+We can therefore assert that any instance of <code>SubscriberName</code> will satisfy all our validation constraints. <br />
+We have made it <b>impossible</b> for an instance of <code>SubscriberName</code> to violate those constraints.
+</div>
+<div style="margin-top:.625em;">
+Let's define a new struct, <code>NewSubscriber</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain.rs
+// [...]
+
+pub struct NewSubscriber {
+    pub email: String,
+    pub name: SubscriberName,
+}
+
+pub struct SubscriberName(String);
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+What happens if we change <code>insert_subscriber</code> to accept an argument of type <code>NewSubscriber</code> instead of <code>FormData</code>?
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+pub async fn insert_subscriber(
+    pool: &PgPool,
+    new_subscriber: &NewSubscriber,
+) -> Result<(), sqlx::Error> {
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+With the new signature we can be <b>sure</b> that <code>new_subscriber.name</code> is non-empty - it is <b>impossible</b> to call <code>insert_subscriber</code> passing an empty subscriber name.
+</div>
+<div style="margin-top:.625em;">
+And we can draw this conclusion just by looking up the definition of the types of the function arguments - we can once again make a local judgement, no need to go and check all the calling sites of our function.
+</div>
+<div style="margin-top:.625em;">
+Take a second to appreciate what just happened: we started with a set of requirements (all subscriber names must verify some constraints), we identified a potential pitfall (we might forget to validate the input before calling insert_subscriber) and we leveraged Rust's type system to eliminate the pitfall, entirely.
+</div>
+<div style="margin-top:.625em;">
+We made an incorrect usage pattern unrepresentable, by construction - it will not compile.
+</div>
+<div style="margin-top:.625em;">
+This technique is known as type-driven development. <br />
+Type-driven development is a powerful approach to encode the constraints of a domain we are trying to model inside the type system, leaning on the compiler to make sure they are enforced.
+</div>
+<div style="margin-top:.625em;">
+The more expressive the type system of our programming language is, the tighter we can constrain our code to only be able to represent states that are valid in the domain we are working in.
+</div>
+<div style="margin-top:.625em;">
+Rust has not invented type-driven development - it has been around for a while, especially in the functional programming communities (Haskell, F#, OCaml, etc.). Rust "just" provides you with a type-system that is expressive enough to leverage many of the design patterns that have been pioneered in those languages in the past decades. The particular pattern we have just shown is often referred to as the "new-type pattern" in the Rust community.
+</div>
+<div style="margin-top:.625em;">
+We will be touching upon type-driven development as we progress in our implementation, but I strongly invite you to check out some of the resources mentioned in the footnotes of this chapter: they are treasure chests for any developer.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">5. Ownership Meets Invariants</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We changed <code>insert_subscriber</code>'s signature, but we have not amended the body to match the new requirements - let's do it now.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+use crate::domain::{NewSubscriber, SubscriberName};
+// [...]
+
+#[tracing::instrument([...])]
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    // `web::Form` is a wrapper around `FormData`
+    // `form.0` gives us access to the underlying `FormData`
+    let new_subscriber = NewSubscriber {
+        email: form.0.email,
+        name: SubscriberName::parse(form.0.name),
+    };
+    match insert_subscriber(&pool, &new_subscriber).await {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
+}
+
+#[tracing::instrument(
+    name = "Saving new subscriber details in the database",
+    skip(new_subscriber, pool)
+)]
+pub async fn insert_subscriber(
+    pool: &PgPool,
+    new_subscriber: &NewSubscriber,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"
+    INSERT INTO subscriptions (id, email, name, subscribed_at)
+    VALUES ($1, $2, $3, $4)
+        "#,
+        Uuid::new_v4(),
+        new_subscriber.email,
+        new_subscriber.name,
+        Utc::now()
+    )
+    .execute(pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to execute query: {:?}", e);
+        e
+    })?;
+    Ok(())
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Close enough - <code>cargo check</code> fails with:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0308]: mismatched types
+  --> src/routes/subscriptions.rs:50:9
+   |
+50 |         new_subscriber.name,
+   |         ^^^^^^^^^^^^^^ expected `&str`, 
+   |         found struct `SubscriberName`
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We have an issue here: we do not have any way to actually access the String value encapsulated inside <code>SubscriberName</code>! <br />
+We could change <code>SubscriberName</code>'s definition from <code>SubscriberName(String)</code> to <code>SubscriberName(pub String)</code>, but we would lose all the nice guarantees we spent the last two sections talking about:
+</div>
+<div style="margin-top:.625em;">
+other developers would be allowed to bypass <code>parse</code> and build a <code>SubscriberName</code> with an arbitrary string
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+let liar = SubscriberName("".to_string());
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+other developers might still choose to build a <code>SubscriberName</code> using <code>parse</code> but they would then have the option to mutate the inner value later to something that does not satisfy anymore the constraints we care about
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+let mut started_well = SubscriberName::parse("A valid name".to_string());
+started_well.0 = "".to_string();
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We can do better - this is the perfect place to take advantage of Rust's ownership system! <br />
+Given a field in a struct we can choose to:
+</div>
+<div style="margin-top:.625em;">
+expose it by value, consuming the struct itself:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+impl SubscriberName {
+    pub fn inner(self) -> String {
+        // The caller gets the inner string,
+        // but they do not have a SubscriberName anymore!
+        // That's because `inner` takes `self` by value, 
+        // consuming it according to move semantics
+        self.0
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+expose a mutable reference:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+impl SubscriberName {
+    pub fn inner_mut(&mut self) -> &mut str {
+        // The caller gets a mutable reference to the inner string.
+        // This allows them to perform *arbitrary* changes to 
+        // value itself, potentially breaking our invariants!
+        &mut self.0
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+expose a shared reference:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+impl SubscriberName {
+    pub fn inner_ref(&self) -> &str {
+        // The caller gets a shared reference to the inner string.
+        // This gives the caller **read-only** access,
+        // they have no way to compromise our invariants!
+        &self.0
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>inner_mut</code> is not what we are looking for here - the loss of control on our invariants would be equivalent to using <code>SubscriberName(pub String)</code>. <br />
+Both <code>inner</code> and <code>inner_ref</code> would be suitable, but <code>inner_ref</code> communicates better our intent: give the caller a chance to read the value without the power to mutate it.
+</div>
+<div style="margin-top:.625em;">
+Let's add <code>inner_ref</code> to <code>SubscriberName</code> - we can then amend <code>insert_subscriber</code> to use it:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+#[tracing::instrument([...])]
+pub async fn insert_subscriber(
+    pool: &PgPool,
+    new_subscriber: &NewSubscriber,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"
+    INSERT INTO subscriptions (id, email, name, subscribed_at)
+    VALUES ($1, $2, $3, $4)
+        "#,
+        Uuid::new_v4(),
+        new_subscriber.email,
+        // Using `inner_ref`!
+        new_subscriber.name.inner_ref(),
+        Utc::now()
+    )
+    .execute(pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to execute query: {:?}", e);
+        e
+    })?;
+    Ok(())
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Boom, it compiles!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="5.1. AsRef" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+While our <code>inner_ref</code> method gets the job done, I am obliged to point out that Rust's standard library exposes a trait that is designed <b>exactly</b> for this type of usage - <a href="https://doc.rust-lang.org/std/convert/trait.AsRef.html">AsRef</a>.
+</div>
+<div style="margin-top:.625em;">
+The definition is quite concise:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+pub trait AsRef<T: ?Sized> {
+    /// Performs the conversion.
+    fn as_ref(&self) -> &T;
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+When should you implement <code>AsRef<T></code> for a type? <br />
+When the type is similar enough to T that we can use a <code>&self</code> to get a reference to <code>T</code> itself!
+</div>
+<div style="margin-top:.625em;">
+Does it sound too abstract? Check out the signature of <code>inner_ref</code> again: that is basically <code>AsRef<str></code> for <code>SubscriberName</code>!
+</div>
+<div style="margin-top:.625em;">
+<code>AsRef</code> can be used to improve ergonomics - let's consider a function with this signature:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+pub fn do_something_with_a_string_slice(s: &str) { 
+    // [...] 
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+To invoke it with our <code>SubscriberName</code> we would have to first call <code>inner_ref</code> and then call <code>do_something_with_a_string_slice</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+let name = SubscriberName::parse("A valid name".to_string());
+do_something_with_a_string_slice(name.inner_ref())
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Nothing too complicated, but it might take you some time to figure out if <code>SubscriberName</code> can give you a <code>&str</code> as well as how, especially if the type comes from a third-party library.
+</div>
+<div style="margin-top:.625em;">
+We can make the experience more seamless by changing <code>do_something_with_a_string_slice</code>'s signature:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+// using a trait bound - `T: AsRef<str>`
+pub fn do_something_with_a_string_slice<T: AsRef<str>>(s: T) {
+    let s = s.as_ref();
+    // [...] 
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now write
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+let name = SubscriberName::parse("A valid name".to_string());
+do_something_with_a_string_slice(name)
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+and it will compile straight-away (assuming <code>SubscriberName</code> implements <code>AsRef<str></code>).
+</div>
+<div style="margin-top:.625em;">
+This pattern is used quite extensively, for example, in the filesystem module in Rust's standard library - <code>std::fs</code>. Functions like <a href="https://doc.rust-lang.org/stable/std/fs/fn.create_dir.html">create_dir</a> take an argument of type P constrained to implement <code>AsRef&lt;Path&gt;</code> instead of forcing the user to understand how to convert a <code>String</code> into a <code>Path</code>. Or how to convert a <code>PathBuf</code> into <code>Path</code>. Or an <code>OsString</code>. Or... you got the gist.
+</div>
+<div style="margin-top:.625em;">
+There are other little conversion traits like <code>AsRef</code> in that standard library - they provide a shared interface for the whole ecosystem to standardise around. Implementing them for your types suddenly unlocks a great deal of functionality exposed via generic types in the crates already available in the wild.
+</div>
+<div style="margin-top:.625em;">
+We will cover some of the other conversion trait later down the line (e.g. <code>From/Into</code>, <code>TryFrom/TryInto</code>).
+</div>
+<div style="margin-top:.625em;">
+Let's remove <code>inner_ref</code> and implement <code>AsRef&lt;str&gt;</code> for <code>SubscriberName</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain.rs
+// [...] 
+
+impl AsRef<str> for SubscriberName {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We also need to change <code>insert_subscriber</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+#[tracing::instrument([...])]
+pub async fn insert_subscriber(
+    pool: &PgPool,
+    new_subscriber: &NewSubscriber,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"
+    INSERT INTO subscriptions (id, email, name, subscribed_at)
+    VALUES ($1, $2, $3, $4)
+        "#,
+        Uuid::new_v4(),
+        new_subscriber.email,
+        // Using `as_ref` now!
+        new_subscriber.name.as_ref(),
+        Utc::now()
+    )
+    .execute(pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to execute query: {:?}", e);
+        e
+    })?;
+    Ok(())
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The project compiles...
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">6. Panics</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+... but our tests are not green:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+thread 'actix-rt:worker:0' panicked at 
+' is not a valid subscriber name.', src/domain.rs:39:13
+
+[...]
+
+---- subscribe_returns_a_200_when_fields_are_present_but_empty stdout ----
+thread 'subscribe_returns_a_200_when_fields_are_present_but_empty' panicked at 
+'Failed to execute request.: 
+  reqwest::Error { 
+    kind: Request, 
+    url: Url { 
+      scheme: "http", 
+      host: Some(Ipv4(127.0.0.1)), 
+      port: Some(40681), 
+      path: "/subscriptions", 
+      query: None, 
+      fragment: None 
+    }, 
+    source: hyper::Error(IncompleteMessage) 
+  }', 
+tests/health_check.rs:164:14
+Panic in Arbiter thread.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+On the bright side: we are not returning a <code>200 OK</code> anymore for empty names.
+</div>
+<div style="margin-top:.625em;">
+On the not-so-bright side: our API is terminating the request processing abruptly, causing the client to observe an <code>IncompleteMessage</code> error. Not very graceful.
+</div>
+<div style="margin-top:.625em;">
+Let's change the test to reflect our new expectations: we'd like to see a <code>400 Bad Request</code> response when the payload contains invalid data.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+// [...]
+
+#[tokio::test]
+// Renamed!
+async fn subscribe_returns_a_400_when_fields_are_present_but_invalid() {
+    // [...]
+
+    assert_eq!(
+        // Not 200 anymore!
+        400,
+        response.status().as_u16(),
+        "The API did not return a 400 Bad Request when the payload was {}.",
+        description
+    );
+    
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Now, let's look at the root cause - we chose to panic when validation checks in <code>SubscriberName::parse</code> fail:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain.rs
+// [...]
+
+impl SubscriberName {
+    pub fn parse(s: String) -> SubscriberName {
+        // [...]
+
+        if is_empty_or_whitespace || is_too_long || contains_forbidden_characters {
+            panic!("{} is not a valid subscriber name.", s)
+        } else {
+            Self(s)
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Panics in Rust are used to deal with <b>unrecoverable</b> errors: failure modes that were not expected or that we have no way to meaningfully recover from. Examples might include the host machine running out of memory or a full disk.
+</div>
+<div style="margin-top:.625em;">
+Rust's panics are <b>not</b> equivalent to exceptions in languages such as Python, C# or Java. Although Rust provides a few utilities to <a href="https://doc.rust-lang.org/std/panic/fn.catch_unwind.html">catch (some) panics</a>, it is most definitely not the recommended approach and should be used sparingly.
+</div>
+<div style="margin-top:.625em;">
+<a href="https://github.com/BurntSushi">burntsushi</a> put it down quite neatly in <a href="https://www.reddit.com/r/rust/comments/9x17hn/when_should_a_library_panic_vs_return_result/e9p5c9t?utm_source=share&utm_medium=web2x&context=3">a Reddit thread</a> a few years ago:
+</div>
+<div style="margin-top:.625em;">
+[...] If your Rust application panics in response to any user input, then the following should be true: your application has a bug, whether it be in a library or in the primary application code.
+</div>
+<div style="margin-top:.625em;">
+Adopting this viewpoint we can understand what is happening: when our request handler panics <a href="https://github.com/actix/actix-web/issues/1501">actix-web assumes that something horrible happened</a> and immediately drops the worker that was dealing with that panicking request.
+</div>
+<div style="margin-top:.625em;">
+If panics are not the way to go, what should we use to handle <code>recoverable</code> errors?
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">7. Errors As Values - Result</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Rust's primary error handling mechanism is built on top of the <code>Result</code> type:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+pub enum Result<T, E> {
+    Ok(T),
+    Err(E),
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>Result</code> is used as the return type for fallible operations: if the operation succeeds, <code>Ok(T)</code> is returned; if it fails, you get <code>Err(E)</code>.
+</div>
+<div style="margin-top:.625em;">
+We have actually already used <code>Result</code>, although we did not stop to discuss its nuances at the time. <br />
+Let's look again at the signature of <code>insert_subscriber</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...] 
+
+pub async fn insert_subscriber(
+    pool: &PgPool,
+    new_subscriber: &NewSubscriber,
+) -> Result<(), sqlx::Error> {
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It tells us that inserting a subscriber in the database is a fallible operation - if all goes as planned, we don't get anything back (<code>()</code> - the unit type), if something is amiss we will instead receive a <code>sqlx::Error</code> with details about what went wrong (e.g. a connection issue).
+</div>
+<div style="margin-top:.625em;">
+Errors as values, combined with Rust's enums, are awesome building blocks for a robust error handling story.
+</div>
+<div style="margin-top:.625em;">
+If you are coming from a language with exception-based error handling, this is likely to be a game changer8: everything we need to know about the failure modes of a function is in its signature.
+</div>
+<div style="margin-top:.625em;">
+You will not have to dig in the documentation of your dependencies to understand what exceptions a certain function might throw (assuming it is documented in the first place!).
+</div>
+<div style="margin-top:.625em;">
+You will not be surprised at runtime by yet another undocumented exception type. <br />
+You will not have to insert a catch-all statement "just in case".
+</div>
+<div style="margin-top:.625em;">
+We will cover the basics here and leave the finer details (<code>Error</code> trait) to the next chapter.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="7.1. Converting parse To Return Result" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's refactor our <code>SubscriberName::parse</code> to return a <code>Result</code> instead of panicking on invalid inputs. <br />
+We will start by changing the signature, without touching the body:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain.rs
+// [...]
+
+impl SubscriberName {
+    pub fn parse(s: String) -> Result<SubscriberName, ???> {
+        // [...]
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+What type should we use as <code>Err</code> variant for our <code>Result</code>? <br />
+The simplest option is a <code>String</code> - we just return an error message on failure.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain.rs
+// [...]
+
+impl SubscriberName {
+    pub fn parse(s: String) -> Result<SubscriberName, String> {
+        // [...]
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Running <code>cargo check</code> surfaces two errors from the compiler:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0308]: mismatched types
+  --> src/routes/subscriptions.rs:27:15
+   |
+27 |         name: SubscriberName::parse(form.0.name),
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+   |               expected struct `SubscriberName`, 
+   |               found enum `Result`
+
+error[E0308]: mismatched types
+  --> src/domain.rs:41:13
+   |
+14 |     pub fn parse(s: String) -> Result<SubscriberName, String> {
+   |                                ------------------------------ 
+   |                                expected `Result<SubscriberName, String>` 
+   |                                because of return type
+...
+41 |             Self(s)
+   |             ^^^^^^^
+   |             |
+   |             expected enum `Result`, found struct `SubscriberName`
+   |             help: try using a variant of the expected enum: `Ok(Self(s))`
+   |
+   = note: expected enum `Result<SubscriberName, String>`
+            found struct `SubscriberName`
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's focus on the second error: we cannot return a bare instance of <code>SubscriberName</code> at the end of <code>parse</code> - we need to choose one of the two <code>Result</code> variants. <br />
+The compiler understands the issue and suggests the right edit: use <code>Ok(Self(s))</code> instead of <code>Self(s)</code>. Let's follow its advice:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain.rs
+// [...]
+
+impl SubscriberName {
+    pub fn parse(s: String) -> Result<SubscriberName, String> {
+        // [...]
+
+        if is_empty_or_whitespace || is_too_long || contains_forbidden_characters {
+            panic!("{} is not a valid subscriber name.", s)
+        } else {
+            Ok(Self(s))
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>cargo check</code> should now return a single error:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0308]: mismatched types
+  --> src/routes/subscriptions.rs:27:15
+   |
+27 |         name: SubscriberName::parse(form.0.name),
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+   |               expected struct `SubscriberName`, 
+   |               found enum `Result`
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It is complaining about our invocation of the <code>parse</code> method in <code>subscribe</code>: when <code>parse</code> returned a <code>SubscriberName</code> it was perfectly fine to assign its output directly to <code>Subscriber.name</code>.
+</div>
+<div style="margin-top:.625em;">
+We are returning a <code>Result</code> now - Rust's type system <b>forces us</b> to deal with the unhappy path. We cannot just pretend it won't happen.
+</div>
+<div style="margin-top:.625em;">
+Let's avoid covering too much ground at once though - for the time being we will just panic if validation fails in order to get the project to compile again as quickly as possible:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    let new_subscriber = NewSubscriber {
+        email: form.0.email,
+        // Notice the usage of `expect` to specify a meaningful panic message
+        name: SubscriberName::parse(form.0.name).expect("Name validation failed."),
+    };
+  // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+cargo check should be happy now. <br />
+Time to work on tests!
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">8. Insightful Assertion Errors: claim</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Most of our assertions will be along the lines of <code>assert!(result.is_ok())</code> or <code>assert!(result.is_err())</code>.
+The error messages returned by <code>cargo test</code> on failure when using these assertions are quite poor. How poor? Let's run a quick experiment!
+</div>
+<div style="margin-top:.625em;">
+If you run <code>cargo test</code> on this dummy test
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#[test]
+fn dummy_fail() {
+    let result: Result<&str, &str> = Err("The app crashed due to an IO error");
+    assert!(result.is_ok());
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+you will get
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+---- dummy_fail stdout ----
+thread 'dummy_fail' panicked at 'assertion failed: result.is_ok()'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We do not get any detail concerning the error itself - it makes for a somewhat painful debugging experience. <br />
+We will be using the <code>claim</code> crate to get more informative error messages:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dev-dependencies]
+claim = "0.5"
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>claim</code> provides a fairly comprehensive range of assertions to work with common Rust types - in particular <code>Option</code> and <code>Result</code>. <br />
+If we rewrite our <code>dummy_fail</code> test to use <code>claim</code>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#[test]
+fn dummy_fail() {
+    let result: Result<&str, &str> = Err("The app crashed due to an IO error");
+    claim::assert_ok!(result);
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+we get
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+---- dummy_fail stdout ----
+thread 'dummy_fail' panicked at 'assertion failed, expected Ok(..), 
+  got Err("The app crashed due to an IO error")'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Much better.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">9. Unit Tests</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We are all geared up - let's add some unit tests to the <code>domain</code> module to make sure all the code we wrote behaves as expected.
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain.rs
+// [...]
+
+#[cfg(test)]
+mod tests {
+    use crate::domain::SubscriberName;
+    use claim::{assert_err, assert_ok};
+
+    #[test]
+    fn a_256_grapheme_long_name_is_valid() {
+        let name = "ё".repeat(256);
+        assert_ok!(SubscriberName::parse(name));
+    }
+
+    #[test]
+    fn a_name_longer_than_256_graphemes_is_rejected() {
+        let name = "a".repeat(257);
+        assert_err!(SubscriberName::parse(name));
+    }
+
+    #[test]
+    fn whitespace_only_names_are_rejected() {
+        let name = " ".to_string();
+        assert_err!(SubscriberName::parse(name));
+    }
+
+    #[test]
+    fn empty_string_is_rejected() {
+        let name = "".to_string();
+        assert_err!(SubscriberName::parse(name));
+    }
+
+    #[test]
+    fn names_containing_an_invalid_character_are_rejected() {
+        for name in &['/', '(', ')', '"', '<', '>', '\\', '{', '}'] {
+            let name = name.to_string();
+            assert_err!(SubscriberName::parse(name));
+        }
+    }
+
+    #[test]
+    fn a_valid_name_is_parsed_successfully() {
+        let name = "Ursula Le Guin".to_string();
+        assert_ok!(SubscriberName::parse(name));
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Unfortunately, it does not compile - <code>cargo</code> highlights all our usages of <code>assert_ok/assert_err</code> with
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+66 |         assert_err!(SubscriberName::parse(name));
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+   |         `SubscriberName` cannot be formatted using `{:?}`
+   |
+   = help: the trait `std::fmt::Debug` is not implemented for `SubscriberName`
+   = note: add `#[derive(Debug)]` or manually implement `std::fmt::Debug`
+   = note: required by `std::fmt::Debug::fmt`
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>claim</code> needs our type to implement the <code>Debug</code> trait to provide those nice error messages. Let's add a <code>#[derive(Debug)]</code> attribute on top of <code>SubscriberName</code>:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain.rs
+// [...]
+
+#[derive(Debug)]
+pub struct SubscriberName(String);
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The compiler should be happy now. What about tests?
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ cargo test
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+failures:
+    domain::tests::a_name_longer_than_256_graphemes_is_rejected
+    domain::tests::empty_string_is_rejected
+    domain::tests::names_containing_an_invalid_character_are_rejected
+    domain::tests::whitespace_only_names_are_rejected
+
+test result: FAILED. 2 passed; 4 failed; 0 ignored; 0 measured; 0 filtered out
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+All our unhappy-path tests are failing because we are still panicking if our validation constraints are not satisfied - let's change it:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain.rs
+// [...]
+
+impl SubscriberName {
+    pub fn parse(s: String) -> Result<SubscriberName, String> {
+        // [...]
+
+        if is_empty_or_whitespace || is_too_long || contains_forbidden_characters {
+            // Replacing `panic!` with `Err(...)`
+            Err(format!("{} is not a valid subscriber name.", s))
+        } else {
+            Ok(Self(s))
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+All our domain unit tests are now passing - let's finally address the failing integration test we wrote at the beginning of the chapter.
+]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">10. Handling A Result</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+<code>SubscriberName::parse</code> is now returning a <code>Result</code>, but <code>subscribe</code> is calling <code>expect</code> on it, therefore panicking if an <code>Err</code> variant is returned. <br />
+The behaviour of the application, as a whole, has not changed at all.
+</div>
+<div style="margin-top:.625em;">
+How do we change <code>subscribe</code> to return a <code>400 Bad Request</code> on validation errors? We can have a look at what we are already doing for our call to <code>insert_subscriber</code>!
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="10.1. match" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+How do we handle the possibility of a failure on the caller side?
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...] 
+
+pub async fn insert_subscriber(
+    pool: &PgPool,
+    new_subscriber: &NewSubscriber,
+) -> Result<(), sqlx::Error> {
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...] 
+
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    // [...]
+    match insert_subscriber(&pool, &new_subscriber).await {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>insert_subscriber</code> returns a <code>Result<(), sqlx::Error></code> while <code>subscribe</code> speaks the language of a REST API - its output must be of type <code>HttpResponse</code>. To return a <code>HttpResponse</code> to the caller in the error case we need to convert <code>sqlx::Error</code> into a representation that makes sense within the technical domain of a REST API - in our case, a <code>500 Internal Server Error</code>.
+</div>
+<div style="margin-top:.625em;">
+That's where a <code>match</code> comes in handy: we tell the compiler what to do in both scenarios, <code>Ok</code> and <code>Err</code>.
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="10.2. The ? Operator" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Speaking of error handling, let's look again at <code>insert_subscriber</code>:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...] 
+
+pub async fn insert_subscriber(/* */) -> Result<(), sqlx::Error> {
+    sqlx::query!(/* */)
+        .execute(pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to execute query: {:?}", e);
+            e
+        })?;
+    Ok(())
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Have you noticed that <code>?</code>, before <code>Ok(())</code>?
+</div>
+<div style="margin-top:.625em;">
+It is the <a href="https://doc.rust-lang.org/edition-guide/rust-2018/error-handling-and-panics/the-question-mark-operator-for-easier-error-handling.html">question mark operator</a>, <code>?</code>. <br />
+? was introduced in Rust <code>1.13</code> - it is <a href="https://en.wikipedia.org/wiki/Syntactic_sugar">syntactic sugar</a>. <br />
+It reduces the amount of visual noise when you are working with fallible functions and you want to "bubble up" failures (e.g. similar enough to re-throwing a caught exception).
+</div>
+<div style="margin-top:.625em;">
+The <code>?</code> in this block
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+insert_subscriber(&pool, &new_subscriber)
+.await
+.map_err(|_| HttpResponse::InternalServerError().finish())?;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+is equivalent to this control flow block
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+if let Err(error) = insert_subscriber(&pool, &new_subscriber)
+    .await
+    .map_err(|_| HttpResponse::InternalServerError().finish())
+{
+    return Err(error);
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It allows us to return early when something fails using a single character instead of a multi-line block.
+</div>
+<div style="margin-top:.625em;">
+Given that <code>?</code> triggers an early return using an <code>Err</code> variant, it can only be used within a function that returns a <code>Result</code>. <code>subscribe</code> does not qualify (yet).
+</div>
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="10.3. 400 Bad Request" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's handle now the error returned by <code>SubscriberName::parse</code>:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...] 
+
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    let name = match SubscriberName::parse(form.0.name) {
+        Ok(name) => name,
+    // Return early if the name is invalid, with a 400
+        Err(_) => return HttpResponse::BadRequest().finish(),
+    };
+    let new_subscriber = NewSubscriber {
+        email: form.0.email,
+        name,
+    };
+    match insert_subscriber(&pool, &new_subscriber).await {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
+}
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>cargo test</code> is not green yet, but we are getting a different error:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+--- subscribe_returns_a_400_when_fields_are_present_but_invalid stdout ----
+thread 'subscribe_returns_a_400_when_fields_are_present_but_invalid' 
+panicked at 'assertion failed: `(left == right)`
+  left: `400`,
+ right: `200`: 
+ The API did not return a 400 Bad Request when the payload was empty email.', 
+tests/health_check.rs:167:9
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The test case using an empty name is now passing, but we are failing to return a <code>400 Bad Request</code> when an empty email is provided. <br />
+Not unexpected - we have not implemented any kind of email validation yet!
+</div>
+<div style="margin-top:.625em;">
+You will have to be patient though, we will not make that test green in this chapter.
+</div>
+]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">11. Summary</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Our API was not performing any validation at all on the incoming payload for <code>POST /subscriptions</code> - we now have a set of robust checks on the provided subscriber name.
+</div>
+<div style="margin-top:.625em;">
+Email addresses, instead, are still flowing through the system without any constraint. <br />
+Email validation, though, is a trickier beast - looking at the format is not enough, we also want to check that the email address is actually reachable. How?
+</div>
+<div style="margin-top:.625em;">
+Sending a confirmation email! <br />
+We will have to integrate a third-party service for email delivery, properly model our subscriber as a state machine and figure out a robust way to test it all.
+</div>
+<div style="margin-top:.625em;">
+Lot to cover in the next chapter!
+</div>
+]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+</c:component>

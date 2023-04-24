@@ -1,0 +1,2972 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<div style="font-size:1.1em;line-height:1.625;">
+This article is a sample from <a href="https://zero2prod.com/">Zero To Production In Rust</a>, a book on backend development in Rust.
+You can get a copy of the book on <a href="https://zero2prod.com/">zero2prod.com</a>.
+<a href="https://www.lpalmieri.com/subscribe">Subscribe to the newsletter</a> to be notified when a new episode is published.
+</div>
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">TL;DR</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We need to send a confirmation email to the new subscribers of our newsletter.
+To pull it off we need to learn:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">how to write a REST API client using <code>reqwests</code>;</li>
+  <li style="margin-top:.325em;">how to test it using HTTP mocking via <code>wiremock</code>.</li>
+</ul>
+<div style="margin-top:.625em;">
+We'll deal with both the happy and the unhappy path (server errors and timeouts).
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Confirmation Emails</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+In the previous chapter we introduced validation for the email addresses of new subscribers - they must comply with the email format.
+</div>
+<div style="margin-top:.625em;">
+We now have emails that are syntactically valid but we are still uncertain about their existence: does anybody actually use those email addresses? Are they reachable?
+</div>
+<div style="margin-top:.625em;">
+We have no idea and there is only one way to find out: sending out an actual confirmation email.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Subscriber Consent" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Your spider-senses should be going off now - do we actually need to know at this stage of the subscriber lifetime? Can't we just wait for the next newsletter issue to find out if they receive our emails or not?
+</div>
+<div style="margin-top:.625em;">
+If performing thorough validation was our only concern, I'd concur: we should wait for the next issue to go out instead of adding more complexity to our <code>POST /subscriptions</code> endpoint.
+</div>
+<div style="margin-top:.625em;">
+There is one more thing we are concerned about though, which we cannot postpone: subscriber consent.
+</div>
+<div style="margin-top:.625em;">
+An email address is not a password - if you have been on the Internet long enough there is a high chance your email is not so difficult to come by.
+</div>
+<div style="margin-top:.625em;">
+Certain types of email addresses (e.g. professional emails) are outright public.
+</div>
+<div style="margin-top:.625em;">
+This opens up the possibility of abuse. <br />
+A malicious user could start subscribing an email address to all sort of newsletters across the internet, flooding the victim's inbox with junk.
+</div>
+<div style="margin-top:.625em;">
+A shady newsletter owner, instead, could start scraping email addresses from the web and adding them to its newsletter email list.
+</div>
+<div style="margin-top:.625em;">
+This is why a request to <code>POST /subscriptions</code> is not enough to say "This person wants to receive my newsletter content!". 
+</div>
+<div style="margin-top:.625em;">
+If you are dealing with European citizens, <a href="https://www.litmus.com/blog/5-things-you-must-know-about-email-consent-under-gdpr/">it is a legal requirement</a> to get explicit consent from the user.
+</div>
+<div style="margin-top:.625em;">
+This is why it has become common practice to send confirmation emails: after entering your details in the newsletter HTML form you will receive an email in your inbox asking you to confirm that you do indeed want to subscribe to that newsletter.
+</div>
+<div style="margin-top:.625em;">
+This works nicely for us - we shield our users from abuse and we get to confirm that the email addresses they provided actually exist before trying to send them a newsletter issue.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="The Confirmation User Journey" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's look at our confirmation flow from a user perspective.
+</div>
+<div style="margin-top:.625em;">
+They will receive an email with a confirmation link.
+</div>
+<div style="margin-top:.625em;">
+Once they click on it something happens and they are then redirected to a success page ("You are now a subscriber of our newsletter! Yay!"). From that point onwards, they will receive all newsletter issues in their inbox.
+</div>
+<div style="margin-top:.625em;">
+How will the backend work? <br />
+We will try to keep it as simple as we can - our version will not perform a redirect on confirmation, we will just return a <code>200 OK</code> to the browser.
+</div>
+<div style="margin-top:.625em;">
+Every time a user wants to subscribe to our newsletter they fire a <code>POST /subscriptions</code> request. Our request handler will:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">add their details to our database in the <code>subscribers</code> table, with <code>status</code> equal to <code>pending_confirmation</code>;</li>
+  <li style="margin-top:.325em;">generate a (unique) <code>subscription_token</code>;</li>
+  <li style="margin-top:.325em;">store <code>subscription_token</code> in our database against their id in a <code>subscription_tokens</code> table;</li>
+  <li style="margin-top:.325em;">send an email to the new subscriber containing a link structured as <code>https://<our-api-domain>/subscriptions/confirm?token=&lt;subscription_token&gt;</code>;</li>
+  <li style="margin-top:.325em;">return a <code>200 OK</code>.</li>
+</ul>
+<div style="margin-top:.625em;">
+Once they click on the link, a browser tab will open up and a <code>GET</code> request will be fired to our <code>GET /subscriptions/confirm</code> endpoint. Our request handler will:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">retrieve <code>subscription_token</code> from the query parameters;</li>
+  <li style="margin-top:.325em;">retrieve the subscriber id associated with <code>subscription_token</code> from the <code>subscription_tokens</code> table;</li>
+  <li style="margin-top:.325em;">update the subscriber status from <code>pending_confirmation</code> to <code>active</code> in the <code>subscribers</code> table;</li>
+  <li style="margin-top:.325em;">return a <code>200 OK</code>.</li>
+</ul>
+<div style="margin-top:.625em;">
+There are a few other possible designs (e.g. use a <code>JWT</code> instead of a unique token) and we have a few corner cases to handle (e.g. what happens if they click on the link twice? What happens if they try to subscribe twice?) - we will discuss both at the most appropriate time as we make progress with the implementation.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="The Implementation Strategy" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+There is a lot to do here, so we will split the work in three conceptual chunks:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">write a module to send an email;</li>
+  <li style="margin-top:.325em;">adapt the logic of our existing <code>POST /subscriptions</code> request handler to match the new specification;</li>
+  <li style="margin-top:.325em;">write a <code>GET /subscriptions/confirm</code> request handler from scratch.</li>
+</ul>
+<div style="margin-top:.625em;">
+Let's get started!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">How To Send An Email</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+How do you actually send an email? <br />
+How does it work?
+</div>
+<div style="margin-top:.625em;">
+You have to look into <a href="https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol">SMTP</a> - the <b>S</b>imple <b>M</b>ail <b>T</b>ransfer <b>P</b>rotocol. <br />
+It has been around since the early days of the Internet - the <a href="https://tools.ietf.org/html/rfc821">first RFC</a> dates back to 1982.
+</div>
+<div style="margin-top:.625em;">
+SMTP does for emails what HTTP does for web pages: it is an application-level protocol that ensures that different implementations of email servers and clients can understand each other and exchange messages.
+</div>
+<div style="margin-top:.625em;">
+Now, let's make things clear - we will not build our own private email server, it would take too long and we would not gain much from the effort. We will be leveraging a third-party service.
+</div>
+<div style="margin-top:.625em;">
+What do email delivery services expect these days? Do we need to talk SMTP to them?
+</div>
+<div style="margin-top:.625em;">
+Not necessarily. <br />
+SMTP is a specialised protocol: unless you have been working with emails before, it is unlikely you have direct experience with it. Learning a new protocol takes time and you are bound to make mistakes along the way - that is why most providers expose two interfaces: an SMTP and a REST API.
+</div>
+<div style="margin-top:.625em;">
+If you are familiar with the email protocol, or you need some non-conventional configuration, go ahead with the SMTP interface. Otherwise, most developers will get up and running much faster (and more reliably) using a REST API.
+</div>
+<div style="margin-top:.625em;">
+As you might have guessed, that is what we will be going for as well - we will write a REST client.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Choosing An Email API" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+There is no shortage of email API providers on the market and you are likely to know the names of the major ones - <a href="https://aws.amazon.com/ses/">AWS SES</a>, <a href="https://sendgrid.com/">SendGrid</a>, <a href="https://mailgun.com/">MailGun</a>, <a href="https://mailchimp.com/">Mailchimp</a>, <a href="https://postmarkapp.com/">Postmark</a>.
+</div>
+<div style="margin-top:.625em;">
+I was looking for a simple enough API (e.g. how easy is it to literally just send an email?), a smooth onboarding flow and a free plan that does not require entering your credit card details just to test the service out. <br />
+That is how I landed on <a href="https://postmarkapp.com/">Postmark</a>.
+</div>
+<div style="margin-top:.625em;">
+To complete the next sections you will have to sign up to Postmark and, once you are logged into their portal, authorise a single sender email.
+</div>
+<div style="margin-top:.625em;">
+Once you are done, we can move forward!
+</div>
+<div style="margin-top:.625em;">
+Disclaimer: Postmark is not paying me to promote their services here.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="The Email Client Interface" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+There are usually two approaches when it comes to a new piece of functionality: you can do it bottom-up, starting from the implementation details and slowly working your way up, or you can do it top-down, by designing the interface first and then figuring out how the implementation is going to work (to an extent).
+</div>
+<div style="margin-top:.625em;">
+In this case, we will go for the second route.
+</div>
+<div style="margin-top:.625em;">
+What kind of interface do we want for our email client? <br />
+We'd like to have some kind of <code>send_email</code> method. At the moment we just need to send a single email out at a time - we will deal with the complexity of sending emails in batches when we start working on newsletter issues. <br />
+What arguments should <code>send_email</code> accept?
+</div>
+<div style="margin-top:.625em;">
+We'll definitely need the recipient email address, the subject line and the email content. We'll ask for both an HTML and a plain text version of the email content - some email clients are not able to render HTML and some users explicitly disable HTML emails. By sending both versions we err on the safe side.
+</div>
+<div style="margin-top:.625em;">
+What about the sender email address? <br />
+We'll assume that all emails sent by an instance of the client are coming from the same address - therefore we do not need it as an argument of <code>send_email</code>, it will be one of the arguments in the constructor of the client itself.
+</div>
+<div style="margin-top:.625em;">
+We also expect <code>send_email</code> to be an asynchronous function, given that we will be performing I/O to talk to a remote server.
+</div>
+<div style="margin-top:.625em;">
+Stitching everything together, we have something that looks more or less like this:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+
+use crate::domain::SubscriberEmail;
+
+pub struct EmailClient;
+
+impl EmailClient {
+  pub async fn send_email(
+    &self,
+    recipient: SubscriberEmail,
+    subject: &str,
+    html_content: &str,
+    text_content: &str
+  ) -> Result<(), String> {
+    todo!()
+  }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/lib.rs
+
+pub mod configuration;
+pub mod domain;
+// New entry!
+pub mod email_client;
+pub mod routes;
+pub mod startup;
+pub mod telemetry;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+There is an unresolved question - the return type. We sketched a <code>Result<(), String></code> which is a way to spell "I'll think about error handling later".
+</div>
+<div style="margin-top:.625em;">
+Plenty of work left to do, but it is a start - we said we were going to start from the interface, not that we'd nail it down in one sitting!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">How To Write A REST Client Using reqwest</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+To talk with a REST API we need an HTTP client. <br />
+There are a few different options in the Rust ecosystem: synchronous vs asynchronous, pure Rust vs bindings to an underlying native library, tied to <code>tokio</code> or <code>async-std</code>, opinionated vs highly customisable, etc.
+</div>
+<div style="margin-top:.625em;">
+We will go with the most popular option on <a href="https://crates.io/">crates.io</a>: <a href="https://crates.io/crates/reqwest">reqwest</a>.
+</div>
+<div style="margin-top:.625em;">
+What to say about <code>reqwest</code>?
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">It has been extensively battle-tested (~8.5 million downloads);</li>
+  <li style="margin-top:.325em;">It offers a primarily asynchronous interface, with the option to enable a synchronous one via the blocking feature flag;</li>
+  <li style="margin-top:.325em;">It relies on <code>tokio</code> as its asynchronous executor, matching what we are already using due to <code>actix-web</code>;</li>
+  <li style="margin-top:.325em;">It does not depend on any system library if you choose to use <code>rustls</code> to back the TLS implementation (<code>rustls-tls</code> feature flag instead of <code>default-tls</code>), making it extremely portable.</li>
+</ul>
+<div style="margin-top:.625em;">
+If you look closely, we are already using <code>reqwest</code>! <br />
+It is the HTTP client we used to fire off requests at our API in the integration tests. Let's lift it from a development dependency to a runtime dependency:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+
+[dependencies]
+# [...]
+# We need the `json` feature flag to serialize/deserialize JSON payloads
+reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
+
+[dev-dependencies]
+# Remove `reqwest`'s entry from this list
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="reqwest::Client" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+The main type you will be dealing with when working with <code>reqwest</code> is <a href="https://docs.rs/reqwest/0.11.0/reqwest/struct.Client.html">reqwest::Client</a> - it exposes all the methods we need to perform requests against a REST API.
+</div>
+<div style="margin-top:.625em;">
+We can get a new client instance by invoking <a href="https://docs.rs/reqwest/0.11.0/reqwest/struct.Client.html#method.new">Client::new</a> or we can go with <a href="https://docs.rs/reqwest/0.11.0/reqwest/struct.Client.html#method.builder">Client::builder</a> if we need to tune the default configuration.
+We will stick to Client::new for the time being.
+</div>
+<div style="margin-top:.625em;">
+Let's add three fields to <code>EmailClient</code>:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;"><code>http_client</code>, to store a <code>Client</code> instance;</li>
+  <li style="margin-top:.325em;"><code>base_url</code>, to store the URL of the API we will be making requests to.</li>
+  <li style="margin-top:.325em;"><code>sender</code>, the address we are going to set as sender for our emails.</li>
+</ul>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+
+use crate::domain::SubscriberEmail;
+use reqwest::Client;
+
+pub struct EmailClient {
+  http_client: Client,
+  base_url: String,
+  sender: SubscriberEmail
+}
+
+impl EmailClient {
+  pub fn new(base_url: String, sender: SubscriberEmail) -> Self {
+    Self {
+      http_client: Client::new(),
+      base_url,
+      sender
+    }
+  }
+
+  // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Connection Pooling" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Before executing an HTTP request against an API hosted on a remote server we need to establish a connection.
+</div>
+<div style="margin-top:.625em;">
+It turns out that connecting is a fairly expensive operation, even more so if using HTTPS: creating a brand-new connection every time we need to fire off a request can impact the performance of our application and might lead to a problem known as <a href="https://www.aspnetmonsters.com/2016/08/2016-08-27-httpclientwrong/">socket exhaustion</a> under load.
+</div>
+<div style="margin-top:.625em;">
+To mitigate the issue, most HTTP clients offer connection pooling: after the first request to a remote server has been completed, they will keep the connection open (for a certain amount of time) and re-use it if we need to fire off another request to the same server, therefore avoiding the need to re-establish a connection from scratch.
+</div>
+<div style="margin-top:.625em;">
+<code>reqwest</code> is no different - every time a <code>Client</code> instance is created <code>reqwest</code> initialises a connection pool under the hood. <br />
+To leverage this connection pool we need to <code>reuse the same Client</code> across multiple requests.
+</div>
+<div style="margin-top:.625em;">
+It is also worth pointing out that <code>Client::clone</code> does not create a new connection pool - we just clone a pointer to the underlying pool.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="How To Reuse The Same reqwest::Client In actix-web" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+To re-use the same HTTP client across multiple requests in <code>actix-web</code> we need to store a copy of it in the application context - we will then be able to retrieve a reference to <code>Client</code> in our request handlers using an extractor (e.g. <code>actix_web::web::Data</code>).
+</div>
+<div style="margin-top:.625em;">
+How do we pull it off? Let's look at the code where we build a <code>HttpServer</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+// [...]
+
+pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Error> {
+  let db_pool = Data::new(db_pool);
+  let server = HttpServer::new(move || {
+    App::new()
+            .wrap(TracingLogger::default())
+            .route("/health_check", web::get().to(health_check))
+            .route("/subscriptions", web::post().to(subscribe))
+            .app_data(db_pool.clone())
+  })
+          .listen(listener)?
+          .run();
+  Ok(server)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="reqwest::Client" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We have two options:
+</div>
+<div style="margin-top:.625em;">
+derive the <code>Clone</code> trait for <code>EmailClient</code>, build an instance of it once and then pass a clone to <code>app_data</code> every time we need to build an <code>App</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+#[derive(Clone)]
+pub struct EmailClient {
+  http_client: Client,
+  base_url: String,
+  sender: SubscriberEmail
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+use crate::email_client::EmailClient;
+// [...]
+
+pub fn run(
+  listener: TcpListener,
+  db_pool: PgPool,
+  email_client: EmailClient,
+) -> Result<Server, std::io::Error> {
+  let db_pool = Data::new(db_pool);
+  let server = HttpServer::new(move || {
+    App::new()
+            .wrap(TracingLogger::default())
+            .route("/health_check", web::get().to(health_check))
+            .route("/subscriptions", web::post().to(subscribe))
+            .app_data(db_pool.clone())
+            .app_data(email_client.clone())
+  })
+          .listen(listener)?
+          .run();
+  Ok(server)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+wrap <code>EmailClient</code> in <code>actix_web::web::Data</code> (an <code>Arc</code> pointer) and pass a pointer to <code>app_data</code> every time we need to build an <code>App</code> - like we are doing with <code>PgPool</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+use crate::email_client::EmailClient;
+// [...]
+
+pub fn run(
+  listener: TcpListener,
+  db_pool: PgPool,
+  email_client: EmailClient,
+) -> Result<Server, std::io::Error> {
+  let db_pool = Data::new(db_pool);
+  let email_client = Data::new(email_client);
+  let server = HttpServer::new(move || {
+    App::new()
+            .wrap(TracingLogger::default())
+            .route("/health_check", web::get().to(health_check))
+            .route("/subscriptions", web::post().to(subscribe))
+            .app_data(db_pool.clone())
+            .app_data(email_client.clone())
+  })
+          .listen(listener)?
+          .run();
+  Ok(server)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Which way is best? <br />
+If <code>EmailClient</code> were just a wrapper around a <code>Client</code> instance, the first option would be preferable - we avoid wrapping the connection pool twice with <code>Arc</code>.
+</div>
+<div style="margin-top:.625em;">
+This is not the case though: <code>EmailClient</code> has two data fields attached (<code>base_url</code> and <code>sender</code>). The first implementation allocates new memory to hold a copy of that data every time an App instance is created, while the second shares it among all <code>App</code> instances.
+</div>
+<div style="margin-top:.625em;">
+That's why we will be using the second strategy.
+</div>
+<div style="margin-top:.625em;">
+Beware though: we are creating an <code>App</code> instance for each thread - the cost of a string allocation (or a pointer clone) is negligible when looking at the bigger picture.
+</div>
+<div style="margin-top:.625em;">
+We are going through the decision-making process here as an exercise to understand the tradeoffs - you might have to make a similar call in the future where the cost of the two options is remarkably different.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Configuring Our EmailClient" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+If you run <code>cargo check</code>, you will get an error:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+  --> src/main.rs:24:5
+   |
+24 |     run(listener, connection_pool)?.await?;
+   |     ^^^ --------  --------------- supplied 2 arguments
+   |     |
+   |     expected 3 arguments
+
+error: aborting due to previous error
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's fix it! <br />
+What do we have in main right now?
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+// [...]
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+   
+   // [...]
+
+   let configuration = get_configuration().expect("Failed to read configuration.");
+   
+   let connection_pool = PgPoolOptions::new()
+      .acquire_timeout(std::time::Duration::from_secs(2))
+      .connect_lazy_with(configuration.database.with_db());
+
+   let address = format!(
+      "{}:{}",
+      configuration.application.host, configuration.application.port
+   );
+
+   let listener = TcpListener::bind(address)?;
+   run(listener, connection_pool)?.await?;
+   
+   Ok(())
+
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We are building the dependencies of our application using the values specified in the configuration we retrieved via <code>get_configuration</code>.
+</div>
+<div style="margin-top:.625em;">
+To build an <code>EmailClient</code> instance we need the base URL of the API we want to fire requests to and the sender email address - let's add them to our <code>Settings</code> struct:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+// [...]
+use crate::domain::SubscriberEmail;
+
+#[derive(serde::Deserialize)]
+pub struct Settings {
+  pub database: DatabaseSettings,
+  pub application: ApplicationSettings,
+  // New field!
+  pub email_client: EmailClientSettings,
+}
+
+#[derive(serde::Deserialize)]
+pub struct EmailClientSettings {
+  pub base_url: String,
+  pub sender_email: String,
+}
+
+impl EmailClientSettings {
+  pub fn sender(&self) -> Result<SubscriberEmail, String> {
+    SubscriberEmail::parse(self.sender_email.clone())
+  }
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We then need to set values for them in our configuration files:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! configuration/base.yaml
+
+application:
+# [...]
+database:
+# [...]
+email_client:
+  base_url: "localhost"
+  sender_email: "test@gmail.com"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! configuration/production.yaml
+application:
+# [...]
+database:
+# [...]
+email_client:
+  # Value retrieved from Postmark's API documentation
+  base_url: "https://api.postmarkapp.com"
+  # Use the single sender email you authorised on Postmark!
+  sender_email: "something@gmail.com"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now build an <code>EmailClient</code> instance in <code>main</code> and pass it to the run function:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+// [...]
+use zero2prod::email_client::EmailClient;
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+
+  // [...]
+
+  let configuration = get_configuration().expect("Failed to read configuration.");
+  let connection_pool = PgPoolOptions::new()
+    .acquire_timeout(std::time::Duration::from_secs(2))
+    .connect_lazy_with(configuration.database.with_db());
+
+  // Build an `EmailClient` using `configuration`
+  let sender_email = configuration.email_client.sender()
+    .expect("Invalid sender email address.");
+
+  let email_client = EmailClient::new(
+    configuration.email_client.base_url,
+    sender_email
+  );
+
+  let address = format!(
+    "{}:{}",
+    configuration.application.host, configuration.application.port
+  );
+
+  let listener = TcpListener::bind(address)?;
+  // New argument for `run`, `email_client`
+  run(listener, connection_pool, email_client)?.await?;
+
+  Ok(())
+
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>cargo check</code> should now pass, although there are a few warnings about unused variables - we will get to those soon enough.
+What about our tests?
+</div>
+<div style="margin-top:.625em;">
+<code>cargo check --all-targets</code> returns a similar error to the one we were seeing before with <code>cargo check</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+  --> tests/health_check.rs:36:18
+   |
+36 |     let server = run(listener, connection_pool.clone())
+   |                  ^^^ --------  ----------------------- supplied 2 arguments
+   |                  |
+   |                  expected 3 arguments
+
+error: aborting due to previous error
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+You are right - it is a symptom of code duplication. We will get to refactor the initialisation logic of our integration tests, but not yet.
+</div>
+<div style="margin-top:.625em;">
+Let's patch it quickly to make it compile:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+
+// [...]
+use zero2prod::email_client::EmailClient;
+// [...]
+
+async fn spawn_app() -> TestApp {
+  // [...]
+
+  let mut configuration = get_configuration().expect("Failed to read configuration.");
+
+  configuration.database.database_name = Uuid::new_v4().to_string();
+  let connection_pool = configure_database(&configuration.database).await;
+
+  // Build a new email client
+  let sender_email = configuration.email_client.sender().expect("Invalid sender email address.");
+
+  let email_client = EmailClient::new(
+    configuration.email_client.base_url,
+    sender_email
+  );
+
+  // Pass the new client to `run`!
+  let server = run(listener, connection_pool.clone(), email_client).expect("Failed to bind address");
+
+  let _ = tokio::spawn(server);
+  
+  TestApp {
+    address,
+    db_pool: connection_pool,
+  }
+
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>cargo test</code> should succeed now.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">How To Test A REST Client</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We have gone through most of the setup steps: we sketched an interface for <code>EmailClient</code> and we wired it up with the application, using a new configuration type - <code>EmailClientSettings</code>.
+</div>
+<div style="margin-top:.625em;">
+To stay true to our test-driven development approach, it is now time to write a test!
+</div>
+<div style="margin-top:.625em;">
+We could start from our integration tests: change the ones for <code>POST /subscriptions</code> to make sure that the endpoint conforms to our new requirements.
+It would take us a long time to turn them green though: apart from sending an email, we need to add logic to generate a unique token and store it.
+</div>
+<div style="margin-top:.625em;">
+Let's start smaller: we will just test our <code>EmailClient</code> component in isolation. <br />
+It will boost our confidence that it behaves as expected when tested as a unit, reducing the number of issues we might encounter when integrating it into the larger confirmation email flow.
+</div>
+<div style="margin-top:.625em;">
+It will also give us a chance to see if the interface we landed on is ergonomic and easy to test.
+</div>
+<div style="margin-top:.625em;">
+What should we actually test though? <br />
+The main purpose of our <code>EmailClient::send_email</code> is to perform an HTTP call: how do we know if it happened? How do we check that the body and the headers were populated as we expected?
+</div>
+<div style="margin-top:.625em;">
+We need to intercept that HTTP request - time to spin up a mock server!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="HTTP Mocking With wiremock" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's add a new module for tests at the bottom of <code>src/email_client.rs</code> with the skeleton of a new test:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+#[cfg(test)]
+mod tests {
+  #[tokio::test]
+  async fn send_email_fires_a_request_to_base_url() {
+    todo!()
+  }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+This will not compile straight-away - we need to add two feature flags to <code>tokio</code> in our <code>Cargo.toml</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+
+[dev-dependencies]
+# [...]
+tokio = { version = "1", features = ["rt", "macros"] }
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We do not know enough about Postmark to make assertions about what we should see in the outgoing HTTP request. <br />
+Nonetheless, as the test name says, it is reasonable to expect a request to be fired to the server at <code>EmailClient::base_url</code>!
+</div>
+<div style="margin-top:.625em;">
+Let's add <a href="https://github.com/lukemathwalker/wiremock-rs">wiremock</a> to our development dependencies:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+
+[dev-dependencies]
+# [...]
+wiremock = "0.5.2"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Using <code>wiremock</code>, we can write <code>send_email_fires_a_request_to_base_url</code> as follows:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+#[cfg(test)]
+mod tests {
+  use crate::domain::SubscriberEmail;
+  use crate::email_client::EmailClient;
+  use fake::faker::internet::en::SafeEmail;
+  use fake::faker::lorem::en::{Paragraph, Sentence};
+  use fake::{Fake, Faker};
+  use wiremock::matchers::any;
+  use wiremock::{Mock, MockServer, ResponseTemplate};
+
+  #[tokio::test]
+  async fn send_email_fires_a_request_to_base_url() {
+    // Arrange
+    let mock_server = MockServer::start().await;
+    let sender = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
+    let email_client = EmailClient::new(mock_server.uri(), sender);
+
+    Mock::given(any())
+            .respond_with(ResponseTemplate::new(200))
+            .expect(1)
+            .mount(&mock_server)
+            .await;
+
+    let subscriber_email = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
+    let subject: String = Sentence(1..2).fake();
+    let content: String = Paragraph(1..10).fake();
+
+    // Act
+    let _ = email_client
+            .send_email(subscriber_email, &subject, &content, &content)
+            .await;
+
+    // Assert
+  }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's break down what is happening, step by step.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="wiremock::MockServer" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+let mock_server = MockServer::start().await;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<a href="https://docs.rs/wiremock/0.5.2/wiremock/struct.MockServer.html">wiremock::MockServer</a> is a full-blown HTTP server. <br />
+<a href="https://docs.rs/wiremock/0.5.2/wiremock/struct.MockServer.html#method.start">MockServer::start</a> asks the operating system for a random available port and spins up the server on a background thread, ready to listen for incoming requests.
+</div>
+<div style="margin-top:.625em;">
+How do we point our email client to our mock server? We can retrieve the address of the mock server using the <a href="https://docs.rs/wiremock/0.5.2/wiremock/struct.MockServer.html#method.uri">MockServer::uri</a> method; we can then pass it as <a>base_url</a> to <a>EmailClient::new</a>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+let email_client = EmailClient::new(mock_server.uri(), sender);
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="wiremock::Mock" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Out of the box, <code>wiremock::MockServer</code> returns <code>404 Not Found</code> to all incoming requests. <br />
+We can instruct the mock server to behave differently by mounting a <a href="https://docs.rs/wiremock/0.5.2/wiremock/struct.Mock.html">Mock</a>.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Mock::given(any())
+.respond_with(ResponseTemplate::new(200))
+.expect(1)
+.mount( & mock_server)
+.await;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+When <code>wiremock::MockServer</code> receives a request, it iterates over all the mounted mocks to check if the request matches their conditions. <br />
+The matching conditions for a mock are specified using <a href="https://docs.rs/wiremock/0.5.2/wiremock/struct.Mock.html#method.given">Mock::given</a>.
+</div>
+<div style="margin-top:.625em;">
+We are passing <a href="https://docs.rs/wiremock/0.5.2/wiremock/matchers/struct.AnyMatcher.html">any()</a> to <code>Mock::Given</code> which, according to <code>wiremock</code>'s documentation,
+</div>
+<div style="margin-top:.625em;">
+Match all incoming requests, regardless of their method, path, headers or body. You can use it to verify that a request has been fired towards the server, without making any other assertion about it.
+</div>
+<div style="margin-top:.625em;">
+Basically, it always matches, regardless of the request - which is what we want here!
+</div>
+<div style="margin-top:.625em;">
+When an incoming request matches the conditions of a mounted mock, <code>wiremock::MockServer</code> returns a response following what was specified in <code>respond_with</code>.
+We passed <a href="https://docs.rs/wiremock/0.5.2/wiremock/struct.ResponseTemplate.html">ResponseTemplate::new(200)</a> - a <code>200 OK</code> response without a body.
+</div>
+<div style="margin-top:.625em;">
+A <code>wiremock::Mock</code> becomes effective only after it has been mounted on a <code>wiremock::Mockserver</code> - that's what our call to <a href="https://docs.rs/wiremock/0.5.2/wiremock/struct.Mock.html#method.mount">Mock::mount</a> is about.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="The Intent Of A Test Should Be Clear" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We then have the actual invocation of <code>EmailClient::send_email</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+let subscriber_email = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
+let subject: String = Sentence(1..2).fake();
+let content: String = Paragraph(1..10).fake();
+
+// Act
+let _ = email_client
+.send_email(subscriber_email, & subject, & content, & content)
+.await;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+You'll notice that we are leaning heavily on <code>fake</code> here: we are generating random data for all the inputs to <code>send_email</code> (and <code>sender</code>, in the previous section).
+</div>
+<div style="margin-top:.625em;">
+We could have just hard-coded a bunch of values, why did we choose to go all the way and make them random?
+</div>
+<div style="margin-top:.625em;">
+A reader, skimming the test code, should be able to identify easily the property that we are trying to test. <br />
+Using random data conveys a specific message: do not pay attention to these inputs, their values do not influence the outcome of the test, that's why they are random!
+</div>
+<div style="margin-top:.625em;">
+Hard-coded values, instead, should always give you pause: does it matter that <code>subscriber_email</code> is set to <code>marco@gmail.com</code>? Should the test pass if I set it to another value? <br />
+In a test like ours, the answer is obvious. In a more intricate setup, it often isn't.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Mock expectations" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+The end of the test looks a bit cryptic: there is an <code>// Assert</code> comment... but no assertion afterwards.
+Let's go back to our <code>Mock</code> setup line:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Mock::given(any())
+.respond_with(ResponseTemplate::new(200))
+.expect(1)
+.mount( & mock_server)
+.await;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+What does <code>.expect(1)</code> do? <br />
+It sets an expectation on our mock: we are telling the mock server that during this test it should receive exactly one request that matches the conditions set by this mock.
+</div>
+<div style="margin-top:.625em;">
+We could also use ranges for our expectations - e.g. <code>expect(1..)</code> if we want to see at least one request, expect(1..=3) if we expect at least one request but no more than three, etc.
+</div>
+<div style="margin-top:.625em;">
+Expectations are verified when <code>MockServer</code> goes out of scope - at the end of our test function, indeed! <br />
+Before shutting down, <code>MockServer</code> will iterate over all the mounted mocks and check if their expectations have been verified. If the verification step fails, it will trigger a panic (and fail the test).
+</div>
+<div style="margin-top:.625em;">
+Let's run <code>cargo test</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+---- email_client::tests::send_email_fires_a_request_to_base_url stdout ----
+thread 'email_client::tests::send_email_fires_a_request_to_base_url' panicked at 
+'not yet implemented', src/email_client.rs:24:9
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Ok, we are not even getting to the end of the test yet because we have a placeholder <code>todo!()</code> as the body of <code>send_email</code>.
+Let's replace it with a dummy <code>Ok</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+impl EmailClient {
+  // [...]
+
+  pub async fn send_email(
+    &self,
+    recipient: SubscriberEmail,
+    subject: &str,
+    html_content: &str,
+    text_content: &str
+  ) -> Result<(), String> {
+    // No matter the input
+    Ok(())
+  }
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+If we run <code>cargo test</code> again, we'll get to see <code>wiremock</code> in action:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+---- email_client::tests::send_email_fires_a_request_to_base_url stdout ----
+thread 'email_client::tests::send_email_fires_a_request_to_base_url' panicked at 
+'Verifications failed:
+- Mock #0.
+        Expected range of matching incoming requests: == 1
+        Number of matched incoming requests: 0
+'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The server expected one request, but it received none - therefore the test failed. <br />
+The time has come to properly flesh out <code>EmailClient::send_email</code>.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">First Sketch Of EmailClient::send_email</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+To implement <code>EmailClient::send_email</code> we need to check out the <a href="https://postmarkapp.com/developer">API documentation</a> of Postmark. Let's start from their <a href="https://postmarkapp.com/developer/user-guide/send-email-with-api#send-a-single-email">Send a single email" user guide</a>.
+</div>
+<div style="margin-top:.625em;">
+Their email sending example looks like this:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+curl "https://api.postmarkapp.com/email" \
+  -X POST \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -H "X-Postmark-Server-Token: server token" \
+  -d '{
+  "From": "sender@example.com",
+  "To": "receiver@example.com",
+  "Subject": "Postmark test",
+  "TextBody": "Hello dear Postmark user.",
+  "HtmlBody": "<html><body><strong>Hello</strong> dear Postmark user.</body></html>"
+}'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Let's break it down - to send an email we need:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">a <code>POST</code> request to the <code>/email</code> endpoint;</li>
+  <li style="margin-top:.325em;">a JSON body, with fields that map closely to the arguments of <code>send_email</code>. We need to be careful with field names, they must be pascal cased;</li>
+  <li style="margin-top:.325em;">an authorization header, <code>X-Postmark-Server-Token</code>, with a value set to a secret token that we can retrieve from their portal.</li>
+</ul>
+<div style="margin-top:.625em;">
+If the request succeeds, we get something like this back:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+    "To": "receiver@example.com",
+    "SubmittedAt": "2021-01-12T07:25:01.4178645-05:00",
+    "MessageID": "0a129aee-e1cd-480d-b08d-4f48548ff48d",
+    "ErrorCode": 0,
+    "Message": "OK"
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We have enough to implement the happy path!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="reqwest::Client::post" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+<code>reqwest::Client</code> exposes a <code>post</code> method - it takes the URL we want to call with a POST request as argument and it returns a <a href="https://docs.rs/reqwest/0.11.0/reqwest/struct.RequestBuilder.html">RequestBuilder</a>.
+</div>
+<div style="margin-top:.625em;">
+<code>RequestBuilder</code> gives us a fluent API to build out the rest of the request we want to send, piece by piece.
+Let's give it a go:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+impl EmailClient {
+  // [...]
+
+  pub async fn send_email(
+    &self,
+    recipient: SubscriberEmail,
+    subject: &str,
+    html_content: &str,
+    text_content: &str
+  ) -> Result<(), String> {
+    // You can do better using `reqwest::Url::join` if you change 
+    // `base_url`'s type from `String` to `reqwest::Url`.
+    // I'll leave it as an exercise for the reader!
+    let url = format!("{}/email", self.base_url);
+    let builder = self.http_client.post(&url);
+    Ok(())
+  }
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="JSON body" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We can encode the request body schema as a struct:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+impl EmailClient {
+  // [...]
+
+  pub async fn send_email(
+    &self,
+    recipient: SubscriberEmail,
+    subject: &str,
+    html_content: &str,
+    text_content: &str
+  ) -> Result<(), String> {
+    let url = format!("{}/email", self.base_url);
+    let request_body = SendEmailRequest {
+      from: self.sender.as_ref().to_owned(),
+      to: recipient.as_ref().to_owned(),
+      subject: subject.to_owned(),
+      html_body: html_content.to_owned(),
+      text_body: text_content.to_owned(),
+    };
+    let builder = self.http_client.post(&url);
+    Ok(())
+  }
+}
+
+struct SendEmailRequest {
+  from: String,
+  to: String,
+  subject: String,
+  html_body: String,
+  text_body: String,
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+If the <code>json</code> feature flag for <code>reqwest</code> is enabled (as we did), <code>builder</code> will expose a <code>json</code> method that we can leverage to set <code>request_body</code> as the JSON body of the request:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+impl EmailClient {
+// [...]
+
+  pub async fn send_email(
+    &self,
+    recipient: SubscriberEmail,
+    subject: &str,
+    html_content: &str,
+    text_content: &str
+  ) -> Result<(), String> {
+    let url = format!("{}/email", self.base_url);
+    let request_body = SendEmailRequest {
+      from: self.sender.as_ref().to_owned(),
+      to: recipient.as_ref().to_owned(),
+      subject: subject.to_owned(),
+      html_body: html_content.to_owned(),
+      text_body: text_content.to_owned(),
+    };
+    let builder = self.http_client.post(&url).json(&request_body);
+    Ok(())
+  }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It almost works:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0277]: the trait bound `SendEmailRequest: Serialize` is not satisfied
+  --> src/email_client.rs:34:56
+   |
+34 |         let builder = self.http_client.post(&url).json(&request_body);
+   |                                                        ^^^^^^^^^^^^^ 
+          the trait `Serialize` is not implemented for `SendEmailRequest`
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's derive <code>serde::Serialize</code> for <code>SendEmailRequest</code> to make it serializable:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+#[derive(serde::Serialize)]
+struct SendEmailRequest {
+  from: String,
+  to: String,
+  subject: String,
+  html_body: String,
+  text_body: String,
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Awesome, it compiles! <br />
+The json method goes a bit further than simple serialization: it will also set the <code>Content-Type</code> header to <code>application/json</code> - matching what we saw in the example!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Authorization Token" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We are almost there - we need to add an authorization header, <code>X-Postmark-Server-Token</code>, to the request.
+Just like the sender email address, we want to store the token value as a field in <code>EmailClient</code>.
+</div>
+<div style="margin-top:.625em;">
+Let's amend <code>EmailClient::new</code> and <code>EmailClientSettings</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+use secrecy::Secret;
+// [...]
+
+pub struct EmailClient {
+   // [...]
+   // We don't want to log this by accident 
+   authorization_token: Secret<String>
+}
+
+impl EmailClient {
+   pub fn new(
+      // [...]
+      authorization_token: Secret<String>
+   ) -> Self {
+      Self {
+         // [...]
+         authorization_token
+      }
+   }
+   // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+// [...]
+
+#[derive(serde::Deserialize)]
+pub struct EmailClientSettings {
+   // [...]
+   // New (secret) configuration value!
+   pub authorization_token: Secret<String>
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can then let the compiler tell us what else needs to be modified:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+#[cfg(test)]
+mod tests {
+   use secrecy::Secret;
+   // [...]
+
+   #[tokio::test]
+   async fn send_email_fires_a_request_to_base_url() {
+       let mock_server = MockServer::start().await;
+       let sender = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
+       // New argument!
+       let email_client = EmailClient::new(
+           mock_server.uri(), 
+           sender, 
+           Secret::new(Faker.fake())
+       );
+       // [...]
+   }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+// [...]
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+  // [...]
+  let email_client = EmailClient::new(
+    configuration.email_client.base_url,
+    sender_email,
+    // Pass argument from configuration
+    configuration.email_client.authorization_token,
+  );
+  // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+// [...]
+
+async fn spawn_app() -> TestApp {
+  // [...]
+  let email_client = EmailClient::new(
+    configuration.email_client.base_url,
+    sender_email,
+    // Pass argument from configuration
+    configuration.email_client.authorization_token,
+  );
+  // [...]
+}
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! configuration/base.yml
+# [...]
+email_client:
+  base_url: "localhost"
+  sender_email: "test@gmail.com"
+  # New value! 
+  # We are only setting the development value,
+  # we'll deal with the production token outside of version control
+  # (given that it's a sensitive secret!)
+  authorization_token: "my-secret-token"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now use the authorization token in <code>send_email</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+use secrecy::{ExposeSecret, Secret};
+// [...]
+
+impl EmailClient {
+// [...]
+
+    pub async fn send_email(
+        // [...]
+    ) -> Result<(), String> {
+        // [...]
+        let builder = self
+            .http_client
+            .post(&url)
+            .header(
+                "X-Postmark-Server-Token", 
+                self.authorization_token.expose_secret()
+            )
+            .json(&request_body);
+        Ok(())
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It compiles straight away.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Executing The Request" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We have all the ingredients - we just need to fire the request now! <br />
+We can use the <code>send</code> method:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+impl EmailClient {
+// [...]
+
+    pub async fn send_email(
+        // [...]
+    ) -> Result<(), String> {
+        // [...]
+        self
+            .http_client
+            .post(&url)
+            .header(
+                "X-Postmark-Server-Token",
+                self.authorization_token.expose_secret()
+            )
+            .json(&request_body)
+            .send()
+            .await?;
+        Ok(())
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>send</code> is asynchronous, therefore we need to await the future it returns. <br />
+</code>send</code> is also a fallible operation - e.g. we might fail to establish a connection to the server. We'd like to return an error if <code>send</code> fails - that's why we use the ? operator. 
+</div>
+<div style="margin-top:.625em;">
+The compiler, though, is not happy:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0277]: `?` couldn't convert the error to `std::string::String`
+--> src/email_client.rs:41:19
+   |
+41 |             .await?;
+   |                   ^ 
+    the trait `From<reqwest::Error>` is not implemented for `std::string::String`
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The error variant returned by <code>send</code> is of type <code>reqwest::Error</code>, while our <code>send_email</code> uses <code>String</code> as error type. The compiler has looked for a conversion (an implementation of the <code>From</code> trait), but it could not find any - therefore it errors out.
+</div>
+<div style="margin-top:.625em;">
+If you recall, we used <code>String</code> as error variant mostly as a placeholder - let's change <code>send_email</code>'s signature to return <code>Result<(), reqwest::Error></code>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+impl EmailClient {
+// [...]
+
+  pub async fn send_email(
+    // [...]
+  ) -> Result<(), reqwest::Error> {
+    // [...]
+  }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The error should be gone now! <br />
+<code>cargo test</code> should pass too: congrats!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Tightening Our Happy Path Test" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's look again at our "happy path" test:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+#[cfg(test)]
+mod tests {
+    use crate::domain::SubscriberEmail;
+    use crate::email_client::EmailClient;
+    use fake::faker::internet::en::SafeEmail;
+    use fake::faker::lorem::en::{Paragraph, Sentence};
+    use fake::{Fake, Faker};
+    use wiremock::matchers::any;
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    #[tokio::test]
+    async fn send_email_fires_a_request_to_base_url() {
+        // Arrange
+        let mock_server = MockServer::start().await;
+        let sender = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
+        let email_client = EmailClient::new(
+            mock_server.uri(),
+            sender,
+            Secret::new(Faker.fake())
+        );
+
+        let subscriber_email = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
+        let subject: String = Sentence(1..2).fake();
+        let content: String = Paragraph(1..10).fake();
+
+        Mock::given(any())
+            .respond_with(ResponseTemplate::new(200))
+            .expect(1)
+            .mount(&mock_server)
+            .await;
+
+        // Act
+        let _ = email_client
+            .send_email(subscriber_email, &subject, &content, &content)
+            .await;
+
+        // Assert
+        // Mock expectations are checked on drop
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+To ease ourselves into the world of <code>wiremock</code> we started with something very basic - we are just asserting that the mock server gets called once. Let's beef it up to check that the outgoing request looks indeed like we expect it to.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Headers, Path And Method" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+any is not the only matcher offered by <code>wiremock</code> out of the box: there are handful available in <code>wiremock</code>'s <a href="https://docs.rs/wiremock/0.5.2/wiremock/matchers/index.html">matchers module</a>. <br />
+We can use <a href="https://docs.rs/wiremock/0.5.2/wiremock/matchers/fn.header_exists.html">header_exists</a> to verify that the <code>X-Postmark-Server-Token</code> is set on the request to the server:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+#[cfg(test)]
+mod tests {
+  // [...]
+  // We removed `any` from the import list
+  use wiremock::matchers::header_exists;
+
+  #[tokio::test]
+  async fn send_email_fires_a_request_to_base_url() {
+    // [...]
+
+    Mock::given(header_exists("X-Postmark-Server-Token"))
+            .respond_with(ResponseTemplate::new(200))
+            .expect(1)
+            .mount(&mock_server)
+            .await;
+
+    // [...]
+  }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can chain multiple matchers together using the and method. <br />
+Let's add <a href="https://docs.rs/wiremock/0.5.2/wiremock/matchers/fn.header.html">header</a> to check that the <code>Content-Type</code> is set to the correct value, <a href="https://docs.rs/wiremock/0.5.2/wiremock/matchers/fn.path.html">path</a> to assert on the endpoint being called and <a href="https://docs.rs/wiremock/0.5.2/wiremock/matchers/fn.method.html">method</a> to verify the HTTP verb:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+#[cfg(test)]
+mod tests {
+  // [...]
+  use wiremock::matchers::{header, header_exists, path, method};
+
+  #[tokio::test]
+  async fn send_email_fires_a_request_to_base_url() {
+    // [...]
+
+    Mock::given(header_exists("X-Postmark-Server-Token"))
+            .and(header("Content-Type", "application/json"))
+            .and(path("/email"))
+            .and(method("POST"))
+            .respond_with(ResponseTemplate::new(200))
+            .expect(1)
+            .mount(&mock_server)
+            .await;
+
+    // [...]
+  }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Body" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+So far, so good: <code>cargo test</code> still passes. <br />
+What about the request body?
+</div>
+<div style="margin-top:.625em;">
+We could use <code>body_json</code> to match exactly the request body. <br />
+We probably do not need to go as far as that - it would be enough to check that the body is valid JSON and it contains the set of field names shown in Postmark's example.
+</div>
+<div style="margin-top:.625em;">
+There is no out-of-the-box matcher that suits our needs - we need to implement our own! <br />
+<code>wiremock</code> exposes a <a href="https://docs.rs/wiremock/0.5.2/wiremock/trait.Match.html">Match</a> trait - everything that implements it can be used as a matcher in <code>given</code> and <code>and</code>. <br />
+Let's stub it out:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+#[cfg(test)]
+mod tests { 
+  use wiremock::Request;
+  // [...]
+
+  struct SendEmailBodyMatcher;
+
+  impl wiremock::Match for SendEmailBodyMatcher {
+    fn matches(&self, request: &Request) -> bool {
+      unimplemented!()
+    }
+  }
+
+  // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We get the incoming request as input, <code>request</code>, and we need to return a boolean value as output: <code>true</code>, if the mock matched, <code>false</code> otherwise.
+</div>
+<div style="margin-top:.625em;">
+We need to deserialize the request body as JSON - let's add <code>serde-json</code> to the list of our development dependencies:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+
+[dev-dependencies]
+# [...]
+serde_json = "1"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now write <code>matches</code>' implementation:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+#[cfg(test)]
+mod tests {
+  // [...]
+
+  struct SendEmailBodyMatcher;
+
+  impl wiremock::Match for SendEmailBodyMatcher {
+    fn matches(&self, request: &Request) -> bool {
+      // Try to parse the body as a JSON value
+      let result: Result<serde_json::Value, _> =
+              serde_json::from_slice(&request.body);
+      if let Ok(body) = result {
+        // Check that all the mandatory fields are populated
+        // without inspecting the field values
+        body.get("From").is_some()
+                && body.get("To").is_some()
+                && body.get("Subject").is_some()
+                && body.get("HtmlBody").is_some()
+                && body.get("TextBody").is_some()
+      } else {
+        // If parsing failed, do not match the request
+        false
+      }
+    }
+  }
+
+  #[tokio::test]
+  async fn send_email_fires_a_request_to_base_url() {
+    // [...]
+
+    Mock::given(header_exists("X-Postmark-Server-Token"))
+            .and(header("Content-Type", "application/json"))
+            .and(path("/email"))
+            .and(method("POST"))
+            // Use our custom matcher!
+            .and(SendEmailBodyMatcher)
+            .respond_with(ResponseTemplate::new(200))
+            .expect(1)
+            .mount(&mock_server)
+            .await;
+
+    // [...]
+  }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It compiles! <br />
+But our tests are failing now...
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+---- email_client::tests::send_email_fires_a_request_to_base_url stdout ----
+thread 'email_client::tests::send_email_fires_a_request_to_base_url' panicked at 
+'Verifications failed:
+- Mock #0.
+        Expected range of matching incoming requests: == 1
+        Number of matched incoming requests: 0
+'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Why is that? <br />
+Let's add a <code>dbg!</code> statement to our matcher to inspect the incoming request:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+#[cfg(test)]
+mod tests {
+  // [...]
+
+  impl wiremock::Match for SendEmailBodyMatcher {
+    fn matches(&self, request: &Request) -> bool {
+      // [...]
+      if let Ok(body) = result {
+        dbg!(&body);
+        // [...]
+      } else {
+        false
+      }
+    }
+  }
+  // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+If you run the test again with <code>cargo test send_email</code> you will get something that looks like this:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+--- email_client::tests::send_email_fires_a_request_to_base_url stdout ----
+[src/email_client.rs:71] &body = Object({
+    "from": String("[...]"),
+    "to": String("[...]"),
+    "subject": String("[...]"),
+    "html_body": String("[...]"),
+    "text_body": String("[...]"),
+})
+thread 'email_client::tests::send_email_fires_a_request_to_base_url' panicked at '
+Verifications failed:
+- Mock #0.
+        Expected range of matching incoming requests: == 1
+        Number of matched incoming requests: 0
+'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It seems we forgot about the casing requirement - field names must be pascal cased! <br />
+We can fix it easily by adding an annotation on <code>SendEmailRequest</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "PascalCase")]
+struct SendEmailRequest {
+  from: String,
+  to: String,
+  subject: String,
+  html_body: String,
+  text_body: String,
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test should pass now. <br />
+Before we move on, let's rename the test to <code>send_email_sends_the_expected_request</code> - it captures better the test purpose at this point.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Refactoring: Avoid Unnecessary Memory Allocations" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We focused on getting <code>send_email</code> to work - now we can look at it again to see if there is any room for improvement. <br />
+Let's zoom on the request body:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+impl EmailClient {
+// [...]
+
+  pub async fn send_email(
+    // [...]
+  ) -> Result<(), reqwest::Error> {
+    // [...]
+    let request_body = SendEmailRequest {
+      from: self.sender.as_ref().to_owned(),
+      to: recipient.as_ref().to_owned(),
+      subject: subject.to_owned(),
+      html_body: html_content.to_owned(),
+      text_body: text_content.to_owned(),
+    };
+    // [...]
+  }
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "PascalCase")]
+struct SendEmailRequest {
+  from: String,
+  to: String,
+  subject: String,
+  html_body: String,
+  text_body: String,
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+For each field we are allocating a bunch of new memory to store a cloned <code>String</code> - it is wasteful. It would be more efficient to reference the existing data without performing any additional allocation.
+</div>
+<div style="margin-top:.625em;">
+We can pull it off by restructuring <code>SendEmailRequest</code>: instead of <code>String</code> we have to use a string slice (<code>&str</code>) as type for all fields.
+</div>
+<div style="margin-top:.625em;">
+A string slice is a just pointer to a memory buffer owned by somebody else. To store a reference in a struct we need to add a lifetime parameter: it keeps track of how long those references are valid for - it's the compiler's job to make sure that references do not stay around longer than the memory buffer they point to!
+</div>
+<div style="margin-top:.625em;">
+Let's do it!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+impl EmailClient {
+// [...]
+
+  pub async fn send_email(
+    // [...]
+  ) -> Result<(), reqwest::Error> {
+    // [...]
+    // No more `.to_owned`!
+    let request_body = SendEmailRequest {
+      from: self.sender.as_ref(),
+      to: recipient.as_ref(),
+      subject,
+      html_body: html_content,
+      text_body: text_content,
+    };
+    // [...]
+  }
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "PascalCase")]
+// Lifetime parameters always start with an apostrophe, `'`
+struct SendEmailRequest<'a> {
+  from: &'a str,
+  to: &'a str,
+  subject: &'a str,
+  html_body: &'a str,
+  text_body: &'a str,
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+That's it, quick and painless - <code>serde</code> does all the heavy lifting for us and we are left with more performant code!
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Dealing With Failures</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We have a good grip on the happy path - what happens instead if things don't go as expected? <br />
+We will look at two scenarios:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">non-success status codes (e.g. <code>4xx</code>, <code>5xx</code>, etc.);</li>
+  <li style="margin-top:.325em;">slow responses.</li>
+</ul>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Error Status Codes" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Our current happy path test is only making assertions on the side-effect performed by <code>send_email</code> - we are not actually inspecting the value it returns!
+</div>
+<div style="margin-top:.625em;">
+Let's make sure that it is an <code>Ok(())</code> if the server returns a <code>200 OK</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+#[cfg(test)]
+mod tests {
+    // [...]
+    use wiremock::matchers::any;
+    use claim::assert_ok;
+    // [...]
+     
+    // New happy-path test!
+    #[tokio::test]
+    async fn send_email_succeeds_if_the_server_returns_200() {
+        // Arrange
+        let mock_server = MockServer::start().await;
+        let sender = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
+        let email_client = EmailClient::new(
+            mock_server.uri(),
+            sender,
+            Secret::new(Faker.fake())
+        );
+
+        let subscriber_email = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
+        let subject: String = Sentence(1..2).fake();
+        let content: String = Paragraph(1..10).fake();
+
+        // We do not copy in all the matchers we have in the other test.
+        // The purpose of this test is not to assert on the request we 
+        // are sending out! 
+        // We add the bare minimum needed to trigger the path we want
+        // to test in `send_email`.
+        Mock::given(any())
+            .respond_with(ResponseTemplate::new(200))
+            .expect(1)
+            .mount(&mock_server)
+            .await;
+
+        // Act
+        let outcome = email_client
+            .send_email(subscriber_email, &subject, &content, &content)
+            .await;
+
+        // Assert
+        assert_ok!(outcome);
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+No surprises, the test passes. <br />
+Let's look at the opposite case now - we expect an <code>Err</code> variant if the server returns a <code>500 Internal Server Error</code>.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+#[cfg(test)]
+mod tests {
+    // [...]
+    use claim::assert_err;
+    // [...]
+
+    #[tokio::test]
+    async fn send_email_fails_if_the_server_returns_500() {
+        // Arrange
+        let mock_server = MockServer::start().await;
+        let sender = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
+        let email_client = EmailClient::new(
+            mock_server.uri(),
+            sender,
+            Secret::new(Faker.fake())
+        );
+
+        let subscriber_email = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
+        let subject: String = Sentence(1..2).fake();
+        let content: String = Paragraph(1..10).fake();
+
+        Mock::given(any())
+            // Not a 200 anymore!
+            .respond_with(ResponseTemplate::new(500))
+            .expect(1)
+            .mount(&mock_server)
+            .await;
+
+        // Act
+        let outcome = email_client
+            .send_email(subscriber_email, &subject, &content, &content)
+            .await;
+
+        // Assert
+        assert_err!(outcome);
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We got some work to do here instead:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+--- email_client::tests::send_email_fails_if_the_server_returns_500 stdout ----
+thread 'email_client::tests::send_email_fails_if_the_server_returns_500' panicked at 
+'assertion failed, expected Err(..), got Ok(())', src/email_client.rs:163:9
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's look again at <code>send_email</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+impl EmailClient {
+    //[...]
+    pub async fn send_email(
+        //[...]
+    ) -> Result<(), reqwest::Error> {
+        //[...]
+        self.http_client
+            .post(&url)
+            .header(
+                "X-Postmark-Server-Token", 
+                self.authorization_token.expose_secret()
+            )
+            .json(&request_body)
+            .send()
+            .await?;
+        Ok(())
+    }
+}
+//[...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The only step that might return an error is <code>send</code> - let's check <code>reqwest</code>'s docs!
+</div>
+<div style="margin-top:.625em;">
+This method fails if there was an error while sending request, redirect loop was detected or redirect limit was exhausted.
+</div>
+<div style="margin-top:.625em;">
+Basically, <code>send</code> returns <code>Ok</code> as long as it gets a valid response from the server - no matter the status code!
+To get the behaviour we want we need to look at the methods available on <a href="https://docs.rs/reqwest/0.11.0/reqwest/struct.Response.html">reqwest::Response</a> - in particular, <code>error_for_status</code>:
+</div>
+<div style="margin-top:.625em;">
+Turn a response into an error if the server returned an error.
+</div>
+<div style="margin-top:.625em;">
+It seems to suit our needs, let's try it out.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+impl EmailClient {
+    //[...]
+    pub async fn send_email(
+        //[...]
+    ) -> Result<(), reqwest::Error> {
+        //[...]
+        self.http_client
+            .post(&url)
+            .header(
+               "X-Postmark-Server-Token",
+               self.authorization_token.expose_secret()
+            )
+            .json(&request_body)
+            .send()
+            .await?
+            .error_for_status()?;
+        Ok(())
+    }
+}
+//[...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Awesome, the test passes!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Timeouts" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+What happens instead if the server returns a <code>200 OK</code>, but it takes ages to send it back? <br />
+We can instruct our mock server to wait a configurable amount of time before sending a response back.  <br />
+Let's experiment a little with a new integration test - what if the server takes <b>3 minutes</b> to respond!?
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+#[cfg(test)]
+mod tests {
+    // [...]
+     
+    #[tokio::test]
+    async fn send_email_times_out_if_the_server_takes_too_long() {
+        // Arrange
+        let mock_server = MockServer::start().await;
+        let sender = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
+        let email_client = EmailClient::new(
+            mock_server.uri(),
+            sender,
+            Secret::new(Faker.fake())
+        );
+
+        let subscriber_email = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
+        let subject: String = Sentence(1..2).fake();
+        let content: String = Paragraph(1..10).fake();
+
+        let response = ResponseTemplate::new(200)
+            // 3 minutes!
+            .set_delay(std::time::Duration::from_secs(180));
+        Mock::given(any())
+            .respond_with(response)
+            .expect(1)
+            .mount(&mock_server)
+            .await;
+
+        // Act
+        let outcome = email_client
+            .send_email(subscriber_email, &subject, &content, &content)
+            .await;
+
+        // Assert
+        assert_err!(outcome);
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+After a while, you should see something like this:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+test email_client::tests::send_email_times_out_if_the_server_takes_too_long ... 
+test email_client::tests::send_email_times_out_if_the_server_takes_too_long 
+has been running for over 60 seconds
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+This is far from ideal: if the server starts misbehaving we might start to accumulate several "hanging" requests.
+</div>
+<div style="margin-top:.625em;">
+We are not hanging up on the server, so the connection is busy: every time we need to send an email we will have to open a new connection. If the server does not recover fast enough, and we do not close any of the open connections, we might end up with socket exhaustion/performance degradation.
+</div>
+<div style="margin-top:.625em;">
+As a rule of thumb: every time you are performing an IO operation, always set a timeout!
+If the server takes longer than the timeout to respond, we should fail and return an error.
+</div>
+<div style="margin-top:.625em;">
+Choosing the right timeout value is often more an art than a science, especially if retries are involved: set it too low and you might overwhelm the server with retried requests; set it too high and you risk again to see degradation on the client side.
+</div>
+<div style="margin-top:.625em;">
+Nonetheless, better to have a conservative timeout threshold than to have none.
+</div>
+<div style="margin-top:.625em;">
+<code>reqwest</code> gives us two options: we can either add a default timeout on the <code>Client</code> itself, which applies to all outgoing requests, or we can specify a per-request timeout.
+</div>
+<div style="margin-top:.625em;">
+Let's go for a <code>Client</code>-wide timeout: we'll set it in <code>EmailClient::new</code>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+impl EmailClient {
+  pub fn new(
+    // [...]
+  ) -> Self {
+    let http_client = Client::builder()
+            .timeout(std::time::Duration::from_secs(10))
+            .build()
+            .unwrap();
+    Self {
+      http_client,
+      base_url,
+      sender,
+      authorization_token,
+    }
+  }
+}
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+If we run the test again, it should pass (after 10 seconds have elapsed).
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Refactoring: Test Helpers" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+There is a lot of duplicated code in our four tests for <code>EmailClient</code> - let's extract the common bits in a set of test helpers.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+#[cfg(test)]
+mod tests {
+  // [...]
+
+  /// Generate a random email subject
+  fn subject() -> String {
+    Sentence(1..2).fake()
+  }
+
+  /// Generate a random email content
+  fn content() -> String {
+    Paragraph(1..10).fake()
+  }
+
+  /// Generate a random subscriber email
+  fn email() -> SubscriberEmail {
+    SubscriberEmail::parse(SafeEmail().fake()).unwrap()
+  }
+
+  /// Get a test instance of `EmailClient`.
+  fn email_client(base_url: String) -> EmailClient {
+    EmailClient::new(base_url, email(), Secret::new(Faker.fake()))
+  }
+
+  // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's use them in <code>send_email_sends_the_expected_request</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+#[cfg(test)]
+mod tests {
+  // [...]
+
+  #[tokio::test]
+  async fn send_email_sends_the_expected_request() {
+    // Arrange
+    let mock_server = MockServer::start().await;
+    let email_client = email_client(mock_server.uri());
+
+    Mock::given(header_exists("X-Postmark-Server-Token"))
+            .and(header("Content-Type", "application/json"))
+            .and(path("/email"))
+            .and(method("POST"))
+            .and(SendEmailBodyMatcher)
+            .respond_with(ResponseTemplate::new(200))
+            .expect(1)
+            .mount(&mock_server)
+            .await;
+
+    // Act
+    let _ = email_client
+            .send_email(email(), &subject(), &content(), &content())
+            .await;
+
+    // Assert
+  }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Way less visual noise - the intent of the test is front and center. <br />
+Go ahead and refactor the other three!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Refactoring: Fail fast" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+The timeout on our HTTP client is currently hard-coded to 10 seconds:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+impl EmailClient {
+    pub fn new(
+        // [...]
+    ) -> Self {
+        let http_client = Client::builder()
+            .timeout(std::time::Duration::from_secs(10))
+        // [...]
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+This implies that our timeout test takes roughly 10 seconds to fail - that is a long time, especially if you are running tests after every little change.
+</div>
+<div style="margin-top:.625em;">
+Let's make the timeout threshold configurable to keep our test suite responsive.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+impl EmailClient {
+    pub fn new(
+        // [...]
+        // New argument!
+        timeout: std::time::Duration,
+    ) -> Self {
+        let http_client = Client::builder()
+            .timeout(timeout)
+        // [...]
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+// [...]
+
+#[derive(serde::Deserialize)]
+pub struct EmailClientSettings {
+    // [...]
+    // New configuration value!
+    pub timeout_milliseconds: u64
+}
+
+impl EmailClientSettings {
+    // [...]
+    pub fn timeout(&self) -> std::time::Duration {
+        std::time::Duration::from_millis(self.timeout_milliseconds)
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+// [...]
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    // [...]
+    let timeout = configuration.email_client.timeout();
+    let email_client = EmailClient::new(
+        configuration.email_client.base_url,
+        sender_email,
+        configuration.email_client.authorization_token,
+        // Pass new argument from configuration
+        timeout
+    );
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! configuration/base.yaml
+# [...]
+email_client:
+  # [...]
+  timeout_milliseconds: 10000
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The project should compile. <br />
+We still need to edit the tests though!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/email_client.rs
+// [...]
+
+#[cfg(test)]
+mod tests {
+    // [...]
+    fn email_client(base_url: String) -> EmailClient {
+        EmailClient::new(
+            base_url,
+            email(),
+            Secret::new(Faker.fake()),
+            // Much lower than 10s!
+            std::time::Duration::from_millis(200),
+        )
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/health_check.rs
+// [...]
+
+async fn spawn_app() -> TestApp {
+    // [...]
+    let timeout = configuration.email_client.timeout();
+    let email_client = EmailClient::new(
+        configuration.email_client.base_url,
+        sender_email,
+        configuration.email_client.authorization_token,
+        timeout
+    );
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+All tests should succeed - and the overall execution time should be down to less than a second for the whole test suite.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Summary</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+It took us a bit of work, but we now have a pretty decent REST client for Postmark's API! <br />
+The REST client was the first ingredient of our confirmation email flow: in the next instalment we will focus on generating a unique confirmation link which we will then pass within the body of the outgoing email.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+</c:component>
