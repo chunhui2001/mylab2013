@@ -1,0 +1,1450 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<div style="font-size:1.1em;line-height:1.625;">
+This article is a sample from <a href="https://zero2prod.com/">Zero To Production In Rust</a>, a book on backend development in Rust.
+You can get a copy of the book on <a href="https://zero2prod.com/">zero2prod.com</a>.
+<a href="https://www.lpalmieri.com/subscribe">Subscribe to the newsletter</a> to be notified when a new episode is published.
+</div>
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">TL;DR</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We are ready to stitch together our email confirmation flow, but how do we roll it out <b>without disrupting our service</b>?
+</div>
+<div style="margin-top:.625em;">
+We approach the topic of zero downtime deployments: what it takes (<code>load balancers</code>), how it impacts the way we sequence our work (e.g. database migrations).
+</div>
+<div style="margin-top:.625em;">
+By the end of the chapter, after a few red-green-refactor iterations, we'll finally get to deploy the new feature.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Confirmation Emails</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Time to go back to the plan we drafted at the beginning of chapter 7:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">write a module to send an email;</li>
+  <li style="margin-top:.325em;">adapt the logic of our existing <code>POST /subscriptions</code> request handler to match the new requirements;</li>
+  <li style="margin-top:.325em;">write a <code>GET /subscriptions/confirm</code> request handler from scratch.</li>
+</ul>
+<div style="margin-top:.625em;">
+The first item is done, time to move on to the remaining two on the list. <br />
+We had a sketch of how the two handlers should work:
+</div>
+<div style="margin-top:1em;">
+<code>POST /subscriptions</code> will:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">add the subscriber details to the database in the <code>subscriptions</code> table, with <code>status</code> equal to <code>pending_confirmation</code>;</li>
+  <li style="margin-top:.325em;">generate a (unique) <code>subscription_token</code>;</li>
+  <li style="margin-top:.325em;">store <code>subscription_token</code> in our database against the subscriber id in a <code>subscription_tokens</code> table;</li>
+  <li style="margin-top:.325em;">send an email to the new subscriber containing a link structured as <code>https://<our-api-domain>/subscriptions/confirm?token=&lt;subscription_token&gt;;</code></li>
+  <li style="margin-top:.325em;">return a <code>200 OK</code>.</li>
+</ul>
+<div style="margin-top:1em;">
+Once they click on the link, a browser tab will open up and a GET request will be fired to our <code>GET /subscriptions/confirm</code> endpoint. The request handler will:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">retrieve <code>subscription_token</code> from the query parameters;</li>
+  <li style="margin-top:.325em;">retrieve the subscriber id associated with <code>subscription_token</code> from the <code>subscription_tokens</code> table;</li>
+  <li style="margin-top:.325em;">update the subscriber status from <code>pending_confirmation</code> to <code>active</code> in the <code>subscriptions</code> table;</li>
+  <li style="margin-top:.325em;">return a <code>200 OK</code>.</li>
+</ul>
+<div style="margin-top:1em;">
+This gives us a fairly precise picture of how the application is going to work once we are done with the implementation.
+It does not help us much to figure out <b>how to get there</b>.
+</div>
+<div style="margin-top:1em;">
+Where should we start from? <br />
+Should we immediately tackle the changes to <code>/subscriptions</code>? <br />
+Should we get <code>/subscriptions/confirm</code> out of the way?
+</div>
+<div style="margin-top:1em;">
+We need to find an implementation route that can be rolled out with <b>zero downtime</b>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Zero Downtime Deployments</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Reliability" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+In Chapter 5 we deployed our application to a public cloud provider. <br />
+It is live: we are not sending out newsletter issues yet, but people can subscribe while we figure that part out.
+</div>
+<div style="margin-top:.625em;">
+Once an application is serving production traffic, we need to make sure it is <b>reliable</b>.
+</div>
+<div style="margin-top:.625em;">
+Reliable means different things in different contexts. If you are selling a data storage solution, for example, it should not lose (or corrupt!) customers' data.
+</div>
+<div style="margin-top:.625em;">
+In a commercial setting, the definition of reliability for your application will often be encoded in a <b>Service Level Agreement</b> (<code>SLA</code>). 
+</div>
+<div style="margin-top:.625em;">
+An SLA is a contractual obligation: you guarantee a certain level of reliability and commit to compensate your customers (usually with discounts or credits) if your service fails to live up to the expectations.
+</div>
+<div style="margin-top:.625em;">
+If you are selling access to an API, for example, you will usually have something related to <b>availability</b> - e.g. the API should successfully respond to at least <code>99.99%</code> of well-formed incoming requests, often referred to as "four nines of availability".
+</div>
+<div style="margin-top:.625em;">
+Phrased differently (and assuming a uniform distribution of incoming requests over time), you can only afford up to 52 minutes of downtime over a whole year. Achieving four nines of availability is tough.
+</div>
+<div style="margin-top:.625em;">
+There is no silver bullet to build a highly available solution: it requires work from the application layer all the way down to the infrastructure layer.
+</div>
+<div style="margin-top:.625em;">
+One thing is certain, though: if you want to operate a highly available service, you should master <b>zero downtime deployments</b> - users should be able to use the service before, during and after the rollout of a new version of the application to production.
+</div>
+<div style="margin-top:.625em;">
+This is even more important if you are practising continuous deployment: you cannot release multiple times a day if every release triggers a small outage.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Deployment Strategies -- Naive Deployment" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Before diving deeper into zero downtime deployments, let's have a look at the "naive" approach. <br />
+Version <code>A</code> of our service is running in production and we want to roll out version <code>B</code>:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">We switch off all instances of version <code>A</code> running the cluster;</li>
+  <li style="margin-top:.325em;">We spin up new instances of our application running version <code>B</code>;</li>
+  <li style="margin-top:.325em;">We start serving traffic using version <code>B</code>.</li>
+</ul>
+<div style="margin-top:.625em;">
+There is a non-zero amount of time where there is no application running in the cluster able to serve user traffic - we are experiencing downtime!
+</div>
+<div style="margin-top:.625em;">
+To do better we need to take a closer look at how our infrastructure is set up.
+</div>
+<div style="margin-top:.625em;">
+<b>Load Balancers</b>
+</div>
+<div style="margin-top:.625em;">
+<img src="/images/rust/lb.png" />
+</div>
+<div style="margin-top:.625em;">
+We have multiple copies1 of our application running behind a <b>load balancer</b>. <br />
+Each replica of our application is registered with the load balancer as a <b>backend</b>. <br />
+Every time somebody sends a request to our API, they hit our load balancer which is then in charge of choosing one of the available backends to fulfill the incoming request.
+</div>
+<div style="margin-top:.625em;">
+Load balancers usually support adding (and removing) backends dynamically. <br />
+This enables a few interesting patterns.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Horizontal Scaling" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We can add more capacity when experiencing a traffic spike by spinning up more replicas of our application (i.e. horizontal scaling). <br />
+It helps to spread the load until the work expected of a single instance becomes manageable.
+</div>
+<div style="margin-top:.625em;">
+We will get back to this topic later in the book when discussing metrics and autoscaling.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Health Checks" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We can ask the load balancer to keep an eye on the <b>health</b> of the registered backends.
+Oversimplifying, health checking can be:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">Passive - the load balancer looks at the distribution of status codes/latency for each backend to determine if they are healthy or not;</li>
+  <li style="margin-top:.325em;">Active - the load balancer is configured to send a health check request to each backend on a schedule. If a backend fails to respond with a success status code for a long enough time period it is marked as unhealthy and removed.</li>
+</ul>
+<div style="margin-top:.625em;">
+This is a critical capability to achieve <b>self-healing</b> in a cloud-native environment: the platform can detect if an application is not behaving as expected and automatically remove it from the list of available backends to mitigate or nullify the impact on users.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Rolling Update Deployments" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We can leverage our load balancer to perform zero downtime deployments.
+</div>
+<div style="margin-top:.625em;">
+Let's look at a snapshot of our production environments: we have three replicas of version <code>A</code> of our application registered as backends for our load balancer.
+We want to deploy version <code>B</code>.
+</div>
+<div style="margin-top:.625em;">
+<img src="/images/rust/lb_rollout1.png" />
+</div>
+<div style="margin-top:.625em;">
+We start by spinning up one replica of version <code>B</code> of our application. <br />
+When the application is ready to serve traffic (i.e. a few health check requests have succeeded) we register it as a backend with our load balancer.
+</div>
+<div style="margin-top:.625em;">
+<img src="/images/rust/lb_rollout2.png" />
+</div>
+<div style="margin-top:.625em;">
+We have four replicas of our application now: 3 running version <code>A</code>, 1 running version B. <code>All four</code> are serving live traffic. <br />
+If all is well, we switch off one of the replicas running version <code>A</code>.
+</div>
+<div style="margin-top:.625em;">
+<img src="/images/rust/lb_rollout3.png" />
+</div>
+<div style="margin-top:.625em;">
+We follow the same process to replace all replicas running version A until all registered backends are running version B.
+</div>
+<div style="margin-top:.625em;">
+This deployment strategy is called <b>rolling update</b>: we run the old and the new version of the application side by side, serving live traffic with both.
+</div>
+<div style="margin-top:.625em;">
+Throughout the process we always have three or more healthy backends: users should not experience any kind of service degradation (assuming version B is not buggy).
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Digital Ocean App Platform" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We are running our application on Digital Ocean App Platform. <br />
+Their documentation boasts of offering zero downtime deployments out of the box, but they do not provide details on how it is achieved.
+</div>
+<div style="margin-top:.625em;">
+A few experiments confirmed that they are indeed relying on a rolling update deployment strategy.
+</div>
+<div style="margin-top:.625em;">
+A rolling update is not the only possible strategy for a zero downtime deployment - <a href="https://martinfowler.com/bliki/BlueGreenDeployment.html">blue-green</a> and <a href="https://martinfowler.com/bliki/CanaryRelease.html">canary deployments</a> are equally popular variations over the same underlying principles.
+</div>
+<div style="margin-top:.625em;">
+Choose the most appropriate solution for your application based on the capabilities offered by your platform and your requirements.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Database Migrations</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="State Is Kept Outside The Application" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Load balancing relies on a strong assumption: no matter which backend is used to serve an incoming request, the outcome will be the same.
+</div>
+<div style="margin-top:.625em;">
+This is something we discussed already in Chapter 3: to ensure high availability in a fault-prone environment, cloud-native applications are <b>stateless</b> - they delegate all persistence concerns to external systems (i.e. databases).
+</div>
+<div style="margin-top:.625em;">
+That's why load balancing works: all backends are talking to the same database to query and manipulate the same <b>state</b>.
+</div>
+<div style="margin-top:.625em;">
+Think of a database as a single gigantic global variable. Continuously accessed and mutated by all replicas of our application.
+State is hard.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Deployments And Migrations" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+During a rolling update deployment, the old and the new version of the application are both serving live traffic, side by side.
+</div>
+<div style="margin-top:.625em;">
+From a different perspective: the old and the new version of the application are using the <b>same database</b> at the <b>same time</b>.
+</div>
+<div style="margin-top:.625em;">
+To avoid downtime, we need a database schema that is understood by both versions. <br />
+This is not an issue for most of our deployments, but it is a serious constraint when we need to evolve the schema.
+</div>
+<div style="margin-top:.625em;">
+Let's circle back to the job we set out to do, confirmation emails. <br />
+To move forward with the implementation strategy we identified, we need to evolve our database schema as follows:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">add a new table, <code>subscription_tokens</code>;</li>
+  <li style="margin-top:.325em;">add a new mandatory column, <code>status</code>, to the existing <code>subscriptions</code> table.</li>
+</ul>
+<div style="margin-top:.625em;">
+Let's go over the possible scenarios to convince ourselves that we cannot possibly deploy confirmation emails all at once without incurring downtime.
+</div>
+<div style="margin-top:.625em;">
+We could first migrate the database and then deploy the new version. <br />
+This implies that the current version is running against the migrated database for some time: our current implementation of <code>POST /subscriptions</code> does not know about <code>status</code> and it tries to insert new rows into <code>subscriptions</code> without populating it. Given that <code>status</code> is constrained to be <code>NOT NULL</code> (i.e. it's mandatory), all inserts would fail - we would not be able to accept new subscribers until the new version of the application is deployed. <br />
+Not good.
+</div>
+<div style="margin-top:.625em;">
+We could first deploy the new version and then migrate the database. <br />
+We get the opposite scenario: the new version of the application is running against the old database schema. When <code>POST /subscriptions</code> is called, it tries to insert a row into <code>subscriptions</code> with a <code>status</code> field that does not exist - all inserts fail and we cannot accept new subscribers until the database is migrated. <br />
+Once again, not good.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Multi-step Migrations" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+A big bang release won't cut it - we need to get there in multiple, smaller steps.
+</div>
+<div style="margin-top:.625em;">
+The pattern is somewhat similar to what we see in test-driven development: we don't change code and tests at the same time - one of the two needs to stay still while the other changes.
+</div>
+<div style="margin-top:.625em;">
+The same applies to database migrations and deployments: if we want to evolve the database schema we cannot change the application behaviour at the same time.
+</div>
+<div style="margin-top:.625em;">
+Think of it as a database refactoring: we are laying down the foundations in order to build the behaviour we need later on.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="A New Mandatory Column" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's start by looking at the <code>status</code> column.
+</div>
+<h4 style="margin-top:.625em;"><b>Step 1: Add As Optional</b></h4>
+<div>
+We start by keeping the application code stable. <br />
+On the database side, we generate a new migration script:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+sqlx migrate add add_status_to_subscriptions
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Creating migrations/20210307181858_add_status_to_subscriptions.sql
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now edit the migration script to add <code>status</code> as an <b>optional</b> column to <code>subscriptions</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+ALTER TABLE subscriptions ADD COLUMN status TEXT NULL;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Run the migration against your local database (<code>SKIP_DOCKER=true ./scripts/init_db.sh</code>): we can now run our test suite to make sure that the code works as is even against the new database schema.
+</div>
+<div style="margin-top:.625em;">
+It should pass: go ahead and migrate the production database.
+</div>
+<h4 style="margin-top:.625em;"><b>Step 2: Start Using The New Column</b></h4>
+<div>
+<code>status</code> now exists: we can start using it!
+To be precise, we can start writing to it: every time a new subscriber is inserted, we will set status to <code>confirmed</code>.
+</div>
+<div style="margin-top:.625em;">
+We just need to change our insertion query from
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn insert_subscriber([...]) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"INSERT INTO subscriptions (id, email, name, subscribed_at)
+        VALUES ($1, $2, $3, $4)"#,
+        // [...]
+    )
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+TO
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn insert_subscriber([...]) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"INSERT INTO subscriptions (id, email, name, subscribed_at, status)
+        VALUES ($1, $2, $3, $4, 'confirmed')"#,
+        // [...]
+    )
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Tests should pass - deploy the new version of the application to production.
+</div>
+<h4 style="margin-top:.625em;"><b>Step 3: Backfill And Mark As NOT NULL</b></h4>
+<div>
+The latest version of the application ensures that <code>status</code> is populated for all new subscribers. 
+</div>
+<div style="margin-top:.625em;">
+To mark <code>status</code> as <code>NOT NULL</code> we just need to backfill the value for historical records: we'll then be free to alter the column.
+</div>
+<div style="margin-top:.625em;">
+Let's generate a new migration script:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+sqlx migrate add make_status_not_null_in_subscriptions
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Creating migrations/20210307184428_make_status_not_null_in_subscriptions.sql
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The SQL migration looks like this:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+-- We wrap the whole migration in a transaction to make sure
+-- it succeeds or fails atomically. We will discuss SQL transactions
+-- in more details towards the end of this chapter!
+-- `sqlx` does not do it automatically for us.
+BEGIN;
+    -- Backfill `status` for historical entries
+    UPDATE subscriptions
+        SET status = 'confirmed'
+        WHERE status IS NULL;
+    -- Make `status` mandatory
+    ALTER TABLE subscriptions ALTER COLUMN status SET NOT NULL;
+COMMIT;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can migrate our local database, run our test suite and then deploy our production database. <br />
+We made it, we added <code>status</code> as a new mandatory column!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="A New Table" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+What about <code>subscription_tokens</code>? Do we need three steps there as well?
+</div>
+<div style="margin-top:.625em;">
+No, it is much simpler: we add the new table in a migration while the application keeps ignoring it.
+We can then deploy a new version of the application that uses it to enable confirmation emails.
+</div>
+<div style="margin-top:.625em;">
+Let's generate a new migration script:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+sqlx migrate add create_subscription_tokens_table
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Creating migrations/20210307185410_create_subscription_tokens_table.sql
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The migration is similar to the very first one we wrote to add <code>subscriptions</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+-- Create Subscription Tokens Table
+CREATE TABLE subscription_tokens(
+   subscription_token TEXT NOT NULL,
+   subscriber_id uuid NOT NULL
+      REFERENCES subscriptions (id),
+   PRIMARY KEY (subscription_token)
+);
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Pay attention to the details here: the <code>subscriber_id</code> column in <code>subscription_tokens</code> is a <b>foreign key</b>.
+</div>
+<div style="margin-top:.625em;">
+For each row in <code>subscription_tokens</code> there must exist a row in <code>subscriptions</code> whose id field has the same value of <code>subscriber_id</code>, otherwise the insertion fails. This guarantees that all tokens are attached to a legitimate subscriber.
+</div>
+<div style="margin-top:.625em;">
+Migrate the production database again - we are done!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Sending A Confirmation Email</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+It took us a while, but the groundwork is done: our production database is ready to accommodate the new feature we want to build, confirmation emails.
+</div>
+<div style="margin-top:.625em;">
+Time to focus on the application code.
+</div>
+<div style="margin-top:.625em;">
+We will build the whole feature in a proper test-driven fashion: small steps in a tight red-green-refactor loop. Get ready!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="A Static Email" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We will start simple: we will test that <code>POST /subscriptions</code> is sending out an email.
+</div>
+<div style="margin-top:.625em;">
+We will not be looking, at this stage, at the body of the email - in particular, we will not check that it contains a confirmation link.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Red test" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+To write this test we need to enhance our <code>TestApp</code>.
+</div>
+<div style="margin-top:.625em;">
+It currently holds our application and a handle to a pool of connections to the database:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/helpers.rs
+// [...]
+
+pub struct TestApp {
+  pub address: String,
+  pub db_pool: PgPool,
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We need to spin up a mock server to stand in for Postmark's API and intercept outgoing requests, just like we did when we built the email client.
+</div>
+<div style="margin-top:.625em;">
+Let's edit <code>spawn_app</code> accordingly:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/helpers.rs
+
+// New import!
+use wiremock::MockServer;
+// [...]
+
+pub struct TestApp {
+    pub address: String,
+    pub db_pool: PgPool,
+    // New field!
+    pub email_server: MockServer,
+}
+
+pub async fn spawn_app() -> TestApp {
+    // [...]
+    // Launch a mock server to stand in for Postmark's API
+    let email_server = MockServer::start().await;
+
+    // Randomise configuration to ensure test isolation
+    let configuration = {
+        let mut c = get_configuration().expect("Failed to read configuration.");
+        // [...]
+        // Use the mock server as email API
+        c.email_client.base_url = email_server.uri();
+        c
+    };
+      
+    // [...]
+
+    TestApp {
+        // [...],
+        email_server,
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now write the new test case:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/subscriptions.rs
+// New imports!
+use wiremock::matchers::{method, path};
+use wiremock::{Mock, ResponseTemplate};
+// [...]
+
+#[tokio::test]
+async fn subscribe_sends_a_confirmation_email_for_valid_data() {
+  // Arrange
+  let app = spawn_app().await;
+  let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+
+  Mock::given(path("/email"))
+          .and(method("POST"))
+          .respond_with(ResponseTemplate::new(200))
+          .expect(1)
+          .mount(&app.email_server)
+          .await;
+
+  // Act
+  app.post_subscriptions(body.into()).await;
+
+  // Assert
+  // Mock asserts on drop
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test, as expected, fails:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+failures:
+
+---- subscriptions::subscribe_sends_a_confirmation_email_for_valid_data stdout ----
+thread 'subscriptions::subscribe_sends_a_confirmation_email_for_valid_data' panicked at 
+'Verifications failed:
+- Mock #0.
+        Expected range of matching incoming requests: == 1
+        Number of matched incoming requests: 0'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Notice that, on failure, <code>wiremock</code> gives us a detailed breakdown of what happened: we expected an incoming request, we received none. <br />
+Let's fix that.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Green test" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Our handler looks like this right now:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+#[tracing::instrument([...])]
+pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> HttpResponse {
+    let new_subscriber = match form.0.try_into() {
+        Ok(form) => form,
+        Err(_) => return HttpResponse::BadRequest().finish(),
+    };
+    match insert_subscriber(&pool, &new_subscriber).await {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+To send an email we need to get our hands on an instance of <code>EmailClient</code>. <br />
+As part of the work we did when writing the module, we also registered it in the application context:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+// [...]
+
+fn run([...]) -> Result<Server, std::io::Error> {
+    // [...]
+    let email_client = Data::new(email_client);
+    let server = HttpServer::new(move || {
+        App::new()
+            .wrap(TracingLogger::default())
+            // [...]
+            // Here!
+            .app_data(email_client.clone())
+    })
+    .listen(listener)?
+    .run();
+    Ok(server)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can therefore access it in our handler using <code>web::Data</code>, just like we did for <code>pool</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// New import!
+use crate::email_client::EmailClient;
+// [...]
+
+#[tracing::instrument(
+    name = "Adding a new subscriber",
+    skip(form, pool, email_client),
+    fields(
+        subscriber_email = %form.email,
+        subscriber_name = %form.name
+    )
+)]
+pub async fn subscribe(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+    // Get the email client from the app context
+    email_client: web::Data<EmailClient>,
+) -> HttpResponse {
+    // [...]
+    if insert_subscriber(&pool, &new_subscriber).await.is_err() {
+        return HttpResponse::InternalServerError().finish();
+    }
+    // Send a (useless) email to the new subscriber.
+    // We are ignoring email delivery errors for now.
+    if email_client
+        .send_email(
+            new_subscriber.email,
+            "Welcome!",
+            "Welcome to our newsletter!",
+            "Welcome to our newsletter!",
+        )
+        .await
+        .is_err() 
+  {
+        return HttpResponse::InternalServerError().finish();
+  }
+    HttpResponse::Ok().finish()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>subscribe_sends_a_confirmation_email_for_valid_data</code> now passes, but <code>subscribe_returns_a_200_for_valid_form_data</code> fails:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+thread 'subscriptions::subscribe_returns_a_200_for_valid_form_data' panicked at 
+'assertion failed: `(left == right)`
+  left: `200`,
+ right: `500`'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It is trying to send an email but it is failing because we haven't setup a mock in that test. Let's fix it:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/subscriptions.rs
+// [...]
+
+#[tokio::test]
+async fn subscribe_returns_a_200_for_valid_form_data() {
+  // Arrange
+    let app = spawn_app().await;
+    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+
+  // New section!
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&app.email_server)
+        .await;
+
+    // Act
+    let response = app.post_subscriptions(body.into()).await;
+
+    // Assert
+    assert_eq!(200, response.status().as_u16());
+
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+All good, the test passes now. <br />
+There is not much to refactor at the moment, let's press forward.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="A Static Confirmation Link" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's raise the bar a bit - we will scan the body of the email to retrieve a confirmation link.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Red Test" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We don't care (yet) about the link being dynamic or actually meaningful - we just want to be sure that there is something in the body that looks like a link.
+</div>
+<div style="margin-top:.625em;">
+We should also have the same link in both the plain text and the HTML version of the email body.
+</div>
+<div style="margin-top:.625em;">
+How do we get the body of a request intercepted by <code>wiremock::MockServer</code>? <br />
+We can use its <code>received_requests</code> method - it returns a vector of all the requests intercepted by the server as long as request recording was enabled (the default).
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/subscriptions.rs
+// [...]
+
+#[tokio::test]
+async fn subscribe_sends_a_confirmation_email_with_a_link() {
+    // Arrange
+    let app = spawn_app().await;
+    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+  
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        // We are not setting an expectation here anymore
+        // The test is focused on another aspect of the app
+        // behaviour.    
+        .mount(&app.email_server)
+        .await;
+  
+    // Act
+    app.post_subscriptions(body.into()).await;
+  
+    // Assert
+    // Get the first intercepted request
+    let email_request = &app.email_server.received_requests().await.unwrap()[0];
+    // Parse the body as JSON, starting from raw bytes
+    let body: serde_json::Value = serde_json::from_slice(&email_request.body).unwrap();
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We now need to extract links out of it. <br />
+The most obvious way forward would be a regular expression. Let's face it though: regexes are a messy business and it takes a while to get them right.
+</div>
+<div style="margin-top:.625em;">
+Once again, we can leverage the work done by the larger Rust ecosystem - let's add <code>linkify</code> as a development dependency:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dev-dependencies]
+linkify = "0.8"
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can use <code>linkify</code> to scan text and return an iterator of extracted links.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/subscriptions.rs
+// [...]
+
+#[tokio::test]
+async fn subscribe_sends_a_confirmation_email_with_a_link() {
+    // [...] 
+    let body: serde_json::Value = serde_json::from_slice(&email_request.body).unwrap();
+  
+    // Extract the link from one of the request fields.
+    let get_link = |s: &str| {
+        let links: Vec<_> = linkify::LinkFinder::new()
+            .links(s)
+            .filter(|l| *l.kind() == linkify::LinkKind::Url)
+            .collect();
+            assert_eq!(links.len(), 1);
+        links[0].as_str().to_owned()
+    };
+
+    let html_link = get_link(&body["HtmlBody"].as_str().unwrap());
+    let text_link = get_link(&body["TextBody"].as_str().unwrap());
+    // The two links should be identical
+    assert_eq!(html_link, text_link);
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+If we run the test suite, we should see the new test case failing:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+failures:
+
+thread 'subscriptions::subscribe_sends_a_confirmation_email_with_a_link' 
+panicked at 'assertion failed: `(left == right)`
+  left: `0`,
+ right: `1`', tests/api/subscriptions.rs:71:9
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Green Test" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We need to tweak our request handler again to satisfy the new test case:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs 
+// [...]
+
+#[tracing::instrument([...])]
+pub async fn subscribe(/* */) -> HttpResponse {
+    // [...]
+    let confirmation_link = 
+        "https://my-api.com/subscriptions/confirm";
+    if email_client
+        .send_email(
+            new_subscriber.email,
+            "Welcome!",
+            &format!(
+                "Welcome to our newsletter!<br />\
+                Click <a href=\"{}\">here</a> to confirm your subscription.",
+                confirmation_link
+            ),
+            &format!(
+                "Welcome to our newsletter!\nVisit {} to confirm your subscription.",
+                confirmation_link
+      ),
+    )
+    .await
+    .is_err() 
+  {
+    return HttpResponse::InternalServerError().finish();
+  }
+    HttpResponse::Ok().finish()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test should pass straight away.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Refactor" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Our request handler is getting a bit busy - there is a lot of code dealing with our confirmation email now. <br />
+Let's extract it into a separate function:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs 
+// [...]
+
+#[tracing::instrument([...])]
+pub async fn subscribe(/* */) -> HttpResponse {
+    let new_subscriber = match form.0.try_into() {
+        Ok(form) => form,
+        Err(_) => return HttpResponse::BadRequest().finish(),
+    };
+    if insert_subscriber(&pool, &new_subscriber).await.is_err() {
+    return HttpResponse::InternalServerError().finish();
+  }
+    if send_confirmation_email(&email_client, new_subscriber)
+      .await
+        .is_err()
+    {
+        return HttpResponse::InternalServerError().finish();
+    }
+    HttpResponse::Ok().finish()
+}
+
+#[tracing::instrument(
+    name = "Send a confirmation email to a new subscriber",
+    skip(email_client, new_subscriber)
+)]
+pub async fn send_confirmation_email(
+    email_client: &EmailClient,
+    new_subscriber: NewSubscriber,
+) -> Result<(), reqwest::Error> {
+    let confirmation_link = "https://my-api.com/subscriptions/confirm";
+    let plain_body = format!(
+        "Welcome to our newsletter!\nVisit {} to confirm your subscription.",
+        confirmation_link
+    );
+    let html_body = format!(
+        "Welcome to our newsletter!<br />\
+        Click <a href=\"{}\">here</a> to confirm your subscription.",
+      confirmation_link
+    );
+    email_client
+        .send_email(
+            new_subscriber.email,
+            "Welcome!",
+            &html_body,
+            &plain_body,
+        )
+       .await
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>subscribe</code> is once again focused on the overall flow, without bothering with details of any of its steps.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Pending Confirmation" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's look at the status for a new subscriber now. <br />
+We are currently setting their status to <code>confirmed</code> in <code>POST /subscriptions</code>, while it should be pending_confirmation until they click on the confirmation link.
+</div>
+<div style="margin-top:.625em;">
+Time to fix it.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Red test" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We can start by having a second look at our first "happy path" test:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/subscriptions.rs
+// [...]
+
+#[tokio::test]
+async fn subscribe_returns_a_200_for_valid_form_data() {
+    // Arrange
+    let app = spawn_app().await;
+    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&app.email_server)
+        .await;
+
+    // Act
+    let response = app.post_subscriptions(body.into()).await;
+
+    // Assert
+    assert_eq!(200, response.status().as_u16());
+
+    let saved = sqlx::query!("SELECT email, name FROM subscriptions",)
+        .fetch_one(&app.db_pool)
+        .await
+        .expect("Failed to fetch saved subscription.");
+
+    assert_eq!(saved.email, "ursula_le_guin@gmail.com");
+    assert_eq!(saved.name, "le guin");
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The name is a bit of a lie - it is checking the status code <b>and</b> performing some assertions against the state stored in the database.
+</div>
+<div style="margin-top:.625em;">
+Let's split it into two separate test cases:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/subscriptions.rs
+// [...]
+
+#[tokio::test]
+async fn subscribe_returns_a_200_for_valid_form_data() {
+    // Arrange
+    let app = spawn_app().await;
+    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&app.email_server)
+        .await;
+  
+    // Act
+    let response = app.post_subscriptions(body.into()).await;
+  
+    // Assert
+    assert_eq!(200, response.status().as_u16());
+}
+
+#[tokio::test]
+async fn subscribe_persists_the_new_subscriber() {
+    // Arrange
+    let app = spawn_app().await;
+    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&app.email_server)
+        .await;
+  
+    // Act
+    app.post_subscriptions(body.into()).await;
+  
+    // Assert
+    let saved = sqlx::query!("SELECT email, name FROM subscriptions",)
+        .fetch_one(&app.db_pool)
+        .await
+        .expect("Failed to fetch saved subscription.");
+  
+    assert_eq!(saved.email, "ursula_le_guin@gmail.com");
+    assert_eq!(saved.name, "le guin");
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now modify the second test case to check the status as well.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/subscriptions.rs
+// [...]
+
+#[tokio::test]
+async fn subscribe_persists_the_new_subscriber() {
+    // [...]
+  
+    // Assert
+    let saved = sqlx::query!("SELECT email, name, status FROM subscriptions",)
+        .fetch_one(&app.db_pool)
+        .await
+        .expect("Failed to fetch saved subscription.");
+  
+    assert_eq!(saved.email, "ursula_le_guin@gmail.com");
+    assert_eq!(saved.name, "le guin");
+    assert_eq!(saved.status, "pending_confirmation");
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test fails as expected:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+failures:
+
+---- subscriptions::subscribe_persists_the_new_subscriber stdout ----
+thread 'subscriptions::subscribe_persists_the_new_subscriber' 
+panicked at 'assertion failed: `(left == right)`
+  left: `"confirmed"`,
+ right: `"pending_confirmation"`'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Green Test" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We can turn it green by touching again our insert query:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+
+#[tracing::instrument([...])]
+pub async fn insert_subscriber([...]) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"INSERT INTO subscriptions (id, email, name, subscribed_at, status)
+        VALUES ($1, $2, $3, $4, 'confirmed')"#,
+        // [...]
+    )
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We just need to change <code>confirmed</code> into <code>pending_confirmation</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+
+#[tracing::instrument([...])]
+pub async fn insert_subscriber([...]) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"INSERT INTO subscriptions (id, email, name, subscribed_at, status)
+        VALUES ($1, $2, $3, $4, 'pending_confirmation')"#,
+        // [...]
+    )
+  // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Tests should be green.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Skeleton of GET /subscriptions/confirm" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We have done most of the groundwork on <code>POST /subscriptions</code> - time to shift our focus to the other half of the journey, <code>GET /subscriptions/confirm</code>.
+</div>
+<div style="margin-top:.625em;">
+We want to build up the skeleton of the endpoint - we need to register the handler against the path in <code>src/startup.rs</code> and reject incoming requests without the required query parameter, <code>subscription_token</code>.
+</div>
+<div style="margin-top:.625em;">
+This will allow us to then build the happy path without having to write a massive amount of code all at once - baby steps!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+</c:component>

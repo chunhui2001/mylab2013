@@ -1,0 +1,1377 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<div style="font-size:1.1em;line-height:1.625;">
+This article is a sample from <a href="https://zero2prod.com/">Zero To Production In Rust</a>, a book on backend development in Rust.
+You can get a copy of the book on <a href="https://zero2prod.com/">zero2prod.com</a>.
+<a href="https://www.lpalmieri.com/subscribe">Subscribe to the newsletter</a> to be notified when a new episode is published.
+</div>
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">TL;DR</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We have used a test-driven approach to write all new pieces of functionality throughout the book.
+While this strategy has served us well, we have not invested a lot of time into refactoring our test code. As a result, our tests folder is a bit of mess at this point.
+</div>
+<div style="margin-top:.625em;">
+Before moving forward, we will restructure our integration test suite to support us as our application grows in complexity and the number of tests increases.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Why Do We Write Tests?</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Is writing tests a good use of developers' time?
+</div>
+<div style="margin-top:.625em;">
+A good test suite is, first and foremost, a risk-mitigation measure. <br />
+Automated tests reduce the risk associated with changes to an existing codebase - most regressions and bugs are caught in the continuous integration pipeline and never reach users. The team is therefore empowered to iterate faster and release more often.
+</div>
+<div style="margin-top:.625em;">
+Tests act as documentation as well. <br />
+The test suite is often the best starting point when deep-diving in an unknown code base - it shows you how the code is supposed to behave and what scenarios are considered relevant enough to have dedicated tests for.
+</div>
+<div style="margin-top:.625em;">
+"Write a test suite!" should definitely be on your to-do list if you want to make your project more welcoming to new contributors.
+</div>
+<div style="margin-top:.625em;">
+There are other positive side-effects often associated with good tests - modularity, decoupling. These are harder to quantify, as we have yet to agree as an industry on what "good code" looks like.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Why Don't We Write Tests?</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Although there are compelling reasons to invest time and effort in writing a good test suite, reality is somewhat messier.
+</div>
+<div style="margin-top:.625em;">
+First, the development community did not always believe in the value of testing. <br />
+We can find examples of test-driven development throughout the history of the discipline, but it is only with the "Extreme Programming" (XP) book that the practice entered the mainstream debate - in 1999!
+</div>
+<div style="margin-top:.625em;">
+Paradigm shifts do not happen overnight - it took years for the test-driven approach to gain traction as a "best practice" within the industry.
+</div>
+<div style="margin-top:.625em;">
+If test-driven development has won the minds and hearts of developers, the battle with management is often still undergoing. <br />
+Good tests build technical leverage, but writing tests takes time. When a deadline is pressing, testing is often the first to be sacrificed.
+</div>
+<div style="margin-top:.625em;">
+As a consequence, most of the material you find around is either an introduction to testing or a guide on how to pitch its value to stakeholders.
+</div>
+<div style="margin-top:.625em;">
+There is very little about testing at scale - what happens if you stick to the book and keep writing tests as the codebase grows to tens of thousands of lines, with hundreds of test cases?
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Test Code Is Still Code</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+All test suites start in the same way: an empty file, a world of possibilities. <br />
+You go in, you add the first test. Easy, done.
+</div>
+<div style="margin-top:.625em;">
+Then the second. Boom. <br />
+The third. You just had to copy a few lines from the first, all good. <br />
+The fourth...
+</div>
+<div style="margin-top:.625em;">
+After a while, test coverage starts to go down: new code is less thoroughly tested than the code you wrote at the very beginning of the project. Have you started to doubt the value of tests? <br />
+Absolutely not, tests are great!
+</div>
+<div style="margin-top:.625em;">
+Yet, you are writing fewer tests as the project moves forward. <br />
+It's because of friction - it got progressively more cumbersome to write new tests as the codebase evolved.
+</div>
+<div style="margin-top:.625em;">
+Test code is still code.
+</div>
+<div style="margin-top:.625em;">
+It has to be modular, well-structured, sufficiently documented. It requires maintenance. <br />
+If we do not actively invest in the health of our test suite, it will rot over time.
+</div>
+<div style="margin-top:.625em;">
+Coverage goes down and soon enough we will find critical paths in our application code that are never exercised by automated tests.
+</div>
+<div style="margin-top:.625em;">
+You need to regularly step back to take a look at your test suite as a whole. <br />
+Time to look at ours, isn't it?
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Our Test Suite</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+All our integration tests live within a single file, <code>tests/health_check.rs</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/health_check.rs
+// [...]
+
+// Ensure that the `tracing` stack is only initialised once using `once_cell`
+static TRACING: Lazy<()> = Lazy::new(|| {
+    // [...]
+});
+
+pub struct TestApp {
+    pub address: String,
+    pub db_pool: PgPool,
+}
+
+async fn spawn_app() -> TestApp {
+    // [...]
+}
+
+pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
+    // [...]
+}
+
+#[tokio::test]
+async fn health_check_works() {
+    // [...]
+}
+
+#[tokio::test]
+async fn subscribe_returns_a_200_for_valid_form_data() {
+    // [...]
+}
+
+#[tokio::test]
+async fn subscribe_returns_a_400_when_data_is_missing() {
+    // [...]
+}
+
+#[tokio::test]
+async fn subscribe_returns_a_400_when_fields_are_present_but_invalid() {
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Test Discovery</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+There is only one test dealing with our health check endpoint - <code>health_check_works</code>. <br />
+The other three tests are probing our <code>POST /subscriptions</code> endpoint while the rest of the code deals with shared setup steps (<code>spawn_app</code>, <code>TestApp</code>, <code>configure_database</code>, <code>TRACING</code>).
+</div>
+<div style="margin-top:.625em;">
+Why have we shoved everything in <code>tests/health_check.rs</code>? <br />
+Because it was convenient! 
+</div>
+<div style="margin-top:.625em;">
+The setup functions were already there - it was easier to add another test case within the same file than figuring out how to share that code properly across multiple test modules.
+</div>
+<div style="margin-top:.625em;">
+Our main goal in this refactoring is discoverability:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">given an application endpoint, it should be easy to find the corresponding integration tests within the tests folder;</li>
+  <li style="margin-top:.325em;">when writing a test, it should be easy to find the relevant test helper functions.</li>
+</ul>
+<div style="margin-top:.625em;">
+We will focus on folder structure, but that is definitely not the only tool available when it comes to test discovery.
+Test coverage tools can often tell you which tests triggered the execution of a certain line of application code.
+You can rely on techniques such as <a href="https://ferrous-systems.com/blog/coverage-marks/">coverage marks</a> to create an obvious link between test and application code.
+</div>
+<div style="margin-top:.625em;">
+As always, a multi-pronged approach is likely to give you the best results as the complexity of your test suite increases.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">One Test File, One Crate</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Before we start moving things around, let's nail down a few facts about integration testing in Rust. <br />
+The <code>tests</code> folder is somewhat special - <code>cargo</code> knows to look into it searching for integration tests.
+</div>
+<div style="margin-top:.625em;">
+Each file within the <code>tests</code> folder gets compiled as its own crate. <br />
+We can check this out by running <code>cargo build --tests</code> and then looking under <code>target/debug/deps</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+# Build test code, without running tests 
+cargo build --tests
+# Find all files with a name starting with `health_check` 
+ls target/debug/deps | grep health_check
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+health_check-fc23645bf877da35
+health_check-fc23645bf877da35.d
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The trailing hashes will likely be different on your machine, but there should be two entries starting with <code>health_check-*</code>. <br />
+What happens if you try to run it?
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+./target/debug/deps/health_check-fc23645bf877da35
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+running 4 tests
+test health_check_works ... ok
+test subscribe_returns_a_400_when_fields_are_present_but_invalid ... ok
+test subscribe_returns_a_400_when_data_is_missing ... ok
+test subscribe_returns_a_200_for_valid_form_data ... ok
+
+test result: ok. 4 passed; finished in 0.44s
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+That's right, it runs our integration tests! <br />
+If we had five <code>*.rs</code> files under <code>tests</code>, we'd find five executables in <code>target/debug/deps</code>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Sharing Test Helpers</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+If each integration test file is its own executable, how do we share test helpers functions?
+</div>
+<div style="margin-top:.625em;">
+The first option is to define a stand-alone module - e.g. <code>tests/helpers/mod.rs</code>.
+You can add common functions in <code>mod.rs</code> (or define other sub-modules in there) and then refer to <code>helpers</code> in your test file (e.g. <code>tests/health_check.rs</code>) with:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/health_check.rs
+// [...]
+mod helpers;
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>helpers</code> is bundled in the <code>health_check</code> test executable as a sub-module and we get access to the functions it exposes in our test cases.
+</div>
+<div style="margin-top:.625em;">
+This approach works fairly well to start out, but it leads to annoying <code>function is never used</code> warnings down the line. 
+</div>
+<div style="margin-top:.625em;">
+The issue is that <code>helpers</code> is bundled as a sub-module, it is not invoked as a third-party crate: <code>cargo</code> compiles each test executable in isolation and warns us if, for a specific test file, one or more public functions in <code>helpers</code> have never been invoked. This is bound to happen as your test suite grows - not all test files will use all your helper methods.
+</div>
+<div style="margin-top:.625em;">
+The second option takes full advantage of that each file under tests is its own executable - we can create sub-modules scoped to a single test executable!
+</div>
+<div style="margin-top:.625em;">
+Let's create an <code>api</code> folder under <code>tests</code>, with a single <code>main.rs</code> file inside:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+tests/
+  api/
+    main.rs
+  health_check.rs
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+First, we gain clarity: we are structuring <code>api</code> in the very same way we would structure a binary crate. Less magic - it builds on the same knowledge of the module system you built while working on application code.
+</div>
+<div style="margin-top:.625em;">
+If you run <code>cargo build --tests</code> you should be able to spot
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Running target/debug/deps/api-0a1bfb817843fdcf
+
+running 0 tests
+
+test result: ok. 0 passed; finished in 0.00s
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+in the output - <code>cargo</code> compiled api as a test executable, looking for tests cases. <br />
+There is no need to define a <code>main</code> function in <code>main.rs</code> - the Rust test framework adds one for us behind the scenes.
+</div>
+<div style="margin-top:.625em;">
+We can now add sub-modules in <code>main.rs</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/main.rs
+
+mod helpers;
+mod health_check;
+mod subscriptions;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Add three empty files - <code>tests/api/helpers.rs</code>, <code>tests/api/health_check.rs</code> and <code>tests/api/subscriptions.rs</code>.
+Time to delete <code>tests/health_check.rs</code> and re-distribute its content:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/helpers.rs
+use sqlx::{Connection, Executor, PgConnection, PgPool};
+use std::net::TcpListener;
+use uuid::Uuid;
+use zero2prod::configuration::{get_configuration, DatabaseSettings};
+use zero2prod::email_client::EmailClient;
+use zero2prod::startup::run;
+use zero2prod::telemetry::{get_subscriber, init_subscriber};
+
+// Ensure that the `tracing` stack is only initialised once using `once_cell`
+static TRACING: Lazy<()> = Lazy::new(|| {
+    // [...]
+});
+
+pub struct TestApp {
+    // [...]
+}
+
+// Public!
+pub async fn spawn_app() -> TestApp {
+    // [...]
+}
+
+// Not public anymore!
+async fn configure_database(config: &DatabaseSettings) -> PgPool {
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/health_check.rs
+use crate::helpers::spawn_app;
+
+#[tokio::test]
+async fn health_check_works() {
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/subscriptions.rs
+use crate::helpers::spawn_app;
+
+#[tokio::test]
+async fn subscribe_returns_a_200_for_valid_form_data() {
+    // [...]
+}
+
+#[tokio::test]
+async fn subscribe_returns_a_400_when_data_is_missing() {
+    // [...]
+}
+
+#[tokio::test]
+async fn subscribe_returns_a_400_when_fields_are_present_but_invalid() {
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>cargo test</code> should succeed, with no warnings.
+Congrats, you have broken down your test suite in smaller and more manageable modules!
+</div>
+<div style="margin-top:.625em;">
+There are a few positive side-effects to the new structure:
+</div>
+
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;"><b>it is recursive</b>. <br />
+If <code>tests/api/subscriptions.rs</code> grows too unwieldy, we can turn it into a module, with <code>tests/api/subscriptions/helpers.rs</code> holding subscription-specific test helpers and one or more test files focused on a specific flow or concern;</li>
+  <li style="margin-top:.325em;"><b>the implementation details of our helpers function are encapsulated</b>. <br />
+It turns out that our tests only need to know about <code>spawn_app</code> and <code>TestApp</code> - no need to expose <code>configure_database</code> or <code>TRACING</code>, we can keep that complexity hidden away in the helpers module;</li>
+  <li style="margin-top:.325em;"><b>we have a single test binary</b>. <br />
+If you have large test suite with a flat file structure, you'll soon be building tens of executable every time you run <code>cargo test</code>. While each executable is compiled in parallel, the <a href="https://en.wikipedia.org/wiki/Linker_(computing)">linking</a> phase is instead entirely sequential! Bundling all your test cases in a single executable reduces the time spent compiling your test suite in <code>CI</code>.</li>
+</ul>
+<div style="margin-top:.625em;">
+If you are running Linux, you might see errors like
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+thread 'actix-rt:worker' panicked at 
+'Can not create Runtime: Os { code: 24, kind: Other, message: "Too many open files" }',
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+when you run <code>cargo test</code> after the refactoring.
+</div>
+<div style="margin-top:.625em;">
+This is due to a limit enforced by the operating system on the maximum number of open file descriptors (including sockets) for each process - given that we are now running all tests as part of a single binary, we might be exceeding it. The limit is usually set to <code>1024</code>, but you can raise it with <code>ulimit -n X</code> (e.g. <code>ulimit -n 10000</code>) to resolve the issue.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Sharing Startup Logic</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Now that we have reworked the layout of our test suite it's time to zoom in on the test logic itself. <br />
+We will start with <code>spawn_app</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/helpers.rs
+// [...]
+
+pub struct TestApp {
+    pub address: String,
+    pub db_pool: PgPool,
+}
+
+pub async fn spawn_app() -> TestApp {
+    Lazy::force(&TRACING);
+
+    let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind random port");
+    let port = listener.local_addr().unwrap().port();
+    let address = format!("http://127.0.0.1:{}", port);
+
+    let mut configuration = get_configuration().expect("Failed to read configuration.");
+    configuration.database.database_name = Uuid::new_v4().to_string();
+    let connection_pool = configure_database(&configuration.database).await;
+
+    let sender_email = configuration
+        .email_client
+        .sender()
+        .expect("Invalid sender email address.");
+    let email_client = EmailClient::new(
+        configuration.email_client.base_url,
+        sender_email,
+        configuration.email_client.authorization_token,
+    );
+
+    let server = run(listener, connection_pool.clone(), email_client)
+        .expect("Failed to bind address");
+    let _ = tokio::spawn(server);
+    TestApp {
+        address,
+        db_pool: connection_pool,
+    }
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Most of the code we have here is extremely similar to what we find in our <code>main</code> entrypoint:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/main.rs
+use sqlx::postgres::PgPoolOptions;
+use std::net::TcpListener;
+use zero2prod::configuration::get_configuration;
+use zero2prod::email_client::EmailClient;
+use zero2prod::startup::run;
+use zero2prod::telemetry::{get_subscriber, init_subscriber};
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+
+    let subscriber = get_subscriber("zero2prod".into(), "info".into(), std::io::stdout);
+    
+    init_subscriber(subscriber);
+
+    let configuration = get_configuration().expect("Failed to read configuration.");
+
+    let connection_pool = PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_secs(2))
+        .connect_lazy_with(configuration.database.with_db());
+
+    let sender_email = configuration
+        .email_client
+        .sender()
+        .expect("Invalid sender email address.");
+
+    let email_client = EmailClient::new(
+        configuration.email_client.base_url,
+        sender_email,
+        configuration.email_client.authorization_token,
+    );
+
+    let address = format!(
+        "{}:{}",
+        configuration.application.host, configuration.application.port
+    );
+    
+    let listener = TcpListener::bind(address)?;
+    run(listener, connection_pool, email_client)?.await?;
+
+    Ok(())
+
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Every time we add a dependency or modify the server constructor, we have at least two places to modify - we have recently gone through the motions with <code>EmailClient</code>. It's mildly annoying.
+</div>
+<div style="margin-top:.625em;">
+More importantly though, the startup logic in our application code is never tested. <br />
+As the codebase evolves, they might start to diverge subtly, leading to different behaviour in our tests compared to our production environment.
+</div>
+<div style="margin-top:.625em;">
+We will first extract the logic out of <code>main</code> and then figure out what hooks we need to leverage the same code paths in our test code.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Extracting Our Startup Code" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+From a structural perspective, our startup logic is a function taking <code>Settings</code> as input and returning an instance of our application as output.
+</div>
+<div style="margin-top:.625em;">
+It follows that our <code>main</code> function should look like this:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/main.rs
+use zero2prod::configuration::get_configuration;
+use zero2prod::startup::build;
+use zero2prod::telemetry::{get_subscriber, init_subscriber};
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    let subscriber = get_subscriber("zero2prod".into(), "info".into(), std::io::stdout);
+    init_subscriber(subscriber);
+
+    let configuration = get_configuration().expect("Failed to read configuration.");
+    let server = build(configuration).await?;
+    server.await?;
+    Ok(())
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We first perform some binary-specific logic (i.e. telemetry initialisation), then we build a set of configuration values from the supported sources (files + environment variables) and use it to spin up an application. Linear. <br />
+Let's define that <code>build</code> function then:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/startup.rs
+// [...]
+// New imports!
+use crate::configuration::Settings;
+use sqlx::postgres::PgPoolOptions;
+
+pub async fn build(configuration: Settings) -> Result<Server, std::io::Error> {
+
+    let connection_pool = PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_secs(2))
+        .connect_lazy_with(configuration.database.with_db());
+
+    let sender_email = configuration
+        .email_client
+        .sender()
+        .expect("Invalid sender email address.");
+
+    let email_client = EmailClient::new(
+        configuration.email_client.base_url,
+        sender_email,
+        configuration.email_client.authorization_token,
+    );
+
+    let address = format!(
+        "{}:{}",
+        configuration.application.host, configuration.application.port
+    );
+    
+    let listener = TcpListener::bind(address)?;
+    run(listener, connection_pool, email_client)
+
+}
+
+
+pub fn run(
+    listener: TcpListener,
+    db_pool: PgPool,
+    email_client: EmailClient,
+) -> Result<Server, std::io::Error> {
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Nothing too surprising - we have just moved around the code that was previously living in <code>main</code>. <br />
+Let's make it test-friendly now!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Testing Hooks In Our Startup Logic" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's look at our <code>spawn_app</code> function again:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/helpers.rs
+// [...]
+use zero2prod::startup::build;
+// [...]
+
+pub async fn spawn_app() -> TestApp {
+
+    // The first time `initialize` is invoked the code in `TRACING` is executed.
+    // All other invocations will instead skip execution.
+    Lazy::force(&TRACING);
+
+    let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind random port");
+    // We retrieve the port assigned to us by the OS
+    let port = listener.local_addr().unwrap().port();
+    let address = format!("http://127.0.0.1:{}", port);
+
+    let mut configuration = get_configuration().expect("Failed to read configuration.");
+    configuration.database.database_name = Uuid::new_v4().to_string();
+    let connection_pool = configure_database(&configuration.database).await;
+
+    let sender_email = configuration
+        .email_client
+        .sender()
+        .expect("Invalid sender email address.");
+
+    let email_client = EmailClient::new(
+        configuration.email_client.base_url,
+        sender_email,
+        configuration.email_client.authorization_token,
+    );
+
+    let server = run(listener, connection_pool.clone(), email_client)
+        .expect("Failed to bind address");
+    
+    let _ = tokio::spawn(server);
+
+    TestApp {
+        address,
+        db_pool: connection_pool,
+    }
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+At a high-level, we have the following phases:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">Execute test-specific setup (i.e. initialise a <code>tracing</code> subscriber);</li>
+  <li style="margin-top:.325em;">Randomise the configuration to ensure tests do not interfere with each other (i.e. a different logical database for each test case);</li>
+  <li style="margin-top:.325em;">Initialise external resources (e.g. create and migrate the database!);</li>
+  <li style="margin-top:.325em;">Build the application;</li>
+  <li style="margin-top:.325em;">Launch the application as a background task and return a set of resources to interact with it.</li>
+</ul>
+<div style="margin-top:.625em;">
+Can we just throw <code>build</code> in there and call it a day? <br />
+Not really, but let's try to see where it falls short:
+</div>
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/helpers.rs
+// [...]
+// New import!
+use zero2prod::startup::build;
+
+pub async fn spawn_app() -> TestApp {
+
+    Lazy::force(&TRACING);
+    
+    // Randomise configuration to ensure test isolation
+    let configuration = {
+        let mut c = get_configuration().expect("Failed to read configuration.");
+        // Use a different database for each test case
+        c.database.database_name = Uuid::new_v4().to_string();
+        // Use a random OS port
+        c.application.port = 0;
+        c
+    };
+
+    // Create and migrate the database
+    configure_database(&configuration.database).await;
+
+    // Launch the application as a background task
+    let server = build(configuration).await.expect("Failed to build application.");
+    let _ = tokio::spawn(server);
+  
+    TestApp {
+        // How do we get these?
+        address: todo!(),
+        db_pool: todo!() 
+    }
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It almost works - the approach falls short at the very end: we have no way to retrieve the random address assigned by the OS to the application and we don't really know how to build a connection pool to the database, needed to perform assertions on side-effects impacting the persisted state.
+</div>
+<div style="margin-top:.625em;">
+Let's deal with the connection pool first: we can extract the initialisation logic from <code>build</code> into a stand-alone function and invoke it twice.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/startup.rs
+// [...]
+use crate::configuration::DatabaseSettings;
+
+// We are taking a reference now!
+pub async fn build(configuration: &Settings) -> Result<Server, std::io::Error> {
+    let connection_pool = get_connection_pool(&configuration.database);
+    // [...]
+}
+
+pub fn get_connection_pool(
+    configuration: &DatabaseSettings
+) -> PgPool {
+    PgPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_secs(2))
+        .connect_lazy_with(configuration.with_db())
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/helpers.rs
+// [...]
+use zero2prod::startup::{build, get_connection_pool};
+// [...]
+
+pub async fn spawn_app() -> TestApp {
+    // Notice the .clone! 
+    let server = build(configuration.clone())
+        .await
+        .expect("Failed to build application.");
+    // [...]
+    TestApp {
+        address: todo!(),
+        db_pool: get_connection_pool(&configuration.database),
+    }
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+You'll have to add a <code>#[derive(Clone)]</code> to all the structs in <code>src/configuration.rs</code></code> to make the compiler happy, but we are done with the database connection pool.
+</div>
+<div style="margin-top:.625em;">
+How do we get the application address instead? <br />
+<code>actix_web::dev::Server</code>, the type returned by <code>build</code>, does not allow us to retrieve the application port.
+We need to do a bit more legwork in our application code - we will wrap <code>actix_web::dev::Server</code> in a new type that holds on to the information we want.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/startup.rs
+// [...]
+
+// A new type to hold the newly built server and its port 
+pub struct Application {
+    port: u16,
+    server: Server,
+}
+
+impl Application {
+    // We have converted the `build` function into a constructor for
+    // `Application`.
+    pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
+        let connection_pool = get_connection_pool(&configuration.database);
+
+        let sender_email = configuration
+            .email_client
+            .sender()
+            .expect("Invalid sender email address.");
+        let email_client = EmailClient::new(
+            configuration.email_client.base_url,
+            sender_email,
+            configuration.email_client.authorization_token,
+        );
+
+        let address = format!(
+            "{}:{}",
+            configuration.application.host, configuration.application.port
+        );
+        let listener = TcpListener::bind(&address)?;
+        let port = listener.local_addr().unwrap().port();
+        let server = run(listener, connection_pool, email_client)?;
+
+        // We "save" the bound port in one of `Application`'s fields
+        Ok(Self { port, server })
+    }
+
+    pub fn port(&self) -> u16 {
+        self.port
+    }
+
+    // A more expressive name that makes it clear that 
+    // this function only returns when the application is stopped.
+    pub async fn run_until_stopped(self) -> Result<(), std::io::Error> {
+        self.server.await
+    }
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/helpers.rs
+// [...]
+// New import!
+use zero2prod::startup::Application;
+
+pub async fn spawn_app() -> TestApp {
+    // [...]
+
+    let application = Application::build(configuration.clone())
+        .await
+        .expect("Failed to build application.");
+    // Get the port before spawning the application
+    let address = format!("http://127.0.0.1:{}", application.port());
+    let _ = tokio::spawn(application.run_until_stopped());
+
+    TestApp {
+        address,
+        db_pool: get_connection_pool(&configuration.database),
+    }
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! src/main.rs
+// [...]
+// New import!
+use zero2prod::startup::Application;
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    // [...]
+    let application = Application::build(configuration).await?;
+    application.run_until_stopped().await?;
+    Ok(())
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It's done - run <code>cargo test</code> if you want to double-check!
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Build An API Client</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+All of our integration tests are black-box: we launch our application at the beginning of each test and interact with it using an HTTP client (i.e. <code>reqwest</code>).
+</div>
+<div style="margin-top:.625em;">
+As we write tests, we necessarily end up implementing a client for our API.
+</div>
+<div style="margin-top:.625em;">
+That's great! <br />
+It gives us a prime opportunity to see what it feels like to interact with the API as a user. 
+</div>
+<div style="margin-top:.625em;">
+We just need to be careful not to spread the client logic all over the test suite - when the API changes, we don't want to go through tens of tests to remove a trailing <code>s</code> from the path of an endpoint.
+</div>
+<div style="margin-top:.625em;">
+Let's look at our subscriptions tests:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/subscriptions.rs
+use crate::helpers::spawn_app;
+
+#[tokio::test]
+async fn subscribe_returns_a_200_for_valid_form_data() {
+    // Arrange
+    let app = spawn_app().await;
+    let client = reqwest::Client::new();
+
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&app.email_server)
+        .await;
+
+    // Act
+    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+    let response = client
+        .post(&format!("{}/subscriptions", &app.address))
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(body)
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    // Assert
+    assert_eq!(200, response.status().as_u16());
+
+    let saved = sqlx::query!("SELECT email, name FROM subscriptions",)
+        .fetch_one(&app.db_pool)
+        .await
+        .expect("Failed to fetch saved subscription.");
+
+    assert_eq!(saved.email, "ursula_le_guin@gmail.com");
+    assert_eq!(saved.name, "le guin");
+}
+
+#[tokio::test]
+async fn subscribe_returns_a_400_when_data_is_missing() {
+    // Arrange
+    let app = spawn_app().await;
+    let client = reqwest::Client::new();
+    let test_cases = vec![
+        ("name=le%20guin", "missing the email"),
+        ("email=ursula_le_guin%40gmail.com", "missing the name"),
+        ("", "missing both name and email"),
+    ];
+
+    for (invalid_body, error_message) in test_cases {
+        // Act
+        let response = client
+            .post(&format!("{}/subscriptions", &app.address))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(invalid_body)
+            .send()
+            .await
+            .expect("Failed to execute request.");
+
+        // Assert
+        assert_eq!(
+            400,
+            response.status().as_u16(),
+            // Additional customised error message on test failure
+            "The API did not fail with 400 Bad Request when the payload was {}.",
+            error_message
+        );
+    }
+}
+
+#[tokio::test]
+async fn subscribe_returns_a_400_when_fields_are_present_but_invalid() {
+    // Arrange
+    let app = spawn_app().await;
+    let client = reqwest::Client::new();
+    let test_cases = vec![
+        ("name=&email=ursula_le_guin%40gmail.com", "empty name"),
+        ("name=Ursula&email=", "empty email"),
+        ("name=Ursula&email=definitely-not-an-email", "invalid email"),
+    ];
+
+    for (body, description) in test_cases {
+        // Act
+        let response = client
+            .post(&format!("{}/subscriptions", &app.address))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(body)
+            .send()
+            .await
+            .expect("Failed to execute request.");
+
+        // Assert
+        assert_eq!(
+            400,
+            response.status().as_u16(),
+            "The API did not return a 400 Bad Request when the payload was {}.",
+            description
+        );
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We have the same calling code in each test - we should pull it out and add a helper method to our <code>TestApp</code> struct:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/helpers.rs
+// [...]
+
+pub struct TestApp {
+    // [...]
+}
+
+impl TestApp {
+    pub async fn post_subscriptions(&self, body: String) -> reqwest::Response {
+        reqwest::Client::new()
+            .post(&format!("{}/subscriptions", &self.address))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(body)
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+}
+
+// [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+//! tests/api/subscriptions.rs
+use crate::helpers::spawn_app;
+
+#[tokio::test]
+async fn subscribe_returns_a_200_for_valid_form_data() {
+    // [...]
+    // Act
+    let response = app.post_subscriptions(body.into()).await;
+    // [...]
+}
+
+#[tokio::test]
+async fn subscribe_returns_a_400_when_data_is_missing() {
+    // [...]
+    for (invalid_body, error_message) in test_cases {
+        let response = app.post_subscriptions(invalid_body.into()).await;
+        // [...]
+    }
+}
+
+#[tokio::test]
+async fn subscribe_returns_a_400_when_fields_are_present_but_invalid() {
+    // [...]
+    for (body, description) in test_cases {
+        let response = app.post_subscriptions(body.into()).await;
+        // [...]
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We could add another method for the health check endpoint, but it's only used once - there is no need right now.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Summary</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We started with a single file test suite, we finished with a modular test suite and a robust set of helpers. <br />
+Just like application code, test code is never finished: we will have to keep working on it as the project evolves, but we have laid down solid foundations to keep moving forward without losing momentum.
+</div>
+<div style="margin-top:.625em;">
+We are now ready to tackle the remaining pieces of functionality needed to dispatch a confirmation email.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+</c:component>
