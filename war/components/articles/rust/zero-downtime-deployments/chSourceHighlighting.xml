@@ -1438,6 +1438,1257 @@ This will allow us to then build the happy path without having to write a massiv
 </div>
     ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="Red Test" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's add a new module to our tests project to host all test cases dealing with the confirmation callback.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/main.rs
+
+mod health_check;
+mod helpers;
+mod subscriptions;
+// New module!
+mod subscriptions_confirm;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/subscriptions_confirm.rs
+use crate::helpers::spawn_app;
+
+#[tokio::test]
+async fn confirmations_without_token_are_rejected_with_a_400() {
+    // Arrange
+    let app = spawn_app().await;
+
+    // Act
+    let response = reqwest::get(&format!("{}/subscriptions/confirm", app.address))
+        .await
+        .unwrap();
+
+    // Assert
+    assert_eq!(response.status().as_u16(), 400);
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Which fails as expected, given that we have no handler yet:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+---- subscriptions_confirm::confirmations_without_token_are_rejected_with_a_400 stdout ----
+thread 'subscriptions_confirm::confirmations_without_token_are_rejected_with_a_400' 
+panicked at 'assertion failed: `(left == right)`
+  left: `404`,
+ right: `400`'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Green Test" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's start with a dummy handler that returns 200 OK regardless of the incoming request:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/mod.rs
+ 
+mod health_check;
+mod subscriptions;
+// New module!
+mod subscriptions_confirm;
+
+pub use health_check::*;
+pub use subscriptions::*;
+pub use subscriptions_confirm::*;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions_confirm.rs
+
+use actix_web::HttpResponse;
+
+#[tracing::instrument(
+    name = "Confirm a pending subscriber",
+)]
+pub async fn confirm() -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+// [...]
+use crate::routes::confirm;
+
+fn run([...]) -> Result<Server, std::io::Error> {
+    // [...]
+    let server = HttpServer::new(move || {
+        App::new()
+            // [...]
+            .route("/subscriptions/confirm", web::get().to(confirm))
+            // [...]
+    })
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We should get a different error now when running cargo test:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+---- subscriptions_confirm::confirmations_without_token_are_rejected_with_a_400 stdout ----
+thread 'subscriptions_confirm::confirmations_without_token_are_rejected_with_a_400' 
+panicked at 'assertion failed: `(left == right)`
+  left: `200`,
+ right: `400`'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It worked! <br />
+Time to turn that <code>200</code> OK in a <code>400 Bad Request</code>. <br />
+We want to ensure that there is a <code>subscription_token</code> query parameter: we can rely on another one <code>actix-web</code>'s extractors - <code>Query</code>.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions_confirm.rs
+use actix_web::{HttpResponse, web};
+
+#[derive(serde::Deserialize)]
+pub struct Parameters {
+    subscription_token: String
+}
+
+#[tracing::instrument(
+    name = "Confirm a pending subscriber",
+    skip(_parameters)
+)]
+pub async fn confirm(_parameters: web::Query<Parameters>) -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The Parameters struct defines all the query parameters that we expect to see in the incoming request. It needs to implement <code>serde::Deserialize</code> to enable <code>actix-web</code> to build it from the incoming request path. It is enough to add a function parameter of type <code>web::Query&lt;Parameter&gt;</code> to confirm to instruct <code>actix-web</code> to only call the handler if the extraction was successful. If the extraction failed a <code>400 Bad Request</code> is automatically returned to the caller.
+</div>
+<div style="margin-top:.625em;">
+Our test should now pass.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Connecting The Dots" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Now that we have a GET <code>/subscriptions/confirm</code> handler we can try to perform the full journey!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Red Test" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We will behave like a user: we will call <code>POST /subscriptions</code>, we will extract the confirmation link from the outgoing email request (using the <code>linkify</code> machinery we already built) and then call it to confirm our subscription - expecting a <code>200 OK</code>.
+</div>
+<div style="margin-top:.625em;">
+We will not be checking the <code>status</code> from the database (yet) - that is going to be our grand finale.
+</div>
+<div style="margin-top:.625em;">
+Let's write it down:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/subscriptions_confirm.rs
+// [...]
+use reqwest::Url;
+use wiremock::{ResponseTemplate, Mock};
+use wiremock::matchers::{path, method};
+
+#[tokio::test]
+async fn the_link_returned_by_subscribe_returns_a_200_if_called() {
+    // Arrange
+    let app = spawn_app().await;
+    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&app.email_server)
+        .await;
+
+    app.post_subscriptions(body.into()).await;
+    let email_request = &app.email_server.received_requests().await.unwrap()[0];
+    let body: serde_json::Value = serde_json::from_slice(&email_request.body).unwrap();
+
+    // Extract the link from one of the request fields.
+    let get_link = |s: &str| {
+        let links: Vec<_> = linkify::LinkFinder::new()
+            .links(s)
+            .filter(|l| *l.kind() == linkify::LinkKind::Url)
+            .collect();
+        assert_eq!(links.len(), 1);
+        links[0].as_str().to_owned()
+    };
+    let raw_confirmation_link = &get_link(&body["HtmlBody"].as_str().unwrap());
+    let confirmation_link = Url::parse(raw_confirmation_link).unwrap();
+    // Let's make sure we don't call random APIs on the web
+    assert_eq!(confirmation_link.host_str().unwrap(), "127.0.0.1");
+
+    // Act
+    let response = reqwest::get(confirmation_link)
+        .await
+        .unwrap();
+
+    // Assert
+    assert_eq!(response.status().as_u16(), 200);
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It fails with
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+thread 'subscriptions_confirm::the_link_returned_by_subscribe_returns_a_200_if_called' 
+panicked at 'assertion failed: `(left == right)`
+  left: `"my-api.com"`,
+ right: `"127.0.0.1"`'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+There is a fair amount of code duplication going on here, but we will take care of it in due time. <br />
+Our primary focus is getting the test to pass now.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Green Test" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's begin by taking care of that URL issue. <br />
+It is currently hard-coded in
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...] 
+
+#[tracing::instrument([...])]
+pub async fn send_confirmation_email([...]) -> Result<(), reqwest::Error> {
+    let confirmation_link = "https://my-api.com/subscriptions/confirm";
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The domain and the protocol are going to vary according to the environment the application is running into: it will be <code>http://127.0.0.1</code> for our tests, it should be a proper DNS record with HTTPS when our application is running in production.
+</div>
+<div style="margin-top:.625em;">
+The easiest way to get it right is to pass the domain in as a configuration value. <br />
+Let's add a new field to <code>ApplicationSettings</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+// [...]
+
+#[derive(serde::Deserialize, Clone)]
+pub struct ApplicationSettings {
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub port: u16,
+    pub host: String,
+    // New field!
+    pub base_url: String
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# configuration/local.yaml
+application:
+    base_url: "http://127.0.0.1"
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! spec.yaml
+# [...]
+services:
+  - name: zero2prod
+    # [...]
+    envs:
+      # We use DO's APP_URL to inject the dynamically
+      # provisioned base url as an environment variable
+      - key: APP_APPLICATION__BASE_URL
+        scope: RUN_TIME
+        value: ${APP_URL}
+        # [...]
+# [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Remember to apply the changes to DigitalOcean every time we touch <code>spec.yaml</code>: grab your app identifier via <code>doctl apps list --format ID</code> and then run <code>doctl apps update $APP_ID --spec spec.yaml</code>.
+</div>
+<div style="margin-top:.625em;">
+We now need to register the value in the application context - you should be familiar with the process at this point:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+// [...]
+
+impl Application {
+    pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
+        // [...]
+        let server = run(
+            listener,
+            connection_pool,
+            email_client,
+            // New parameter!
+            configuration.application.base_url,
+        )?;
+
+        Ok(Self { port, server })
+    }
+    
+    // [...]
+}
+
+// We need to define a wrapper type in order to retrieve the URL
+// in the `subscribe` handler. 
+// Retrieval from the context, in actix-web, is type-based: using
+// a raw `String` would expose us to conflicts.
+pub struct ApplicationBaseUrl(pub String);
+
+fn run(
+    listener: TcpListener,
+    db_pool: PgPool,
+    email_client: EmailClient,
+    // New parameter!
+    base_url: String,
+) -> Result<Server, std::io::Error> {
+    // [...]
+    let base_url = Data::new(ApplicationBaseUrl(base_url));
+    let server = HttpServer::new(move || {
+        App::new()
+            // [...]
+            .app_data(base_url.clone())
+    })
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now access it in the request handler:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+use crate::startup::ApplicationBaseUrl;
+// [...]
+
+#[tracing::instrument(
+    skip(form, pool, email_client, base_url),
+    [...]
+)]
+pub async fn subscribe(
+    // [...]
+    // New parameter!
+    base_url: web::Data<ApplicationBaseUrl>,
+) -> HttpResponse {
+    // [...]
+    // Pass the application url
+    if send_confirmation_email(
+        &email_client, 
+        new_subscriber, 
+        &base_url.0
+    )
+    .await
+    .is_err()
+  {
+        return HttpResponse::InternalServerError().finish();
+  }
+    // [...]
+}
+
+#[tracing::instrument(
+    skip(email_client, new_subscriber, base_url)
+    [...]
+)]
+pub async fn send_confirmation_email(
+    // [...]
+    // New parameter!
+    base_url: &str,
+) -> Result<(), reqwest::Error> {
+    // Build a confirmation link with a dynamic root
+    let confirmation_link = format!("{}/subscriptions/confirm", base_url);
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's run the test suite again:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+thread 'subscriptions_confirm::the_link_returned_by_subscribe_returns_a_200_if_called' 
+panicked at 'called `Result::unwrap()` on an `Err` value: 
+    reqwest::Error { 
+        kind: Request, 
+        url: Url { 
+            scheme: "http", 
+            host: Some(Ipv4(127.0.0.1)), 
+            port: None, 
+            path: "/subscriptions/confirm", 
+            query: None, 
+            fragment: None }, 
+        source: hyper::Error(
+            Connect, 
+            ConnectError(
+                "tcp connect error", 
+                Os { 
+                    code: 111, 
+                    kind: ConnectionRefused, 
+                    message: "Connection refused" 
+                }
+            )
+        ) 
+    }'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The host is correct, but the <code>reqwest::Client</code> in our test is failing to establish a connection. What is going wrong? <br />
+If you look closely, you'll notice <code>port: None</code> - we are sending our request to <code>http://127.0.0.1/subscriptions/confirm</code> without specifying the port our test server is listening on.
+</div>
+<div style="margin-top:.625em;">
+The tricky bit, here, is the sequence of events: we pass in the <code>application_url</code> configuration value before spinning up the server, therefore we do not know what port it is going to listen to (given that the port is randomised using <code>0</code>!).
+</div>
+<div style="margin-top:.625em;">
+This is non-issue for production workloads where the DNS domain is enough - we'll just patch it in the test.  <br />
+Let's store the application port in its own field within <code>TestApp</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/helpers.rs
+// [...]
+
+pub struct TestApp {
+    // New field!
+    pub port: u16,
+    // [...]
+}
+
+pub async fn spawn_app() -> TestApp {
+    // [...]
+
+    let application = Application::build(configuration.clone())
+        .await
+        .expect("Failed to build application.");
+    let application_port = application.port();
+    let _ = tokio::spawn(application.run_until_stopped());
+
+    TestApp {
+        address: format!("http://localhost:{}", application_port),
+        port: application_port,
+        db_pool: get_connection_pool(&configuration.database),
+        email_server,
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can then use it in the test logic to edit the confirmation link:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/subscriptions_confirm.rs
+// [...]
+
+#[tokio::test]
+async fn the_link_returned_by_subscribe_returns_a_200_if_called() {
+    // [...]
+    let mut confirmation_link = Url::parse(raw_confirmation_link).unwrap();
+    assert_eq!(confirmation_link.host_str().unwrap(), "127.0.0.1");
+    // Let's rewrite the URL to include the port
+    confirmation_link.set_port(Some(app.port)).unwrap();
+
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Not the prettiest, but it gets the job done. <br />
+Let's run the test again:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+thread 'subscriptions_confirm::the_link_returned_by_subscribe_returns_a_200_if_called' 
+panicked at 'assertion failed: `(left == right)`
+  left: `400`,
+ right: `200`'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We get a <code>400 Bad Request</code> back because our confirmation link does not have a <code>subscription_token</code> query parameter attached. <br />
+Let's fix it by hard-coding one for the time being:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn send_confirmation_email([...]) -> Result<(), reqwest::Error> {
+    let confirmation_link = format!(
+        "{}/subscriptions/confirm?subscription_token=mytoken", 
+        base_url
+    );
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test passes!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Refactor" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+The logic to extract the two confirmation links from the outgoing email request is duplicated across two of our tests - we will likely add more that rely on it as we flesh out the remaining bits and pieces of this feature. It makes sense to extract it in its own helper function.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/helpers.rs
+// [...]
+
+/// Confirmation links embedded in the request to the email API.
+pub struct ConfirmationLinks {
+    pub html: reqwest::Url,
+    pub plain_text: reqwest::Url
+}
+
+impl TestApp {
+    // [...]
+
+    /// Extract the confirmation links embedded in the request to the email API.
+    pub fn get_confirmation_links(
+        &self, 
+        email_request: &wiremock::Request
+    ) -> ConfirmationLinks {
+        let body: serde_json::Value = serde_json::from_slice(
+            &email_request.body
+        ).unwrap();
+
+        // Extract the link from one of the request fields.
+        let get_link = |s: &str| {
+            let links: Vec<_> = linkify::LinkFinder::new()
+                .links(s)
+                .filter(|l| *l.kind() == linkify::LinkKind::Url)
+                .collect();
+            assert_eq!(links.len(), 1);
+            let raw_link = links[0].as_str().to_owned();
+            let mut confirmation_link = reqwest::Url::parse(&raw_link).unwrap();
+            // Let's make sure we don't call random APIs on the web
+            assert_eq!(confirmation_link.host_str().unwrap(), "127.0.0.1");
+            confirmation_link.set_port(Some(self.port)).unwrap();
+            confirmation_link
+        };
+
+        let html = get_link(&body["HtmlBody"].as_str().unwrap());
+        let plain_text = get_link(&body["TextBody"].as_str().unwrap());
+        ConfirmationLinks {
+            html,
+            plain_text
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We are adding it as a method on <code>TestApp</code> in order to get access to the application port, which we need to inject into the links. 
+</div>
+<div style="margin-top:.625em;">
+It could as well have been a free function taking both <code>wiremock::Request</code> and <code>TestApp</code> (or <code>u16</code>) as parameters - a matter of taste.
+</div>
+<div style="margin-top:.625em;">
+We can now massively simplify our two test cases:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/subscriptions.rs
+// [...]
+
+#[tokio::test]
+async fn subscribe_sends_a_confirmation_email_with_a_link() {
+    // Arrange
+    let app = spawn_app().await;
+    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&app.email_server)
+        .await;
+
+    // Act
+    app.post_subscriptions(body.into()).await;
+
+    // Assert
+    let email_request = &app.email_server.received_requests().await.unwrap()[0];
+    let confirmation_links = app.get_confirmation_links(&email_request);
+
+    // The two links should be identical
+    assert_eq!(confirmation_links.html, confirmation_links.plain_text);
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/subscriptions_confirm.rs
+// [...]
+
+#[tokio::test]
+async fn the_link_returned_by_subscribe_returns_a_200_if_called() {
+    // Arrange
+    let app = spawn_app().await;
+    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&app.email_server)
+        .await;
+
+    app.post_subscriptions(body.into()).await;
+    let email_request = &app.email_server.received_requests().await.unwrap()[0];
+    let confirmation_links = app.get_confirmation_links(&email_request);
+
+    // Act
+    let response = reqwest::get(confirmation_links.html)
+        .await
+        .unwrap();
+
+    // Assert
+    assert_eq!(response.status().as_u16(), 200);
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The intent of those two test cases is much clearer now.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Subscription Tokens" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We are ready to tackle the elephant in the room: we need to start generating subscription tokens.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Red Test" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We will add a new test case which builds on top of the work we just did: instead of asserting against the returned status code we will check the <code>status</code> of the subscriber stored in the database.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/subscriptions_confirm.rs
+// [...]
+
+#[tokio::test]
+async fn clicking_on_the_confirmation_link_confirms_a_subscriber() {
+    // Arrange
+    let app = spawn_app().await;
+    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&app.email_server)
+        .await;
+
+    app.post_subscriptions(body.into()).await;
+    let email_request = &app.email_server.received_requests().await.unwrap()[0];
+    let confirmation_links = app.get_confirmation_links(&email_request);
+
+    // Act
+    reqwest::get(confirmation_links.html)
+        .await
+        .unwrap()
+        .error_for_status()
+        .unwrap();
+
+    // Assert
+    let saved = sqlx::query!("SELECT email, name, status FROM subscriptions",)
+        .fetch_one(&app.db_pool)
+        .await
+        .expect("Failed to fetch saved subscription.");
+
+    assert_eq!(saved.email, "ursula_le_guin@gmail.com");
+    assert_eq!(saved.name, "le guin");
+    assert_eq!(saved.status, "confirmed");
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test fails, as expected:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+thread 'subscriptions_confirm::clicking_on_the_confirmation_link_confirms_a_subscriber' 
+panicked at 'assertion failed: `(left == right)`
+  left: `"pending_confirmation"`,
+ right: `"confirmed"`'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Green Test" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+To get the previous test case to pass, we hard-coded a subscription token in the confirmation link:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn send_confirmation_email([...]) -> Result<(), reqwest::Error> {
+    let confirmation_link = format!(
+        "{}/subscriptions/confirm?subscription_token=mytoken", 
+        base_url
+    );
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's refactor <code>send_confirmation_email</code> to take the token as a parameter - it will make it easier to add the generation logic upstream.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+#[tracing::instrument([...])]
+pub async fn subscribe([...]) -> HttpResponse {
+    // [...]
+    if send_confirmation_email(
+        &email_client, 
+        new_subscriber, 
+        &base_url.0, 
+    // New parameter!
+        "mytoken"
+    )
+    .await
+    .is_err() {
+        return HttpResponse::InternalServerError().finish();
+  }
+    // [...]
+}
+
+#[tracing::instrument(
+    name = "Send a confirmation email to a new subscriber",
+    skip(email_client, new_subscriber, base_url, subscription_token)
+)]
+pub async fn send_confirmation_email(
+    email_client: &EmailClient,
+    new_subscriber: NewSubscriber,
+    base_url: &str,
+    // New parameter!
+    subscription_token: &str
+) -> Result<(), reqwest::Error> {
+    let confirmation_link = format!(
+        "{}/subscriptions/confirm?subscription_token={}", 
+        base_url, 
+        subscription_token
+    );
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Our subscription tokens are not passwords: they are single-use and they do not grant access to protected information.3 We need them to be hard enough to guess while keeping in mind that the worst-case scenario is an unwanted newsletter subscription landing in someone's inbox.
+</div>
+<div style="margin-top:.625em;">
+Given our requirements it should be enough to use a <a href="https://en.wikipedia.org/wiki/Cryptographically_secure_pseudorandom_number_generator">cryptographically secure pseudo-random number generator</a> - a CSPRNG, if you are into obscure acronyms.
+</div>
+<div style="margin-top:.625em;">
+Every time we need to generate a subscription token we can sample a sufficiently-long sequence of alphanumeric characters.
+</div>
+<div style="margin-top:.625em;">
+To pull it off we need to add <code>rand</code> as a dependency:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+
+[dependencies]
+# [...]
+# We need the `std_rng` to get access to the PRNG we want
+rand = { version = "0.8", features=["std_rng"] }
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
+// [...]
+
+/// Generate a random 25-characters-long case-sensitive subscription token.
+fn generate_subscription_token() -> String {
+  let mut rng = thread_rng();
+  std::iter::repeat_with(|| rng.sample(Alphanumeric))
+          .map(char::from)
+          .take(25)
+          .collect()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Using 25 characters we get roughly ~10^45 possible tokens - it should be more than enough for our use case.
+</div>
+<div style="margin-top:.625em;">
+To check if a token is valid in <code>GET /subscriptions/confirm</code> we need <code>POST /subscriptions</code> to store the newly minted tokens in the database.
+The table we added for this purpose, <code>subscription_tokens</code>, has two columns: <code>subscription_token</code> and <code>subscriber_id</code>.
+</div>
+<div style="margin-top:.625em;">
+We are currently generating the subscriber identifier in <code>insert_subscriber</code> but we never return it to the caller:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#[tracing::instrument([...])]
+pub async fn insert_subscriber([...]) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"[...]"#,
+        // The subscriber id, never returned or bound to a variable
+        Uuid::new_v4(),
+        // [...]
+    )
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's refactor <code>insert_subscriber</code> to give us back the identifier:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#[tracing::instrument([...])]
+pub async fn insert_subscriber([...]) -> Result<Uuid, sqlx::Error> {
+    let subscriber_id = Uuid::new_v4();
+    sqlx::query!(
+        r#"[...]"#,
+        subscriber_id,
+        // [...]
+    )
+    // [...]
+    Ok(subscriber_id)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now tie everything together:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn subscribe([...]) -> HttpResponse {
+    // [...]
+    let subscriber_id = match insert_subscriber(&pool, &new_subscriber).await {
+        Ok(subscriber_id) => subscriber_id,
+        Err(_) => return HttpResponse::InternalServerError().finish(),
+    };
+    let subscription_token = generate_subscription_token();
+    if store_token(&pool, subscriber_id, &subscription_token)
+        .await
+        .is_err()
+    {
+        return HttpResponse::InternalServerError().finish();
+    }
+    if send_confirmation_email(
+        &email_client,
+        new_subscriber,
+        &base_url.0,
+        &subscription_token,
+    )
+    .await
+    .is_err()
+    {
+        return HttpResponse::InternalServerError().finish();
+    }
+    HttpResponse::Ok().finish()
+}
+
+
+#[tracing::instrument(
+    name = "Store subscription token in the database",
+    skip(subscription_token, pool)
+)]
+pub async fn store_token(
+    pool: &PgPool,
+    subscriber_id: Uuid,
+    subscription_token: &str,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"INSERT INTO subscription_tokens (subscription_token, subscriber_id)
+        VALUES ($1, $2)"#,
+        subscription_token,
+        subscriber_id
+    )
+    .execute(pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to execute query: {:?}", e);
+        e
+    })?;
+    Ok(())
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We are done on <code>POST /subscriptions</code>, let's shift to <code>GET /subscription/confirm</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions_confirm.rs
+use actix_web::{HttpResponse, web};
+
+#[derive(serde::Deserialize)]
+pub struct Parameters {
+    subscription_token: String
+}
+
+#[tracing::instrument(
+    name = "Confirm a pending subscriber",
+    skip(_parameters)
+)]
+pub async fn confirm(_parameters: web::Query<Parameters>) -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We need to:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">get a reference to the database pool;</li>
+  <li style="margin-top:.325em;">retrieve the subscriber id associated with the token (if one exists);</li>
+  <li style="margin-top:.325em;">change the subscriber status to confirmed.</li>
+</ul>
+<div style="margin-top:.625em;">
+Nothing we haven't done before - let's get cracking!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+use actix_web::{web, HttpResponse};
+use sqlx::PgPool;
+use uuid::Uuid;
+
+#[derive(serde::Deserialize)]
+pub struct Parameters {
+    subscription_token: String,
+}
+
+#[tracing::instrument(
+    name = "Confirm a pending subscriber", 
+    skip(parameters, pool)
+)]
+pub async fn confirm(
+    parameters: web::Query<Parameters>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    let id = match get_subscriber_id_from_token(&pool, &parameters.subscription_token).await {
+        Ok(id) => id,
+        Err(_) => return HttpResponse::InternalServerError().finish(),
+    };
+    match id {
+        // Non-existing token!
+        None => HttpResponse::Unauthorized().finish(),
+        Some(subscriber_id) => {
+            if confirm_subscriber(&pool, subscriber_id).await.is_err() {
+                return HttpResponse::InternalServerError().finish();
+            }
+            HttpResponse::Ok().finish()
+        }
+    }
+}
+
+#[tracing::instrument(
+    name = "Mark subscriber as confirmed", 
+    skip(subscriber_id, pool)
+)]
+pub async fn confirm_subscriber(
+    pool: &PgPool, 
+    subscriber_id: Uuid
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"UPDATE subscriptions SET status = 'confirmed' WHERE id = $1"#,
+        subscriber_id,
+        )
+        .execute(pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to execute query: {:?}", e);
+            e
+        })?;
+    Ok(())
+}
+
+#[tracing::instrument(
+    name = "Get subscriber_id from token", 
+    skip(subscription_token, pool)
+)]
+pub async fn get_subscriber_id_from_token(
+    pool: &PgPool,
+    subscription_token: &str,
+) -> Result<Option<Uuid>, sqlx::Error> {
+    let result = sqlx::query!(
+      r#"SELECT subscriber_id FROM subscription_tokens WHERE subscription_token = $1"#,
+      subscription_token,
+    )
+    .fetch_optional(pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to execute query: {:?}", e);
+        e
+    })?;
+    Ok(result.map(|r| r.subscriber_id))
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Is it enough? Did we miss anything during the journey? <br />
+There is only one way to find out.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+$ cargo test 
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+     Running target/debug/deps/api-5a717281b98f7c41
+running 10 tests
+[...]
+
+test result: ok. 10 passed; 0 failed; finished in 0.92s
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Oh, yes! It works!
+    ]]>
+    </c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
