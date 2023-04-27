@@ -21,12 +21,730 @@ You can get a copy of the book on <a href="https://zero2prod.com/">zero2prod.com
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
       <![CDATA[
 <div>
-Our project is not yet a viable newsletter service: it cannot send out a new episode!
+To send a confirmation email you have to stitch together multiple operations: validation of user input, email dispatch, various database queries. <br />
+They all have one thing in common: they may fail.
 </div>
 <div style="margin-top:.625em;">
-We will use this chapter to bootstrap newsletter delivery using a naive implementation.
-It will be an opportunity to deepen our understanding of techniques we touched upon in previous chapters while building the foundation for a production-ready solution that ticks all our boxes (i.e. security and fault tolerance).
+In <a href="https://www.lpalmieri.com/posts/2020-12-11-zero-to-production-6-domain-modelling/#7-errors-as-values-result">Chapter 6</a> we discussed the building blocks of error handling in Rust - <code>Result</code> and the <code>?</code> operator.
+We left many questions unanswered: how do errors fit within the broader architecture of our application? What does a good error look like? Who are errors for? Should we use a library? Which one?
 </div>
+<div style="margin-top:.625em;">
+An in-depth analysis of error handling patterns in Rust will be the sole focus of this chapter.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="What Is The Purpose Of Errors?" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's start with an example:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn store_token(
+    transaction: &mut Transaction<'_, Postgres>,
+    subscriber_id: Uuid,
+    subscription_token: &str,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"
+    INSERT INTO subscription_tokens (subscription_token, subscriber_id)
+    VALUES ($1, $2)
+        "#,
+        subscription_token,
+        subscriber_id
+    )
+    .execute(transaction)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to execute query: {:?}", e);
+        e
+    })?;
+    Ok(())
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We are trying to insert a row into the <code>subscription_tokens</code> table in order to store a newly-generated token against a <code>subscriber_id</code>.
+</div>
+<div style="margin-top:.625em;">
+<code>execute</code> is a fallible operation: we might have a network issue while talking to the database, the row we are trying to insert might violate some table constraints (e.g. uniqueness of the primary key), etc.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Internal Errors" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<h4><b>Enable The Caller To React</b></h4>
+<div>
+The caller of <code>execute</code> most likely wants to be informed if a failure occurs - <b>they need to react accordingly</b>, e.g. retry the query or propagate the failure upstream using <code>?</code>, as in our example.
+</div>
+<div style="margin-top:.625em;">
+Rust leverages the type system to communicate that an operation may not succeed: the return type of <code>execute</code> is <code>Result</code>, an enum.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+pub enum Result<Success, Error> {
+    Ok(Success),
+    Err(Error)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The caller is then forced by the compiler to express how they plan to handle both scenarios - success and failure.
+</div>
+<div style="margin-top:.625em;">
+If our only goal was to communicate to the caller that an error happened, we could use a simpler definition for <code>Result</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+pub enum ResultSignal<Success> {
+    Ok(Success),
+    Err
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+There would be no need for a generic <code>Error</code> type - we could just check that <code>execute</code> returned the <code>Err</code> variant, e.g.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+let outcome = sqlx::query!(/* ... */)
+    .execute(transaction)
+    .await;
+if outcome == ResultSignal::Err { 
+    // Do something if it failed
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+This works if there is only one failure mode. Truth is, operations can fail in multiple ways and we might want to react differently depending on what happened.
+</div>
+<div style="margin-top:.625em;">
+Let's look at the skeleton of <code>sqlx::Error</code>, the error type for <code>execute</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! sqlx-core/src/error.rs
+ 
+pub enum Error {
+    Configuration(/* */),
+    Database(/* */),
+    Io(/* */),
+    Tls(/* */),
+    Protocol(/* */),
+    RowNotFound,
+    TypeNotFound {/* */},
+    ColumnIndexOutOfBounds {/* */},
+    ColumnNotFound(/* */),
+    ColumnDecode {/* */},
+    Decode(/* */),
+    PoolTimedOut,
+    PoolClosed,
+    WorkerCrashed,
+    Migrate(/* */),
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Quite a list, ain't it?
+</div>
+<div style="margin-top:.625em;">
+<code>sqlx::Error</code> is implemented as an enum to allow users to match on the returned error and behave differently depending on the underlying failure mode. For example, you might want to retry a <code>PoolTimedOut</code> while you will probably give up on a <code>ColumnNotFound</code>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Help An Operator To Troubleshoot" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+What if an operation has a single failure mode - should we just use <code>()</code> as error type?
+</div>
+<div style="margin-top:.625em;">
+<code>Err(())</code> might be enough for the caller to determine what to do - e.g. return a <code>500 Internal Server Error</code> to the user.
+</div>
+<div style="margin-top:.625em;">
+But control flow is not the only purpose of errors in an application.
+</div>
+<div style="margin-top:.625em;">
+We expect errors to carry enough <code>context</code> about the failure to produce a <code>report</code> for an operator (e.g. the developer) that contains enough details to go and troubleshoot the issue.
+</div>
+<div style="margin-top:.625em;">
+What do we mean by report? <br />
+In a backend API like ours it will usually be a log event. <br />
+In a CLI it could be an error message shown in the terminal when a <code>--verbose</code> flag is used.
+</div>
+<div style="margin-top:.625em;">
+The implementation details may vary, the purpose stays the same: help a <code>human</code> understand what is going wrong.
+That's exactly what we are doing in the initial code snippet:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn store_token(/* */) -> Result<(), sqlx::Error> {
+    sqlx::query!(/* */)
+        .execute(transaction)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to execute query: {:?}", e);
+            e
+        })?;
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+If the query fails, we grab the error and emit a log event. We can then go and inspect the error logs when investigating the database issue.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Errors At The Edge" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<h4><b>Help A User To Troubleshoot</b></h4>
+<div>
+So far we focused on the internals of our API - functions calling other functions and operators trying to make sense of the mess after it happened. <br />
+What about users?
+</div>
+<div style="margin-top:.625em;">
+Just like operators, users expect the API to <code>signal</code> when a failure mode is encountered.
+</div>
+<div style="margin-top:.625em;">
+What does a user of our API see when <code>store_token</code></code> fails? <br />
+We can find out by looking at the request handler:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn subscribe(/* */) -> HttpResponse {
+    // [...]
+    if store_token(&mut transaction, subscriber_id, &subscription_token)
+        .await
+        .is_err() 
+    {
+        return HttpResponse::InternalServerError().finish();
+    }
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+They receive an HTTP response with no body and a <code>500 Internal Server Error</code> status code.
+</div>
+<div style="margin-top:.625em;">
+The status code fulfills the same purpose of the error type in <code>store_token</code>: it is a machine-parsable piece of information that the caller (e.g. the browser) can use to determine what to do next (e.g. retry the request assuming it's a transient failure).
+</div>
+<div style="margin-top:.625em;">
+What about the human behind the browser? What are we telling them? <br />
+Not much, the response body is empty. <br />
+That is actually a good implementation: the user should not have to care about the internals of the API they are calling - they have no mental model of it and no way to determine why it is failing. That's the realm of the operator. <br />
+We are <code>omitting</code> those details by design.
+</div>
+<div style="margin-top:.625em;">
+In other circumstances, instead, we need to convey additional information to the human user. Let's look at our input validation for the same endpoint:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+
+#[derive(serde::Deserialize)]
+pub struct FormData {
+    email: String,
+    name: String,
+}
+
+impl TryFrom<FormData> for NewSubscriber {
+    type Error = String;
+
+    fn try_from(value: FormData) -> Result<Self, Self::Error> {
+        let name = SubscriberName::parse(value.name)?;
+        let email = SubscriberEmail::parse(value.email)?;
+        Ok(Self { email, name })
+    }
+} 
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We received an email address and a name as data attached to the form submitted by the user. Both fields are going through an additional round of validation - <code>SubscriberName::parse</code> and <code>SubscriberEmail::parse</code>. Those two methods are fallible - they return a <code>String</code> as error type to explain what has gone wrong:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/domain/subscriber_email.rs
+// [...]
+
+impl SubscriberEmail {
+    pub fn parse(s: String) -> Result<SubscriberEmail, String> {
+        if validate_email(&s) {
+            Ok(Self(s))
+        } else {
+            Err(format!("{} is not a valid subscriber email.", s))
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It is, I must admit, not the most useful error message: we are telling the user that the email address they entered is wrong, but we are not helping them to determine why.
+</div>
+<div style="margin-top:.625em;">
+In the end, it doesn't matter: we are not sending any of that information to the user as part of the response of the API - they are getting a <code>400 Bad Request</code> with no body.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscription.rs
+// [...]
+
+pub async fn subscribe(/* */) -> HttpResponse {
+    let new_subscriber = match form.0.try_into() {
+        Ok(form) => form,
+        Err(_) => return HttpResponse::BadRequest().finish(),
+    };
+    // [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+This is a poor error: the user is left in the dark and cannot adapt their behaviour as required.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Summary" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's summarise what we uncovered so far.
+Errors serve two1 main purposes:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">Control flow (i.e. determine what do next);</li>
+  <li style="margin-top:.325em;">Reporting (e.g. investigate, after the fact, what went wrong on).</li>
+</ul>
+<div style="margin-top:.625em;">
+We can also distinguish errors based on their location:
+</div>
+
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">Internal (i.e. a function calling another function within our application);</li>
+  <li style="margin-top:.325em;">At the edge (i.e. an API request that we failed to fulfill).</li>
+</ul>
+
+<div style="margin-top:.625em;">
+Control flow is scripted: all information required to take a decision on what to do next must be accessible to a <b>machine</b>.
+</div>
+<div style="margin-top:.625em;">
+We use types (e.g. enum variants), methods and fields for internal errors. <br />
+We rely on status codes for errors at the edge.
+</div>
+<div style="margin-top:.625em;">
+Error reports, instead, are primarily consumed by <code>humans</code>. <br />
+The content has to be tuned depending on the audience. 
+</div>
+<div style="margin-top:.625em;">
+An operator has access to the internals of the system - they should be provided with as much <code>context</code> as possible on the failure mode.
+</div>
+<div style="margin-top:.625em;">
+A user sits outside the boundary of the application: they should only be given the amount of information required to adjust their behaviour if necessary (e.g. fix malformed inputs).
+</div>
+<div style="margin-top:.625em;">
+We can visualise this mental model using a 2x2 table with <code>Location</code> as columns and <code>Purpose</code> as rows:
+</div>
+<table style="color:darkslateblue;margin:.5em 0;line-height:1.3em;">
+    <tbody>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight:normal;width:140px;">&nbsp;</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;width:300px;">Internal</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">At the edge</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight:normal;width:140px;">Control Flow</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;width:300px;">Types, methods, fields</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">Status codes</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight:normal;width:140px;">Reporting</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;width:300px;">Logs/traces</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">Response body</td>
+        </tr>
+    </tbody>
+</table>
+<div style="margin-top:.625em;">
+We will spend the rest of the chapter improving our error handling strategy for each of the cells in the table.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Error Reporting For Operators</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's start with error reporting for operators. <br />
+Are we doing a good job with logging right now when it comes to errors?
+</div>
+<div style="margin-top:.625em;">
+Let's write a quick test to find out:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/subscriptions.rs
+// [...]
+
+#[tokio::test]
+async fn subscribe_fails_if_there_is_a_fatal_database_error() {
+    // Arrange
+    let app = spawn_app().await;
+    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+    // Sabotage the database
+    sqlx::query!("ALTER TABLE subscription_tokens DROP COLUMN subscription_token;",)
+        .execute(&app.db_pool)
+        .await
+        .unwrap();
+
+    // Act
+    let response =  app.post_subscriptions(body.into()).await;
+
+    // Assert
+    assert_eq!(response.status().as_u16(), 500);
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The test passes straight away - let's look at the log emitted by the application.
+</div>
+<div style="margin-top:.625em;">
+Make sure you are running on <code>tracing-actix-web 0.4.0-beta.8</code>, <code>tracing-bunyan-formatter 0.2.4</code> and <code>actix-web 4.0.0-beta.8</code>!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# sqlx logs are a bit spammy, cutting them out to reduce noise
+export RUST_LOG="sqlx=error,info"
+export TEST_LOG=enabled
+cargo t subscribe_fails_if_there_is_a_fatal_database_error | bunyan
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The output, once you focus on what matters, is the following:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+INFO: [HTTP REQUEST - START] 
+ INFO: [ADDING A NEW SUBSCRIBER - START]
+ INFO: [SAVING NEW SUBSCRIBER DETAILS IN THE DATABASE - START]
+ INFO: [SAVING NEW SUBSCRIBER DETAILS IN THE DATABASE - END]
+ INFO: [STORE SUBSCRIPTION TOKEN IN THE DATABASE - START]
+ERROR: [STORE SUBSCRIPTION TOKEN IN THE DATABASE - EVENT] Failed to execute query: 
+        Database(PgDatabaseError { 
+          severity: Error, 
+          code: "42703", 
+          message: 
+              "column 'subscription_token' of relation
+               'subscription_tokens' does not exist", 
+          ...
+        })
+    target=zero2prod::routes::subscriptions
+ INFO: [STORE SUBSCRIPTION TOKEN IN THE DATABASE - END]
+ INFO: [ADDING A NEW SUBSCRIBER - END]
+ERROR: [HTTP REQUEST - EVENT] Error encountered while 
+        processing the incoming HTTP request: "" 
+    exception.details="",
+    exception.message="",
+    target=tracing_actix_web::middleware
+ INFO: [HTTP REQUEST - END] 
+    exception.details="",
+    exception.message="",
+    target=tracing_actix_web::root_span_builder, 
+    http.status_code=500
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+How do you read something like this? <br />
+Ideally, you start from the outcome: the log record emitted at the end of request processing. In our case, that is:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+ INFO: [HTTP REQUEST - END] 
+    exception.details="",
+    exception.message="",
+    target=tracing_actix_web::root_span_builder, 
+    http.status_code=500
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+What does that tell us? <br />
+The request returned a <code>500</code> status code - it failed. <br />
+We don't learn a lot more than that: both <code>exception.details</code> and <code>exception.message</code> are empty.
+</div>
+<div style="margin-top:.625em;">
+The situation does not get much better if we look at the next log, emitted by <code>tracing_actix_web</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+ ERROR: [HTTP REQUEST - EVENT] Error encountered while 
+        processing the incoming HTTP request: "" 
+    exception.details="",
+    exception.message="",
+    target=tracing_actix_web::middleware
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+No actionable information whatsoever. Logging "Oops! Something went wrong!" would have been just as useful. <br />
+We need to keep looking, all the way to the last remaining error log:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+ERROR: [STORE SUBSCRIPTION TOKEN IN THE DATABASE - EVENT] Failed to execute query: 
+        Database(PgDatabaseError { 
+          severity: Error, 
+          code: "42703", 
+          message: 
+              "column 'subscription_token' of relation
+               'subscription_tokens' does not exist", 
+          ...
+        })
+    target=zero2prod::routes::subscriptions
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Something went wrong when we tried talking to the database - we were expecting to see a <code>subscription_token</code> column in the <code>subscription_tokens</code> table but, for some reason, it was not there. <br />
+This is actually useful!
+</div>
+<div style="margin-top:.625em;">
+Is it the cause of the <code>500</code> though? <br />
+Difficult to say just by looking at the logs - a developer will have to clone the codebase, check where that log line is coming from and make sure that it's indeed the cause of the issue.
+</div>
+<div style="margin-top:.625em;">
+It can be done, but it takes time: it would be much easier if the <code>[HTTP REQUEST - END]</code> log record reported something useful about the <b>underlying root cause</b> in <code>exception.details</code> and <code>exception.message</code>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Keeping Track Of The Error Root Cause" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+To understand why the log records coming out <code>tracing_actix_web</code> are so poor we need to inspect (again) our request handler and <code>store_token</code>:
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn subscribe(/* */) -> HttpResponse {
+    // [...]
+    if store_token(&mut transaction, subscriber_id, &subscription_token)
+        .await
+        .is_err()
+    {
+        return HttpResponse::InternalServerError().finish();
+    }
+    // [...]
+}
+
+pub async fn store_token(/* */) -> Result<(), sqlx::Error> {
+    sqlx::query!(/* */)
+        .execute(transaction)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to execute query: {:?}", e);
+            e
+        })?;
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The useful error log we found is indeed the one emitted by that <code>tracing::error</code> call - the error message includes the <code>sqlx::Error</code> returned by <code>execute</code>.
+We propagate the error upwards using the <code>?</code> operator, but the chain breaks in subscribe - we discard the error we received from <code>store_token</code> and build a bare <code>500</code> response.
+</div>
+<div style="margin-top:.625em;">
+<code>HttpResponse::InternalServerError().finish()</code> is the only thing that <code>actix_web</code> and <code>tracing_actix_web::TracingLogger</code> get to access when they are about to emit their respective log records. The error does not contain any context about the <b>underlying root cause</b>, therefore the log records are equally useless.
+</div>
+<div style="margin-top:.625em;">
+How do we fix it?
+</div>
+<div style="margin-top:.625em;">
+We need to start leveraging the error handling machinery exposed by <code>actix_web</code> - in particular, <code>actix_web::Error</code>. According to the documentation:
+</div>
+<div style="margin-top:.625em;">
+<code>actix_web::Error</code> is used to carry errors from <code>std::error</code> through <code>actix_web</code> in a convenient way.
+</div>
+<div style="margin-top:.625em;">
+It sounds exactly like what we are looking for. How do we build an instance of <a href="https://docs.rs/actix-web/4.0.1/actix_web/struct.Error.html">actix_web::Error</a>?
+The documentation states that
+</div>
+<div style="margin-top:.625em;">
+<code>actix_web::Error</code> can be created by converting errors with into().
+</div>
+<div style="margin-top:.625em;">
+A bit indirect, but we can figure it out. <br />
+The only <code>From/Into</code> implementation that we can use, browsing the ones listed in the documentation, seems to be this one:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+/// Build an `actix_web::Error` from any error that implements `ResponseError`
+impl<T: ResponseError + 'static> From<T> for Error {
+    fn from(err: T) -> Error {
+        Error {
+            cause: Box::new(err),
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<a href="https://docs.rs/actix-web/4.0.1/actix_web/trait.ResponseError.html">ResponseError</a> is a trait exposed by <code>actix_web</code>:
     ]]>
     </c:sourceContent>
     <c:comment>
