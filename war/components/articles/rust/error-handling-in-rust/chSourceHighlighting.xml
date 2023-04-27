@@ -1604,6 +1604,274 @@ impl std::fmt::Display for SubscribeError {
 }
     ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Debug is easily sorted: we implemented the <code>Error</code> trait for <code>SubscribeError</code>, including <code>source</code>, and we can use again the helper function we wrote earlier for <code>StoreTokenError</code>.
+</div>
+<div style="margin-top:.625em;">
+We have a problem when it comes to <code>Display</code> - the same <code>DatabaseError</code> variant is used for errors encountered when:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">acquiring a new Postgres connection from the pool;</li>
+  <li style="margin-top:.325em;">inserting a subscriber in the <code>subscribers</code> table;</li>
+  <li style="margin-top:.325em;">committing the SQL transaction.</li>
+</ul>
+<div style="margin-top:.625em;">
+When implementing <code>Display</code> for <code>SubscribeError</code> we have no way to distinguish which of those three cases we are dealing with - the <b>underlying error type is not enough</b>.
+</div>
+<div style="margin-top:.625em;">
+Let's disambiguate by using a different enum variant for each operation:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub enum SubscribeError {
+    // [...]
+    // No more `DatabaseError`
+    PoolError(sqlx::Error),
+    InsertSubscriberError(sqlx::Error),
+    TransactionCommitError(sqlx::Error),
+}
+
+impl std::error::Error for SubscribeError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            //  [...]
+            // No more DatabaseError
+            SubscribeError::PoolError(e) => Some(e),
+            SubscribeError::InsertSubscriberError(e) => Some(e),
+            SubscribeError::TransactionCommitError(e) => Some(e),
+            // [...]
+        }
+    }
+}
+
+impl std::fmt::Display for SubscribeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            // [...]
+            SubscribeError::PoolError(_) => {
+                write!(f, "Failed to acquire a Postgres connection from the pool")
+            }
+            SubscribeError::InsertSubscriberError(_) => {
+                write!(f, "Failed to insert new subscriber in the database.")
+            }
+            SubscribeError::TransactionCommitError(_) => {
+                write!(
+                    f,
+                    "Failed to commit SQL transaction to store a new subscriber."
+                )
+            }
+        }
+    }
+}
+
+impl ResponseError for SubscribeError {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            SubscribeError::ValidationError(_) => StatusCode::BAD_REQUEST,
+            SubscribeError::PoolError(_)
+            | SubscribeError::TransactionCommitError(_)
+            | SubscribeError::InsertSubscriberError(_)
+            | SubscribeError::StoreTokenError(_)
+            | SubscribeError::SendEmailError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>DatabaseError</code> is used in one more place:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [..]
+
+impl From<sqlx::Error> for SubscribeError {
+    fn from(e: sqlx::Error) -> Self {
+        Self::DatabaseError(e)
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The type alone is not enough to distinguish which of the new variants should be used; we cannot implement <code>From</code> for <code>sqlx::Error</code>. <br />
+We have to use <code>map_err</code> to perform the right conversion in each case.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [..]
+
+pub async fn subscribe(/* */) -> Result<HttpResponse, SubscribeError> {
+    // [...]
+    let mut transaction = pool.begin().await.map_err(SubscribeError::PoolError)?;
+    let subscriber_id = insert_subscriber(&mut transaction, &new_subscriber)
+        .await
+        .map_err(SubscribeError::InsertSubscriberError)?;
+    // [...]
+    transaction
+        .commit()
+        .await
+        .map_err(SubscribeError::TransactionCommitError)?;
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The code compiles and <code>exception.message</code> is useful again:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+...
+ INFO: [HTTP REQUEST - END] 
+    exception.details="Failed to store the confirmation token 
+        for a new subscriber.
+
+        Caused by:
+            A database failure was encountered while trying to store 
+            a subscription token.
+        Caused by:
+            error returned from database: column 'subscription_token'
+            of relation 'subscription_tokens' does not exist"
+    exception.message="Failed to store the confirmation token for a new subscriber.",
+    target=tracing_actix_web::root_span_builder, 
+    http.status_code=500
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Removing The Boilerplate With thiserror" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+It took us roughly 90 lines of code to implement <code>SubscribeError</code> and all the machinery that surrounds it in order to achieve the desired behaviour and get useful diagnostic in our logs.
+</div>
+<div style="margin-top:.625em;">
+That is a lot of code, with a ton of boilerplate (e.g. <code>source</code>'s or <code>From</code> implementations). <br />
+Can we do better?
+</div>
+<div style="margin-top:.625em;">
+Well, I am not sure we can write less code, but we can find a different way out: we can <code>generate</code> all that boilerplate using a macro!
+</div>
+<div style="margin-top:.625em;">
+As it happens, there is already a great crate in the ecosystem for this purpose: <a href="https://github.com/dtolnay/thiserror">thiserror</a>. Let's add it to our dependencies:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+
+[dependencies]
+# [...]
+thiserror = "1"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It provides a derive macro to generate most of the code we just wrote by hand. <br />
+Let's see it in action:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+#[derive(thiserror::Error)]
+pub enum SubscribeError {
+    #[error("{0}")]
+    ValidationError(String),
+    #[error("Failed to acquire a Postgres connection from the pool")]
+    PoolError(#[source] sqlx::Error),
+    #[error("Failed to insert new subscriber in the database.")]
+    InsertSubscriberError(#[source] sqlx::Error),
+    #[error("Failed to store the confirmation token for a new subscriber.")]
+    StoreTokenError(#[from] StoreTokenError),
+    #[error("Failed to commit SQL transaction to store a new subscriber.")]
+    TransactionCommitError(#[source] sqlx::Error),
+    #[error("Failed to send a confirmation email.")]
+    SendEmailError(#[from] reqwest::Error),
+}
+
+// We are still using a bespoke implementation of `Debug`
+// to get a nice report using the error source chain
+impl std::fmt::Debug for SubscribeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        error_chain_fmt(self, f)
+    }
+}
+
+pub async fn subscribe(/* */) -> Result<HttpResponse, SubscribeError> {
+    // We no longer have `#[from]` for `ValidationError`, so we need to 
+    // map the error explicitly
+    let new_subscriber = form.0.try_into().map_err(SubscribeError::ValidationError)?;
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We cut it down to 21 lines - not bad! <br />
+Let's break down what is happening now.
+</div>
+<div style="margin-top:.625em;">
+<code>thiserror::Error</code> is a <a href="https://doc.rust-lang.org/reference/procedural-macros.html">procedural macro</a> used via a <code>#[derive(/* */)]</code> attribute.
+We have seen and used these before - e.g. <code>#[derive(Debug)]</code> or <code>#[derive(serde::Serialize)]</code>.
+</div>
+<div style="margin-top:.625em;">
+The macro receives, at compile-time, the definition of <code>SubscribeError</code> as input and returns another stream of tokens as output - it generates new Rust code, which is then compiled into the final binary.
+</div>
+<div style="margin-top:.625em;">
+Within the context of <code>#[derive(thiserror::Error)]</code> we get access to other attributes to achieve the behaviour we are looking for:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;"><code>#[error(/* */)]</code> defines the Display representation of the enum variant it is applied to. E.g. <code>Display</code> will return <code>Failed to send a confirmation email</code>. when invoked on an instance of <code>SubscribeError::SendEmailError</code>. You can interpolate values in the final representation - e.g. the <code>{0}</code> in <code>#[error("{0}")]</code> on top of <code>ValidationError</code> is referring to the wrapped <code>String</code> field, mimicking the syntax to access fields on tuple structs (i.e. <code>self.0</code>).</li>
+  <li style="margin-top:.325em;"><code>#[source]</code> is used to denote what should be returned as root cause in <code>Error::source</code>;</li>
+  <li style="margin-top:.325em;"><code>#[from]</code> automatically derives an implementation of <code>From</code> for the type it has been applied to into the top-level error type (e.g. <code>impl From<StoreTokenError> for SubscribeError {/* */}</code>). The field annotated with <code>#[from]</code> is also used as error source, saving us from having to use two annotations on the same field (e.g. <code>#[source] #[from] reqwest::Error</code>).</li>
+</ul>
+<div style="margin-top:.625em;">
+I want to call your attention on a small detail: we are not using either <code>#[from]</code> or <code>#[source]</code> for the <code>ValidationError</code> variant. That is because <code>String</code> does not implement the <code>Error</code> trait, therefore it cannot be returned in <code>Error::source</code> - the same limitation we encountered before when implementing <code>Error::source</code> manually, which led us to return <code>None</code> in the <code>ValidationError</code> case.
+</div>
+    ]]>
+    </c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
@@ -1611,6 +1879,481 @@ impl std::fmt::Display for SubscribeError {
     </c:comment>
   </c:entry>
 
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Avoid "Ball Of Mud" Error Enums</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+In <code>SubscribeError</code> we are using enum variants for two purposes:
+</div>
+<div style="margin-top:.625em;">
+Determine the response that should be returned to the caller of our API (<code>ResponseError</code>); <br />
+Provide relevant diagnostic (<code>Error::source</code>, <code>Debug</code>, <code>Display</code>).
+</div>
+<div style="margin-top:.625em;">
+<code>SubscribeError</code>, as currently defined, exposes a lot of the implementation details of <code>subscribe</code>: we have a variant for every fallible function call we make in the request handler! <br />
+It is not a strategy that scales very well.
+</div>
+<div style="margin-top:.625em;">
+We need to think in terms of <b>abstraction layers</b>: what does a caller of <code>subscribe</code> <b>need</b> to know?
+</div>
+<div style="margin-top:.625em;">
+They should be able to determine what response to return to a user (via <code>ResponseError</code>). That's it.
+</div>
+<div style="margin-top:.625em;">
+The caller of <code>subscribe</code> does not understand the intricacies of the subscription flow: they don't know enough about the domain to behave differently for a <code>SendEmailError</code> compared to a <code>TransactionCommitError</code> (by design!). <code>subscribe</code> should return an error type that speaks at the <b>right level of abstraction</b>.
+</div>
+<div style="margin-top:.625em;">
+The ideal error type would look like this:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs 
+
+#[derive(thiserror::Error)]
+pub enum SubscribeError {
+    #[error("{0}")]
+    ValidationError(String),
+    #[error(/* */)]
+    UnexpectedError(/* */),
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>ValidationError</code> maps to a <code>400 Bad Request</code>, <code>UnexpectedError</code> maps to an opaque <code>500 Internal Server</code> Error.
+</div>
+<div style="margin-top:.625em;">
+What should we store in the <code>UnexpectedError</code> variant? <br />
+We need to map <code>multiple</code> error types into it - <code>sqlx::Error</code>, <code>StoreTokenError</code>, <code>reqwest::Error</code>.
+</div>
+<div style="margin-top:.625em;">
+We do not want to expose the implementation details of the fallible routines that get mapped to <code>UnexpectedError</code> by <code>subscribe</code> - it must be <b>opaque</b>.
+</div>
+<div style="margin-top:.625em;">
+We bumped into a type that fulfills those requirements when looking at the <code>Error</code> trait from Rust's standard library: <code>Box&lt;dyn std::error::Error&gt;</code>
+</div>
+<div style="margin-top:.625em;">
+Let's give it a go:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs 
+
+#[derive(thiserror::Error)]
+pub enum SubscribeError {
+    #[error("{0}")]
+    ValidationError(String),
+    // Transparent delegates both `Display`'s and `source`'s implementation
+    // to the type wrapped by `UnexpectedError`.
+    #[error(transparent)]
+    UnexpectedError(#[from] Box<dyn std::error::Error>),
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can still generate an accurate response for the caller:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs 
+// [...]
+
+impl ResponseError for SubscribeError {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            SubscribeError::ValidationError(_) => StatusCode::BAD_REQUEST,
+            SubscribeError::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We just need to adapt <code>subscribe</code> to properly convert our errors before using the <code>?</code> operator:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs 
+// [...]
+
+pub async fn subscribe(/* */) -> Result<HttpResponse, SubscribeError> {
+    // [...]
+    let mut transaction = pool
+        .begin()
+        .await
+        .map_err(|e| SubscribeError::UnexpectedError(Box::new(e)))?;
+    let subscriber_id = insert_subscriber(/* */)
+        .await
+        .map_err(|e| SubscribeError::UnexpectedError(Box::new(e)))?;
+    // [...]
+    store_token(/* */)
+        .await
+        .map_err(|e| SubscribeError::UnexpectedError(Box::new(e)))?;
+    transaction
+        .commit()
+        .await
+        .map_err(|e| SubscribeError::UnexpectedError(Box::new(e)))?;
+    send_confirmation_email(/* */)
+        .await
+        .map_err(|e| SubscribeError::UnexpectedError(Box::new(e)))?;
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+There is some code repetition, but let it be for now. <br />
+The code compiles and our tests pass as expected.
+</div>
+<div style="margin-top:.625em;">
+Let's change the test we have used so far to check the quality of our log messages: let's trigger a failure in <code>insert_subscriber</code> instead of <code>store_token</code>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/subscriptions.rs
+// [...] 
+
+#[tokio::test]
+async fn subscribe_fails_if_there_is_a_fatal_database_error() {
+    // [...]
+    // Break `subscriptions` instead of `subscription_tokens` 
+    sqlx::query!("ALTER TABLE subscriptions DROP COLUMN email;",)
+        .execute(&app.db_pool)
+        .await
+        .unwrap();
+    
+    // [..]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test passes, but we can see that our logs have regressed:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+ INFO: [HTTP REQUEST - END] 
+    exception.details: 
+        "error returned from database: column 'email' of 
+         relation 'subscriptions' does not exist"
+    exception.message: 
+        "error returned from database: column 'email' of 
+         relation 'subscriptions' does not exist"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We do not see a cause chain anymore. <br />
+We lost the operator-friendly error message that was previously attached to the <code>InsertSubscriberError</code> via <code>thiserror</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+#[derive(thiserror::Error)]
+pub enum SubscribeError {
+    #[error("Failed to insert new subscriber in the database.")]
+    InsertSubscriberError(#[source] sqlx::Error),
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+That is to be expected: we are forwarding the raw error now to Display (via <code>#[error(transparent)]</code>), we are not attaching any <b>additional context</b> to it in <code>subscribe</code>.
+</div>
+<div style="margin-top:.625em;">
+We can fix it - let's add a new <code>String</code> field to <code>UnexpectedError</code> to attach contextual information to the opaque error we are storing:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+#[derive(thiserror::Error)]
+pub enum SubscribeError {
+    #[error("{0}")]
+    ValidationError(String),
+    #[error("{1}")]
+    UnexpectedError(#[source] Box<dyn std::error::Error>, String),
+}
+
+impl ResponseError for SubscribeError {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            // [...]
+            // The variant now has two fields, we need an extra `_`
+            SubscribeError::UnexpectedError(_, _) => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We need to adjust our mapping code in <code>subscribe</code> accordingly - we will reuse the error descriptions we had before refactoring <code>SubscribeError</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn subscribe(/* */) -> Result<HttpResponse, SubscribeError> {
+    // [..]
+    let mut transaction = pool.begin().await.map_err(|e| {
+        SubscribeError::UnexpectedError(
+            Box::new(e),
+            "Failed to acquire a Postgres connection from the pool".into(),
+        )
+    })?;
+    let subscriber_id = insert_subscriber(/* */)
+        .await
+        .map_err(|e| {
+            SubscribeError::UnexpectedError(
+                Box::new(e),
+                "Failed to insert new subscriber in the database.".into(),
+            )
+        })?;
+    // [..]
+    store_token(/* */)
+        .await
+        .map_err(|e| {
+            SubscribeError::UnexpectedError(
+                Box::new(e),
+                "Failed to store the confirmation token for a new subscriber.".into(),
+            )
+        })?;
+    transaction.commit().await.map_err(|e| {
+        SubscribeError::UnexpectedError(
+            Box::new(e),
+            "Failed to commit SQL transaction to store a new subscriber.".into(),
+        )
+    })?;
+    send_confirmation_email(/* */)
+        .await
+        .map_err(|e| {
+            SubscribeError::UnexpectedError(
+                Box::new(e), 
+                "Failed to send a confirmation email.".into()
+            )
+        })?;
+    // [..]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It is somewhat ugly, but it works:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+ INFO: [HTTP REQUEST - END] 
+    exception.details=
+        "Failed to insert new subscriber in the database.
+        
+        Caused by:
+            error returned from database: column 'email' of 
+             relation 'subscriptions' does not exist"
+    exception.message="Failed to insert new subscriber in the database."
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Using anyhow As Opaque Error Type" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We could spend more time polishing the machinery we just built, but it turns out it is not necessary: we can lean on the ecosystem, again. <br />
+The author of <code>thiserror</code> has another crate for us - <a href="https://github.com/dtolnay/anyhow">anyhow</a>.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+
+[dependencies]
+# [...]
+anyhow = "1"
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The type we are looking for is <code>anyhow::Error</code>. Quoting the documentation:
+</div>
+<div style="margin-top:.625em;">
+<code>anyhow::Error</code> is a wrapper around a dynamic error type. <code>anyhow::Error</code> works a lot like <code>Box&lt;dyn std::error::Error&gt;</code>, but with these differences:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;"><code>anyhow::Error</code> requires that the error is <code>Send</code>, <code>Sync</code>, and <code>'static</code>.</li>
+  <li style="margin-top:.325em;"><code>anyhow::Error</code> guarantees that a backtrace is available, even if the underlying error type does not provide one.</li>
+  <li style="margin-top:.325em;"><code>anyhow::Error</code> is represented as a narrow pointer — exactly one word in size instead of two.</li>
+</ul>
+<div style="margin-top:.625em;">
+The additional constraints (<code>Send</code>, Sync and <code>'static</code>) are not an issue for us. <br />
+We appreciate the more compact representation and the option to access a backtrace, if we were to be interested in it.
+</div>
+<div style="margin-top:.625em;">
+Let's replace <code>Box&lt;dyn std::error::Error&gt;</code> with <code>anyhow::Error</code> in <code>SubscribeError</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+#[derive(thiserror::Error)]
+pub enum SubscribeError {
+    #[error("{0}")]
+    ValidationError(String),
+    #[error(transparent)]
+    UnexpectedError(#[from] anyhow::Error),
+}
+
+impl ResponseError for SubscribeError {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            // [...]
+            // Back to a single field
+            SubscribeError::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We got rid of the second <code>String</code> field as well in <code>SubscribeError::UnexpectedError</code> - it is no longer necessary. <br />
+<code>anyhow::Error</code> provides the capability to enrich an error with <b>additional context</b> out of the box.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+use anyhow::Context;
+// [...]
+
+pub async fn subscribe(/* */) -> Result<HttpResponse, SubscribeError> {
+    // [...]
+    let mut transaction = pool
+        .begin()
+        .await
+        .context("Failed to acquire a Postgres connection from the pool")?;
+    let subscriber_id = insert_subscriber(/* */)
+        .await
+        .context("Failed to insert new subscriber in the database.")?;
+    // [..]
+    store_token(/* */)
+        .await
+        .context("Failed to store the confirmation token for a new subscriber.")?;
+    transaction
+        .commit()
+        .await
+        .context("Failed to commit SQL transaction to store a new subscriber.")?;
+    send_confirmation_email(/* */)
+        .await
+        .context("Failed to send a confirmation email.")?;
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The <code>context</code> method is performing double duties here:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">it converts the error returned by our methods into an <code>anyhow::Error</code>;</li>
+  <li style="margin-top:.325em;">it enriches it with additional context around the intentions of the caller.</li>
+</ul>
+<div style="margin-top:.625em;">
+<code>context</code> is provided by the <code>Context</code> trait - <code>anyhow</code> implements it for <code>Result</code>, giving us access to a fluent API to easily work with fallible functions of all kinds.
+</div>
+
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
 
 
 
