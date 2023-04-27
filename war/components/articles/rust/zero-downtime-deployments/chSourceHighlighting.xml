@@ -2697,5 +2697,405 @@ Oh, yes! It works!
   </c:entry>
 
 
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Database Transactions</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="All Or Nothing" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+It is too soon to declare victory though. <br />
+Our <code>POST /subscriptions</code> handler has grown in complexity - we are now performing two INSERT queries against our Postgres database: one to store the details of the new subscriber, one to store the newly generated subscription token.
+What happens if the application crashes between those two operations?
+</div>
+<div style="margin-top:.625em;">
+The first query might complete successfully, but the second one might never be executed.
+</div>
+<div style="margin-top:.625em;">
+There are three possible states for our database after an invocation of <code>POST /subscriptions</code>:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">a new subscriber and its token have been persisted;</li>
+  <li style="margin-top:.325em;">a new subscriber has been persisted, without a token;</li>
+  <li style="margin-top:.325em;">nothing has been persisted.</li>
+</ul>
+<div style="margin-top:.625em;">
+The more queries you have, the worse it gets to reason about the possible end states of our database.
+</div>
+<div style="margin-top:.625em;">
+Relational databases (and a few others) provide a mechanism to mitigate this issue: <code>transactions</code>.
+</div>
+<div style="margin-top:.625em;">
+Transactions are a way to group together related operations in a single <code>unit of work</code>.
+</div>
+<div style="margin-top:.625em;">
+The database guarantees that all operations within a transaction will succeed or fail together: the database will never be left in a state where the effect of only a subset of the queries in a transaction is visible.
+</div>
+<div style="margin-top:.625em;">
+Going back to our example, if we wrap the two <code>INSERT</code> queries in a transaction we now have <code>two</code> possible end states:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">a new subscriber and its token have been persisted;</li>
+  <li style="margin-top:.325em;">nothing has been persisted.</li>
+</ul>
+<div style="margin-top:.625em;">
+Much easier to deal with.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Transactions In Postgres" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+To start a transaction in Postgres you use a <a href="https://www.postgresql.org/docs/current/sql-begin.html">BEGIN statement</a>. All queries after <code>BEGIN</code> are part of the transaction. <br />
+The transaction is then finalised with a <a href="https://www.postgresql.org/docs/current/sql-commit.html">COMMIT statement</a>.
+</div>
+<div style="margin-top:.625em;">
+We have actually already used a transaction in one of our migration scripts!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+BEGIN;
+UPDATE subscriptions SET status = 'confirmed' WHERE status IS NULL;
+ALTER TABLE subscriptions ALTER COLUMN status SET NOT NULL;
+COMMIT;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+If any of the queries within a transaction fails the database <b>rolls back</b>: all changes performed by previous queries are reverted, the operation is aborted.
+</div>
+<div style="margin-top:.625em;">
+You can also explicitly trigger a rollback with the <a href="https://www.postgresql.org/docs/current/sql-rollback.html">ROLLBACK statement</a>.
+</div>
+<div style="margin-top:.625em;">
+Transactions are a deep topic: they not only provide a way to convert multiple statements into an all-or-nothing operation, they also hide the effect of uncommitted changes from other queries that might be running, concurrently, against the same tables.
+</div>
+<div style="margin-top:.625em;">
+As your needs evolves, you will often want to explicitly choose the <a href="https://www.postgresql.org/docs/current/transaction-iso.html">isolation level</a> of your transactions to fine-tune the concurrency guarantees provided by the database on your operations. Getting a good grip on the different kinds of concurrency-related issues (e.g. <a href="https://en.wikipedia.org/wiki/Isolation_(database_systems)">dirty reads, phantom reads, etc</a>.) becomes more and more important as your system grows in scale and complexity.
+</div>
+<div style="margin-top:.625em;">
+I can't recommend <a href="https://www.oreilly.com/library/view/designing-data-intensive-applications/9781491903063/">Designing Data Intensive Applications"</a> enough if you want to learn more about these topics.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Transactions In Sqlx" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Back to the code: how do we leverage transactions in <code>sqlx</code>?
+</div>
+<div style="margin-top:.625em;">
+You don't have to manually write a <code>BEGIN</code> statement: transactions are so central to the usage of relational databases that <code>sqlx</code> provides a dedicated API.
+</div>
+<div style="margin-top:.625em;">
+By calling <code>begin</code> on our <code>pool</code> we acquire a connection from the pool and kick off a transaction:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn subscribe([...]) -> HttpResponse {
+    let new_subscriber = // [...]
+    let mut transaction = match pool.begin().await {
+        Ok(transaction) => transaction,
+        Err(_) => return HttpResponse::InternalServerError().finish(),
+    };
+    // [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>begin</code>, if successful, returns a <a href="https://docs.rs/sqlx/0.5.1/sqlx/struct.Transaction.html">Transaction</a> struct. <br />
+A mutable reference to a <code>Transaction</code> implements <code>sqlx</code>'s <a href="https://docs.rs/sqlx/0.5.1/sqlx/trait.Executor.html">Executor</a> trait therefore it can be used to run queries. All queries run using a <code>Transaction</code> as executor become of the transaction.
+</div>
+<div style="margin-top:.625em;">
+Let's pass <code>transaction</code> down to <code>insert_subscriber</code> and <code>store_token</code> instead of <code>pool</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+use sqlx::{Postgres, Transaction};
+// [...]
+
+#[tracing::instrument([...])]
+pub async fn subscribe([...]) -> HttpResponse {
+    // [...]
+    let mut transaction = match pool.begin().await {
+        Ok(transaction) => transaction,
+        Err(_) => return HttpResponse::InternalServerError().finish(),
+    };
+    let subscriber_id = match insert_subscriber(&mut transaction, &new_subscriber).await {
+        Ok(subscriber_id) => subscriber_id,
+        Err(_) => return HttpResponse::InternalServerError().finish(),
+    };
+    let subscription_token = generate_subscription_token();
+    if store_token(&mut transaction, subscriber_id, &subscription_token)
+        .await
+        .is_err()
+    {
+        return HttpResponse::InternalServerError().finish();
+    }
+    // [...]
+}
+
+#[tracing::instrument(
+    name = "Saving new subscriber details in the database",
+    skip(new_subscriber, transaction)
+)]
+pub async fn insert_subscriber(
+    transaction: &mut Transaction<'_, Postgres>,
+    new_subscriber: &NewSubscriber,
+) -> Result<Uuid, sqlx::Error> {
+    let subscriber_id = Uuid::new_v4();
+    sqlx::query!([...])
+        .execute(transaction)
+    // [...]
+}
+
+#[tracing::instrument(
+    name = "Store subscription token in the database",
+    skip(subscription_token, transaction)
+)]
+pub async fn store_token(
+    transaction: &mut Transaction<'_, Postgres>,
+    subscriber_id: Uuid,
+    subscription_token: &str,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!([..])
+        .execute(transaction)
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+If you run <code>cargo test</code> now you will see something funny: some of our tests are failing! <br />
+Why is that happening?
+</div>
+<div style="margin-top:.625em;">
+As we discussed, a transaction has to either be committed or rolled back. <br />
+<code>Transaction</code> exposes two dedicated methods: <a href="https://docs.rs/sqlx/0.5.1/sqlx/struct.Transaction.html#method.commit">Transaction::commit</a>, to persist changes, and <a href="https://docs.rs/sqlx/0.5.1/sqlx/struct.Transaction.html#method.rollback">Transaction::rollback</a>, to abort the whole operation. <br />
+We are not calling either - what happens in that case?
+</div>
+<div style="margin-top:.625em;">
+We can look at <code>sqlx</code>'s source code to understand better. <br />
+In particular, <code>Transaction</code>'s Drop implementation:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+impl<'c, DB> Drop for Transaction<'c, DB>
+where
+    DB: Database,
+{
+    fn drop(&mut self) {
+        if self.open {
+            // starts a rollback operation
+
+            // what this does depends on the database but generally 
+            // this means we queue a rollback operation that will 
+            // happen on the next asynchronous invocation of the 
+            // underlying connection (including if the connection 
+            // is returned to a pool)
+            DB::TransactionManager::start_rollback(&mut self.connection);
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>self.open</code> is an internal boolean flag attached to the connection used to begin the transaction and run the queries attached to it.
+</div>
+<div style="margin-top:.625em;">
+When a transaction is created, using <code>begin</code>, it is set to <code>true</code> until either <code>rollback</code> or <code>commit</code> are called:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+impl<'c, DB> Transaction<'c, DB>
+where
+    DB: Database,
+{
+    pub(crate) fn begin(
+        conn: impl Into<MaybePoolConnection<'c, DB>>,
+    ) -> BoxFuture<'c, Result<Self, Error>> {
+        let mut conn = conn.into();
+
+        Box::pin(async move {
+            DB::TransactionManager::begin(&mut conn).await?;
+
+            Ok(Self {
+                connection: conn,
+                open: true,
+            })
+        })
+    }
+
+    pub async fn commit(mut self) -> Result<(), Error> {
+        DB::TransactionManager::commit(&mut self.connection).await?;
+        self.open = false;
+
+        Ok(())
+    }
+
+    pub async fn rollback(mut self) -> Result<(), Error> {
+        DB::TransactionManager::rollback(&mut self.connection).await?;
+        self.open = false;
+
+        Ok(())
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+In other words: if <code>commit</code> or <code>rollback</code> have not been called before the <code>Transaction</code> object goes out of scope (i.e. <code>Drop</code> is invoked), a <code>rollback</code> command is queued to be executed as soon as an opportunity arises.
+</div>
+<div style="margin-top:.625em;">
+That is why our tests are failing: we are using a transaction but we are not explicitly committing the changes. When the connection goes back into the pool, at the end of our request handler, all changes are rolled back and our test expectations are not met.
+</div>
+<div style="margin-top:.625em;">
+We can fix it by adding a one-liner to <code>subscribe</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+use sqlx::{Postgres, Transaction};
+// [...]
+
+#[tracing::instrument([...])]
+pub async fn subscribe([...]) -> HttpResponse {
+    // [...]
+    let mut transaction = match pool.begin().await {
+        Ok(transaction) => transaction,
+        Err(_) => return HttpResponse::InternalServerError().finish(),
+    };
+    let subscriber_id = match insert_subscriber(&mut transaction, &new_subscriber).await {
+        Ok(subscriber_id) => subscriber_id,
+        Err(_) => return HttpResponse::InternalServerError().finish(),
+    };
+    let subscription_token = generate_subscription_token();
+    if store_token(&mut transaction, subscriber_id, &subscription_token)
+        .await
+        .is_err()
+    {
+        return HttpResponse::InternalServerError().finish();
+    }
+    if transaction.commit().await.is_err() {
+        return HttpResponse::InternalServerError().finish();
+    }
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The test suite should succeed once again.
+</div>
+<div style="margin-top:.625em;">
+Go ahead and deploy the application: seeing a feature working in a live environment adds a whole new level of satisfaction!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Summary</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+This chapter was a long journey, but you have come a long way as well! <br />
+The skeleton of our application has started to shape up, starting with our test suite. Features are moving along as well: we now have a functional subscription flow, with a proper confirmation email.
+</div>
+<div style="margin-top:.625em;">
+More importantly: we are getting into the <code>rhythm</code> of writing Rust code.
+</div>
+<div style="margin-top:.625em;">
+The very end of the chapter has been a long pair programming session where we have made significant progress without introducing many new concepts.
+</div>
+<div style="margin-top:.625em;">
+This is a great moment to go off and explore a bit on your own: improve on what we built so far!
+There are plenty of opportunities:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">What happens if a user tries to subscribe twice? Make sure that they receive two confirmation emails;
+  <li style="margin-top:.325em;">What happens if a user clicks on a confirmation link twice?</li>
+  <li style="margin-top:.325em;">What happens if the subscription token is well-formatted but non-existent?</li>
+  <li style="margin-top:.325em;">Add validation on the incoming token, we are currently passing the raw user input straight into a query (thanks sqlx for protecting us from SQL injections <3);</li>
+  <li style="margin-top:.325em;">Use a proper templating solution for our emails (e.g. <a href="https://github.com/Keats/tera">tera</a>);</li>
+  <li style="margin-top:.325em;">Anything that comes to your mind!</li>
+</ul>
+<div style="margin-top:.625em;">
+It takes deliberate practice to achieve mastery.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
 
 </c:component>
