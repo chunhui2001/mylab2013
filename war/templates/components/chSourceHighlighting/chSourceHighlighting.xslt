@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<xsl:stylesheet version="1.0"
+<xsl:stylesheet version="2.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-                xmlns:c="http://com.snnmo.website"
+                xmlns:c="http://com.snnmo.website" 
+                xmlns:uuid="http://www.uuid.org"
                 exclude-result-prefixes="c">  
   <xsl:output method="html" indent="yes"/>
   
@@ -128,6 +129,14 @@
                           <pre class="syntax">
                               <xsl:value-of disable-output-escaping="no" select="$content-code"/>
                           </pre>
+                      </xsl:when>
+                      <xsl:when test="current()/@type = 'rust'">
+                          <textarea>
+                              <xsl:attribute name="class">
+                                <xsl:value-of select="'rust-code'"/>        
+                              </xsl:attribute>
+                              <xsl:value-of disable-output-escaping="no" select="$content-code"/>
+                          </textarea>
                       </xsl:when>
                       <xsl:otherwise>
                         <div style="font-size:.8em;">
@@ -284,4 +293,5 @@
       <xsl:with-param name="trim" select="$trim" />
     </xsl:call-template>
   </xsl:template>
+
 </xsl:stylesheet>  

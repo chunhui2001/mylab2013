@@ -42,7 +42,17 @@
         <meta property="countryCode" content="{$countryCode}" />
       </xsl:if>
 
-      <link href="//127.0.0.1:9001//gfont/font.css" rel="stylesheet" crossorigin="" />
+      <link href="//127.0.0.1:9001/gfont/font.css" rel="stylesheet" crossorigin="" />
+
+      <link rel="stylesheet" href="//127.0.0.1:9001/codemirror-5.65.2/doc/docs.css" />
+      <link rel="stylesheet" href="//127.0.0.1:9001/codemirror-5.65.2/lib/codemirror.css" />
+      <link rel="stylesheet" href="//127.0.0.1:9001/codemirror-5.65.2/theme/panda-syntax.css" />
+      <link rel="stylesheet" href="//127.0.0.1:9001/codemirror-5.65.2/theme/yonce.css" />
+      <script type="text/javascript" src="//127.0.0.1:9001/codemirror-5.65.2/lib/codemirror.js"></script>
+      <script type="text/javascript" src="//127.0.0.1:9001/codemirror-5.65.2/addon/mode/simple.js"></script>
+      <script type="text/javascript" src="//127.0.0.1:9001/codemirror-5.65.2/mode/rust/rust.js"></script>
+      <script type="text/javascript" src="//127.0.0.1:9001/codemirror-5.65.2/addon/selection/active-line.js"></script>
+
       <link rel="stylesheet" type="text/css" href="/RenderingAssets/lib/bootstrap/bootstrap.min.css" />
 	  	<link rel="stylesheet" type="text/css" href="/RenderingAssets/css/reset.css" />
 	  	<link rel="stylesheet" type="text/css" href="/RenderingAssets/css/global.css" />
@@ -83,6 +93,16 @@
       <link rel="stylesheet" type="text/css" href="/RenderingAssets/lib/jCarousel/jcarousel.responsive.css"/>
       <link rel="stylesheet" href="/RenderingAssets/lib/caroufredsel/caroufredsel.css" type="text/css" />
 
+      <style type="text/css">
+          .CodeMirror {
+              position: relative;
+              overflow: hidden;
+              height: auto;
+              margin-top: 0.325em;
+              font-size: 13px;
+          }
+      </style>
+
       <!--script src="http://jwpsrv.com/library/02YIiKJ2EeOigiIACi0I_Q.js"></script-->
 
       <!-- AddThis Smart Layers BEGIN -->
@@ -99,22 +119,6 @@
         });
       </script-->
       <!-- AddThis Smart Layers END -->
-
-      <script type="text/javascript">
-        $(function(){
-        $(".various").fancybox({
-        maxWidth	: 800,
-        maxHeight	: 600,
-        fitToView	: false,
-        width		: '70%',
-        height		: '70%',
-        autoSize	: false,
-        closeClick	: false,
-        openEffect	: 'none',
-        closeEffect	: 'none'
-        });
-        });
-      </script>
     </head>
   	<body>
 	  	<div>
@@ -152,11 +156,40 @@
       <script type="text/javascript" src="/RenderingAssets/lib/jCarousel/jquery.jcarousel.min.js"></script>
       <script src="/RenderingAssets/lib/caroufredsel/jquery.caroufredsel.js" type="text/javascript"></script>
 
+      <script type="text/javascript">
+        $(function() {
+
+          $('.rust-code').each(function(i, ele) {
+              
+            var editor = CodeMirror.fromTextArea(ele, {
+                lineNumbers: true,
+                lineWrapping: false,
+                indentUnit: 4,
+                readOnly: true,
+                styleActiveLine: true,
+                
+                mode: "rust"
+            });
+          });
+
+           $(".various").fancybox({
+            maxWidth  : 800,
+            maxHeight : 600,
+            fitToView : false,
+            width   : '70%',
+            height    : '70%',
+            autoSize  : false,
+            closeClick  : false,
+            openEffect  : 'none',
+            closeEffect : 'none'
+          });
+
+        })
+
+      </script>
+
     </body>
   </html>
   </xsl:template>
-
-
-
 
 </xsl:stylesheet>  

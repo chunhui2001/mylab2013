@@ -40,7 +40,7 @@ An in-depth analysis of error handling patterns in Rust will be the sole focus o
 Let's start with an example:
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
       <![CDATA[
@@ -95,7 +95,7 @@ Rust leverages the type system to communicate that an operation may not succeed:
 </div>
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
       <![CDATA[
@@ -117,7 +117,7 @@ If our only goal was to communicate to the caller that an error happened, we cou
 </div>
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
       <![CDATA[
@@ -134,7 +134,7 @@ pub enum ResultSignal<Success> {
 There would be no need for a generic <code>Error</code> type - we could just check that <code>execute</code> returned the <code>Err</code> variant, e.g.
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
       <![CDATA[
@@ -158,7 +158,7 @@ Let's look at the skeleton of <code>sqlx::Error</code>, the error type for <code
 </div>
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
       <![CDATA[
@@ -222,7 +222,7 @@ That's exactly what we are doing in the initial code snippet:
 </div>
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
       <![CDATA[
@@ -266,7 +266,7 @@ We can find out by looking at the request handler:
 </div>
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
       <![CDATA[
@@ -306,7 +306,7 @@ In other circumstances, instead, we need to convey additional information to the
 </div>
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
       <![CDATA[
@@ -336,7 +336,7 @@ impl TryFrom<FormData> for NewSubscriber {
 We received an email address and a name as data attached to the form submitted by the user. Both fields are going through an additional round of validation - <code>SubscriberName::parse</code> and <code>SubscriberEmail::parse</code>. Those two methods are fallible - they return a <code>String</code> as error type to explain what has gone wrong:
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
       <![CDATA[
@@ -366,7 +366,7 @@ In the end, it doesn't matter: we are not sending any of that information to the
 </div>
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
       <![CDATA[
@@ -403,12 +403,10 @@ Errors serve two1 main purposes:
 <div style="margin-top:.625em;">
 We can also distinguish errors based on their location:
 </div>
-
 <ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
   <li style="margin-top:.325em;">Internal (i.e. a function calling another function within our application);</li>
   <li style="margin-top:.325em;">At the edge (i.e. an API request that we failed to fulfill).</li>
 </ul>
-
 <div style="margin-top:.625em;">
 Control flow is scripted: all information required to take a decision on what to do next must be accessible to a <b>machine</b>.
 </div>
@@ -481,7 +479,7 @@ Let's write a quick test to find out:
 </div>
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
       <![CDATA[
@@ -519,7 +517,7 @@ Make sure you are running on <code>tracing-actix-web 0.4.0-beta.8</code>, <code>
 </div>
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
       <![CDATA[
@@ -536,7 +534,7 @@ cargo t subscribe_fails_if_there_is_a_fatal_database_error | bunyan
 The output, once you focus on what matters, is the following:
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
       <![CDATA[
@@ -577,7 +575,7 @@ How do you read something like this? <br />
 Ideally, you start from the outcome: the log record emitted at the end of request processing. In our case, that is:
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
       <![CDATA[
@@ -602,7 +600,7 @@ The situation does not get much better if we look at the next log, emitted by <c
 </div>
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
       <![CDATA[
@@ -623,7 +621,7 @@ We need to keep looking, all the way to the last remaining error log:
 </div>
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
       <![CDATA[
@@ -663,7 +661,7 @@ It can be done, but it takes time: it would be much easier if the <code>[HTTP RE
 To understand why the log records coming out <code>tracing_actix_web</code> are so poor we need to inspect (again) our request handler and <code>store_token</code>:
 ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
       <![CDATA[
@@ -726,7 +724,7 @@ The only <code>From/Into</code> implementation that we can use, browsing the one
 </div>
     ]]>
     </c:sourceContent>
-    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
       <![CDATA[
@@ -745,6 +743,865 @@ impl<T: ResponseError + 'static> From<T> for Error {
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
       <![CDATA[
 <a href="https://docs.rs/actix-web/4.0.1/actix_web/trait.ResponseError.html">ResponseError</a> is a trait exposed by <code>actix_web</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+/// Errors that can be converted to `Response`.
+pub trait ResponseError: fmt::Debug + fmt::Display {
+    /// Response's status code.
+    ///
+    /// The default implementation returns an internal server error.
+    fn status_code(&self) -> StatusCode;
+
+    /// Create a response from the error.
+    ///
+    /// The default implementation returns an internal server error.
+    fn error_response(&self) -> Response;
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We just need to implement it for our errors! <br />
+<code>actix_web</code> provides a default implementation for both methods that returns a <code>500 Internal Server Error</code> - exactly what we need. Therefore it's enough to write:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+use actix_web::ResponseError;
+// [...]
+
+impl ResponseError for sqlx::Error {}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The compiler is not happy:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0117]: only traits defined in the current crate 
+              can be implemented for arbitrary types
+   --> src/routes/subscriptions.rs:162:1
+    |
+162 | impl ResponseError for sqlx::Error {}
+    | ^^^^^^^^^^^^^^^^^^^^^^^-----------
+    | |                      |
+    | |                      `sqlx::Error` is not defined in the current crate
+    | impl doesn't use only types from inside the current crate
+    |
+    = note: define and implement a trait or new type instead
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We just bumped into <a href="https://doc.rust-lang.org/book/ch10-02-traits.html#implementing-a-trait-on-a-type">Rust's orphan rule</a>: it is forbidden to implement a foreign trait for a foreign type, where foreign stands for "from another crate".
+</div>
+<div style="margin-top:.625em;">
+This restriction is meant to preserve coherence: imagine if you added a dependency that defined its own implementation of <code>ResponseError</code> for <code>sqlx::Error</code> - which one should the compiler use when the trait methods are invoked?
+</div>
+<div style="margin-top:.625em;">
+Orphan rule aside, it would still be a mistake for us to implement <code>ResponseError</code> for <code>sqlx::Error</code>.
+We want to return a <code>500 Internal Server Error</code> when we run into a <code>sqlx::Error</code> while trying to persist a subscriber token.
+In another circumstance we might wish to handle a <code>sqlx::Error</code> differently.
+</div>
+<div style="margin-top:.625em;">
+We should follow the compiler's suggestion: define a new type to wrap <code>sqlx::Error</code>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+//                                    Using the new error type!
+pub async fn store_token(/* */) -> Result<(), StoreTokenError> {
+    sqlx::query!(/* */)
+    .execute(transaction)
+    .await
+    .map_err(|e| {
+        // [...]
+        // Wrapping the underlying error
+        StoreTokenError(e)
+    })?;
+    // [...]
+}
+
+// A new error type, wrapping a sqlx::Error
+pub struct StoreTokenError(sqlx::Error);
+
+impl ResponseError for StoreTokenError {}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It doesn't work, but for a different reason:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0277]: `StoreTokenError` doesn't implement `std::fmt::Display`
+   --> src/routes/subscriptions.rs:164:6
+    |
+164 | impl ResponseError for StoreTokenError {}
+    |      ^^^^^^^^^^^^^ 
+    `StoreTokenError` cannot be formatted with the default formatter
+    |
+    |
+59  | pub trait ResponseError: fmt::Debug + fmt::Display {
+    |                                       ------------ 
+    |     required by this bound in `ResponseError`
+    |
+    = help: the trait `std::fmt::Display` is not implemented for `StoreTokenError`
+
+error[E0277]: `StoreTokenError` doesn't implement `std::fmt::Debug`
+   --> src/routes/subscriptions.rs:164:6
+    |
+164 | impl ResponseError for StoreTokenError {}
+    |      ^^^^^^^^^^^^^ 
+    `StoreTokenError` cannot be formatted using `{:?}`
+    |
+    |
+59  | pub trait ResponseError: fmt::Debug + fmt::Display {
+    |                          ---------- 
+                required by this bound in `ResponseError`
+    |
+    = help: the trait `std::fmt::Debug` is not implemented for `StoreTokenError`
+    = note: add `#[derive(Debug)]` or manually implement `std::fmt::Debug`
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We are missing two trait implementations on <code>StoreTokenError</code>: Debug and <code>Display</code>. <br />
+Both traits are concerned with formatting, but they serve a different purpose.
+</div>
+<div style="margin-top:.625em;">
+<code>Debug</code> should return a programmer-facing representation, as faithful as possible to the underlying type structure, to help with debugging (as the name implies). Almost all public types should implement <code>Debug</code>.
+</div>
+<div style="margin-top:.625em;">
+<code>Display</code>, instead, should return a user-facing representation of the underlying type. Most types do not implement <code>Display</code> and it cannot be automatically implemented with a <code>#[derive(Display)]</code> attribute.
+</div>
+<div style="margin-top:.625em;">
+When working with errors, we can reason about the two traits as follows: <code>Debug</code> returns as much information as possible while <code>Display</code> gives us a brief description of the failure we encountered, with the essential amount of context.
+</div>
+<div style="margin-top:.625em;">
+Let's give it a go for <code>StoreTokenError</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+// We derive `Debug`, easy and painless.
+#[derive(Debug)]
+pub struct StoreTokenError(sqlx::Error);
+
+impl std::fmt::Display for StoreTokenError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "A database error was encountered while \
+            trying to store a subscription token."
+        )
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It compiles! <br />
+We can now leverage it in our request handler:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn subscribe(/* */) -> Result<HttpResponse, actix_web::Error> {
+    // You will have to wrap (early) returns in `Ok(...)` as well!
+    // [...]
+    // The `?` operator transparently invokes the `Into` trait
+    // on our behalf - we don't need an explicit `map_err` anymore.
+    store_token(/* */).await?;
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's look at our logs again:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# sqlx logs are a bit spammy, cutting them out to reduce noise
+export RUST_LOG="sqlx=error,info"
+export TEST_LOG=enabled
+cargo t subscribe_fails_if_there_is_a_fatal_database_error | bunyan
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+...
+ INFO: [HTTP REQUEST - END] 
+    exception.details= StoreTokenError(
+        Database(
+            PgDatabaseError { 
+                severity: Error, 
+                code: "42703", 
+                message: 
+                    "column 'subscription_token' of relation 
+                     'subscription_tokens' does not exist",
+                ...
+            }
+        )
+    )
+    exception.message=
+        "A database failure was encountered while 
+         trying to store a subscription token.",
+    target=tracing_actix_web::root_span_builder, 
+    http.status_code=500
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Much better! <br />
+The log record emitted at the end of request processing now contains both an in-depth and brief description of the error that caused the application to return a <code>500 Internal Server Error</code> to the user.
+</div>
+<div style="margin-top:.625em;">
+It is enough to look at this log record to get a pretty accurate picture of everything that matters for this request.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="The Error Trait" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+So far we moved forward by following the compiler suggestions, trying to satisfy the constraints imposed on us by <code>actix-web</code> when it comes to error handling.
+</div>
+<div style="margin-top:.625em;">
+Let's step back to look at the bigger picture: what should an error look like in Rust (not considering the specifics of <code>actix-web</code>)?
+</div>
+<div style="margin-top:.625em;">
+Rust's standard library has a dedicated trait, <code>Error</code>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+pub trait Error: Debug + Display {
+    /// The lower-level source of this error, if any.
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        None
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It requires an implementation of <code>Debug</code> and <code>Display</code>, just like <code>ResponseError</code>. <br />
+It also gives us the option to implement a <code>source</code> method that returns the underlying cause of the error, if any.
+</div>
+<div style="margin-top:.625em;">
+What is the point of implementing the <code>Error</code> trait at all for our error type? <br />
+It is not required by <code>Result</code> - any type can be used as error variant there.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+pub enum Result<T, E> {
+    /// Contains the success value
+    Ok(T),
+
+    /// Contains the error value
+    Err(E),
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The Error trait is, first and foremost, a way to <b>semantically</b> mark our type as being an error. It helps a reader of our codebase to immediately spot its purpose.
+</div>
+<div style="margin-top:.625em;">
+It is also a way for the Rust community to standardise on the minimum requirements for a <b>good</b> error:
+</div>
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">it should provide different representations (<code>Debug</code> and <code>Display</code>), tuned to different audiences;</li>
+  <li style="margin-top:.325em;">it should be possible to look at the underlying cause of the error, if any (<code>source</code>).</li>
+</ul>
+<div style="margin-top:.625em;">
+This list is still evolving - e.g. there is an unstable <a href="https://doc.rust-lang.org/std/error/trait.Error.html#method.backtrace">backtrace method</a>.
+</div>
+<div style="margin-top:.625em;">
+Error handling is an active area of research in the Rust community - if you are interested in staying on top of what is coming next I strongly suggest you to keep an eye on the <a href="https://blog.rust-lang.org/inside-rust/2020/11/23/What-the-error-handling-project-group-is-working-on.html">Rust Error Handling Working Group</a>.
+</div>
+<div style="margin-top:.625em;">
+By providing a good implementation of all the optional methods we can fully leverage the error handling ecosystem - functions that have been designed to work with errors, generically. We will be writing one in a couple of sections!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Trait Objects" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Before we work on implementing source, let's take a closer look at its return - <code>Option<&(dyn Error + 'static)></code>. <code>dyn Error</code> is a trait object5 - a type that we know nothing about apart from the fact that it implements the <code>Error</code> trait.
+</div>
+<div style="margin-top:.625em;">
+Trait objects, just like generic type parameters, are a way to achieve polymorphism in Rust: invoke different implementations of the same interface. Generic types are resolved at compile-time (static dispatch), trait objects incur a runtime cost (dynamic dispatch).
+</div>
+<div style="margin-top:.625em;">
+Why does the standard library return a trait object? <br />
+It gives developers a way to access the underlying root cause of current error while keeping it opaque.
+</div>
+<div style="margin-top:.625em;">
+It does not leak any information about the type of the underlying root cause - you only get access to the methods exposed by the <code>Error</code> trait: different representations (<code>Debug</code>, <code>Display</code>), the chance to go one level deeper in the <b>error chain</b> using <code>source</code>.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Error::source" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's implement Error for <code>StoreTokenError</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [..]
+
+impl std::error::Error for StoreTokenError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        // The compiler transparently casts `&sqlx::Error` into a `&dyn Error`
+        Some(&self.0)
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>source</code> is useful when writing code that needs to handle a variety of errors: it provides a structured way to navigate the error chain without having to know anything about the specific error type you are working with.
+</div>
+<div style="margin-top:.625em;">
+If we look at our log record, the causal relationship between <code>StoreTokenError</code> and <code>sqlx::Error</code> is somewhat implicit - we infer one is the cause of the other because it is a part of it.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+...
+ INFO: [HTTP REQUEST - END] 
+    exception.details= StoreTokenError(
+        Database(
+            PgDatabaseError { 
+                severity: Error, 
+                code: "42703", 
+                message: 
+                    "column 'subscription_token' of relation 
+                     'subscription_tokens' does not exist",
+                ...
+            }
+        )
+    )
+    exception.message=
+        "A database failure was encountered while 
+         trying to store a subscription token.",
+    target=tracing_actix_web::root_span_builder, 
+    http.status_code=500
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's go for something more explicit:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+
+// Notice that we have removed `#[derive(Debug)]`
+pub struct StoreTokenError(sqlx::Error);
+
+impl std::fmt::Debug for StoreTokenError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}\nCaused by:\n\t{}", self, self.0)
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The log record leaves nothing to the imagination now:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+...
+ INFO: [HTTP REQUEST - END] 
+    exception.details=
+        "A database failure was encountered 
+        while trying to store a subscription token.
+    
+        Caused by:
+            error returned from database: column 'subscription_token'
+            of relation 'subscription_tokens' does not exist"
+    exception.message=
+        "A database failure was encountered while 
+         trying to store a subscription token.",
+    target=tracing_actix_web::root_span_builder, 
+    http.status_code=500
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>exception.details</code> is easier to read and still conveys all the relevant information we had there before.
+</div>
+<div style="margin-top:.625em;">
+Using <code>source</code> we can write a function that provides a similar representation for any type that implements <code>Error</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+fn error_chain_fmt(
+    e: &impl std::error::Error,
+    f: &mut std::fmt::Formatter<'_>,
+) -> std::fmt::Result {
+    writeln!(f, "{}\n", e)?;
+    let mut current = e.source();
+    while let Some(cause) = current {
+        writeln!(f, "Caused by:\n\t{}", cause)?;
+        current = cause.source();
+    }
+    Ok(())
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It iterates over the whole chain of errors that led to the failure we are trying to print. <br />
+We can then change our implementation of <code>Debug</code> for <code>StoreTokenError</code> to use it:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+impl std::fmt::Debug for StoreTokenError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        error_chain_fmt(self, f)
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The result is identical - and we can reuse it when working with other errors if we want a similar <code>Debug</code> representation.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Errors For Control Flow</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="Layering" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We achieved the outcome we wanted (useful logs), but I am not too fond of the solution: we implemented a trait from our web framework (<code>ResponseError</code>) for an error type returned by an operation that is blissfully unaware of REST or the HTTP protocol, <code>store_token</code>. We could be calling <code>store_token</code> from a different entrypoint (e.g. a CLI) - nothing should have to change in its implementation.
+</div>
+<div style="margin-top:.625em;">
+Even assuming we are only ever going to be invoking <code>store_token</code> in the context of a REST API, we might add other endpoints that rely on that routine - they might not want to return a <code>500</code> when it fails.
+</div>
+<div style="margin-top:.625em;">
+Choosing the appropriate HTTP status code when an error occurs is a concern of the request handler, it should not leak elsewhere. <br />
+Let's delete
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+// Nuke it!
+impl ResponseError for StoreTokenError {}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+To enforce a proper separation of concerns we need to introduce another error type, <code>SubscribeError</code>. We will use it as failure variant for <code>subscribe</code> and it will own the HTTP-related logic (<code>ResponseError</code>'s implementation).
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn subscribe(/* */) -> Result<HttpResponse, SubscribeError> {
+    // [...]  
+}
+
+#[derive(Debug)]
+struct SubscribeError {}
+
+impl std::fmt::Display for SubscribeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Failed to create a new subscriber."
+        )
+    }
+}
+
+impl std::error::Error for SubscribeError {}
+
+impl ResponseError for SubscribeError {}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+If you run <code>cargo check</code> you will see an avalanche of <code>'?' couldn't convert the error to 'SubscribeError'</code> - we need to implement conversions from the error types returned by our functions and <code>SubscribeError</code>.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="Modelling Errors as Enums" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+An enum is the most common approach to work around this issue: a variant for each error type we need to deal with.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+#[derive(Debug)]
+pub enum SubscribeError {
+    ValidationError(String),
+    DatabaseError(sqlx::Error),
+    StoreTokenError(StoreTokenError),
+    SendEmailError(reqwest::Error),
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can then leverage the <code>?</code> operator in our handler by providing a <code>From</code> implementation for each of wrapped error types:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+impl From<reqwest::Error> for SubscribeError {
+    fn from(e: reqwest::Error) -> Self {
+        Self::SendEmailError(e)
+    }
+}
+
+impl From<sqlx::Error> for SubscribeError {
+    fn from(e: sqlx::Error) -> Self {
+        Self::DatabaseError(e)
+    }
+}
+
+impl From<StoreTokenError> for SubscribeError {
+    fn from(e: StoreTokenError) -> Self {
+        Self::StoreTokenError(e)
+    }
+}
+
+impl From<String> for SubscribeError {
+    fn from(e: String) -> Self {
+        Self::ValidationError(e)
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now clean up our request handler by removing all those <code>match</code> / <code>if fallible_function().is_err()</code> lines:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn subscribe(/* */) -> Result<HttpResponse, SubscribeError> {
+    let new_subscriber = form.0.try_into()?;
+    let mut transaction = pool.begin().await?;
+    let subscriber_id = insert_subscriber(/* */).await?;
+    let subscription_token = generate_subscription_token();
+    store_token(/* */).await?;
+    transaction.commit().await?;
+    send_confirmation_email(/* */).await?;
+    Ok(HttpResponse::Ok().finish())
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The code compiles, but one of our tests is failing:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+thread 'subscriptions::subscribe_returns_a_400_when_fields_are_present_but_invalid' 
+panicked at 'assertion failed: `(left == right)`
+  left: `400`,
+ right: `500`: The API did not return a 400 Bad Request when the payload was empty name.'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We are still using the default implementation of <code>ResponseError</code> - it always returns <code>500</code>. <br />
+This is where <code>enums</code> shine: we can use a <code>match</code> statement for <b>control flow</b> - we behave differently depending on the failure scenario we are dealing with.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+use actix_web::http::StatusCode; 
+// [...]
+
+impl ResponseError for SubscribeError {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            SubscribeError::ValidationError(_) => StatusCode::BAD_REQUEST,
+            SubscribeError::DatabaseError(_)
+            | SubscribeError::StoreTokenError(_)
+            | SubscribeError::SendEmailError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test suite should pass again.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="The Error Type Is Not Enough" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+What about our logs? <br />
+Let's look again:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+export RUST_LOG="sqlx=error,info"
+export TEST_LOG=enabled
+cargo t subscribe_fails_if_there_is_a_fatal_database_error | bunyan
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+...
+ INFO: [HTTP REQUEST - END] 
+    exception.details="StoreTokenError(
+            A database failure was encountered while trying to 
+            store a subscription token.
+            
+        Caused by:
+            error returned from database: column 'subscription_token' 
+            of relation 'subscription_tokens' does not exist)"
+    exception.message="Failed to create a new subscriber.",
+    target=tracing_actix_web::root_span_builder, 
+    http.status_code=500
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We are still getting a great representation for the underlying <code>StoreTokenError</code> in <code>exception.details</code>, but it shows that we are now using the derived Debug implementation for <code>SubscribeError</code>. No loss of information though.
+</div>
+<div style="margin-top:.625em;">
+The same cannot be said for <code>exception.message</code> - no matter the failure mode, we always get <code>Failed to create a new subscriber</code>. Not very useful.
+</div>
+<div style="margin-top:.625em;">
+Let's refine our <code>Debug</code> and <code>Display</code> implementations:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+// Remember to delete `#[derive(Debug)]`!
+impl std::fmt::Debug for SubscribeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        error_chain_fmt(self, f)
+    }
+}
+
+impl std::error::Error for SubscribeError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            // &str does not implement `Error` - we consider it the root cause
+            SubscribeError::ValidationError(_) => None,
+            SubscribeError::DatabaseError(e) => Some(e),
+            SubscribeError::StoreTokenError(e) => Some(e),
+            SubscribeError::SendEmailError(e) => Some(e),
+        }
+    }
+}
+
+impl std::fmt::Display for SubscribeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SubscribeError::ValidationError(e) => write!(f, "{}", e),
+            // What should we do here?
+            SubscribeError::DatabaseError(_) => write!(f, "???"),
+            SubscribeError::StoreTokenError(_) => write!(
+                f,
+                "Failed to store the confirmation token for a new subscriber."
+            ),
+            SubscribeError::SendEmailError(_) => {
+                write!(f, "Failed to send a confirmation email.")
+            },
+        }
+    }
+}
     ]]>
     </c:sourceContent>
     <c:comment>
