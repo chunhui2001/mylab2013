@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+<div style="font-size:1.1em;line-height:1.625;">
+This article is a sample from <a href="https://zero2prod.com/">Zero To Production In Rust</a>, a book on backend development in Rust.
+You can get a copy of the book on <a href="https://zero2prod.com/">zero2prod.com</a>.
+<a href="https://www.lpalmieri.com/subscribe">Subscribe to the newsletter</a> to be notified when a new episode is published.
+</div>
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">TL;DR</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We kept the first iteration of our newsletter endpoint very simple: emails are immediately sent out to all subscribers via Postmark, one API call at a time.
+</div>
+<div style="margin-top:.625em;">
+This is good enough if the audience is small - it breaks down, in a variety of ways, when dealing with hundreds of subscribers.
+</div>
+<div style="margin-top:.625em;">
+We want our application to be <b>fault-tolerant</b>. <br />
+Newsletter delivery should not be disrupted by transient failures like application crashes, Postmark API errors or network timeouts. To deliver a reliable service in the face of failure we will have to explore new concepts: idempotency, locking, queues and background jobs.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">1. POST /admin/newsletters - A Refresher</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's refresh our memory before jumping straight into the task: what does <code>POST /admin/newsletters</code> look like?
+</div>
+<div style="margin-top:.625em;">
+The endpoint is invoked when a logged-in newsletter author submits the HTML form served at <code>GET /admin/newsletters</code>.
+We parse the form data out of the HTTP request body and, if nothing is amiss, kick-off the processing.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em">
+      <![CDATA[
+//! src/routes/admin/newsletter/post.rs
+// [...]
+
+#[derive(serde::Deserialize)]
+pub struct FormData {
+    title: String,
+    text_content: String,
+    html_content: String,
+}
+
+#[tracing::instrument(/* */)]
+pub async fn publish_newsletter(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+    email_client: web::Data<EmailClient>,
+) -> Result<HttpResponse, actix_web::Error> {
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em">
+      <![CDATA[
+We start by fetching all confirmed subscribers from our Postgres database.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em">
+      <![CDATA[
+//! src/routes/admin/newsletter/post.rs
+// [...]
+
+#[tracing::instrument(/* */)]
+pub async fn publish_newsletter(/* */) -> Result<HttpResponse, actix_web::Error> {
+    // [...]
+    let subscribers = get_confirmed_subscribers(&pool).await.map_err(e500)?;
+    // [...]
+}
+
+struct ConfirmedSubscriber {
+    email: SubscriberEmail,
+}
+
+#[tracing::instrument(/* */)]
+async fn get_confirmed_subscribers(
+    pool: &PgPool,
+) -> Result<Vec<Result<ConfirmedSubscriber, anyhow::Error>>, anyhow::Error> {
+    /* */
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em">
+      <![CDATA[
+We iterate over the retrieved subscribers, sequentially. <br />
+For each user, we try to send out an email with the new newsletter issue.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em">
+      <![CDATA[
+//! src/routes/admin/newsletter/post.rs
+// [...]
+
+#[tracing::instrument(/* */)]
+pub async fn publish_newsletter(/* */) -> Result<HttpResponse, actix_web::Error> {
+    // [...]
+    let subscribers = get_confirmed_subscribers(&pool).await.map_err(e500)?;
+    for subscriber in subscribers {
+        match subscriber {
+            Ok(subscriber) => {
+                email_client
+                    .send_email(/* */)
+                    .await
+                    .with_context(/* */)
+                    .map_err(e500)?;
+            }
+            Err(error) => {
+                tracing::warn!(/* */);
+            }
+        }
+    }
+    FlashMessage::info("The newsletter issue has been published!").send();
+    Ok(see_other("/admin/newsletters"))
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em">
+      <![CDATA[
+Once all subscribers have been taken care of, we redirect the author back to the newsletter form - they will be shown a flash message confirming that the issue was published successfully.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">2. Our Goal</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We want to ensure <b>best-effort delivery</b>: we strive to deliver the new newsletter issue to all subscribers. <br />
+We cannot guarantee that all emails will be delivered: some accounts might just have been deleted.
+</div>
+<div style="margin-top:.625em;">
+At the same time, we should try to minimize duplicates - i.e. a subscriber receiving the same issue multiple times. We cannot rule out duplicates entirely (we will later discuss why), but our implementation should minimize their frequency.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">3. Failure Modes</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's have a look at the possible failure modes of our <code>POST /admin/newsletters</code> endpoint. <br />
+Can we still achieve best-effort delivery when something goes awry?
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.1. Invalid Inputs" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+There might be issues with the incoming request: the body is malformed or the user has not authenticated. <br />
+Both scenarios are already handled appropriately:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">the <code>web::Form</code> extractor returns a <code>400 Bad Request</code> if the incoming form data is invalid;</li>
+  <li style="margin-top:.325em;">unauthenticated users are redirected back to the login form.</li>
+</ul>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.2. Network I/O" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Problems might arise when we interact with other machines over the network.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.2.1. Postgres" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+The database might misbehave when we try to retrieve the current list of subscribers. We do not have a lot of options apart from retrying. We can:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">retry in process, by adding some logic around the <code>get_confirmed_subscribers</code> call;</li>
+  <li style="margin-top:.325em;">give up by returning an error to the user. The user can then decide if they want to retry or not.</li>
+</ul>
+<div style="margin-top:.625em;">
+The first option makes our application more resilient to spurious failures. Nonetheless, you can only perform a finite number of retries; you will have to give up eventually.
+</div>
+<div style="margin-top:.625em;">
+Our implementation opts for the second strategy from the get-go. It might result in a few more 500s, but it is not incompatible with our over-arching objective.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.2.2. Postmark - API Errors" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+What about email delivery issues? 
+</div>
+<div style="margin-top:.625em;">
+Let's start with the simplest scenario: Postmark returns an error when we try to email one of our subscribers. 
+</div>
+<div style="margin-top:.625em;">
+Our current implementation bails out: we abort the processing and return a <code>500 Internal Server Error</code> to the caller.
+</div>
+<div style="margin-top:.625em;">
+We are sending emails out sequentially. We will never get a chance to deliver the new issue to the subscribers at the end of the list if we abort as soon as an API error is encountered. This is far from being "best-effort delivery".
+</div>
+<div style="margin-top:.625em;">
+This is not the end of our problems either - can the newsletter author retry the form submission?
+</div>
+<div style="margin-top:.625em;">
+It depends on <b>where</b> the error occurred.
+</div>
+<div style="margin-top:.625em;">
+Was it the first subscriber in the list returned by our database query? <br />
+No problem, nothing has happened yet.
+</div>
+<div style="margin-top:.625em;">
+What if it were the third subscriber in the list? Or the fifth? Or the one-hundredth? <br />
+We have a problem: some subscribers have been sent the new issue, others haven't. <br />
+If the author retries, some subscribers are going to receive the issue <b>twice</b>. <br />
+If they don't retry, some subscribers might never receive the issue.
+</div>
+<div style="margin-top:.625em;">
+Damned if you do, damned if you don't.
+</div>
+<div style="margin-top:.625em;">
+You might recognize the struggle: we are dealing with a <b>workflow</b>, a combination of multiple <b>sub-tasks</b>. <br />
+We faced something similar in chapter 7 when we had to execute a sequence of SQL queries to create a new subscriber. Back then, we opted for an all-or-nothing semantics using SQL transactions: nothing happens unless all queries succeed. Postmark's API does not provide any3 kind of transactional semantics - each API call is its own unit of work, we have no way to link them together.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.3. Application Crashes" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Our application could crash at any point in time. It might, for example, run out of memory or the server it is running on might be abruptly terminated (welcome to the cloud!).
+</div>
+<div style="margin-top:.625em;">
+A crash, in particular, might happen <b>after</b> we started to process the subscribers list but <b>before</b> we got to the end of it. The author will receive an error message in the browser.
+</div>
+<div style="margin-top:.625em;">
+Re-submitting the form is likely to result in a high number of redundant deliveries, just like we observed when discussing the consequences of Postmark's API errors.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="3.4. Author Actions" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Last but not least, we might have issues in the interaction between the author and the API.
+</div>
+<div style="margin-top:.625em;">
+If we are dealing with a large audience, it might take minutes to process the entire subscribers list. The author might get impatient and choose to re-submit the form. The browser might decide to give up (client-side timeout). Or, equally problematic, the author might click on the Submit button more than once4, by mistake.
+</div>
+<div style="margin-top:.625em;">
+Once again, we end up in a corner because our implementation is not retry-safe.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+</c:component>
