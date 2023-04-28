@@ -1887,7 +1887,7 @@ I want to call your attention on a small detail: we are not using either <code>#
     </c:desc>
     <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
-                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
       <![CDATA[
 <div>
 In <code>SubscribeError</code> we are using enum variants for two purposes:
@@ -2348,6 +2348,42 @@ The <code>context</code> method is performing double duties here:
 
     ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="anyhow Or thiserror?" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We have covered a lot of ground - time to address a common Rust myth:
+</div>
+<div style="margin-top:.625em;">
+<code>anyhow</code> is for applications, <code>thiserror</code> is for libraries.
+</div>
+<div style="margin-top:.625em;">
+It is not the right framing to discuss error handling. <br />
+You need to reason about <b>intent</b>.
+</div>
+<div style="margin-top:.625em;">
+Do you expect the caller to behave differently based on the failure mode they encountered? <br />
+Use an error enumeration, empower them to match on the different variants. Bring in <code>thiserror</code> to write less boilerplate.
+</div>
+<div style="margin-top:.625em;">
+Do you expect the caller to just give up when a failure occurs? Is their main concern reporting the error to an operator or a user? <br />
+Use an opaque error, do not give the caller programmatic access to the error inner details. Use <code>anyhow</code> or <code>eyre</code> if you find their API convenient.
+</div>
+<div style="margin-top:.625em;">
+The misunderstanding arises from the observation that most Rust libraries return an error enum instead of <code>Box&lt;dyn std::error::Error&gt;</code> (e.g. <code>sqlx::Error</code>).
+</div>
+<div style="margin-top:.625em;">
+Library authors cannot (or do not want to) make assumptions on the intent of their users. They steer away from being opinionated (to an extent) - enums give users more control, if they need it.
+</div>
+<div style="margin-top:.625em;">
+Freedom comes at a price - the interface is more complex, users need to sift through 10+ variants trying to figure out which (if any) deserve special handling.
+</div>
+<div style="margin-top:.625em;">
+Reason carefully about your usecase and the assumptions you can afford to make in order to design the most appropriate error type - sometimes <code>Box&lt;dyn std::error::Error&gt;</code> or <code>anyhow::Error</code> are the most appropriate choice, even for libraries.
+</div>
+    ]]>
+    </c:sourceContent>
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
@@ -2355,6 +2391,205 @@ The <code>context</code> method is performing double duties here:
     </c:comment>
   </c:entry>
 
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Who Should Log Errors?</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's look again at the logs emitted when a request fails.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+# sqlx logs are a bit spammy, cutting them out to reduce noise
+export RUST_LOG="sqlx=error,info"
+export TEST_LOG=enabled
+cargo t subscribe_fails_if_there_is_a_fatal_database_error | bunyan
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+There are three error-level log records: <br />
+one emitted by our code in <code>insert_subscriber</code>
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs 
+// [...]
+
+pub async fn insert_subscriber(/* */) -> Result<Uuid, sqlx::Error> {
+    // [...]
+    sqlx::query!(/* */)
+        .execute(transaction)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to execute query: {:?}", e);
+            e
+        })?;
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+one emitted by <code>actix_web</code> when converting <code>SubscribeError</code> into an <code>actix_web::Error</code>; <br />
+one emitted by <code>tracing_actix_web::TracingLogger</code>, our telemetry middleware.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We do not need to see the same information three times - we are emitting unnecessary log records which, instead of helping, make it more confusing for operators to understand what is happening (are those logs reporting the same error? Am I dealing with three different errors?).
+</div>
+<div style="margin-top:.625em;">
+As a rule of thumb,
+</div>
+<div style="margin-top:.625em;">
+errors should be logged when they are handled.
+</div>
+<div style="margin-top:.625em;">
+If your function is propagating the error upstream (e.g. using the <code>?</code> operator), it should <b>not</b> log the error. It can, if it makes sense, add more context to it.
+</div>
+<div style="margin-top:.625em;">
+If the error is propagated all the way up to the request handler, delegate logging to a dedicated middleware - <code>tracing_actix_web::TracingLogger</code> in our case.
+</div>
+<div style="margin-top:.625em;">
+The log record emitted by <code>actix_web</code> is going to be <a href="https://github.com/actix/actix-web/pull/2196">removed in the next release</a>. Let's ignore it for now.
+</div>
+<div style="margin-top:.625em;">
+Let's review the <code>tracing::error</code> statements in our own code:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/subscriptions.rs
+// [...]
+
+pub async fn insert_subscriber(/* */) -> Result<Uuid, sqlx::Error> {
+    // [...]
+    sqlx::query!(/* */)
+        .execute(transaction)
+        .await
+        .map_err(|e| {
+            // This needs to go, we are propagating the error via `?`
+            tracing::error!("Failed to execute query: {:?}", e);
+            e
+        })?;
+    // [..]
+}
+
+pub async fn store_token(/* */) -> Result<(), StoreTokenError> {
+    sqlx::query!(/* */)
+        .execute(transaction)
+        .await
+        .map_err(|e| {
+            // This needs to go, we are propagating the error via `?`
+            tracing::error!("Failed to execute query: {:?}", e);
+            StoreTokenError(e)
+        })?;
+    Ok(())
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Check the logs again to confirm they look pristine.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">Summary</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We used this chapter to learn error handling patterns "the hard way" - building an ugly but working prototype first, refining it later using popular crates from the ecosystem.
+You should now have:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">a solid grasp on the different purposes fulfilled by errors in an application;</li>
+  <li style="margin-top:.325em;">the most appropriate tools to fulfill them.</li>
+</ul>
+<div style="margin-top:.625em;">
+Internalise the mental model we discussed (<code>Location</code> as columns, <code>Purpose</code> as rows):
+</div>
+
+<table style="color:darkslateblue;margin:.5em 0;line-height:1.3em;width:100%;">
+    <tbody>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight:normal;width:220px;">&nbsp;</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;width:300px;">Internal</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">At the edge</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight:normal;width:220px;">Control Flow</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;width:300px;">Types, methods, fields </td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">Status codes</td>
+        </tr>
+        <tr style="padding: 0;margin: 0;border-bottom: solid 1px #d4d4d4;border-style: dashed;
+          border-top: solid 1px #d4d4d4;border-style: dashed;">
+            <td style="padding:0 10px;margin: 0;text-align:left;font-weight:normal;width:220px;">Reporting</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;width:300px;">Logs/traces</td>
+            <td style="padding:0 10px;margin: 0;text-align:left;padding:.5em 0;">Response body</td>
+        </tr>
+    </tbody>
+</table>
+
+<div style="margin-top:.625em;">
+Practice what you learned: we worked on the <code>subscribe</code> request handler, tackle <code>confirm</code> as an exercise to verify your understanding of the concepts we covered. Improve the response returned to the user when validation of form data fails.
+</div>
+<div style="margin-top:.625em;">
+You can look at the code in <a href="https://github.com/lukemathwalker/zero-to-production">the GitHub repository</a> as a reference implementation.
+</div>
+<div style="margin-top:.625em;">
+Some of the themes we discussed in this chapter (e.g. layering and abstraction boundaries) will make another appearance when talking about the overall layout and structure of our application. Something to look forward to!
+</div>
+
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
 
 
 </c:component>
