@@ -329,5 +329,525 @@ Once again, we end up in a corner because our implementation is not retry-safe.
     </c:comment>
   </c:entry>
 
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">4. Idempotency: An Introduction</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+<code>POST /admin/newsletters</code> is, all things considered, a pretty simple endpoint. Nonetheless, our investigation highlighted several scenarios where the current implementation fails to meet our expectations.
+Most of our problems boil down to a specific limitation: <b>it is not safe to retry</b>.
+</div>
+<div style="margin-top:.625em;">
+Retry-safety has a dramatic impact on the ergonomics of an API. It is substantially easier to write a reliable API client if you can safely retry when something goes wrong. <br />
+But what does retry-safety <b>actually</b> entail?
+</div>
+<div style="margin-top:.625em;">
+We built an intuitive understanding of what it means in our domain, newsletter delivery - send the content to every subscriber no more than once. How does that transfer to another domain?
+</div>
+<div style="margin-top:.625em;">
+You might be surprised to find out that we do not have a clear industry-accepted definition. It is a tricky subject.
+For the purpose of this book, we will define retry-safety as follows:
+</div>
+<div style="margin-top:.625em;">
+An API endpoint is retry-safe (or <b>idempotent</b>) if the caller has no way to <b>observe</b> if a request has been sent to the server once or multiple times.
+</div>
+<div style="margin-top:.625em;">
+We will probe and explore this definition for a few sections: it is important to fully understand its ramifications.
+</div>
+<div style="margin-top:.625em;">
+If you have been in the industry long enough, you have probably heard another term used to describe the concept of retry-safety: <b>idempotency</b>. They are mostly used as synonyms - we will use idempotency going forward, mostly to align with other industry terminology that will be relevant to our implementation (i.e. <code>idempotency keys</code>).
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.1. Idempotency In Action: Payments" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's explore the implications of our idempotency definition in another domain, payments. <br />
+Our fictional payments API exposes three endpoints:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;"><code>GET /balance</code>, to retrieve your current account balance;</li>
+  <li style="margin-top:.325em;"><code>GET /payments</code>, to retrieve the list of payments you initiated;</li>
+  <li style="margin-top:.325em;"><code>POST /payments</code>, to initiate a new payment.</li>
+</ul>
+<div style="margin-top:.625em;">
+<code>POST /payments</code>, in particular, takes as input the beneficiary details and the payment amount. An API call triggers a money transfer from your account to the specified beneficiary; your balance is reduced accordingly (i.e. <code>new_balance = old_balance - payment_amount</code>).
+</div>
+<div style="margin-top:.625em;">
+Let's consider this scenario: your balance is 400 USD and you send a request to transfer 20 USD. The request succeeds: the API returned a <code>200 OK</code>, your balance was updated to 380 USD and the beneficiary received 20 USD. <br />
+You then retry the same request - e.g. you click twice on the  <code>Pay now</code> button. <br />
+What should happen if <code>POST /payments</code> is idempotent?
+</div>
+<div style="margin-top:.625em;">
+Our idempotency definition is built around the concept of observability - properties of the system state that the caller can inspect by interacting with the system itself.
+</div>
+<div style="margin-top:.625em;">
+For example: you could easily determine that the second call is a retry by going through the logs emitted by the API. But the caller is not an operator - they have no way to inspect those logs. They are invisible to the users of the API - in so far as idempotency is concerned, they don't exist. They are not part of the <code>domain model</code> exposed and manipulated by the API.
+</div>
+<div style="margin-top:.625em;">
+The domain model in our example includes:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">the caller's account, with its balance (via <code>GET /balance</code>) and payment history (via <code>GET /payments</code>);</li>
+  <li style="margin-top:.325em;">other accounts reachable over the payment network (i.e. beneficiaries we can pay).</li>
+</ul>
+<div style="margin-top:.625em;">
+Given the above, we can say that <code>POST /payments</code> is idempotent if, when the request is retried,
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">the balance remains 380 USD;</li>
+  <li style="margin-top:.325em;">no additional money are transferred to the beneficiary.</li>
+</ul>
+<div style="margin-top:.625em;">
+There is one more detail to sort out - what HTTP response should the server return for the retried request? <br />
+The caller should not be able to observe that the second request was a retry. The payment succeeded, therefore the server should return a success response that is semantically equivalent to the HTTP response used to answer the initial request.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.2. Idempotency Keys" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+There is room for ambiguity in our definition of idempotency: how do we distinguish between a retry and a user trying to perform two distinct payments for the same amount to the same beneficiary?
+</div>
+<div style="margin-top:.625em;">
+We need to understand the caller's <b>intent</b>.
+</div>
+<div style="margin-top:.625em;">
+We could try to use a heuristic - e.g. the second request is a duplicate if it was sent no more than 5 minutes later. <br />
+This could be a good starting point, but it is not bulletproof. The consequences of misclassification could be dire, both for the caller and our reputation as an organization (e.g. a late retry causing a double payment).
+</div>
+<div style="margin-top:.625em;">
+Given that this is all about understanding the caller's intent, there is no better strategy than empowering the caller themselves to tell us what they are trying to do. This is commonly accomplished using <b>idempotency keys</b>.
+</div>
+<div style="margin-top:.625em;">
+The caller generates a unique identifier, the idempotency key, for every state-altering operation they want to perform. The idempotency key is attached to the outgoing request, usually as an HTTP header (e.g. <code>Idempotency-Key</code>). 
+</div>
+<div style="margin-top:.625em;">
+The server can now easily spot duplicates:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">two identical requests, different idempotency keys = two distinct operations; </li>
+  <li style="margin-top:.325em;">two identical requests, same idempotency key = a single operation, the second request is a duplicate; </li>
+  <li style="margin-top:.325em;">two different requests, same idempotency key = the first request is processed, the second one is rejected. </li>
+</ul>
+<div style="margin-top:.625em;">
+We will start requiring an idempotency key in <code>POST /admin/newsletters</code> as part of our idempotency implementation.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="4.3. Concurrent Requests" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+What should happen when two duplicate requests are fired <code>concurrently</code> - i.e. the second request reaches the server before it finishes processing the first one?
+</div>
+<div style="margin-top:.625em;">
+We do not yet know the outcome of the first request. Processing both requests in parallel might also introduce the risk of performing side effects more than once (e.g. initiating two distinct payments).
+</div>
+<div style="margin-top:.625em;">
+It is common to introduce <code>synchronization</code>: the second request should not be processed until the first one has completed.
+We have two options:
+</div>
+<div style="margin-top:.625em;">
+Reject the second request by returning a <code>409 Conflict</code> status code back to the caller;
+Wait until the first request completes processing. Then return the same response back to the caller.
+</div>
+<div style="margin-top:.625em;">
+Both are viable. <br />
+The latter is fully transparent to the caller, making it easier to consume the API - they don't have to handle yet another transient failure mode. There is a price to pay though: both the client and the server need to keep an open connection while spinning idle, waiting for the other task to complete.
+</div>
+<div style="margin-top:.625em;">
+Considering our use case (processing forms), we will go for the second strategy in order to minimize the number of user-visible errors - browsers do not automatically retry <code>409</code>s.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">5. Requirements As Tests #1</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's start by focusing on the simplest scenario: a request was received and processed successfully, then a retry is performed.
+</div>
+<div style="margin-top:.625em;">
+We expect a success response with no duplicate newsletter delivery:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/newsletter.rs
+// [...]
+
+#[tokio::test]
+async fn newsletter_creation_is_idempotent() {
+    // Arrange
+    let app = spawn_app().await;
+    create_confirmed_subscriber(&app).await;
+    app.test_user.login(&app).await;
+
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .expect(1)
+        .mount(&app.email_server)
+        .await;
+
+    // Act - Part 1 - Submit newsletter form
+    let newsletter_request_body = serde_json::json!({
+        "title": "Newsletter title",
+        "text_content": "Newsletter body as plain text",
+        "html_content": "<p>Newsletter body as HTML</p>",
+        // We expect the idempotency key as part of the
+        // form data, not as an header
+        "idempotency_key": uuid::Uuid::new_v4().to_string()
+    });
+    let response = app.post_publish_newsletter(&newsletter_request_body).await;
+    assert_is_redirect_to(&response, "/admin/newsletters");
+
+    // Act - Part 2 - Follow the redirect
+    let html_page = app.get_publish_newsletter_html().await;
+    assert!(
+        html_page.contains("<p><i>The newsletter issue has been published!</i></p>")
+    );
+
+    // Act - Part 3 - Submit newsletter form **again**
+    let response = app.post_publish_newsletter(&newsletter_request_body).await;
+    assert_is_redirect_to(&response, "/admin/newsletters");
+
+    // Act - Part 4 - Follow the redirect
+    let html_page = app.get_publish_newsletter_html().await;
+    assert!(
+        html_page.contains("<p><i>The newsletter issue has been published!</i></p>")
+    );
+
+    // Mock verifies on Drop that we have sent the newsletter email **once**
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em">
+      <![CDATA[
+<code>$ cargo test</code> should fail:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+thread 'newsletter::newsletter_creation_is_idempotent' panicked at 
+'Verifications failed:
+- Mock #1.
+    Expected range of matching incoming requests: == 1
+    Number of matched incoming requests: 2
+[...]'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em">
+      <![CDATA[
+The retry succeeded, but it resulted in the newsletter being delivered twice to our subscriber - the problematic behaviour we identified during the failure analysis at the very beginning of this chapter.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">6. Implementation Strategies</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+How do we prevent the retried request from dispatching a new round of emails to our subscribers? We have two options - one requires state, the other doesn't.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="6.1. Stateful Idempotency: Save And Replay" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+In the stateful approach, we process the first request and then store its idempotency key next to the HTTP response we are about to return. When a retry comes in, we look for a match in the store against its idempotency key, fetch the saved HTTP response and return it to the caller.
+</div>
+<div style="margin-top:.625em;">
+The entire handler logic is short-circuited - it never gets executed. Postmark's API is never called again, preventing duplicate deliveries.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="6.2. Stateless Idempotency: Deterministic Key Generation" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+The stateless approach tries to achieve the same outcome without relying on persistence.
+For every subscriber, we <b>deterministically</b> generate a new idempotency key using their subscriber id, the newsletter content and the idempotency key attached to the incoming request. Every time we call Postmark to send an email we make sure to pass along the subscriber-specific idempotency key.
+</div>
+<div style="margin-top:.625em;">
+When a retry comes in, we execute the same processing logic - this leads to the same sequence of HTTP calls to Postmark, using exactly the same idempotency keys. Assuming their idempotency implementation is sound, no new email is going to be dispatched.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="6.3. Time Is a Tricky Beast" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+The stateless and the stateful approach are not 100% equivalent.
+</div>
+<div style="margin-top:.625em;">
+Let's consider what happens, for example, when a new person subscribes to our newsletter between the initial request and the following retry.
+</div>
+<div style="margin-top:.625em;">
+The stateless approach executes the handler logic in order to process the retried request. In particular, it re-generates the list of current subscribers before kicking off the email dispatching for loop. As a result, the new subscriber will receive the newsletter issue.
+This is not the case when following the stateful approach - we retrieve the HTTP response from the store and return it to the caller without performing any kind of processing.
+</div>
+<div style="margin-top:.625em;">
+This is a symptom of a deeper discrepancy - the <b>elapsed time</b> between the initial request and the following retry affects the processing outcome when following the stateless approach.
+</div>
+<div style="margin-top:.625em;">
+We cannot execute our handler logic against the same snapshot of the state seen by the first request - therefore, the view of the world in the stateless approach is impacted by all the operations that have been committed since the first request was processed11 (e.g. new subscribers joining the mailing list).
+</div>
+<div style="margin-top:.625em;">
+Whether this is acceptable or not depends on the domain. <br />
+In our case, the fallout is quite minor - we are just sending extra newsletters out. We could live with it if the stateless approach led us to a dramatically simpler implementation.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="6.4. Making A Choice" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Unfortunately, the circumstances leave us with no wiggle room: Postmark's API does not provide any idempotency mechanism therefore we cannot follow the stateless approach.
+</div>
+<div style="margin-top:.625em;">
+The stateful approach happens to be trickier to implement - rejoice, we'll have a chance to learn some new patterns!
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">7. Idempotency Store</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="7.1. Which Database Should We Use?" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+For each idempotency key, we must store the associated HTTP response.
+Our application currently uses two different data sources:
+</div>
+<div style="margin-top:.625em;">
+Redis, to store the session state for each user;
+Postgres, for everything else.
+We do not want to store idempotency keys forever - it would be impractical and wasteful.
+We also do not want actions performed by a user A to influence the outcome of actions performed by user B - there is a concrete security risk (cross-user data leakage) if proper isolation is not enforced.
+</div>
+<div style="margin-top:.625em;">
+Storing idempotency keys and responses into the session state of the user would guarantee both isolation and expiry out of the box. At the same time, it doesn't feel right to tie the lifespan of idempotency keys to the lifespan of the corresponding user sessions.
+</div>
+<div style="margin-top:.625em;">
+Based on our current requirements, Redis looks like the best solution to store our (user_id, idempotency_key, http_response) triplets. They would have their own time-to-live policy, with no ties to session states, and Redis would take care of cleaning old entries for us.
+</div>
+<div style="margin-top:.625em;">
+Unfortunately, new requirements will soon emerge and turn Redis into a limiting choice. There is not much to learn by taking the wrong turn here, so I'll cheat and force our hand towards Postgres.
+</div>
+<div style="margin-top:.625em;">
+Spoiler: we will leverage the possibility of modifying the idempotency triplets and our application state within a single SQL transaction.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="7.2. Schema" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We need to define a new table to store the following information:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">user id;</li>
+  <li style="margin-top:.325em;">idempotency key;</li>
+  <li style="margin-top:.325em;">HTTP response.</li>
+</ul>
+<div style="margin-top:.625em;">
+The user id and the idempotency key can be used as a composite primary key. We should also record when each row was created in order to evict old idempotency keys.
+</div>
+<div style="margin-top:.625em;">
+There is a major unknown though: what type should be used to store HTTP responses?
+</div>
+<div style="margin-top:.625em;">
+We could treat the whole HTTP response as a blob of bytes, using <code>bytea</code> as column type. <br />
+Unfortunately, it'd be tricky to re-hydrate the bytes into an <code>HttpResponse</code> object - <code>actix-web</code> does not provide any serialization/deserialization implementation for <code>HttpResponse</code>.
+</div>
+<div style="margin-top:.625em;">
+We are going to write our own (de)serialisation code - we will work with the core components of an HTTP response:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">status code;</li>
+  <li style="margin-top:.325em;">headers;</li>
+  <li style="margin-top:.325em;">body.</li>
+</ul>
+<div style="margin-top:.625em;">
+We are not going to store the HTTP version - the assumption is that we are working exclusively with HTTP/1.1.
+We can use smallint for the status code - it's maximum value is 32767, which is more than enough. bytea will do for the body.
+What about headers? What is their type?
+</div>
+<div style="margin-top:.625em;">
+We can have multiple header values associated to the same header name, therefore it makes sense to represent them as an array of <code>(name, value)</code> pairs.
+</div>
+<div style="margin-top:.625em;">
+We can use <code>TEXT</code> for the <code>name</code> (see <a href="https://github.com/hyperium/http/blob/c28945c6c6f99379b674a1e961a743c7752f2346/src/header/name.rs#L981">http's implementation</a>) while <code>value</code> will require <code>BYTEA</code> because it allows opaque octets (see <a href="https://github.com/hyperium/http/blob/c28945c6c6f99379b674a1e961a743c7752f2346/src/header/value.rs#L780">http's test cases</a>).
+</div>
+<div style="margin-top:.625em;">
+Postgres does not support arrays of tuples, but there is a workaround: we can define a Postgres <code>composite type</code> - i.e. a named collection of fields, the equivalent of a struct in our Rust code.
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+CREATE TYPE header_pair AS (
+    name TEXT,
+    value BYTEA
+);
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now put together the migration script:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+sqlx migrate add create_idempotency_table
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+-- migrations/20220211080603_create_idempotency_table.sql
+CREATE TYPE header_pair AS (
+    name TEXT,
+    value BYTEA
+);
+
+CREATE TABLE idempotency (
+   user_id uuid NOT NULL REFERENCES users(user_id),
+   idempotency_key TEXT NOT NULL,
+   response_status_code SMALLINT NOT NULL,
+   response_headers header_pair[] NOT NULL,
+   response_body BYTEA NOT NULL,
+   created_at timestamptz NOT NULL,
+   PRIMARY KEY(user_id, idempotency_key)
+);
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+sqlx migrate run
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We could have defined an overall <code>http_response</code> composite type, but we would have run into <a href="https://github.com/launchbadge/sqlx/issues/1031">a bug in sqlx</a> which is in turn caused by a <a href="https://github.com/rust-lang/rust/issues/82219">bug in the Rust compiler</a>. Best to avoid nested composite types for the time being.
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">8. Save And Replay</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="8.1. Read Idempotency Key" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Our <code>POST /admin/newsletters</code> endpoint is being triggered by an HTML form submission, therefore we do not have control over the headers that are being sent to the server.
+</div>
+<div style="margin-top:.625em;">
+The most practical choice is to embed the idempotency key inside the form data:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/newsletter/post.rs
+// [...]
+
+#[derive(serde::Deserialize)]
+pub struct FormData {
+    title: String,
+    text_content: String,
+    html_content: String,
+    // New field!
+    idempotency_key: String
+}
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
 
 </c:component>
