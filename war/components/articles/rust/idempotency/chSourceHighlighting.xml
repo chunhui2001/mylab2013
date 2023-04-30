@@ -842,12 +842,2847 @@ pub struct FormData {
 }
     ]]>
     </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We do not care about the exact format of the idempotency key, as long as it's not empty and it's reasonably long. <br />
+Let's define a new type to enforce minimal validation:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/lib.rs
+// [...]
+// New module!
+pub mod idempotency;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/mod.rs
+mod key;
+pub use key::IdempotencyKey;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/key.rs
+#[derive(Debug)]
+pub struct IdempotencyKey(String);
+
+impl TryFrom<String> for IdempotencyKey {
+    type Error = anyhow::Error;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        if s.is_empty() {
+            anyhow::bail!("The idempotency key cannot be empty");
+        }
+        let max_length = 50;
+        if s.len() >= max_length {
+            anyhow::bail!(
+                "The idempotency key must be shorter 
+                than {max_length} characters");
+        }
+        Ok(Self(s))
+    }
+}
+
+impl From<IdempotencyKey> for String {
+    fn from(k: IdempotencyKey) -> Self {
+        k.0
+    }
+}
+
+impl AsRef<str> for IdempotencyKey {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now use it in <code>publish_newsletter</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/utils.rs
+use actix_web::http::StatusCode;
+// [...]
+
+// Return a 400 with the user-representation of the validation error as body.
+// The error root cause is preserved for logging purposes.
+pub fn e400<T>(e: T) -> actix_web::Error
+where
+    T: std::fmt::Debug + std::fmt::Display + 'static
+{
+    actix_web::error::ErrorBadRequest(e)
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/newsletter/post.rs
+use crate::idempotency::IdempotencyKey;
+use crate::utils::e400;
+// [...]
+
+pub async fn publish_newsletter(/* */) -> Result<HttpResponse, actix_web::Error> {
+    // We must destructure the form to avoid upsetting the borrow-checker
+    let FormData { title, text_content, html_content, idempotency_key } = form.0;
+    let idempotency_key: IdempotencyKey = idempotency_key.try_into().map_err(e400)?;
+    let subscribers = get_confirmed_subscribers(&pool).await.map_err(e500)?;
+    for subscriber in subscribers {
+        match subscriber {
+            Ok(subscriber) => {
+                // No longer using `form.<X>`
+                email_client
+                    .send_email(&subscriber.email, &title, &html_content, &text_content)
+                    // [...]
+            }
+            // [...]
+        }
+    }
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Success! The idempotency key has been parsed and validated. <br />
+Some of our old tests, though, are not particularly happy:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+thread 'newsletter::you_must_be_logged_in_to_publish_a_newsletter' 
+panicked at 'assertion failed: `(left == right)`
+  left: `400`,
+ right: `303`'
+
+thread 'newsletter::newsletters_are_not_delivered_to_unconfirmed_subscribers' 
+panicked at 'assertion failed: `(left == right)`
+  left: `400`,
+ right: `303`'
+
+thread 'newsletter::newsletters_are_delivered_to_confirmed_subscribers' 
+panicked at 'assertion failed: `(left == right)`
+  left: `400`,
+ right: `303`'
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Our test requests are being rejected because they do not include an idempotency key. <br />
+Let's update them:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/newsletter.rs
+// [...]
+
+#[tokio::test]
+async fn newsletters_are_not_delivered_to_unconfirmed_subscribers() {
+    // [...]
+    let newsletter_request_body = serde_json::json!({
+        // [...]
+        "idempotency_key": uuid::Uuid::new_v4().to_string()
+    });
+}
+
+#[tokio::test]
+async fn newsletters_are_delivered_to_confirmed_subscribers() {
+    // [...] 
+    let newsletter_request_body = serde_json::json!({
+        // [...]
+        "idempotency_key": uuid::Uuid::new_v4().to_string()
+    });
+}
+
+#[tokio::test]
+async fn you_must_be_logged_in_to_publish_a_newsletter() {
+    // [...]
+    let newsletter_request_body = serde_json::json!({
+        // [...]
+        "idempotency_key": uuid::Uuid::new_v4().to_string()
+    });
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Those three tests should now pass again, leaving <code>newsletter::newsletter_creation_is_idempotent</code> as the only failing test.
+</div>
+<div style="margin-top:.625em;">
+We also need to update <code>GET /admin/newsletters</code> to embed a randomly-generated idempotency key in the HTML form:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/newsletter/get.rs
+// [...]
+
+pub async fn publish_newsletter_form(/* */) -> Result<HttpResponse, actix_web::Error> {
+    // [...]
+    let idempotency_key = uuid::Uuid::new_v4();
+    Ok(HttpResponse::Ok()
+        .content_type(ContentType::html())
+        .body(format!(
+            r#"<!-- ... -->   
+    <form action="/admin/newsletters" method="post">
+        <!-- ... -->
+        <input hidden type="text" name="idempotency_key" value="{idempotency_key}">
+        <button type="submit">Publish</button>
+    </form>
+    <!-- ... -->"#,
+        )))
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="8.2. Retrieve Saved Responses" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+The next step is trying to fetch a saved HTTP response from the store, assuming one exists.
+</div>
+<div style="margin-top:.625em;">
+It boils down to a single SQL query:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/mod.rs
+// [...]
+mod persistence;
+pub use persistence::get_saved_response;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[//! src/idempotency/persistence.rs
+use super::IdempotencyKey;
+use actix_web::HttpResponse;
+use sqlx::PgPool;
+use uuid::Uuid;
+
+pub async fn get_saved_response(
+    pool: &PgPool,
+    idempotency_key: &IdempotencyKey,
+    user_id: Uuid,
+) -> Result<Option<HttpResponse>, anyhow::Error> {
+    let saved_response = sqlx::query!(
+        r#"
+        SELECT 
+            response_status_code, 
+            response_headers,
+            response_body
+        FROM idempotency
+        WHERE 
+          user_id = $1 AND
+          idempotency_key = $2
+        "#,
+        user_id,
+        idempotency_key.as_ref()
+    )
+    .fetch_optional(pool)
+    .await?;
+    todo!()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+There is a caveat - <code>sqlx</code> does not know how to handle our custom <code>header_pair</code> type:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/persistence.rs
+error: unsupported type _header_pair of column #2 ("response_headers")
+ |
+ |       let saved_response = sqlx::query!(
+ |  __________________________^
+ | |         r#"
+ | |         SELECT 
+.. |
+ | |         idempotency_key.as_ref()
+ | |     )
+   | |_____^
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It might not be supported out of the box, but there is a mechanism for us to specify how it should be handled - the <a href="https://docs.rs/sqlx/0.5.10/sqlx/trait.Type.html">Type</a>, <a href="https://docs.rs/sqlx/0.5.10/sqlx/trait.Decode.html">Decode</a> and <a href="https://docs.rs/sqlx/0.5.10/sqlx/trait.Encode.html">Encode</a> traits.
+</div>
+<div style="margin-top:.625em;">
+Luckily enough, we do not have to implement them manually - we can derive them with a macro! <br />
+We just need to specify the type fields and the name of the composite type as it appears in Postgres; the macro should take care of the rest:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/persistence.rs
+// [...]
+
+#[derive(Debug, sqlx::Type)]
+#[sqlx(type_name = "header_pair")]
+struct HeaderPairRecord {
+    name: String,
+    value: Vec<u8>,
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Unfortunately, the error is still there.
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error: unsupported type _header_pair of column #2 ("response_headers")
+ |
+ |       let saved_response = sqlx::query!(
+ |  __________________________^
+ | |         r#"
+ | |         SELECT 
+.. |
+ | |         idempotency_key.as_ref()
+ | |     )
+ | |_____^
+
+// [...] <new error> [...]
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It turns out that <code>sqlx::query!</code> does not handle custom type automatically - we need to explain how we want the custom column to be handled by using an explicit type annotation. <br />
+The query becomes:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/persistence.rs
+// [...]
+
+pub async fn get_saved_response(/* */) -> Result</* */> {
+    let saved_response = sqlx::query!(
+        r#"
+        SELECT 
+            response_status_code, 
+            response_headers as "response_headers: Vec<HeaderPairRecord>",
+            response_body
+        // [...]
+        "#,
+        // [...]
+    )
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+At last, it compiles! <br />
+Let's map the retrieved data back into a proper <code>HttpResponse</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/persistence.rs
+use actix_web::http::StatusCode;
+// [...]
+
+pub async fn get_saved_response(/* */) -> Result<Option<HttpResponse>, anyhow::Error> {
+    let saved_response = sqlx::query!(/* */)
+        .fetch_optional(pool)
+        .await?;
+    if let Some(r) = saved_response {
+        let status_code = StatusCode::from_u16(
+            r.response_status_code.try_into()?
+        )?;
+        let mut response = HttpResponse::build(status_code);
+        for HeaderPairRecord { name, value } in r.response_headers {
+            response.append_header((name, value));
+        }
+        Ok(Some(response.body(r.response_body)))
+    } else {
+        Ok(None)
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now plug <code>get_saved_response</code> into our request handler:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/newsletter/post.rs
+// [...] 
+use crate::idempotency::get_saved_response;
+
+pub async fn publish_newsletter(
+    // [...]
+    // Inject the user id extracted from the user session
+    user_id: ReqData<UserId>,
+) -> Result<HttpResponse, actix_web::Error> {
+    let user_id = user_id.into_inner();
+    let FormData {
+        title,
+        text_content,
+        html_content,
+        idempotency_key,
+    } = form.0;
+    let idempotency_key: IdempotencyKey = idempotency_key.try_into().map_err(e400)?;
+    // Return early if we have a saved response in the database 
+    if let Some(saved_response) = get_saved_response(&pool, &idempotency_key, *user_id)
+        .await
+        .map_err(e500)?
+    {
+        return Ok(saved_response);
+    }
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="8.3. Save Responses" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We have code to retrieve saved responses, but we don't have code yet to save responses - that's what we will be focusing on next.
+</div>
+<div style="margin-top:.625em;">
+Let's add a new function skeleton to our <code>idempotency</code> module:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/mod.rs
+// [...]
+pub use persistence::save_response;
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/persistence.rs
+// [...]
+
+pub async fn save_response(
+    _pool: &PgPool,
+    _idempotency_key: &IdempotencyKey,
+    _user_id: Uuid,
+    _http_response: &HttpResponse
+) -> Result<(), anyhow::Error> {
+    todo!()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We need to break <code>HttpResponse</code> into its separate components before we write the <code>INSERT</code> query. <br />
+We can use <code>.status()</code> for the status code, <code>.headers()</code> for the headers... what about the body?
+</div>
+<div style="margin-top:.625em;">
+There is a <code>.body()</code> method - this is its signature:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+/// Returns a reference to this response's body.
+pub fn body(&self) -> &B {
+    self.res.body()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+What is <code>B</code>? We must include the <code>impl</code> block definition into the picture to grasp it:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+impl<B> HttpResponse<B> {
+    /// Returns a reference to this response's body.
+    pub fn body(&self) -> &B {
+        self.res.body()
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Well, well, it turns out that <code>HttpResponse</code> is generic over the body type! <br />
+But, you may ask, "we have been using <code>HttpResponse</code> for 400 pages without specifying any generic parameter, what's going on?"
+</div>
+<div style="margin-top:.625em;">
+There is a default generic parameter which kicks in if B is left unspecified:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+/// An outgoing response.
+pub struct HttpResponse<B = BoxBody> {/* */}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="8.3.1. MessageBody and HTTP Streaming" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Why does <code>HttpResponse</code> need to be generic over the body type in the first place? Can't it just use <code>Vec&lt;u8&gt;</code> or a similar bytes container?
+</div>
+<div style="margin-top:.625em;">
+We have always worked with responses that were fully formed on the server before being sent back to the caller. HTTP/1.1 supports another mechanism to transfer data - <code>Transfer-Encoding: chunked</code>, also known as <a href="https://gist.github.com/CMCDragonkai/6bfade6431e9ffb7fe88">HTTP streaming</a>.
+</div>
+<div style="margin-top:.625em;">
+The server breaks down the payload into multiple chunks and sends them over to the caller one at a time instead of accumulating the entire body in memory first. It allows the server to significantly reduce its memory usage. It is quite useful when working on large payloads such as files or results from a large query (streaming all the way through!).
+</div>
+<div style="margin-top:.625em;">
+With HTTP streaming in mind, it becomes easier to understand the design of <code>MessageBody</code>, the trait that must be implemented to use a type as body in <code>actix-web</code>:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+pub trait MessageBody {
+    type Error: Into<Box<dyn Error + 'static, Global>>;
+    fn size(&self) -> BodySize;
+    fn poll_next(
+        self: Pin<&mut Self>, 
+        cx: &mut Context<'_>
+    ) -> Poll<Option<Result<Bytes, Self::Error>>>;
+    // [...]
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="8.3.1. MessageBody and HTTP Streaming" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+You pull data, one chunk at a time, until you have fetched it all. <br />
+When the response is not being streamed, the data is available all at once - <code>poll_next</code> returns it all in one go.
+</div>
+<div style="margin-top:.625em;">
+Let's try to understand <code>BoxBody</code>, the default body type used by <code>HttpResponse</code>. The body type we have been using for several chapters, unknowingly!
+</div>
+<div style="margin-top:.625em;">
+<code>BoxBody</code> abstracts away the specific payload delivery mechanism. Under the hood, it is nothing more than an <code>enum</code> with a variant for each strategy, with a special case catering for body-less responses:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#[derive(Debug)]
+pub struct BoxBody(BoxBodyInner);
+
+enum BoxBodyInner {
+    None(body::None),
+    Bytes(Bytes),
+    Stream(Pin<Box<dyn MessageBody<Error = Box<dyn StdError>>>>),
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It worked for so long because we did not really care about the way the response was being sent back to the caller.
+Implementing <code>save_response</code> forces us to look closer - we need to collect the response in memory in order to save it in the <code>idempotency</code> table of our database.
+</div>
+<div style="margin-top:.625em;">
+<code>actix-web</code> has a dedicated function for situation like ours: <a href="https://docs.rs/actix-web/4.0.0-rc.3/actix_web/body/fn.to_bytes.html">to_bytes</a>.
+</div>
+<div style="margin-top:.625em;">
+It calls <code>poll_next</code> until there is no more data to fetch, than it returns the entire response back to us inside a <code>Bytes</code> container. 
+</div>
+<div style="margin-top:.625em;">
+I'd normally advise for caution when talking about <code>to_bytes</code> - if you are dealing with huge payloads, there is a risk of putting the server under significant memory pressure.
+</div>
+<div style="margin-top:.625em;">
+This is not our case - all our response bodies are small and don't actually take advantage of HTTP streaming, so <code>to_bytes</code> will not actually do any work.
+</div>
+<div style="margin-top:.625em;">
+Enough with the theory - let's piece it together:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/persistence.rs
+use actix_web::body::to_bytes;
+// [...]
+
+pub async fn save_response(
+    pool: &PgPool,
+    idempotency_key: &IdempotencyKey,
+    user_id: Uuid,
+    http_response: &HttpResponse,
+) -> Result<(), anyhow::Error> {
+    let status_code = http_response.status().as_u16() as i16;
+    let headers = {
+        let mut h = Vec::with_capacity(http_response.headers().len());
+        for (name, value) in http_response.headers().iter() {
+            let name = name.as_str().to_owned();
+            let value = value.as_bytes().to_owned();
+            h.push(HeaderPairRecord { name, value });
+        }
+        h
+    };
+    let body = to_bytes(http_response.body()).await.unwrap();
+    todo!()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The compiler is not happy:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0277]: the trait bound `&BoxBody: MessageBody` is not satisfied
+--> src/idempotency/persistence.rs
+ |
+ |     let body = to_bytes(http_response.body()).await.unwrap();
+ |                -------- ^^^^^^^^^^^^^^^^^^^^ 
+ the trait `MessageBody` is not implemented for `&BoxBody`
+ |                |
+ |                required by a bound introduced by this call
+ |
+ = help: the following implementations were found:
+           <BoxBody as MessageBody>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>BoxBody</code> implements <code>MessageBody</code>, but <code>&BoxBody</code> doesn't - and <code>.body()</code> returns a reference, it does not give us ownership over the body. <br />
+Why do we need ownership? It's because of HTTP streaming, once again!
+</div>
+<div style="margin-top:.625em;">
+Pulling a chunk of data from the payload stream requires a mutable reference to the stream itself - once the chunk has been read, there is no way to "replay" the stream and read it again.
+</div>
+<div style="margin-top:.625em;">
+There is a common pattern to work around this:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">Get ownership of the body via <code>.into_parts()</code>;</li>
+  <li style="margin-top:.325em;">Buffer the whole body in memory via <code>to_bytes</code>;</li>
+  <li style="margin-top:.325em;">Do whatever you have to do with the body;</li>
+  <li style="margin-top:.325em;">Re-assemble the response using <code>.set_body()</code> on the request head.</li>
+</ul>
+<div style="margin-top:.625em;">
+<code>.into_parts()</code> requires ownership of <code>HttpResponse</code> - we'll have to change the signature of <code>save_response</code> to accommodate it. Instead of asking for a reference, we'll take ownership of the response and then return another owned <code>HttpResponse</code> in case of success.
+</div>
+<div style="margin-top:.625em;">
+Let's go for it:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/persistence.rs
+// [...]
+
+pub async fn save_response(
+    // [...]
+    // No longer a reference!
+    http_response: HttpResponse,
+) -> Result<HttpResponse, anyhow::Error> {
+    let (response_head, body) = http_response.into_parts();
+    // `MessageBody::Error` is not `Send` + `Sync`, 
+    // therefore it doesn't play nicely with `anyhow`
+    let body = to_bytes(body).await.map_err(|e| anyhow::anyhow!("{}", e))?;
+    let status_code = response_head.status().as_u16() as i16;
+    let headers = {
+        let mut h = Vec::with_capacity(response_head.headers().len());
+        for (name, value) in response_head.headers().iter() {
+            let name = name.as_str().to_owned();
+            let value = value.as_bytes().to_owned();
+            h.push(HeaderPairRecord { name, value });
+        }
+        h
+    };
+
+    // TODO: SQL query
+
+    // We need `.map_into_boxed_body` to go from 
+    // `HttpResponse<Bytes>` to `HttpResponse<BoxBody>`
+    let http_response = response_head.set_body(body).map_into_boxed_body();
+    Ok(http_response)
+}
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+That should compile, although it isn't particularly useful (yet).
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="8.3.2. Array Of Composite Postgres Types" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+Let's add the insertion query:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/persistence.rs
+// [...]
+
+pub async fn save_response(
+    // [...]
+) -> Result<HttpResponse, anyhow::Error> {
+    // [...]
+    sqlx::query!(
+        r#"
+        INSERT INTO idempotency (
+            user_id, 
+            idempotency_key, 
+            response_status_code, 
+            response_headers, 
+            response_body,
+            created_at
+        )
+        VALUES ($1, $2, $3, $4, $5, now())
+        "#,
+        user_id,
+        idempotency_key.as_ref(),
+        status_code,
+        headers,
+        body.as_ref()
+    )
+    .execute(pool)
+    .await?;
+
+    let http_response = response_head.set_body(body).map_into_boxed_body();
+    Ok(http_response)
+}
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Compilation fails with an error:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error: unsupported type _header_pair for param #4
+--> src/idempotency/persistence.rs
+ |
+ | /     sqlx::query!(
+ | |         r#"
+ | |         INSERT INTO idempotency (
+ | |             user_id,
+.. |
+ | |         body.as_ref()
+ | |     )
+   | |_____^
+    ]]>
+    </c:sourceContent>   
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It does make sense - we are using a custom type and <code>sqlx::query!</code> is not powerful enough to learn about it at compile-time in order to check our query. We will have to disable compile-time verification - use <code>query_unchecked!</code> instead of <code>query!</code>:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/persistence.rs
+// [...]
+
+pub async fn save_response(
+    // [...]
+) -> Result<HttpResponse, anyhow::Error> {
+    // [...]
+    sqlx::query_unchecked!(/* */)
+    // [...]
+}
+    ]]>
+    </c:sourceContent>   
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We are getting closer - a different error!
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+error[E0277]: the trait bound `HeaderPairRecord: PgHasArrayType` is not satisfied
+--> src/idempotency/persistence.rs
+ |
+ | /     sqlx::query_unchecked!(
+ | |         r#"
+ | |         INSERT INTO idempotency (
+ | |             user_id,
+.. |
+ | |         body.as_ref()
+ | |     )
+ | |_____^ the trait `PgHasArrayType` is not implemented for `HeaderPairRecord`
+    ]]>
+    </c:sourceContent>   
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+<code>sqlx</code> knows, via our <code>#[sqlx(type_name = "header_pair")]</code> attribute, the name of the composite type itself. It does not know the name of the type for arrays containing <code>header_pair</code> elements.
+</div>
+<div style="margin-top:.625em;">
+Postgres creates an array type implicitly when we run a <code>CREATE TYPE</code> statement - it is simply <a href="https://www.postgresql.org/docs/current/sql-createtype.html">the composite type name prefixed by an underscore</a>.
+</div>
+<div style="margin-top:.625em;">
+We can provide this information to <code>sqlx</code> by implementing the <code>PgHasArrayType</code> trait, just like the compiler suggested:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/persistence.rs
+use sqlx::postgres::PgHasArrayType;
+// [...]
+
+impl PgHasArrayType for HeaderPairRecord {
+    fn array_type_info() -> sqlx::postgres::PgTypeInfo {
+        sqlx::postgres::PgTypeInfo::with_name("_header_pair")
+    }
+}
+    ]]>
+    </c:sourceContent>   
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The code should finally compile.
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="8.3.3. Plug It In" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+It's a milestone, but it is a bit early to cheer - we don't know if it works yet. Our integration test is still red.
+Let's plug <code>save_response</code> into our request handler:
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/newsletter/post.rs
+use crate::idempotency::save_response;
+// [...]
+
+pub async fn publish_newsletter(/* */) -> Result</* */> {
+    // [...]
+    for subscriber in subscribers {
+        // [...]
+    }
+    FlashMessage::info("The newsletter issue has been published!").send();
+    let response = see_other("/admin/newsletters");
+    let response = save_response(&pool, &idempotency_key, *user_id, response)
+        .await
+        .map_err(e500)?;
+    Ok(response)
+}
+    ]]>
+    </c:sourceContent>    
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Low and behold, <code>cargo test</code> succeeds! We made it!
+    ]]>
+    </c:sourceContent>  
     <c:comment>
       <c:comment1>
         <![CDATA[]]>
       </c:comment1>
     </c:comment>
   </c:entry>
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">9. Concurrent Requests</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We dealt with the "easy" scenario when it comes to idempotency: a request arrives, it's fully processed, then a retry comes in.
+</div>
+<div style="margin-top:.625em;">
+We will now deal with the more troublesome scenario - the retry arrives before the first request is fully processed. 
+</div>
+<div style="margin-top:.625em;">
+We expect the second request to be queued behind the first one - once that finishes, it will retrieve the saved HTTP response from the store and return it to the caller.
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="9.1. Requirements As Tests #2" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We can, once again, encode our requirements as tests:
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/newsletter.rs
+use std::time::Duration;
+// [...]
+
+#[tokio::test]
+async fn concurrent_form_submission_is_handled_gracefully() {
+    // Arrange
+    let app = spawn_app().await;
+    create_confirmed_subscriber(&app).await;
+    app.test_user.login(&app).await;
+
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        // Setting a long delay to ensure that the second request 
+        // arrives before the first one completes
+        .respond_with(ResponseTemplate::new(200).set_delay(Duration::from_secs(2)))
+        .expect(1)
+        .mount(&app.email_server)
+        .await;
+
+    // Act - Submit two newsletter forms concurrently
+    let newsletter_request_body = serde_json::json!({
+        "title": "Newsletter title",
+        "text_content": "Newsletter body as plain text",
+        "html_content": "<p>Newsletter body as HTML</p>",
+        "idempotency_key": uuid::Uuid::new_v4().to_string()
+    });
+    let response1 = app.post_publish_newsletter(&newsletter_request_body);
+    let response2 = app.post_publish_newsletter(&newsletter_request_body);
+    let (response1, response2) = tokio::join!(response1, response2);
+
+    assert_eq!(response1.status(), response2.status());
+    assert_eq!(response1.text().await.unwrap(), response2.text().await.unwrap());
+
+    // Mock verifies on Drop that we have sent the newsletter email **once**
+}
+    ]]>
+    </c:sourceContent>   
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test fails - our server returned a 500 Internal Server Error to one of the two requests:
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+thread 'newsletter::concurrent_form_submission_is_handled_gracefully' 
+panicked at 'assertion failed: `(left == right)`
+  left: `303`,
+ right: `500`'
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The logs explain what happened:
+    ]]>
+    </c:sourceContent>    
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+exception.details: 
+    error returned from database: 
+    duplicate key value violates unique constraint "idempotency_pkey"
+
+    Caused by:
+        duplicate key value violates unique constraint "idempotency_pkey"
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The slowest request fails to insert into the <code>idempotency</code> table due to our uniqueness constraint. <br />
+The error response is not the only issue: both requests executed the email dispatch code (otherwise we wouldn't have seen the constraint violation!), resulting into duplicate delivery.
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="9.2. Synchronization" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The second request is not aware of the first until it tries to insert into the database. <br />
+If we want to prevent duplicate delivery, we need to introduce <b>cross-request synchronization</b> before we start processing subscribers.
+</div>
+<div style="margin-top:.625em;">
+In-memory locks (e.g. <a href="https://docs.rs/tokio/latest/tokio/sync/struct.Mutex.html">tokio::sync::Mutex</a>) would work if all incoming requests were being served by a single API instance. This is not our case: our API is replicated, therefore the two requests might end up being processed by two different instances.
+</div>
+<div style="margin-top:.625em;">
+Our synchronization mechanism will have to live out-of-process - our database being the natural candidate. <br />
+Let's think about it: we have an <code>idempotency</code> table, it contains one row for each unique combination of user id and idempotency key. Can we do something with it?
+</div>
+<div style="margin-top:.625em;">
+Our current implementation inserts a row into the <code>idempotency</code> table after processing the request, just before returning the response to the caller. We are going to change that: we will insert a new row as soon as the handler is invoked.
+We don't know the final response at that point - we haven't started processing yet! We must relax the <code>NOT NULL</code> constraints on some of the columns:
+</div>
+    ]]>
+    </c:sourceContent>    
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+sqlx migrate add relax_null_checks_on_idempotency
+    ]]>
+    </c:sourceContent>   
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+ALTER TABLE idempotency ALTER COLUMN response_status_code DROP NOT NULL;
+ALTER TABLE idempotency ALTER COLUMN response_body DROP NOT NULL;
+ALTER TABLE idempotency ALTER COLUMN response_headers DROP NOT NULL;
+    ]]>
+    </c:sourceContent>   
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+sqlx migrate run
+    ]]>
+    </c:sourceContent>   
+    <c:sourceContent type="html" title="9.2. Synchronization" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We can now insert a row as soon as the handler gets invoked using the information we have up to that point - the user id and the idempotency key, our composite primary key.
+</div>
+<div style="margin-top:.625em;">
+The first request will succeed in inserting a row into <code>idempotency</code>. The second request, instead, will fail due to our uniqueness constraint. <br />
+That is not what we want:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">if the first request completed, we want to return the saved response;</li>
+  <li style="margin-top:.325em;">if the first request is still ongoing, we want to <b>wait</b>. </li>
+</ul>
+<div style="margin-top:.625em;">
+The first scenario can be accommodated by using Postgres' <code>ON CONFLICT</code> statement - it allows us to define what should happen when an <code>INSERT</code> fails due to a constraint violation (e.g. uniqueness).
+</div>
+<div style="margin-top:.625em;">
+We have two options: <code>ON CONFLICT DO NOTHING</code> and <code>ON CONFLICT DO UPDATE</code>.
+</div>
+<div style="margin-top:.625em;">
+<code>ON CONFLICT DO NOTHING</code>, as you might guess, does nothing - it simply swallows the error. We can detect that the row was already there by checking the number of rows that were affected by the statement.
+</div>
+<div style="margin-top:.625em;">
+<code>ON CONFLICT DO UPDATE</code>, instead, can be used to modify the pre-existing row - e.g. <code>ON CONFLICT DO UPDATE SET updated_at = now()</code>.
+</div>
+<div style="margin-top:.625em;">
+We will use <code>ON CONFLICT DO NOTHING</code> - if no new row was inserted, we will try to fetch the saved response.
+</div>
+<div style="margin-top:.625em;">
+Before we start implementing, there is an issue we need to solve: our code no longer compiles. Our code has not been updated to deal with the fact that a few columns in <code>idempotency</code> are now nullable. We must update the query to ask sqlx to forcefully assume that the columns will not be null - if we are wrong, it will cause an error at runtime.
+</div>
+<div style="margin-top:.625em;">
+The syntax is similar to the type casting syntax we used previously to deal with header pairs - we must append a ! to the column alias name:
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/persistence.rs
+// [...]
+
+pub async fn get_saved_response(/* */) -> Result</* */> {
+    let saved_response = sqlx::query!(
+        r#"
+        SELECT 
+            response_status_code as "response_status_code!", 
+            response_headers as "response_headers!: Vec<HeaderPairRecord>",
+            response_body as "response_body!"
+        [...]
+        "#,
+        user_id,
+        idempotency_key.as_ref()
+    )
+    // [...]
+}
+    ]]>
+    </c:sourceContent>     
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Let's now define the skeleton of a new function, the one we will invoke at the beginning of our request handler - <code>try_processing</code>.
+</div>
+<div style="margin-top:.625em;">
+It will try to perform the insertion we just discussed - if it fails because a row already exists, we will assume that a response has been saved and try to return it.
+</div>
+    ]]>
+    </c:sourceContent>   
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/mod.rs
+// [...]
+pub use persistence::{try_processing, NextAction};
+    ]]>
+    </c:sourceContent>    
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/persistence.rs
+// [...]
+
+pub enum NextAction {
+    StartProcessing,
+    ReturnSavedResponse(HttpResponse)
+}
+
+pub async fn try_processing(
+    pool: &PgPool, 
+    idempotency_key: &IdempotencyKey, 
+    user_id: Uuid
+) -> Result<NextAction, anyhow::Error> {
+    todo!()
+}
+    ]]>
+    </c:sourceContent>    
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Our handler will invoke <code>try_processing</code> instead of <code>get_saved_response</code>:
+    ]]>
+    </c:sourceContent>   
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/newsletter/post.rs
+use crate::idempotency::{try_processing, NextAction};
+// [...]
+
+pub async fn publish_newsletter(/* */) -> Result<HttpResponse, actix_web::Error> {
+    // [...]
+    let idempotency_key: IdempotencyKey = idempotency_key.try_into().map_err(e400)?;
+    match try_processing(&pool, &idempotency_key, *user_id)
+        .await
+        .map_err(e500)?
+    {
+        NextAction::StartProcessing => {}
+        NextAction::ReturnSavedResponse(saved_response) => {
+            success_message().send();
+            return Ok(saved_response);
+        }
+    }
+    // [...]
+    success_message().send();
+    let response = see_other("/admin/newsletters");
+    let response = save_response(&pool, &idempotency_key, *user_id, response)
+        .await
+        .map_err(e500)?;
+    Ok(response)
+}
+
+fn success_message() -> FlashMessage {
+    FlashMessage::info("The newsletter issue has been published!")
+}
+    ]]>
+    </c:sourceContent>     
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can now flesh out <code>try_processing</code>:
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/persistence.rs
+// [...]
+
+pub async fn try_processing(
+    pool: &PgPool,
+    idempotency_key: &IdempotencyKey,
+    user_id: Uuid,
+) -> Result<NextAction, anyhow::Error> {
+    let n_inserted_rows = sqlx::query!(
+        r#"
+        INSERT INTO idempotency (
+            user_id, 
+            idempotency_key,
+            created_at
+        ) 
+        VALUES ($1, $2, now()) 
+        ON CONFLICT DO NOTHING
+        "#,
+        user_id,
+        idempotency_key.as_ref()
+    )
+    .execute(pool)
+    .await?
+    .rows_affected();
+    if n_inserted_rows > 0 {
+        Ok(NextAction::StartProcessing)
+    } else {
+        let saved_response = get_saved_response(pool, idempotency_key, user_id)
+            .await?
+            .ok_or_else(|| 
+                anyhow::anyhow!("We expected a saved response, we didn't find it")
+            )?;
+        Ok(NextAction::ReturnSavedResponse(saved_response))
+    }
+}
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+A bunch of our tests will start failing. What is going on?
+</div>
+<div style="margin-top:.625em;">
+Log inspection highlights a <code>duplicate key value violates unique constraint "idempotency_pkey"</code>. Guess what? We forgot to update <code>save_response</code>! It's trying to insert another row into <code>idempotency</code> for the same combination of user id and idempotency key - it needs to perform an <code>UPDATE</code> instead of an <code>INSERT</code>.
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/persistence.rs
+// [...]
+
+pub async fn save_response(/* */) -> Result</* */> {
+    // [...]
+    sqlx::query_unchecked!(
+        r#"
+        UPDATE idempotency
+        SET 
+            response_status_code = $3, 
+            response_headers = $4,
+            response_body = $5
+        WHERE
+            user_id = $1 AND
+            idempotency_key = $2
+        "#,
+        user_id,
+        idempotency_key.as_ref(),
+        status_code,
+        headers,
+        body.as_ref()
+    )
+    // [...]
+}
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We are back to square one - <code>concurrent_form_submission_is_handled_gracefully</code> is the only failing test. What have we gained?
+</div>
+<div style="margin-top:.625em;">
+Very little - the second request returns an error instead of sending emails out twice. An improvement, but not yet where we want to land.
+</div>
+<div style="margin-top:.625em;">
+We need to find a way to cause the INSERT in <code>try_processing</code> to wait instead of erroring out when a retry arrives before the first request has completed processing.
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="9.2.1. Transaction Isolation Levels" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's do an experiment: we will wrap the <code>INSERT</code> in <code>try_processing</code> and the <code>UPDATE</code> in <code>save_response</code> in a single SQL transaction.
+</div>
+<div style="margin-top:.625em;">
+What do you think it's going to happen?
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/persistence.rs
+use sqlx::{Postgres, Transaction};
+// [...]
+
+#[allow(clippy::large_enum_variant)]
+pub enum NextAction {
+    // Return transaction for later usage
+    StartProcessing(Transaction<'static, Postgres>),
+    // [...]
+}
+
+
+pub async fn try_processing(/* */) -> Result</* */> {
+    let mut transaction = pool.begin().await?;
+    let n_inserted_rows = sqlx::query!(/* */)
+        .execute(&mut transaction)
+        .await?
+        .rows_affected();
+    if n_inserted_rows > 0 {
+        Ok(NextAction::StartProcessing(transaction))
+    } else {
+        // [...]
+    }
+}
+
+pub async fn save_response(
+    // No longer a `Pool`!
+    mut transaction: Transaction<'static, Postgres>,
+    // [...]
+) -> Result</* */> {
+    // [...]
+    sqlx::query_unchecked!(/* */)
+        .execute(&mut transaction)
+        .await?;
+    transaction.commit().await?;
+    // [...]
+}
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/newsletter/post.rs
+// [...]
+
+pub async fn publish_newsletter(/* */) -> Result</* */> {
+    // [...]
+    let transaction = match try_processing(&pool, &idempotency_key, *user_id)
+        .await
+        .map_err(e500)?
+    {
+        NextAction::StartProcessing(t) => t,
+        // [...]
+    };
+    // [...]
+    let response = save_response(transaction, /* */)
+        .await
+        .map_err(e500)?;
+    // [...]
+}
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+All our tests are passing! But <code>why</code>? <br />
+It boils down to locks and transaction isolation levels!
+</div>
+<div style="margin-top:.625em;">
+<code>READ COMMITTED</code> is the default isolation level in Postgres. We have not tuned this setting, therefore this is the case for the queries in our application as well.
+</div>
+<div style="margin-top:.625em;">
+Postgres' documentation describes the behaviour at this isolation level as follows:
+</div>
+<div style="margin-top:.625em;">
+[...] a SELECT query (without a FOR UPDATE/SHARE clause) sees only data committed before the query began; it never sees either uncommitted data or changes committed during query execution by concurrent transactions. In effect, a SELECT query sees a snapshot of the database as of the instant the query begins to run.
+</div>
+<div style="margin-top:.625em;">
+Data-altering statements, instead, will be influenced by uncommitted transactions that are trying to alter the same set of rows:
+</div>
+<div style="margin-top:.625em;">
+<code>UPDATE</code>, <code>DELETE</code>, <code>SELECT FOR UPDATE</code> [...] will only find target rows that were committed as of the command start time. However, such a target row might have already been updated (or deleted or locked) by another concurrent transaction by the time it is found. In this case, <b>the would-be updater will wait for the first updating transaction to commit or roll back (if it is still in progress)</b>.
+</div>
+<div style="margin-top:.625em;">
+This is exactly what is happening in our case. <br />
+The <code>INSERT</code> statement fired by the second request must wait for outcome of the SQL transaction started by the first request.
+</div>
+<div style="margin-top:.625em;">
+If the latter commits, the former will <code>DO NOTHING</code>. <br />
+If the latter rolls back, the former will actually perform the insertion.
+</div>
+<div style="margin-top:.625em;">
+It is worth highlighting that this strategy will <b>not</b> work if using stricter isolation levels. <br />
+We can test this pretty easily:
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/idempotency/persistence.rs
+// [...]
+
+pub async fn try_processing(/* */) -> Result</* */> {
+    let mut transaction = pool.begin().await?;
+    sqlx::query!("SET TRANSACTION ISOLATION LEVEL repeatable read")
+        .execute(&mut transaction)
+        .await?;
+    let n_inserted_rows = sqlx::query!(/* */)
+    // [...]
+}
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The second concurrent request will fail due to a database error: <code>could not serialize access due to concurrent update</code>.
+</div>
+<div style="margin-top:.625em;">
+<code>repeatable read</code> is designed to prevent non-repeatable reads (who would have guessed?): the same <code>SELECT</code> query, if run twice in a row within the same transaction, should return the same data.
+</div>
+<div style="margin-top:.625em;">
+This has consequences for statements such as <code>UPDATE</code>: if they are executed within a <code>repeatable read</code> transaction, they cannot modify or lock rows changed by other transactions after the repeatable read transaction began.
+</div>
+<div style="margin-top:.625em;">
+This is why the transaction initiated by the second request fails to commit in our little experiment above. The same would have happened if we had chosen <code>serializable</code>, the strictest isolation level available in Postgres.
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">10. Dealing With Errors</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We made some solid progress - our implementation handles duplicated requests gracefully, no matter if they arrive concurrently or sequentially. <br />
+What about errors?
+</div>
+<div style="margin-top:.625em;">
+Let's add another test case:
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+#! Cargo.toml
+# [...]
+[dev-dependencies]
+serde_urlencoded = "0.7.1"
+# [...]
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/newsletter.rs
+use fake::faker::internet::en::SafeEmail;
+use fake::faker::name::en::Name;
+use fake::Fake;
+use wiremock::MockBuilder;
+// [...]
+
+// Short-hand for a common mocking setup
+fn when_sending_an_email() -> MockBuilder {
+    Mock::given(path("/email")).and(method("POST"))
+}
+
+#[tokio::test]
+async fn transient_errors_do_not_cause_duplicate_deliveries_on_retries() {
+    // Arrange
+    let app = spawn_app().await;
+    let newsletter_request_body = serde_json::json!({
+        "title": "Newsletter title",
+        "text_content": "Newsletter body as plain text",
+        "html_content": "<p>Newsletter body as HTML</p>",
+        "idempotency_key": uuid::Uuid::new_v4().to_string()
+    });
+    // Two subscribers instead of one!
+    create_confirmed_subscriber(&app).await;
+    create_confirmed_subscriber(&app).await;
+    app.test_user.login(&app).await;
+
+    // Part 1 - Submit newsletter form
+    // Email delivery fails for the second subscriber
+    when_sending_an_email()
+        .respond_with(ResponseTemplate::new(200))
+        .up_to_n_times(1)
+        .expect(1)
+        .mount(&app.email_server)
+        .await;
+    when_sending_an_email()
+        .respond_with(ResponseTemplate::new(500))
+        .up_to_n_times(1)
+        .expect(1)
+        .mount(&app.email_server)
+        .await;
+
+    let response = app.post_publish_newsletter(&newsletter_request_body).await;
+    assert_eq!(response.status().as_u16(), 500);
+
+    // Part 2 - Retry submitting the form
+    // Email delivery will succeed for both subscribers now
+    when_sending_an_email()
+        .respond_with(ResponseTemplate::new(200))
+        .expect(1)
+        .named("Delivery retry")
+        .mount(&app.email_server)
+        .await;
+    let response = app.post_publish_newsletter(&newsletter_request_body).await;
+    assert_eq!(response.status().as_u16(), 303);
+
+    // Mock verifies on Drop that we did not send out duplicates
+}
+
+async fn create_unconfirmed_subscriber(app: &TestApp) -> ConfirmationLinks {
+    // We are working with multiple subscribers now,
+    // their details must be randomised to avoid conflicts!
+    let name: String = Name().fake();
+    let email: String = SafeEmail().fake();
+    let body = serde_urlencoded::to_string(&serde_json::json!({
+        "name": name,
+        "email": email
+    }))
+    .unwrap();
+    // [...]
+}
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+The test does not pass - we are seeing yet another instance of duplicated delivery:
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+thread 'newsletter::transient_errors_do_not_cause_duplicate_deliveries_on_retries' 
+panicked at 'Verifications failed:
+- Delivery retry.
+        Expected range of matching incoming requests: == 1
+        Number of matched incoming requests: 2
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+It makes sense, if you think again about our idempotency implementation: the SQL transaction inserting into the <code>idempotency</code> table commits exclusively when processing succeeds.
+</div>
+<div style="margin-top:.625em;">
+Errors lead to an early return - this triggers a rollback when the <code>Transaction&lt;'static, Postgres&gt;</code> value is dropped.
+</div>
+<div style="margin-top:.625em;">
+Can we do better?
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="10.1. Distributed Transactions" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+The pain we are feeling is a common issue in real-world applications - you lose transactionality when executing logic that touches, at the same time, your local state and a remote state managed by another system.
+</div>
+<div style="margin-top:.625em;">
+I happen to be fascinated by the technical challenges in distributed systems, but I am well aware that users do not share my passion. They want to get something done, they do not care about the internals - and rightly so.
+A newsletter author expects one of the following scenarios after clicking on <code>Submit</code>:
+</div>
+<ul style="margin-left:2em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.325em;">the issue was delivered to all subscribers;</li>
+  <li style="margin-top:.325em;">the issue could not be published, therefore nobody received it.</li>
+</ul>
+<div style="margin-top:.625em;">
+Our implementation allows for a third scenario at the moment: the issue could not be published (<code>500 Internal Server Error</code>), but some subscribers received it anyway.
+</div>
+<div style="margin-top:.625em;">
+That won't do - <b>partial</b> execution is not acceptable, the system must end up in a sensible state. <br />
+There are two common approaches to solve this problem: <b>backward recovery</b> and <b>forward recovery</b>.
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="10.2. Backward Recovery" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+<b>Backward recovery</b> tries to achieve a semantic rollback by executing <b>compensating actions</b>.
+</div>
+<div style="margin-top:.625em;">
+Let's imagine we are working on an e-commerce checkout system: we have already charged the customer for the products in their basket but, when trying to authorize the shipment, we discover that one of the items is now out of stock.
+</div>
+<div style="margin-top:.625em;">
+We can perform a backward recovery by cancelling all shipment instructions and refunding the customer for the entire amount of their basket.
+</div>
+<div style="margin-top:.625em;">
+The recovery mechanism is not transparent to the customer - they will still see two payments on their transaction history, the original charge and the following refund. We are also likely to send out an email to explain what happened. But their balance, the state they care about, has been restored.
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="10.3. Forward Recovery" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Backward recovery is not a good fit for our newsletter delivery system - we cannot "unsend" an email nor would it make sense to send a follow-up email asking subscribers to ignore the email we sent before (it'd be funny though).
+</div>
+<div style="margin-top:.625em;">
+We must try to perform <b>forward recovery</b> - drive the overall workflow to completion even if one or more sub-tasks did not succeed. <br />
+We have two options: <b>active</b> and <b>passive</b> recovery.
+</div>
+<div style="margin-top:.625em;">
+<b>Passive recovery</b> pushes on the API caller the responsibility to drive the workflow to completion.
+</div>
+<div style="margin-top:.625em;">
+The request handler leverages checkpoints to keep track of its progress - e.g. "123 emails have been sent out". If the handler crashes, the next API call will resume processing from the latest checkpoint, minimizing the amount of duplicated work (if any). After enough retries, the workflow will eventually complete.
+</div>
+<div style="margin-top:.625em;">
+<b>Active recovery</b>, instead, does not require the caller to do anything apart from kicking off the workflow. The system must self-heal.
+</div>
+<div style="margin-top:.625em;">
+We would rely on a background process - e.g. a background task on our API - to detect newsletter issues whose delivery stopped halfway. The process would then drive the delivery to completion.
+</div>
+<div style="margin-top:.625em;">
+Healing would happen <b>asynchronously</b> - outside the lifecycle of the original <b>POST /admin/newsletters</b> request.
+</div>
+<div style="margin-top:.625em;">
+Passive recovery makes for a poor user experience - the newsletter author has to submit the form over and over again until they receive a success response back. The author is in an awkward position - is the error they are seeing related to a transient issue encountered during delivery? Or is it the database failing when trying to fetch the list of subscribers? In other words, will retries actually lead to a success, eventually?
+</div>
+<div style="margin-top:.625em;">
+If they choose to give up retrying, while in the middle of delivery, the system is once again left in an inconsistent state.
+</div>
+<div style="margin-top:.625em;">
+We will therefore opt for active recovery in our implementation.
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="10.4. Asynchronous Processing" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Active recovery has its rough edges as well. <br />
+We do not want the author to receive an error back from the API while, under the hood, newsletter delivery has been kicked off.
+</div>
+<div style="margin-top:.625em;">
+We can improve the user experience by changing the expectations for <code>POST /admin/newsletters</code>. <br />
+A successful form submission currently implies that the new newsletter issue has been validated and delivered to all subscribers.
+We can reduce its scope: a successful form submission will mean that the newsletter has been validated and <b>will</b> be delivered to all subscribers, <b>asynchronously</b>.
+</div>
+<div style="margin-top:.625em;">
+In other words, a successful form submission guarantees to the author that the delivery workflow has been correctly kicked off. They just need to wait for all emails to go out, but they have nothing to worry about - it will happen.
+</div>
+<div style="margin-top:.625em;">
+The request handler of <code>POST /admin/newsletters</code> is no longer going to dispatch emails - it will simply enqueue a list of tasks that will be fulfilled asynchronously by a set of background workers. We will use another Postgres table as our task queue - it will be named <code>issue_delivery_queue</code>.
+</div>
+<div style="margin-top:.625em;">
+At a glance, it might look like a small difference - we are just shifting around when work needs to happen. But it has a powerful implication: we recover transactionality.
+</div>
+<div style="margin-top:.625em;">
+Our subscribers' data, our idempotency records, the task queue - they all live in Postgres. All the operations performed by <code>POST /admin/newsletters</code> can be wrapped in a single SQL transaction - either they all succeed, or nothing happened.
+The caller no longer needs to second guess the response of our API or try to reason about its implementation!
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="10.4.1. newsletter_issues" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+By dispatching eagerly, we never needed to store the details of the issues we were sending out. To pursue our new strategy, this has to change: we will start persisting newsletter issues in a dedicated <code>newsletter_issues</code> table.
+The schema should not come as a surprise:
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+sqlx migrate add create_newsletter_issues_table
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+-- migrations/20220211080603_create_newsletter_issues_table.sql
+CREATE TABLE newsletter_issues (
+   newsletter_issue_id uuid NOT NULL,
+   title TEXT NOT NULL,
+   text_content TEXT NOT NULL,
+   html_content TEXT NOT NULL,
+   published_at TEXT NOT NULL,
+   PRIMARY KEY(newsletter_issue_id)
+);
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+sqlx migrate run
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+Let's write a matching <code>insert_newsletter_issue</code> function - we'll need it soon:
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/newsletter/post.rs
+use sqlx::{Postgres, Transaction};
+use uuid::Uuid;
+// [...]
+
+#[tracing::instrument(skip_all)]
+async fn insert_newsletter_issue(
+    transaction: &mut Transaction<'_, Postgres>,
+    title: &str,
+    text_content: &str,
+    html_content: &str,
+) -> Result<Uuid, sqlx::Error> {
+    let newsletter_issue_id = Uuid::new_v4();
+    sqlx::query!(
+        r#"
+        INSERT INTO newsletter_issues (
+            newsletter_issue_id, 
+            title, 
+            text_content, 
+            html_content,
+            published_at
+        )
+        VALUES ($1, $2, $3, $4, now())
+        "#,
+        newsletter_issue_id,
+        title,
+        text_content,
+        html_content 
+    )
+    .execute(transaction)
+    .await?;
+    Ok(newsletter_issue_id)
+}
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="html" title="10.4.2. issue_delivery_queue" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+When it comes to tasks, we are going to keep it simple:
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+sqlx migrate add create_issue_delivery_queue_table
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+-- migrations/20220211080603_create_issue_delivery_queue_table.sql
+CREATE TABLE issue_delivery_queue (
+   newsletter_issue_id uuid NOT NULL REFERENCES newsletter_issues (newsletter_issue_id),
+   subscriber_email TEXT NOT NULL,
+   PRIMARY KEY(newsletter_issue_id, subscriber_email)
+);
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+sqlx migrate run
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can create the task set using a single insert query:
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/newsletter/post.rs
+// [...]
+
+#[tracing::instrument(skip_all)]
+async fn enqueue_delivery_tasks(
+    transaction: &mut Transaction<'_, Postgres>,
+    newsletter_issue_id: Uuid,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"
+        INSERT INTO issue_delivery_queue (
+            newsletter_issue_id, 
+            subscriber_email
+        )
+        SELECT $1, email
+        FROM subscriptions
+        WHERE status = 'confirmed'
+        "#,
+        newsletter_issue_id,
+    )
+    .execute(transaction)
+    .await?;
+    Ok(())
+}
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="html" title="10.4.3. POST /admin/newsletters" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We are ready to overhaul our request handler by putting together the pieces we just built:
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/routes/admin/newsletter/post.rs
+// [...]
+
+#[tracing::instrument(
+    name = "Publish a newsletter issue",
+    skip_all,
+    fields(user_id=%&*user_id)
+)]
+pub async fn publish_newsletter(
+    form: web::Form<FormData>,
+    pool: web::Data<PgPool>,
+    user_id: web::ReqData<UserId>,
+) -> Result<HttpResponse, actix_web::Error> {
+    let user_id = user_id.into_inner();
+    let FormData {
+        title,
+        text_content,
+        html_content,
+        idempotency_key,
+    } = form.0;
+    let idempotency_key: IdempotencyKey = idempotency_key.try_into().map_err(e400)?;
+    let mut transaction = match try_processing(&pool, &idempotency_key, *user_id)
+        .await
+        .map_err(e500)?
+    {
+        NextAction::StartProcessing(t) => t,
+        NextAction::ReturnSavedResponse(saved_response) => {
+            success_message().send();
+            return Ok(saved_response);
+        }
+    };
+    let issue_id = insert_newsletter_issue(&mut transaction, &title, &text_content, &html_content)
+        .await
+        .context("Failed to store newsletter issue details")
+        .map_err(e500)?;
+    enqueue_delivery_tasks(&mut transaction, issue_id)
+        .await
+        .context("Failed to enqueue delivery tasks")
+        .map_err(e500)?;
+    let response = see_other("/admin/newsletters");
+    let response = save_response(transaction, &idempotency_key, *user_id, response)
+        .await
+        .map_err(e500)?;
+    success_message().send();
+    Ok(response)
+}
+
+
+fn success_message() -> FlashMessage {
+    FlashMessage::info(
+        "The newsletter issue has been accepted - \
+        emails will go out shortly.",
+    )
+}
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+We can also delete <code>get_confirmed_subscribers</code> and <code>ConfirmedSubscriber</code>.
+</div>
+<div style="margin-top:.625em;">
+The logic in the request handler is now quite linear. The author is also going to have a quicker feedback loop - the endpoint no longer has to iterate over hundreds of subscribers before redirecting them to a success page.
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="10.4.4. Email Processing" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Let's move our focus to the delivery instead.
+</div>
+<div style="margin-top:.625em;">
+We need to consume tasks from <code>issue_delivery_queue</code>. There are going to be multiple delivery workers running at the same time - at least one per API instance.
+</div>
+<div style="margin-top:.625em;">
+A naive approach would get us into trouble:
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+SELECT (newsletter_issue_id, subscriber_email)
+FROM issue_delivery_queue
+LIMIT 1
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+Multiple workers would pick the same task and we would end up with a lot of duplicated emails.
+</div>
+<div style="margin-top:.625em;">
+We need synchronization. Once again, we are going to leverage the database - we will use <a href="https://www.postgresql.org/docs/current/explicit-locking.html#LOCKING-ROWS">row-level locks</a>.
+</div>
+<div style="margin-top:.625em;">
+Postgres 9.5 introduced the <code>SKIP LOCKED</code> clause - it allows <code>SELECT</code> statements to ignore all rows that are currently locked by another concurrent operation. <br />
+<code>FOR UPDATE</code>, instead, can be used to lock the rows returned by a <code>SELECT</code>. <br />
+We are going to combine them:
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+SELECT (newsletter_issue_id, subscriber_email)
+FROM issue_delivery_queue
+FOR UPDATE
+SKIP LOCKED
+LIMIT 1
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+This gives us a concurrency-safe queue.
+</div>
+<div style="margin-top:.625em;">
+Each worker is going to select an uncontested task (<code>SKIP LOCKED</code> and <code>LIMIT 1</code>); the task itself is going to become unavailable to other workers (<code>FOR UPDATE</code>) for the duration of the over-arching SQL transaction.
+</div>
+<div style="margin-top:.625em;">
+When the task is complete (i.e. the email has been sent), we are going to delete the corresponding row from <code>issue_delivery_queue</code> and commit our changes.
+</div>
+<div style="margin-top:.625em;">
+Let's code it up:
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! lib.rs
+// [...]
+pub mod issue_delivery_worker;
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/issue_delivery_worker;
+use crate::email_client::EmailClient;
+use sqlx::{PgPool, Postgres, Transaction};
+use tracing::{field::display, Span};
+use uuid::Uuid;
+
+#[tracing::instrument(
+    skip_all,
+    fields(
+        newsletter_issue_id=tracing::field::Empty,
+        subscriber_email=tracing::field::Empty
+    ),
+    err
+)]
+async fn try_execute_task(
+    pool: &PgPool, 
+    email_client: &EmailClient
+) -> Result<(), anyhow::Error> {
+    if let Some((transaction, issue_id, email)) = dequeue_task(pool).await? {
+        Span::current()
+            .record("newsletter_issue_id", &display(issue_id))
+            .record("subscriber_email", &display(&email));
+        // TODO: send email
+        delete_task(transaction, issue_id, &email).await?;
+    }
+    Ok(())
+}
+
+type PgTransaction = Transaction<'static, Postgres>;
+
+#[tracing::instrument(skip_all)]
+async fn dequeue_task(
+    pool: &PgPool,
+) -> Result<Option<(PgTransaction, Uuid, String)>, anyhow::Error> {
+    let mut transaction = pool.begin().await?;
+    let r = sqlx::query!(
+        r#"
+        SELECT newsletter_issue_id, subscriber_email
+        FROM issue_delivery_queue
+        FOR UPDATE
+        SKIP LOCKED
+        LIMIT 1
+        "#,
+    )
+    .fetch_optional(&mut transaction)
+    .await?;
+    if let Some(r) = r {
+        Ok(Some((
+            transaction,
+            r.newsletter_issue_id,
+            r.subscriber_email,
+        )))
+    } else {
+        Ok(None)
+    }
+}
+
+#[tracing::instrument(skip_all)]
+async fn delete_task(
+    mut transaction: PgTransaction,
+    issue_id: Uuid,
+    email: &str,
+) -> Result<(), anyhow::Error> {
+    sqlx::query!(
+        r#"
+        DELETE FROM issue_delivery_queue
+        WHERE 
+            newsletter_issue_id = $1 AND
+            subscriber_email = $2 
+        "#,
+        issue_id,
+        email
+    )
+    .execute(&mut transaction)
+    .await?;
+    transaction.commit().await?;
+    Ok(())
+}
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+To actually send the email, we need to fetch the newsletter content first:
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/issue_delivery_worker;
+// [...]
+
+struct NewsletterIssue {
+    title: String,
+    text_content: String,
+    html_content: String,
+}
+
+#[tracing::instrument(skip_all)]
+async fn get_issue(
+    pool: &PgPool,
+    issue_id: Uuid
+) -> Result<NewsletterIssue, anyhow::Error> {
+    let issue = sqlx::query_as!(
+        NewsletterIssue,
+        r#"
+        SELECT title, text_content, html_content
+        FROM newsletter_issues
+        WHERE
+            newsletter_issue_id = $1
+        "#,
+        issue_id
+    )
+    .fetch_one(pool)
+    .await?;
+    Ok(issue)
+}
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can then recover the dispatch logic that used to live in <code>POST /admin/newsletters</code>:
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/issue_delivery_worker;
+use crate::domain::SubscriberEmail;
+// [...]
+
+#[tracing::instrument(/* */)]
+async fn try_execute_task(
+    pool: &PgPool, 
+    email_client: &EmailClient
+) -> Result<(), anyhow::Error> {
+    if let Some((transaction, issue_id, email)) = dequeue_task(pool).await? {
+        // [...]
+        match SubscriberEmail::parse(email.clone()) {
+            Ok(email) => {
+                let issue = get_issue(pool, issue_id).await?;
+                if let Err(e) = email_client
+                    .send_email(
+                        &email,
+                        &issue.title,
+                        &issue.html_content,
+                        &issue.text_content,
+                    )
+                    .await
+                {
+                    tracing::error!(
+                        error.cause_chain = ?e,
+                        error.message = %e,
+                        "Failed to deliver issue to a confirmed subscriber. \
+                         Skipping.",
+                    );
+                }
+            }
+            Err(e) => {
+                tracing::error!(
+                    error.cause_chain = ?e,
+                    error.message = %e,
+                    "Skipping a confirmed subscriber. \
+                     Their stored contact details are invalid",
+                );
+            }
+        }
+        delete_task(transaction, issue_id, &email).await?;
+    }
+    Ok(())
+}
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+As you can see, we do not retry when the delivery attempt fails due to a Postmark error.
+</div>
+<div style="margin-top:.625em;">
+This could be changed by enhancing <code>issue_delivery_queue</code> - e.g. adding a <code>n_retries</code> and <code>execute_after</code> columns to keep track of how many attempts have already taken place and how long we should wait before trying again. Try implementing it as an exercise!
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="10.4.5. Worker loop" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+<code>try_execute_task</code> tries to deliver a single email - we need a background task that keeps pulling from <code>issue_delivery_queue</code> and fulfills tasks as they become available.
+</div>
+<div style="margin-top:.625em;">
+We can use an infinite loop:
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/issue_delivery_worker;
+use std::time::Duration;
+// [...]
+
+async fn worker_loop(
+    pool: PgPool, 
+    email_client: EmailClient
+) -> Result<(), anyhow::Error> {
+    loop {
+        if try_execute_task(&pool, &email_client).await.is_err() {
+            tokio::time::sleep(Duration::from_secs(1)).await;
+        }
+    }
+}
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+If we experience a transient failure, we need to sleep for a while to improve our future chances of success. This could be further refined by introducing an <a href="https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/">exponential backoff with jitter</a>.
+</div>
+<div style="margin-top:.625em;">
+There is another scenario we need to keep in mind, apart from failure: <code>issue_delivery_queue might</code> be empty.
+When that is the case, <code>try_execute_task</code> is going to be invoked continuously. That translates into an avalanche of unnecessary queries to the database.
+</div>
+<div style="margin-top:.625em;">
+We can mitigate this risk by changing the signature of <code>try_execute_task</code> - we need to know if it actually managed to dequeue something.
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/issue_delivery_worker.rs
+// [...]
+
+enum ExecutionOutcome {
+    TaskCompleted,
+    EmptyQueue,
+}
+
+#[tracing::instrument(/* */)]
+async fn try_execute_task(/* */) -> Result<ExecutionOutcome, anyhow::Error> {
+    let task = dequeue_task(pool).await?;
+    if task.is_none() {
+        return Ok(ExecutionOutcome::EmptyQueue);
+    }
+    let (transaction, issue_id, email) = task.unwrap();
+    // [...]
+    Ok(ExecutionOutcome::TaskCompleted)
+}
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<code>worker_loop</code> can now become smarter:
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/issue_delivery_worker.rs
+// [...]
+
+async fn worker_loop(/* */) -> Result</* */> {
+    loop {
+        match try_execute_task(&pool, &email_client).await {
+            Ok(ExecutionOutcome::EmptyQueue) => {
+                tokio::time::sleep(Duration::from_secs(10)).await;
+            }
+             Err(_) => {
+                tokio::time::sleep(Duration::from_secs(1)).await;
+            }
+            Ok(ExecutionOutcome::TaskCompleted) => {}
+        }
+    }
+}
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+No more busy looping, yay!
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="10.4.6. Launching Background Workers" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+We have a worker loop - but it is not launched anywhere. <br />
+Let's start by building the required dependencies based on the configuration values:
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/issue_delivery_worker.rs
+use crate::{configuration::Settings, startup::get_connection_pool};
+// [...]
+
+pub async fn run_worker_until_stopped(
+    configuration: Settings
+) -> Result<(), anyhow::Error> {
+    let connection_pool = get_connection_pool(&configuration.database);
+
+    let sender_email = configuration
+        .email_client
+        .sender()
+        .expect("Invalid sender email address.");
+    let timeout = configuration.email_client.timeout();
+    let email_client = EmailClient::new(
+        configuration.email_client.base_url,
+        sender_email,
+        configuration.email_client.authorization_token,
+        timeout,
+    );
+    worker_loop(connection_pool, email_client).await
+}
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+To run our background worker and the API side-to-side we need to restructure our <code>main</code> function. <br />
+We are going to build the <code>Future</code> for each of the two long-running tasks - <code>Futures</code> are lazy in Rust, so nothing happens until they are actually awaited.
+</div>
+<div style="margin-top:.625em;">
+We will use <code>tokio::select!</code> to get both tasks to make progress concurrently. <code>tokio::select!</code> returns as soon as one of the two tasks completes or errors out:
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+use zero2prod::issue_delivery_worker::run_worker_until_stopped;
+// [...]
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let subscriber = get_subscriber("zero2prod".into(), "info".into(), std::io::stdout);
+    init_subscriber(subscriber);
+
+    let configuration = get_configuration().expect("Failed to read configuration.");
+    let application = Application::build(configuration.clone())
+        .await?
+        .run_until_stopped();
+    let worker = run_worker_until_stopped(configuration);
+
+    tokio::select! {
+        _ = application => {},
+        _ = worker => {},
+    };
+
+    Ok(())
+}
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+There is a pitfall to be mindful of when using <code>tokio::select!</code> - all selected <code>Futures</code> are polled as a single task. This has consequences, as <code>tokio</code>'s documentation highlights:
+</div>
+<div style="margin-top:.625em;">
+By running all async expressions on the current task, the expressions are able to run concurrently but not in parallel. This means all expressions are run on the same thread and if one branch blocks the thread, all other expressions will be unable to continue. If parallelism is required, spawn each async expression using <code>tokio::spawn</code> and pass the join handle to <code>select!</code>.
+</div>
+<div style="margin-top:.625em;">
+We should definitely follow their recommendation:
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+// [...]
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // [...]
+    let application = Application::build(configuration.clone()).await?;
+    let application_task = tokio::spawn(application.run_until_stopped());
+    let worker_task = tokio::spawn(run_worker_until_stopped(configuration));
+
+    tokio::select! {
+        _ = application_task => {},
+        _ = worker_task => {},
+    };
+
+    Ok(())
+}
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+As it stands, we have no visibility into which task completed first or if they completed successfully at all. Let's add some logging:
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/main.rs
+use std::fmt::{Debug, Display};
+use tokio::task::JoinError;
+// [...]
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // [...]
+    tokio::select! {
+        o = application_task => report_exit("API", o),
+        o = worker_task =>  report_exit("Background worker", o),
+    };
+
+    Ok(())
+}
+
+
+fn report_exit(
+    task_name: &str, 
+    outcome: Result<Result<(), impl Debug + Display>, JoinError>
+) {
+    match outcome {
+        Ok(Ok(())) => {
+            tracing::info!("{} has exited", task_name)
+        }
+        Ok(Err(e)) => {
+            tracing::error!(
+                error.cause_chain = ?e, 
+                error.message = %e, 
+                "{} failed", 
+                task_name
+            )
+        }
+        Err(e) => {
+            tracing::error!(
+                error.cause_chain = ?e, 
+                error.message = %e, 
+                "{}' task failed to complete", 
+                task_name
+            )
+        }
+    }
+}
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+It is looking pretty solid!
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="html" title="10.4.7. Updating The Test Suite" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+We have one little problem left - many of our tests are failing. They were written when emails were being delivered synchronously, which is no longer the case. How should we deal with them?
+</div>
+<div style="margin-top:.625em;">
+Launching a background worker would mimic the behaviour of our application, but it would make for a fragile test suite - we would have to sleep for arbitrary time intervals waiting for the background worker to process the email tasks we just enqueued. We are bound to have flaky tests sooner or later.
+An alternative approach relies on launching the worker on demand, asking it to consume all available tasks. It deviates slightly from the behaviour in our main function, but it manages to exercise most of the code while being significantly more robust. This is what we are going for!
+</div>
+<div style="margin-top:.625em;">
+Let's add an <code>EmailClient</code> instance to our <code>TestApp</code>:
+</div>
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/configuration.rs
+use crate::email_client::EmailClient;
+// [...]
+
+impl EmailClientSettings {
+    pub fn client(self) -> EmailClient {
+        let sender_email = self.sender().expect("Invalid sender email address.");
+        let timeout = self.timeout();
+        EmailClient::new(
+            self.base_url,
+            sender_email,
+            self.authorization_token,
+            timeout,
+        )
+    }
+
+    // [...]
+}
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/helpers.rs
+use zero2prod::email_client::EmailClient;
+// [...]
+
+pub struct TestApp {
+    // [...]
+    pub email_client: EmailClient
+}
+
+pub async fn spawn_app() -> TestApp {
+    // [...]
+    let test_app = TestApp {
+        // [...]
+        email_client: configuration.email_client.client()
+    };
+    // [...]
+}
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/issue_delivery_worker.rs
+// [...]
+
+pub async fn run_worker_until_stopped(
+    configuration: Settings
+) -> Result<(), anyhow::Error> {
+    let connection_pool = get_connection_pool(&configuration.database);
+    // Use helper function!
+    let email_client = configuration.email_client.client();
+    worker_loop(connection_pool, email_client).await
+}
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/startup.rs
+// [...]
+impl Application {
+    pub async fn build(configuration: Settings) -> Result<Self, anyhow::Error> {
+        let connection_pool = get_connection_pool(&configuration.database);
+        // Use helper function!
+        let email_client = configuration.email_client.client();
+        // [...]
+    }
+    // [...]
+}
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can then write a helper to consume all enqueued tasks:
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/helpers.rs
+use zero2prod::issue_delivery_worker::{try_execute_task, ExecutionOutcome};
+// [...]
+
+impl TestApp {
+    pub async fn dispatch_all_pending_emails(&self) {
+        loop {
+            if let ExecutionOutcome::EmptyQueue =
+                try_execute_task(&self.db_pool, &self.email_client)
+                    .await
+                    .unwrap()
+            {
+                break;
+            }
+        }
+    }
+    // [...]
+}
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! src/issue_delivery_worker.rs
+// [...] 
+
+// Mark as pub
+pub enum ExecutionOutcome {/* */}
+
+#[tracing::instrument(/* */)]
+// Mark as pub
+pub async fn try_execute_task(/* */) -> Result</* */> {/* */}
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+We can update all the impacted test cases:
+    ]]>
+    </c:sourceContent> 
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+//! tests/api/newsletter.rs
+// [...]
+
+#[tokio::test]
+async fn newsletters_are_not_delivered_to_unconfirmed_subscribers() {
+    // [...]
+    assert!(html_page.contains(
+        "<p><i>The newsletter issue has been accepted - \
+        emails will go out shortly.</i></p>"
+    ));
+    app.dispatch_all_pending_emails().await;
+    // Mock verifies on Drop that we haven't sent the newsletter email
+}
+
+#[tokio::test]
+async fn newsletters_are_delivered_to_confirmed_subscribers() {
+    // [...]
+    assert!(html_page.contains(
+        "<p><i>The newsletter issue has been accepted - \
+        emails will go out shortly.</i></p>"
+    ));
+    app.dispatch_all_pending_emails().await;
+    // Mock verifies on Drop that we have sent the newsletter email
+}
+
+#[tokio::test]
+async fn newsletter_creation_is_idempotent() {
+    // [...]
+    // Act - Part 2 - Follow the redirect
+    let html_page = app.get_publish_newsletter_html().await;
+    assert!(html_page.contains(
+        "<p><i>The newsletter issue has been accepted - \
+        emails will go out shortly.</i></p>"
+    ));
+    // [...]
+    // Act - Part 4 - Follow the redirect
+    let html_page = app.get_publish_newsletter_html().await;
+    assert!(html_page.contains(
+        "<p><i>The newsletter issue has been accepted - \
+        emails will go out shortly.</i></p>"
+    ));
+    app.dispatch_all_pending_emails().await;
+    // Mock verifies on Drop that we have sent the newsletter email **once**
+}
+
+#[tokio::test]
+async fn concurrent_form_submission_is_handled_gracefully() {
+    // [...]
+    app.dispatch_all_pending_emails().await;
+    // Mock verifies on Drop that we have sent the newsletter email **once**
+}
+
+// We deleted `transient_errors_do_not_cause_duplicate_deliveries_on_retries`
+// It is no longer relevant given the redesign
+    ]]>
+    </c:sourceContent>  
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+The tests are passing, we made it!
+</div>
+<div style="margin-top:.625em;">
+Well, we almost made it. <br />
+We neglected one detail: there is no expiry mechanism for our idempotency keys. Try designing one as an exercise, using what we learned on background workers as a reference.
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry> 
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title id="Reproduce-the-connection-reset-by-peer-error">11. Epilogue</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+This is where our journey together comes to an end.
+</div>
+<div style="margin-top:.625em;">
+We started from an empty skeleton. Look at our project now: fully functional, well tested, reasonably secure - a proper minimum viable product. The project was never the goal though - it was an excuse, an opportunity to see what it feels like to write a production-ready API using Rust.
+</div>
+<div style="margin-top:.625em;">
+Zero To Production In Rust started with a question, a question I hear every other day:
+</div>
+<div style="margin-top:.625em;">
+Can Rust be a productive language for API development?
+</div>
+<div style="margin-top:.625em;">
+I have taken you on a tour. I showed you a little corner of the Rust ecosystem, an opinionated yet powerful toolkit. I tried to explain, to the best of my abilities, the key language features.
+</div>
+<div style="margin-top:.625em;">
+The choice is now yours: you have learned enough to keep walking on your own, if you wish to do so.
+</div>
+<div style="margin-top:.625em;">
+Rust's adoption in the industry is taking off: we are living through an inflection point. It was my ambition to write a book that could serve as a ticket for this rising tide - an onboarding guide for those who want to be a part of this story.
+This is just the beginning - the future of this community is yet to be written, but it is looking bright.
+</div>
+    ]]>
+    </c:sourceContent>  
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry> 
 
 
 </c:component>
