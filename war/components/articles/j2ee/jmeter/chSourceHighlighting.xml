@@ -36,6 +36,16 @@
 <div style="margin-bottom:.3em;">
   <img width="100%" src="/images/j2ee/jmeter/1229365-20180719141929743-1356502878.png" />
 </div>
+<h3>Ramp-Up Period</h3>
+<div style="margin-bottom:.3em;">
+在 JMeter 中，"Ramp-Up Period"（逐渐增加时间）选项用于控制测试中虚拟用户（线程）的逐渐增加速率。它定义了在一开始启动测试时，线程将逐渐增加到目标线程数的时间间隔。这对于模拟用户逐渐访问系统的情况非常有用，以避免系统突然遭受大量并发访问。
+</div>
+<div style="margin-bottom:.3em;">
+假设您在测试中使用了100个线程，并将Ramp-Up Period设置为5秒。这意味着从开始测试到达100个并发用户的状态将花费5秒钟的时间。在这个过程中，每秒钟将启动20个线程，直到达到目标线程数。
+</div>
+<div style="margin-bottom:.3em;">
+通过逐渐增加线程数，您可以更加真实地模拟实际的用户行为，因为在现实世界中，用户不会突然同时涌入系统。逐渐增加线程数可以帮助您识别系统在不同负载下的性能瓶颈和稳定性。
+</div>
    ]]>
     </c:sourceContent>
     <c:sourceContent type="html" title="添加协议及相关配置信息" id="sourceContent1"
@@ -126,6 +136,59 @@ Sent KB/sec       - 每秒从客户端发送的请求的数量
 <div style="margin-bottom:.3em;">
   <img width="100%" src="/images/j2ee/jmeter/1229365-20180719143026553-1735509751.png" />
 </div>
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="桌面图标 /usr/share/applications/jmeter.desktop" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+[Desktop Entry]
+Name=Jmeter 5
+Type=Application
+Exec=/opt/jmeter/bin/jmeter.sh
+Terminal=false
+Icon=/opt/jmeter/jmeter.png
+Comment=Integrated Development Environment
+NoDisplay=false
+Categories=Development;IDE;
+Name[en]=Jmeter
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="修改界面图标大小" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+# /opt/jmeter/bin/jmeter.properties
+# OR 
+# /opt/jmeter/bin/user.properties
+jmeter.hidpi.mode=true
+jmeter.hidpi.scale.factor=2.0
+jmeter.toolbar.icons.size=48x48
+jmeter.tree.icons.size=48x48
+
+### Save the file
+》Open Jmeter and go to Options -> Look and Feel -> Metal
+》Restart Jmeter
+   ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="命令行cli" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.2em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+
+### jmeter
+# -e 设置测试完成后生成测试报表
+# -l 指定结果文件路径 (jtl或cvs), 参数为: 结果文件路径。路径不存在时会自动创建
+# -j 指定执行日志路径，参数为: 日志路径。路径不存在，不会自动创建，同时将日志输出至命令控制台
+# -o 指定测试报表生成文件夹，文件夹必须为空或不存在。参数为: 报表文件夹路径
+# -r 设置分布式(远程）执行， 服务器列表由 JMETER_HOME\bin\jmeter.properties 中 remote_hosts 指定
+# -R 指定远程(分布式）服务器列表，参数为: 指定服务器列表，配置形式同remote_hosts
+# -g 指定测试结果文件路径，仅用于生成测试报表。参数为: csv结果文件
+# -H 指定代理服务器域名或代理服务器IP。参数为：代理服务器域名或代理服务器IP
+# -P 指定代理服务器端口号。 参数为：代理服务器端口号
+jmeter:
+  rm -rf ./jmeter_jmx/out ./jmeter_jmx/reports ./jmeter_jmx/jmeter.log
+  jmeter -n -t ./jmeter_jmx/HTTP请求.jmx -j ./jmeter_jmx/jmeter.log -l ./jmeter_jmx/out/jmeter.out -e -o ./jmeter_jmx/reports
    ]]>
     </c:sourceContent>
 
