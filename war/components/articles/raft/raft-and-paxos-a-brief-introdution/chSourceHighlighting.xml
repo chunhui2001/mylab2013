@@ -5,6 +5,9 @@
 <div style="font-size:1.1em;line-height:1.625;">
 Many of the institutions we depend on as a modern society like hospitals, banks, stock exchanges and airports, need highly reliable and available computer systems to work. Unfortunately, single machines are not up to the task; they’re susceptible to crashes and downtime, and need regular maintenance. The solution, of course is to have multiple machines doing the same job, but how do we get them to do so? This is not a simple problem; the network connections between the machines are not reliable, the machines themselves may crash and we don’t want to involve people to fix things at 3 AM on a Sunday. Consensus is a fundamental part of building replicated systems and getting these machines to work together. The idea of getting them to work together is to have them all store the same data or commands in their logs. This increases the overall system reliability, because if one machine fails, another machine can take up its work.
 </div>
+<div style="font-size:1.1em;line-height:1.625;margin-top:.625em;">
+目前几乎所有语言都已经有支持Raft算法的库包，具体可参考：<a href="https://raft.github.io/">raftconsensus.github.io</a>
+</div>
 ]]>
   </c:abstract>
 
@@ -14,18 +17,171 @@ Many of the institutions we depend on as a modern society like hospitals, banks,
     <c:desc>
       <c:desc1> <![CDATA[]]></c:desc1>
     </c:desc>
-    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+
+    <c:sourceContent type="html" title="动画演示Raft" id="sourceContent1" style="background-color:transparent;"
                      titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
                      bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
       <![CDATA[
 <div>
-We are ready to stitch together our email confirmation flow, but how do we roll it out <b>without disrupting our service</b>?
+<a href="http://localhost:9001/raft-animate/">Understandable Distributed Consensus</a>
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="分布式系统的Raft算法" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div style="margin-top:.625em;">
+过去, Paxos 一直是分布式协议的标准，但是 Paxos 难于理解，更难以实现，Google 的分布式锁系统 Chubby(Zookeeper前身) 作为 Paxos 实现曾经遭遇到很多坑。
 </div>
 <div style="margin-top:.625em;">
-We approach the topic of zero downtime deployments: what it takes (<code>load balancers</code>), how it impacts the way we sequence our work (e.g. database migrations).
+来自 Stanford 的新的分布式协议研究称为 Raft，它是一个为真实世界应用建立的协议，主要注重协议的落地性和可理解性。
 </div>
 <div style="margin-top:.625em;">
-By the end of the chapter, after a few red-green-refactor iterations, we'll finally get to deploy the new feature.
+在了解 Raft 之前，我们先了解 <code>Consensus一致性</code> 这个概念，它是指多个服务器在状态达成一致，但是在一个分布式系统中，因为各种意外可能，有的服务器可能会崩溃或变得不可靠，它就不能和其他服务器达成一致状态。这样就需要一种 Consensus 协议，一致性协议是为了确保容错性，也就是即使系统中有一两个服务器当机，也不会影响其处理过程。
+</div>
+<div style="margin-top:.625em;">
+为了以容错方式达成一致，我们不可能要求所有服务器 100% 都达成一致状态，只要超过半数的大多数服务器达成一致就可以了，假设有N台服务器，N/2 +1 就超过半数，代表大多数了。
+</div>
+<div style="margin-top:.625em;">
+Paxos 和 Raft 都是为了实现 <code>Consensus</code> 一致性这个目标，这个过程如同选举一样，参选者需要说服大多数选民(服务器)投票给他，一旦选定后就跟随其操作。Paxos 和 Raft 的区别在于选举的具体过程不同。
+</div>
+<div style="margin-top:.625em;">
+在 Raft 中，任何时候一个服务器可以扮演下面角色之一：
+</div>
+
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.125em;"><code>Leader</code>: 处理所有客户端交互，日志复制等，一般一次只有一个 Leader.</li>
+  <li style="margin-top:.125em;"><code>Follower</code>: 类似选民，完全被动</li>
+  <li style="margin-top:.125em;"><code>Candidate</code> 候选人: 类似 Proposer 律师，可以被选为一个新的领导人。</li>
+</ul>
+
+<div style="margin-top:1.625em;">
+Raft 阶段分为两个，首先是选举过程，然后在选举出来的领导人带领进行正常操作，比如日志复制等。下面用图示展示这个过程：
+</div>
+
+<div style="margin-top:.625em;">
+1. 任何一个服务器都可以成为一个候选者 Candidate，它向其他服务器 Follower 发出要求选举自己的请求：
+</div>
+<div>
+  <img src="/images/raft/raft1.png" style="max-width:200px;margin:auto;" />
+</div>
+
+<div style="margin-top:.625em;">
+2. 其他服务器同意了，发出OK。
+</div>
+<div>
+  <img src="/images/raft/raft2.png" style="max-width:200px;margin:auto;" />
+</div>
+
+<div style="margin-top:1.625em;">
+注意如果在这个过程中，如果有一个 Follower 当机，没有收到请求选举的要求，因此候选者可以自己选自己，只要达到 N/2 + 1 的大多数票，候选人还是可以成为 Leader 的。
+</div>
+
+<div style="margin-top:.625em;">
+3. 这样这个候选者就成为了 Leader 领导人，它可以向选民也就是 Follower 们发出指令，比如进行日志复制。
+</div>
+<div>
+  <img src="/images/raft/raft3.png" style="max-width:200px;margin:auto;" />
+</div>
+
+<div style="margin-top:.625em;">
+4. 以后通过心跳进行日志复制的通知
+</div>
+<div>
+  <img src="/images/raft/raft4.png" style="max-width:200px;margin:auto;" />
+</div>
+
+<div style="margin-top:.625em;">
+5. 如果一旦这个 Leader 当机崩溃了，那么 Follower 中有一个成为候选者，发出邀票选举。
+</div>
+<div>
+  <img src="/images/raft/raft5.png" style="max-width:200px;margin:auto;" />
+</div>
+
+<div style="margin-top:.625em;">
+6. Follower同意后，其成为Leader，继续承担日志复制等指导工作：
+</div>
+<div>
+  <img src="/images/raft/raft6.png" style="max-width:200px;margin:auto;" />
+</div>
+
+<div style="margin-top:1.625em;">
+值得注意的是，整个选举过程是有一个时间限制的，如下图：
+</div>
+<div>
+  <img src="/images/raft/raft7.png" style="max-width:600px;margin:auto;" />
+</div>
+
+<div style="margin-top:1.625em;">
+Splite Vote 是因为如果同时有两个候选人向大家邀票，这时通过类似加时赛来解决，两个候选者在一段 timeout 比如 300ms 互相不服气的等待以后，因为双方得到的票数是一样的，一半对一半，那么在 300ms 以后，再由这两个候选者发出邀票，这时同时的概率大大降低，那么首先发出邀票的的候选者得到了大多数同意，成为领导者 Leader，而另外一个候选者后来发出邀票时，那些 Follower 选民已经投票给第一个候选者，不能再投票给它，它就成为落选者了，最后这个落选者也成为普通 Follower 一员了。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="日志复制" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+下面以日志复制为例子说明 Raft 算法，假设 Leader 领导人已经选出，这时客户端发出增加一个日志的要求，比如日志是 "sally"：
+</div>
+<div>
+  <img src="/images/raft/raft8.png" style="max-width:100%;" />
+</div>
+
+<div style="margin-top:1.625em;">
+2. Leader 要求 Followe 遵从他的指令，都将这个新的日志内容追加到他们各自日志中：
+</div>
+<div>
+  <img src="/images/raft/raft9.png" style="max-width:100%;" />
+</div>
+
+<div style="margin-top:1.625em;">
+3. 大多数 follower 服务器将日志写入磁盘文件后，确认追加成功，发出 Commited Ok:
+</div>
+<div>
+  <img src="/images/raft/raft10.png" style="max-width:100%;" />
+</div>
+
+<div style="margin-top:1.625em;">
+4. 在下一个心跳 heartbeat 中，Leader 会通知所有 Follwer 更新 commited 项目。
+</div>
+
+<div style="margin-top:.625em;">
+对于每个新的日志记录，重复上述过程。
+</div>
+
+<div style="margin-top:.625em;">
+如果在这一过程中，发生了网络分区或者网络通信故障，使得 Leader 不能访问大多数 Follwers 了，那么 Leader 只能正常更新它能访问的那些 Follower 服务器，而大多数的服务器 Follower 因为没有了 Leader，他们重新选举一个候选者作为 Leader，然后这个 Leader 作为代表于外界打交道，如果外界要求其添加新的日志，这个新的 Leader 就按上述步骤通知大多数 Followers，如果这时网络故障修复了，那么原先的 Leader 就变成 Follower，在失联阶段这个老 Leader 的任何更新都不能算 commit，都回滚，接受新的 Leader 的新的更新。
+</div>
+
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="raft-rs" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top:1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.825;font-family:monospace;">
+      <![CDATA[
+<div>
+Raft 的模型很简单，就是一个基于 Log 复制的状态机模型。只要我们能保证所有机器上面的 Log 序列是一致的，那么就能保证将这些 Log 序列的数据依次应用到状态机之后，各个机器上面的状态机是一致的。
+</div>
+<div>
+  <img src="/images/raft/2224-15af7900f1fedfc1.webp" style="max-width:100%;" />
+</div>
+
+<div style="margin-top:1em;">
+上图就是 Raft 论文里面提到的一个典型的状态机模型，我们可以看到几个关键的部分：
+</div>
+
+<ul style="margin-left:1.5em;list-style-type:disc;margin-top: .325em;">
+  <li style="margin-top:.125em;">Consensus Module，最核心的一致性算法模块，用来保证数据 Log 的一致性</li>
+  <li style="margin-top:.125em;">Log，保存 Raft Log 的地方</li>
+  <li style="margin-top:.125em;">State Machine，状态机，应用 Raft Log 之后实际写入数据的地方</li>
+  <li style="margin-top:.125em;">Transport，也就是网络传输层，Raft 是需要在各个节点之间进行网络交互的</li>
+</ul>
+
+<div style="margin-top:1em;">
+对于 raft-rs 来说，它只是提供了最核心的 Consensus Module，而其他的组件，包括 Log，State Machine，Transport，都是需要外面自己去定制实现的。这个设计的好处在于足够简单，只聚焦于最核心的一致性算法实现，大家可以用这个模块来灵活的去拼接起自己的服务。
 </div>
     ]]>
     </c:sourceContent>
