@@ -199,4 +199,1655 @@ LensWrap::new(WidgetThatExpectsf64::new(), lens!(AppState, value));
     </c:comment>
   </c:entry>
 
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>rust 使用druid创建窗体ui</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="rust" title="创建我们的rust项目" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+$ cargo new druid-app
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="在Cargo.toml中添加Druid的包" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+[dependencies]
+druid = { git = "https://github.com/linebender/druid.git" }
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="打开main.rs编写我们的第一个窗体" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+use druid::widget::{Button, Flex, Label};
+use druid::{AppLauncher, LocalizedString, PlatformError, Widget, WidgetExt, WindowDesc};
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="编写主界面" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+fn ui_builder() -> impl Widget<u32> {
+    //创建一个本地处理话的数据
+    let text = LocalizedString::new("hello-counter")
+        .with_arg("count", |data:&u32,_evt|{(*data).into()});
+    let label = Label::new(text).padding(5.0).center();
+    let button = Button::new("+ 1")
+        .on_click(|_ctx,data:&mut u32,_ent|{
+            *data += 1;
+        });
+    Flex::column().with_child(label).with_child(button)
+} 
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="编写启动类" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+fn main() -> Result<(), PlatformError>{
+    let win = WindowDesc::new(ui_builder());
+    let data = 0_u32;
+    let _app = AppLauncher::with_window(win)
+        .log_to_console()
+        .launch(data);
+    Ok(())
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="启动就会获得我们的第一个程序啦，点击按钮数字会持续增加" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<img src="/images/rust/7092df8dde3edf7cc19e113bed7377b9.png" style="max-width: 100%;" />
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Druid框架 - Data trait</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+    Druid应用程序的核心是应用程序模型。模型驱动 UI。当您更改模型时，Druid 会比较旧版本和新版本，并将更改传播到受更改影响的应用程序组件(“widgets”)。
+</div>
+<div style="margin-top:.625em;">
+    为此，您的模型必须实现 <code>Clone</code> 和 <code>Data</code> 特性。您的模型克隆成本低是很重要的; 我们鼓励使用引用计数指针来允许克隆成本更高的类型。Arc 和 Rc 具有覆盖数据隐含，所以如果您有一个不实现 Data 的类型，那么您总是可以将它包装在其中一个智能指针中。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="Trait druid::Data (派生宏)" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+#[derive(Clone, Data)]
+enum Foo {
+    Case1(i32, f32),
+    Case2 { a: String, b: Arc<i32> }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="#[data(ignore)]" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+计算相同性时跳过此字段。
+</div>
+<div style="margin-top:.625em;">
+如果实现 Data 的类型包含一些与 Data impl 无关的字段，则可以使用此属性忽略它们。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title='#[data(same_fn = "path")]' id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+使用特定的函数来计算相同性。
+</div>
+<div style="margin-top:.625em;">
+默认情况下，Data 的派生实现只在每个字段上递归地调用 Data: : 。使用此属性，您可以指定将改为使用的自定义函数。
+</div>
+<div style="margin-top:.625em;">
+这个函数必须在表单 fn &lt;T&gt; (&T，&T)-> bool 中有一个签名，其中 T 是字段的类型。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title='集合类型' id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+没有为标准的集合类型实现Data，因为他们比较消耗，如果在Druid中使用集合类型，有两种简单的选择: 要么将集合包装在一个 Arc 中或者构建具有 IM 特性的Druid，该特性将Data实现添加到收集箱中,一组不可变的数据结构，非常适合Druid
+</div>
+<div style="margin-top:.625em;">
+如果使用 IM 特性，则从Druid板条箱的根重新导出板条箱。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+#[derive(Clone, Data)]
+struct PathEntry {
+    // PathBuf 没有实现Data，但是没有问题
+    #[data(same_fn = "PartialEq::eq")]
+    path: PathBuf,
+    priority: usize,
+    // 该字段不属于我们的数据模型。
+    #[data(ignore)]
+    last_read: Instant,
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title='C-style enum' id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+对于“c样式”枚举(只包含单位变量的枚举，即没有变量具有字段)，生成的实现检查是否相等。因此，这些类型还必须实现 PartialEq。
+</div>
+<div style="margin-top:.625em;">
+方法: 
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+pub fn same(&self, other: &Self) -> bool
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title='' id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;margin-top: 1em;">
+      <![CDATA[
+<div>
+确认两个值是否相同
+</div>
+<div style="margin-top:.625em;">
+这是为了始终是一个快速的操作。如果返回 true，则这两个值必须相等，但两个相等的值在这里不必被认为是相同的，因为在分配两个副本时通常会出现这种情况。
+请注意，上面的“等于”与 PartialEq 的含义略有不同，例如，当两个浮点 NaN 值具有相同的位表示形式时，它们应该被认为是相等的。
+</div>
+<div style="margin-top:.625em;">
+例子:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+use druid::Data;
+use std::sync::Arc;
+ 
+#[derive(Clone, Data)]
+/// 待办事项列表应用程序的主模型。
+struct TodoList {
+    items: Arc<Vec<TodoItem>>,
+}
+ 
+#[derive(Clone, Data)]
+///一个待办事项
+struct TodoItem {
+    category: Category,
+    title: String,
+    note: Option<String>,
+    completed: bool,
+ 
+    // 这里DateTime没有实现Data，所以使用Arc
+    due_date: Option<Arc<DateTime>>,
+ 
+    // 你可以自定义比较的fn
+    #[data(same_fn = "PartialEq::eq")]
+    added_date: DateTime,
+ 
+    //你也可以指定字段在比较时跳过
+    #[data(ignore)]
+    debug_timestamp: usize,
+}
+ 
+#[derive(Clone, Data, PartialEq)]
+/// 三种任务类型
+enum Category {
+    Work,
+    Play,
+    Revolution,
+}
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Druid UI框架 - Widget trait</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+    Widget trait 表示 UI 的组件。Druid 包含一组内置的小部件，您也可以编写自己的小部件。将内置小部件和自定义小部件组合起来创建一个小部件树; 您将从一些单根小部件开始，这些小部件(通常)有子部件，它们本身可能有子部件，等等。Widget 有一个通用参数 T，表示该小部件处理的数据。有些小部件(比如布局小部件)可能完全不知道它们遇到的数据类型，而其他小部件(比如滑块)可能期望只有一种类型(比如 f64)。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="widgets" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+由所有小部件实现的 trait。
+</div>
+<div style="margin-top:.625em;">
+小部件的所有外观和行为都封装在实现此特性的对象中。
+</div>
+<div style="margin-top:.625em;">
+Trait 由关联数据的类型(T)参数化。所有 trait 方法都可以访问这些数据，并且在事件的情况下，引用是可变的，因此事件可以直接更新数据。
+</div>
+<div style="margin-top:.625em;">
+只要应用程序数据发生变化，框架就会使用 update 方法遍历小部件层次结构。框架需要知道数据实际上是否已经更改，这就是为什么 T 有一个 Data 绑定。
+</div>
+<div style="margin-top:.625em;">
+所有的特征方法都提供了相应的上下文。小部件可以通过调用上下文中的方法来请求事物并导致操作。
+</div>
+<div style="margin-top:.625em;">
+此外，所有 trait 方法都提供了一个环境(Env)。
+</div>
+<div style="margin-top:.625em;">
+容器小部件通常不会直接在它们的子小部件上调用 Widget 方法，而是拥有封装在 WidgetPod 中的小部件，并在其上调用相应的方法。WidgetPod 包含这些遍历的状态和逻辑。另一方面，特别是轻量级容器可能直接包含它们的子 Widget (当不需要布局或事件流逻辑时) ，并且在这些情况下将调用这些方法。
+</div>
+<div style="margin-top:.625em;">
+作为一般模式，容器小部件将在其所有子级上调用相应的 WidgetPod 方法。WidgetPod 根据需要应用逻辑来确定是否递归。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+pub fn event(
+    &mut self,
+    ctx: &mut EventCtx<'_, '_>,
+    event: &Event,
+    data: &mut T,
+    env: &Env
+)
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="处理事件" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+此方法调用处理许多不同的事件(在 Event 枚举中)。小部件可以通过多种方式处理这些事件: 从 EventCtx 请求事件、变更数据或提交命令
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+pub fn lifecycle(
+    &mut self,
+    ctx: &mut LifeCycleCtx<'_, '_>,
+    event: &LifeCycle,
+    data: &T,
+    env: &Env
+)
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="处理生命周期通知。" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+调用此方法是为了通知小部件某些特殊事件(可在 LifeCycle 枚举中获得) ，这些事件通常与小部件图中的变化或特定小部件的状态有关。
+</div>
+<div style="margin-top:.625em;">
+小部件不会根据这些事件变更应用程序状态，而只是根据需要更新它自己的内部状态; 如果小部件需要变更数据，它可以提交一个将在下一次机会执行的 Command。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+pub fn update(
+    &mut self,
+    ctx: &mut UpdateCtx<'_, '_>,
+    old_data: &T,
+    data: &T,
+    env: &Env
+)
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;margin-top: 1em;">
+      <![CDATA[
+<div>
+更新小部件的外观以响应应用程序的 Data 或 Env 的更改。
+</div>
+<div style="margin-top:.625em;">
+每当数据或环境发生更改时调用此方法。当需要更新小部件的外观以响应这些更改时，您可以在提供的 UpdateCtx 上调用 request _ aint 或 request _ layup，以根据需要安排绘制和布局的调用。 如果小部件希望计算细粒度的增量，则提供数据的前一个值; 如果实际需要，则应尝试仅请求新的布局或绘制通过。 要确定 Env 是否已经更改，可以在提供的 UpdateCtx 上调用 Env _ change; 然后可以使用小部件中使用的任何键调用 Env _ key _ change，查看它们是否已经更改; 然后可以根据需要请求布局或绘制。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+pub fn layout(
+    &mut self,
+    ctx: &mut LayoutCtx<'_, '_>,
+    bc: &BoxConstraints,
+    data: &T,
+    env: &Env
+) -> Size
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="计算布局" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+叶子小部件应该确定它的大小(受提供的约束的限制)并返回它。容器小部件将在其子小部件上递归地调用 WidgetPod:: 布局，为每个小部件提供适当的框约束、计算布局，然后在其每个子小部件上调用 set _ source。最后，它应该返回容器的大小。容器可以以任何顺序递归，这对于首先计算非 flex 小部件的大小来确定可用于 flex 小部件的空间量是很有帮助的。为了提高效率，容器应该只调用一次子窗口小部件的布局，尽管没有任何强制措施。布局策略受到 Flutter 的强烈启发。
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+pub fn paint(&mut self, ctx: &mut PaintCtx<'_, '_, '_>, data: &T, env: &Env)
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<div>
+绘制小部件外观。PaintCtx 对实现 RenderContext 特性的内容进行了定义，该特性公开了小部件可以用来绘制其外观的各种方法。 
+</div>
+<div style="margin-top:.625em;">
+容器小部件可以在递归到它们的子元素之前绘制背景，或者在之后绘制注释(例如，滚动条)。此外，它们还可以对呈现上下文应用掩码和转换，这对滚动特别有用。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="手动实现一个自己的小部件" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+## 首先创建我们的rust项目
+$ cargo new druid-widget
+
+## 创建完成项目后添加包
+druid = { git = "https://github.com/linebender/druid.git"}
+
+## 在main.rs引入我们需要用到的引用
+use druid::{widget::{Label, LabelText, ControllerHost, Click, Flex},RoundedRectRadii,Affine,UnitPoint,LinearGradient,Insets,theme, Data, Size, Env, WindowDesc, AppLauncher, Color, Lens};
+use druid::widget::prelude::*;
+
+## 我们先创建我们的小部件结构体
+struct MyButton<T>{
+    //按钮上面的文字使用Label
+    label:Label<T>,
+    //尺寸
+    label_size:Size
+}
+
+## 给 MyButton 实现 new 方法和 form_label 方法，on_click 点击事件
+impl<T: Data> MyButton<T> {
+ 
+    pub fn new(text: impl Into<LabelText<T>>) -> MyButton<T>{
+        //根据传入文字参数，创建按钮
+        MyButton::form_label(Label::new(text))
+    }
+ 
+    pub fn form_label(label:Label<T>) -> MyButton<T>{
+        //根据传入label部件创建按钮
+        MyButton 
+        { 
+            label,
+            label_size: Size::ZERO,
+        }
+    }
+ 
+    //按钮点击事件（也可以实现其余的事件，鼠标悬浮，鼠标移除等）
+    pub fn on_click(
+        self,
+        f: impl Fn(&mut EventCtx,&mut T,&Env)+ 'static,
+    ) -> ControllerHost<Self,Click<T>> {
+        //controller事件处理，后面会详细讲解，Click是druid里面的部件可以直接使用，点击事件
+        ControllerHost::new(self, Click::new(f))
+    }
+ 
+}
+
+## 下面让我们的 MyButton 实现 Widget，实现部件显示（里边的代码和方法我都添加了注释）
+impl<T:Data> Widget<T> for MyButton<T> {
+ 
+    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
+        match event {
+            Event::MouseDown(_) => {
+                if !ctx.is_disabled() {
+                    ctx.set_active(true);
+                    //请求重画
+                    ctx.request_paint();
+                }
+            },
+            Event::MouseUp(_) => {
+                if ctx.is_active() && ctx.is_disabled() {
+                    //请求重画
+                    ctx.request_paint();
+                    //trace!("Button {:?} released",ctx.widget_id());
+                }
+                ctx.set_active(false);
+            },
+            _ => {}
+        }
+    }
+ 
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, data: &T, env: &Env) {
+        if let LifeCycle::HotChanged(_) | LifeCycle::DisabledChanged(_) = event {
+            ctx.request_paint();
+        }
+        self.label.lifecycle(ctx, event, data, env)
+    }
+ 
+    fn update(&mut self, ctx: &mut UpdateCtx, old_data: &T, data: &T, env: &Env) {
+        //调用label的update方法
+        self.label.update(ctx, old_data, data, env)
+    }
+ 
+    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints, data: &T, env: &Env) -> Size {
+        //设置padding的大小
+        let padding = Size::new(LABEL_INSETS.x_value(), LABEL_INSETS.y_value());
+        //shrink 按照传入的padding设置label的边距，（给定的大小也是取整数，四舍五入）
+        //loosen 复制一份相同大小的尺寸
+        let label_bc = bc.shrink(padding).loosen();
+        //调用label的layout方法
+        self.label_size = self.label.layout(ctx, &label_bc, data, env);
+        //获取部件的最小宽度
+        let min_height = env.get(theme::BORDERED_WIDGET_HEIGHT);
+        //返回偏移量
+        let baseline = self.label.baseline_offset();
+        //设置偏移量
+        ctx.set_baseline_offset(baseline + LABEL_INSETS.y1);
+        //按钮的大小
+        let button_size = bc.constrain(Size::new(
+            self.label_size.width + padding.width,
+            (self.label_size.height + padding.height).max(min_height),
+        ));
+        println!("{:?}",button_size);
+        button_size
+    }
+ 
+    fn paint(&mut self, ctx: &mut PaintCtx, data: &T, env: &Env) {
+ 
+        //active 表示是否鼠标按下
+        //disabled 表示是否禁用
+        let is_active = ctx.is_active() && !ctx.is_disabled();
+        //hot 鼠标是否悬停在按钮上面
+        let is_hot = ctx.is_hot();
+        //size 布局大小
+        let size = ctx.size();
+        //获取按钮边框的宽度
+        let stroke_width = env.get(theme::BUTTON_BORDER_WIDTH);
+ 
+        let rounded_rect = size
+            //转换成原点格式 Rect::new(0., 0., self.width, self.height)
+            .to_rect()
+            //计算尺寸
+            .inset(-stroke_width / 2.0)
+            //拐角的半径 env.get(theme::BUTTON_BORDER_RADIUS)
+            .to_rounded_rect(RoundedRectRadii {
+                top_left:size.width/2.0,
+                top_right:size.width/2.0,
+                bottom_right:size.width/2.0,
+                bottom_left:size.width/2.0,
+            });
+ 
+        //
+        let bg_gradient = if ctx.is_disabled() {
+            //禁用的效果
+            LinearGradient::new(
+                UnitPoint::TOP,
+                UnitPoint::BOTTOM,
+                (
+                    env.get(theme::DISABLED_BUTTON_LIGHT),
+                    env.get(theme::DISABLED_BUTTON_DARK),
+                ),
+            )
+            //鼠标按下的效果
+        } else if is_active {
+            LinearGradient::new(
+                UnitPoint::TOP,
+                UnitPoint::BOTTOM,
+                (Color::YELLOW,Color::WHITE)
+                //(env.get(theme::BUTTON_DARK), env.get(theme::BUTTON_LIGHT)),
+            )
+        } else {
+            //从某个位置到某个位置，可以渐变
+            LinearGradient::new(
+                //从顶部到底部  由红色渐变到白色
+                UnitPoint::TOP,
+                UnitPoint::BOTTOM,
+                (Color::PURPLE,Color::WHITE)
+                //(env.get(theme::BUTTON_LIGHT), env.get(theme::BUTTON_DARK)),
+            )
+        };
+ 
+        //边框的颜色
+        let border_color = if is_hot && !ctx.is_disabled() {
+            //env.get(theme::BORDER_LIGHT)
+            Color::RED
+        } else {
+            //env.get(theme::BORDER_DARK)
+            Color::WHITE
+        };
+ 
+        //
+        ctx.stroke(rounded_rect, &border_color, stroke_width);
+ 
+        ctx.fill(rounded_rect, &bg_gradient);
+ 
+        let label_offset = (size.to_vec2() - self.label_size.to_vec2()) / 2.0;
+ 
+        ctx.with_save(|ctx| {
+            ctx.transform(Affine::translate(label_offset));
+            //调用label的paint
+            self.label.paint(ctx, data, env);
+        });
+    }
+}
+
+## 下面我们创建我们的Data数据结构体
+#[derive(Clone,Data,Lens)]
+struct State{
+    //label显示的文字
+    text:String,
+}
+
+## 编写窗体部分
+fn builder_ui() -> impl Widget<State> {
+ 
+    //MyButton创建，这里的Label使用了Data模型，MyButton添加了点击事件
+    let my_button = MyButton::form_label(Label::new(|state: &State,_env: &Env|{ format!("{}",state.text)}))
+        .on_click(|_etc,state,_env|{
+            println!("点击了按钮");
+            state.text = "你点击了".to_string();
+        });
+ 
+    //Flex布局，这个后面也会讲解一下
+    Flex::row()
+        //把我们的组件添加到布局
+        .with_child(my_button)
+}
+
+## 编写启动方法
+fn main() {
+    let win = WindowDesc::new(builder_ui()).title("自定义按钮").window_size((300.0,300.0));
+ 
+    let _app = AppLauncher::with_window(win)
+        .log_to_console()
+        .launch(State { text: "按钮".to_string() });
+}
+
+]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="运行窗体" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;margin-top:1em;">
+      <![CDATA[
+<img src="/images/rust/8bdfad2d1bcd56c840f11fcab4dc1c82.png" />
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Druid - Lens trait</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+一个关键的抽象Druid随着数据是 Lens trait。本页解释它们是什么，以及如何使用它们。一开始，Lens可能看起来很复杂，但是它们也非常强大，允许你编写可重用、简洁和易懂的代码(一旦你理解了lens本身)。
+</div>
+<div style="margin-top:.625em;">
+基本原理:
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+pub trait Lens<T, U> {
+    fn with<F: FnOnce(&U)>(&self, data: &T, f: F);
+
+    fn with_mut<F: FnOnce(&mut U)>(&self, data: &mut T, f: F);
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;margin-top: 1em;">
+      <![CDATA[
+<div>
+我从 Druid 的源代码中复制了这个定义，然后通过删除返回类型来简化它，因为它们不是Lens工作方式的基础。
+</div>
+<div style="margin-top:.625em;">
+首先要注意的是Lens本身的泛型。Lens有三种类型: Lens、LensT 和Lens U。这两个类型的参数表示Lens所解决的不匹配: 我们有一个操作于 U 的函数，和一个 T 类型的对象，所以我们需要以某种方式将 T 转换成 U。
+</div>
+<div style="margin-top:.625em;">
+实现: 
+</div>
+<div style="margin-top:.625em;">
+举个例子。让我们手动实现和使用镜头，这样我们就可以看到发生了什么。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+struct Container {
+    inner: String,
+    another: String,
+}
+
+
+// Here the lens doesn't have any data, but there are cases where
+// it might, for example it might contain an index into a collection.
+struct InnerLens;
+
+// Our lens will apply functions that operate on a `String` to a `Container`.
+impl Lens<Container, String> for InnerLens {
+    fn with<F: FnOnce(&String)>(&self, data: &Container, f: F) {
+        f(&data.inner);
+    }
+
+    fn with_mut<F: FnOnce(&mut String)>(&self, data: &mut Container, f: F) {
+        f(&mut data.inner);
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;margin-top: 1em;">
+      <![CDATA[
+<div>
+这个案子很简单。我们需要做的就是将函数投射到字段上。请注意，这不是我们可以制作的从 Container 到 String 的唯一有效镜头-我们也可以从 Container 投影到另一个镜头。在实现 Lens 时，我们选择了如何将 Container 转换为 String。
+</div>
+<div style="margin-top:.625em;">
+你还会注意到，这两个方法都接受对 self 的不可变引用，甚至是 mut 变量。Lens本身应该被认为是一个固定的东西，知道如何进行映射。在上述情况下，它不包含任何数据，甚至很可能不会出现在最终编译/优化的代码中。
+</div>
+<div style="margin-top:.625em;">
+现在来看一个稍微复杂一点的例子
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+struct Container2 {
+    first_name: String,
+    last_name: String,
+    age: u16, // in the future maybe people will live past 256?
+}
+
+struct Name {
+    first: String,
+    last: String,
+}
+
+struct NameLens;
+
+impl Lens<Container2, Name> for NameLens {
+    fn with<F: FnOnce(&Name)>(&self, data: &Container2, f: F) {
+        let first = data.first_name.clone();
+        let last = data.last_name.clone();
+        f(&Name { first, last });
+    }
+
+    fn with_mut<F: FnOnce(&mut Name)>(&self, data: &mut Container2, f: F) {
+        let first = data.first_name.clone();
+        let last = data.last_name.clone();
+        let mut name = Name { first, last };
+        f(&mut name);
+        data.first_name = name.first;
+        data.last_name = name.last;
+    }
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;margin-top: 1em;">
+      <![CDATA[
+<div>
+现在我相信你已经意识到了，以上这些是非常低效的。考虑到我们将经常遍历我们的数据，我们需要它是便宜的。(这在以前不是问题，因为当我们不需要构建内部类型时，我们可以只使用引用。如果我们的数据复制/克隆成本很低，例如任何基本数字类型 u8，… f64，那也不是问题。)幸运的是，这正是生锈所擅长的。让我们重写上面的例子，以快速！
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+struct Container2 {
+    first_name: Rc<String>,
+    last_name: Rc<String>,
+    age: u16,
+}
+
+struct Name {
+    first: Rc<String>,
+    last: Rc<String>,
+}
+
+struct NameLens;
+
+impl Lens<Container2, Name> for NameLens {
+    // .. identical to previous example
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;margin-top: 1em;">
+      <![CDATA[
+<div>
+正如您将看到的，我们已经介绍了 Rc: 引用计数指针。您将在示例中看到这个函数及其多线程表兄 Arc 被广泛使用。现在，我们实际复制内存的唯一时间是在 f in with_mut 中调用 Rc::make_mut 时。这意味着，在没有任何变化的情况下，我们所要做的就是递增和递减引用计数。此外，我们还为编译器提供了内联 f 和/with_mut 的机会，使得这个抽象可能成本为零
+</div>
+<div style="margin-top:.625em;">
+折衷之处在于，我们在 Name 类型中引入了更多的复杂性: 为了对数据进行更改，我们必须使用 Rc::make_mut 来获得对 String 的可变访问权。(镜头中的代码将确保 Rc 数据的较新副本保存到外部类型。)这意味着快速编写德鲁伊代码需要了解铁锈指针类型(Rc/Arc，也可能是 RefCell/Mutex)。
+</div>
+<div style="margin-top:.625em;">
+我们可以做得更好。假设我们处理的是数据向量而不是字符串。我们可以导入入口箱来获得使用结构共享的集合，这意味着即使载体发生变异，我们也只克隆需要克隆的部分。因为 IM 非常有用，所以它包含在Druid(在 IM 特性后面)中。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+struct Container2 {
+    // Pretend that it's the 1980s and we store only ASCII names.
+    first_name: im::Vector<u8>,
+    last_name: im::Vector<u8>,
+    age: u16,
+}
+
+struct Name {
+    first: im::Vector<u8>,
+    last: im::Vector<u8>,
+}
+
+struct NameLens;
+
+impl Lens<Container2, Name> for NameLens {
+    // .. identical to previous example
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;margin-top: 1em;">
+      <![CDATA[
+<div>
+现在，除了几乎免费的克隆，我们还可以对数据本身进行廉价的增量更新。对于名称，这并不重要，但是如果向量有1_000_000_000个元素，我们仍然可以在 O (log (n))时间内进行更改(在这种情况下，1_000_000_000和30之间的差异非常大!).
+</div>
+<div style="margin-top:.625em;">
+好了，现在你知道Lens是怎么工作的了。恭喜你，你已经完成了最困难的部分！
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>druid UI - lens 练习使用</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+我们通过上几章的学习，我们做一个小练习，
+</div>
+<div style="margin-top:.625em;">
+效果图:
+</div>
+<div>
+    <img src="/images/rust/69843e4ece7841db94849ebde35d4cb9.png" />
+</div>
+<div style="margin-top:.625em;">
+实现一个效果，通过 按钮对滑块的操作，并且label显示滑块位置。
+</div>
+<div style="margin-top:.625em;">
+我们接下来开始实现这个小练习，我们使用的组件有 Button(按钮)、Slider(滑块)、Label(文本)、Flex(布局)。
+</div>
+<div style="margin-top:.625em;">
+让我们创建一个rust项目
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+$ cargo new lens_demo
+
+## 让我们添加包
+[dependencies]
+druid = { git = "https://github.com/linebender/druid.git"}
+
+## 添加我们需要用到的引用
+use druid::widget::{Button,Label,Slider,Flex};
+use druid::widget::Widget;
+use druid::{Env, WindowDesc, AppLauncher, Data, Lens, WidgetExt};
+
+## 创建我们的Data Lens
+#[derive(Data,Clone,Lens)]
+struct AppState{
+    current:f64,
+}
+
+## 创建界面和启动程序
+fn ui_builder() -> impl Widget<AppState> {
+
+    //创建label显示滑块的位置数字 绑定了current
+    let label = Label::new(|app_state:&AppState,_env:&Env|{ format!("{:.1}",app_state.current)});
+
+    //创建滑块，with_range 设置滑块的开始位置结束位置，lens绑定了current，fix_width设置滑块的宽度
+    let slider = Slider::new().with_range(1., 100.).lens(AppState::current).fix_width(250.);
+
+    //创建减一按钮，fix_width 设置按钮的宽度，on_click 绑定点击事件，
+    let button_reduce = Button::new("- 1").fix_width(100.).on_click(|_,app_state: &mut AppState,_|{
+        //对值进行判断，不能小于1，修改current的值
+        if app_state.current - 1. < 1. {
+            app_state.current = 1.;
+        }else{
+            app_state.current -= 1.;
+        }
+    });
+
+    let button_increase = Button::new("+ 1").fix_width(100.).on_click(|_,app_state: &mut AppState,_|{
+        if app_state.current + 1. > 100. {
+            app_state.current = 100.;
+        }else{
+            app_state.current += 1.;
+        }
+        
+    });
+
+    //创建布局垂直排列
+    Flex::column()
+        .with_child(
+            //水平排列
+            Flex::row()
+            //添加显示位置的label
+            .with_child(label)
+        )
+        .with_child(
+            //水平排列
+            Flex::row()
+                //添加滑块
+                .with_child(slider)   
+        )
+        .with_child(
+            //水平排列
+            Flex::row()
+                //添加按钮
+                .with_child(button_reduce)
+                .with_child(button_increase).padding(10.)
+        )
+}
+
+fn main() {
+    let win = WindowDesc::new(ui_builder()).window_size((300.,200.)).title("rust语言编程");
+    let _app = AppLauncher::with_window(win).launch(AppState{current:1.});
+}
+
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>druid UI框架 - Controller</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+Controller 是一种管理子部件、重写或自定义其事件处理或更新行为的类型。Controller控制器只能处理事件和更新，不能影响布局和绘制。控制器是一种方便; 
+</div>
+<div style="margin-top:.625em;">
+它可以做的任何事情也可以通过创建一个拥有子控件的自定义 Widget 来完成。但是，这有点麻烦，特别是当您只想拦截或修改一个或两个事件时。Controller 上的方法与 Widget 上的方法相同，只是它们也被传递给控制器的子方法。控制器负责根据需要显式地将调用转发到子级。Controller 与 ControllerHost 一起使用，后者管理它与其子节点之间的关系; 尽管通常您会使用 WidgetExt::Controller 方法，而不是直接实例化主机。
+</div>
+<div style="margin-top:.625em;">
+Controller有3个需要实现的方法
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+pub fn event(
+    &mut self,
+    child: &mut W,
+    ctx: &mut EventCtx<'_, '_>,
+    event: &Event,
+    data: &mut T,
+    env: &Env
+)
+
+## 处理事件
+pub fn lifecycle(
+    &mut self,
+    child: &mut W,
+    ctx: &mut LifeCycleCtx<'_, '_>,
+    event: &LifeCycle,
+    data: &T,
+    env: &Env
+)
+
+## 声明周期
+pub fn update(
+    &mut self,
+    child: &mut W,
+    ctx: &mut UpdateCtx<'_, '_>,
+    old_data: &T,
+    data: &T,
+    env: &Env
+)
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div style="margin-top:.625em;">
+修改小部件
+</div>
+<div style="margin-top:.625em;">
+下面通过是一个实例学习Controller的使用
+</div>
+<div style="margin-top:.625em;">
+让程序启动的时候，输入框获得聚焦
+</div>
+<div style="margin-top:.625em;">
+效果图:
+</div>
+<div style="margin-top:.625em;">
+<img src="/images/rust/69f332281f6f4d7584190c207b380c5f.png" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+## 创建rust项目
+$ cargo new controller_demo
+
+## 添加druid的包
+[dependencies]
+druid = { git = "https://github.com/linebender/druid.git"}
+
+## 添加需要用到的引用
+use druid::widget::{Controller,Flex,TextBox};
+use druid::{Env,Event,EventCtx,Widget, WidgetExt, Data, Lens, WindowDesc, AppLauncher};
+
+## 我们先编写controller控制器
+struct TakeFocus;
+
+impl <T, W: Widget<T>> Controller<T, W> for TakeFocus {
+    //处理事件
+    /*
+    child:小部件
+    EventCtx:事件etc
+    Event：事件
+    data：数据
+    */
+    fn event(&mut self, child: &mut W, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
+        //当窗口第一次实例化的时候接收到WindowConnectioned
+        if let Event::WindowConnected = event {
+            //让小部件获得焦点
+            ctx.request_focus();
+        }
+        child.event(ctx, event, data, env)
+    }
+}
+
+## 编写我们的ui，创建textBox并且让textBox使用controller控制器
+#[derive(Data,Lens,Clone)]
+struct AppState{
+    text:String
+}
+
+fn builder_ui() -> impl Widget<AppState>{
+    Flex::row()
+        //给输入框添加controller控制器
+        .with_child(TextBox::multiline().controller(TakeFocus).lens(AppState::text))
+}
+
+## 创建我们的启动main方法
+fn main() {
+    let win = WindowDesc::new(builder_ui()).window_size((200.,200.));
+
+    let _app = AppLauncher::with_window(win).launch(AppState{text:"".to_string()});
+}
+
+## 我们一个简单的控制器使用就完成啦！！
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>druid UI框架 - Selector选择器</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+Selector是一个特殊命令的标识符
+</div>
+<div style="margin-top:.625em;">
+这应该是一个唯一的字符串标识符。不允许使用具有相同标识符但不同有效负载类型的多个选择器，这可能导致 Command::get 和 get_uncheck 出现恐慌。
+</div>
+<div style="margin-top:.625em;">
+Type 参数 T 指定命令的有效负载类型
+</div>
+<div style="margin-top:.625em;">
+某些选择器是由druid定义的，并且对框架有特殊的意义; 它们在 druid::commands 中列出
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+pub const NOOP: Selector
+
+## 一个什么都不做的选择器
+pub fn to(self, target: impl Into<Target>) -> Command
+
+## 将其转换为具有指定 Target 的命令。
+pub const fn new(s: &'static str) -> Selector<T>
+
+## 用给定的字符串创建一个新的 Selector。
+pub fn with(self, payload: T) -> Command
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div style="margin-top:.625em;">
+这个选择器为 Command::new 提供了方便的方法。
+</div>
+<div style="margin-top:.625em;">
+如果有效负载是()，就不需要调用这个函数，因为 Selector<()> 实现 Into<Command> 。
+</div>
+<div style="margin-top:.625em;">
+默认情况下，该命令将具有 Target::Auto。
+</div>
+<div style="margin-top:.625em;">
+选择器和AppDalegate使用
+</div>
+<div style="margin-top:.625em;">
+AppDalegate提供用于处理和修改顶级事件的挂钩的类型。
+</div>
+<div style="margin-top:.625em;">
+AppDalegate是一种特性，允许在事件传递到小部件树之前处理和修改事件。
+</div>
+<div style="margin-top:.625em;">
+对于窗口和菜单管理来说，这是一个很自然的地方。
+</div>
+<div style="margin-top:.625em;">
+可以通过在自己的类型上实现其方法来自定义 AppDalegate。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+pub fn event(
+    &mut self,
+    ctx: &mut DelegateCtx<'_>,
+    window_id: WindowId,
+    event: Event,
+    data: &mut T,
+    env: &Env
+) -> Option<Event>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;margin-top: 1em;">
+      <![CDATA[
+<div style="margin-top:.625em;">
+此函数接收所有非命令事件，然后再向下传递。
+</div>
+<div style="margin-top:.625em;">
+这个函数的返回值将在树中传递。这可以是传入的事件、不同的事件或没有事件。在所有情况下，update ()方法都将像往常一样调用。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+pub fn command(
+    &mut self,
+    ctx: &mut DelegateCtx<'_>,
+    target: Target,
+    cmd: &Command,
+    data: &mut T,
+    env: &Env
+) -> Handled
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;margin-top: 1em;">
+      <![CDATA[
+<div style="margin-top:.625em;">
+应用委托命令处理程序。
+</div>
+<div style="margin-top:.625em;">
+这个函数在每个(Target，Command)对被发送到树之前被调用。
+</div>
+<div style="margin-top:.625em;">
+如果您的实现返回 Handled::No，该命令将沿小部件树发送。否则不会。
+</div>
+<div style="margin-top:.625em;">
+要做比这更复杂的事情，您可以通过 DelegateCtx::submit_command 提交任意命令。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+pub fn window_added(
+    &mut self,
+    id: WindowId,
+    data: &mut T,
+    env: &Env,
+    ctx: &mut DelegateCtx<'_>
+)
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;margin-top: 1em;">
+      <![CDATA[
+窗口创建事件的处理程序。该函数在添加窗口后调用，允许您自定义应用程序的窗口创建行为。
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+pub fn window_removed(
+    &mut self,
+    id: WindowId,
+    data: &mut T,
+    env: &Env,
+    ctx: &mut DelegateCtx<'_>
+)
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;margin-top: 1em;">
+      <![CDATA[
+<div style="margin-top:.625em;">
+窗口删除事件的处理程序。此函数在窗口被删除后调用。
+</div>
+<div style="margin-top:.625em;">
+下一章使用选择器和AppDelegate实现异步处理
+</div>
+<div style="margin-top:.625em;">
+效果图
+</div>
+<div style="margin-top:.625em;">
+    <img src="/images/rust/dfef3596942f4e709d1262777edbc292.gif" style="max-width:600px;margin:auto;" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>druid UI框架 - Radio/RadioGroup(单选项组件)</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+## 单选项
+pub fn new(label: impl Into<LabelText<T>>, variant: T) -> Radio<T>
+
+## 创建一个单选项
+let png = Radio::new("png", ImageType::PNG).lens(AppState::image_type1);
+
+## 一组单选按钮
+# 给出一个(label_text, enum_variant)图元的向量，创建一组Radio按钮
+pub fn new<T: Data + PartialEq>(
+    variants: impl IntoIterator<Item = (impl Into<LabelText<T>> + 'static, T)>
+) -> impl Widget<T>
+
+## 示例，实现一组单选框按钮
+use druid::{
+    AppLauncher,Widget, widget::{Flex, RadioGroup}, Data, Lens, WindowDesc, WidgetExt};
+
+
+#[derive(Data,Lens,Clone, Copy)]
+struct AppState{
+    image_type:ImageType
+}
+
+//单选 选项
+#[derive(Clone, Copy, PartialEq, Data)]
+enum ImageType {
+    PNG,
+    JPEG,
+    ICON,
+}
+
+fn build_main() -> impl Widget<AppState> {
+
+    //创建一组单选按钮
+    let radio_group = RadioGroup::row(vec![
+        ("png",ImageType::PNG),
+        ("jpeg",ImageType::JPEG),
+        ("icon",ImageType::ICON)
+        ]).lens(AppState::image_type);
+
+    Flex::row()
+        .with_child(radio_group)
+}
+
+fn main() {
+    //创建窗体
+    let win = WindowDesc::new(build_main()).title("单选demo");
+
+    let _ = AppLauncher::with_window(win).launch(AppState{image_type:ImageType::PNG});
+}
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>druid UI框架 - Painter 绘图</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+## painter 是处理绘图的小部件，当想自定义部件外观的时候可以使用这个部件
+# 创建绘图部件
+pub fn new(f: impl FnMut(&mut PaintCtx<'_, '_, '_>, &T, &Env) + 'static) -> Self
+new 参数是一个方法，PaintCtx，data，Env
+
+# 先创建一个基本的绘图部件
+let painter = Painter::new(|ctx:&mut PaintCtx,data:&AppState,env|{
+    //获取绘图部件的尺寸
+    let size = ctx.size().to_rect();
+    //填充一个形状，第一个参数是尺寸，第二个是颜色
+    ctx.fill(size, &Color::WHITE);
+    //设置部件的尺寸为500*500
+}).fix_width(500.).height(500.);
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+    <img src="/images/rust/d0a3af609dcd42ee9c85762bfb3a0577.png" style="max-width: 300px;" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+## 下面我们在这个绘图部件上面进行一些创作
+# 画一个填充的方形
+pub fn fill(&mut self, shape: impl Shape, brush: &impl IntoBrush<Self>)
+
+## Shape 第一个参数是形状的参数，Shape是一个Trait，实现了Shape这个trait的有很多， 这里介绍一些经常使用的
+# Rect 绘制方形
+let rect = Rect::new(0., 0., 100., 100.);
+
+## 创建一个Rect，需要使用4个参数，x1,y1,x2,y2 。这四个参数组成了对角点，则绘制成了方形，下面我们使用代码创建一个红色的填充的正方形图案
+# 绘制一块填充的图形 x:0,y:0 x:100,y:100 的正方形
+let rect = Rect::new(0., 0., 100., 100.);
+ctx.fill(rect, &Color::RED);
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+    <img src="/images/rust/5704d3ee7c6842088e3b31c034edd68a.png" style="max-width: 300px;" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+## Circle 绘制圆形
+pub fn new(center: impl Into<Point>, radius: f64) -> Circle
+
+## 创建圆形的参数，第一个参数是中心点，第二个参数是半径，Point创建有两个参数就是x和y，下面我们创建一个圆形参数，并且使用fill绘制一个蓝色半径为50的圆
+# 画圆圈
+let circle = Circle::new(Point::new(150., 50.), 50.);
+ctx.fill(circle, &Color::BLUE);
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+    <img src="/images/rust/d7b1ce0d7cf2426ab3bc38314ddfc677.png" style="max-width: 300px;" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+## 下面介绍一个绘制不填充的方法
+pub fn stroke(
+    &mut self,
+    shape: impl Shape,
+    brush: &impl IntoBrush<Self>,
+    width: f64
+)
+
+## 比填充的方法多了一个线宽度，下面我们使用stroke画一个方形和圆形
+# 绘制不填充的方形
+let rect = Rect::new(0., 105., 100., 205.);
+ctx.stroke(rect, &Color::BLACK,2.);
+
+# 绘制不填充的圆形
+let circle = Circle::new(Point::new(150., 150.), 50.);
+ctx.stroke(circle, &Color::BLUE, 1.);
+
+# Line 绘制一条线
+pub fn new(p0: impl Into<Point>, p1: impl Into<Point>) -> Line
+
+## 创建Line需要使用两个坐标的参数，第一个为起始点，第二个为结束点，两点连接成一条线
+# 创建线两端的点
+let line = Line::new(Point::new(0.,220.), Point::new(200.,220.));
+
+# 绘制一条宽度为5的线t
+ctx.stroke(line, &Color::PURPLE,5.);
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+    <img src="/images/rust/5beb45d5023f404fa369b75ce310954c.png" style="max-width: 300px;" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+## TextLayout 绘制文字布局
+pub fn draw_text(&mut self, layout: &Self::TextLayout, pos: impl Into<Point>)
+
+## 绘制文字需要使用两个参数，TextLayout 文字和坐标信息，下面我们看下怎么进行创建TextLayout
+# 首先获取文字
+pub fn text(&mut self) -> &mut Self::Text
+
+## Text 有一个创建 TextLayoutBuilder 方法
+pub fn new_text_layout(
+    &mut self,
+    text: impl TextStorage
+) -> Self::TextLayoutBuilder
+
+## 创建一个新的并且设置文字，我们使用代码来书写，我们得到了 TextLayoutBuilder，这个还不是我们想要的类型，使用 TextLayoutBuilder 中的 builder 方法创建 TextLayout
+# 在没有 build 之前，可以对文字进行一些设置，使用 default_attribute 方法
+pub fn default_attribute(self, attribute: impl Into<TextAttribute>) -> Self
+
+type Out: TextLayout
+pub fn build(self) -> Result<Self::Out, Error>
+
+## 下面我们使用代码把这个文字创建出来，并绘制
+let point = Point::new(0., 250.);
+let text = ctx.text();
+let new_text = text.new_text_layout("hello world")
+    //文字颜色
+    .default_attribute(TextAttribute::TextColor(Color::RED))
+    //文字大小
+    .default_attribute(TextAttribute::FontSize(20.))
+    .build().unwrap();
+ctx.draw_text(&new_text, point);
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+    <img src="/images/rust/603c101acddf42c3b10e05a64fe2f7b3.png" style="max-width: 300px;" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+## Image 绘制图片
+pub fn draw_image(
+   &mut self,
+   image: &Self::Image,
+   dst_rect: impl Into<Rect>,
+   interp: InterpolationMode
+)
+
+## 第一个参数是图片，第二个为绘制的尺寸，第三个为绘制方式（最近邻不插值、双线性插值）
+# 读取图片可以使用druid的ImageBuf::from_file直接传入图片地址，使用from_file需要使用features=[“image-all”]
+druid = { git = "https://github.com/linebender/druid.git" ,features = ["image-all"]}
+
+## 下面我们绘制一个图片到部件
+# 绘制图片
+let image = ImageBuf::from_file("E:/bizhi/200.jpg").unwrap()
+    //使用to_image转换下
+    .to_image(ctx.render_ctx);
+let rect = Rect::new(330., 330., 430., 430.);
+ctx.draw_image(&image, rect, InterpolationMode::Bilinear);
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+    <img src="/images/rust/e8103d2582604050b00f77a5d4928051.png" style="max-width: 300px;" />
+</div>
+<div style="margin-top:1em;">
+这个绘制部件还有很多的方法，可以高斯模糊绘制矩形blurred_rect,清除指定的颜色等，这里就不一一列举了
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>druid UI框架 - window设置程序图标</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+## 在 Windows 上，如果可执行文件包含一个id为1的图标资源，这个图标将被用在Druid窗口的任务栏和标题栏中。如果没有这样的图标资源，则将使用默认的应用程序图标。
+# 添加自定义图标：一种方法是使用 winres crate 并遵循其自述文件中的指南; winres::WindowsResource::set_icon() 添加ID为1的图标。
+# 创建 druid 项目设置窗体图标
+$ cargo new druid-icon
+
+## 添加 druid 包
+[dependencies]
+druid = "0.8.2"
+
+## 添加设置图标使用的库
+[package]
+build = "build.rs"
+
+[build-dependencies]
+winres = "0.1.12"
+
+## 添加build.rs启动文件 (项目根目录下)
+extern crate winres;
+
+fn main() {
+    if cfg!(target_os = "windows") {
+        let mut res = winres::WindowsResource::new();
+        //设置图标，图标和build.rs文件都放在项目根目录下
+        res.set_icon("logo.ico");
+        res.compile().unwrap();
+    }
+}
+
+## 编写main.rs主方法
+use druid::widget::{Flex, Label};
+use druid::{AppLauncher, PlatformError, Widget, WindowDesc, Data, Lens};
+
+#[derive(Data,Lens,Clone)]
+struct AppData{
+
+}
+
+fn main() -> Result<(), PlatformError> {
+    //创建窗体，并且设置为300x250
+    let main_window = WindowDesc::new(ui_builder()).window_size((300.,250.));
+    //启动
+    AppLauncher::with_window(main_window)
+        //打印日志log
+        .log_to_console()
+        .launch(AppData{})
+}
+
+fn ui_builder() -> impl Widget<AppData> {
+    
+    //创建显示的内容
+    Flex::<AppData>::column()
+        .with_child(Label::new("设置图标"))
+}
+
+## 运行效果  
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+    <img src="/images/rust/bde8f96e13ecdea3c4a29e74ffe21a1e.png" style="max-width: 300px;" />
+</div>
+<div style="margin-top: 1em;">
+    项目目录
+</div>
+<div style="margin-top: 1em;">
+    <img src="/images/rust/80a11a4c458491a302d3421c4fe9f1f1.png" style="max-width: 300px;" />
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+
+
 </c:component>
