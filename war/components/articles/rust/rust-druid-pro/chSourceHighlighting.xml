@@ -17,6 +17,15 @@
 <div style="margin-bottom:1em;line-height:1.625;">
   <a href="https://github.com/iced-rs/iced">https://github.com/iced-rs/iced</a>
 </div>
+<div style="margin-bottom:1em;line-height:1.625;">
+  <a href="https://www.cnblogs.com/silentdoer/p/13056165.html">https://www.cnblogs.com/silentdoer/p/13056165.html</a>
+</div>
+<div style="margin-bottom:1em;line-height:1.625;">
+  <a href="http://www.manongjc.com/detail/59-tivhsjrzdnnromi.html">http://www.manongjc.com/detail/59-tivhsjrzdnnromi.html</a>
+</div>
+<div style="margin-bottom:1em;line-height:1.625;">
+  <a href="https://www.jianshu.com/p/fb5c05233660">https://www.jianshu.com/p/fb5c05233660</a>
+</div>
 ]]>
   </c:abstract>
 
@@ -1851,6 +1860,243 @@ fn ui_builder() -> impl Widget<AppData> {
 <div style="margin-top: 1em;">
     <img src="/images/rust/80a11a4c458491a302d3421c4fe9f1f1.png" style="max-width: 300px;" />
 </div>
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>druid UI框架 - Flex布局</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+Flex 内部有两种类型，一种是 <code>non-flex</code>，其对应的函数为 <code>with_child</code>，另外一种是flex类型，其对于的函数为 <scode>with_flexchild</code>。
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+-------non-flex------flex--------
+|       child #1     | child #2 |
+
+
+-----flex------------flex--------
+|    child #1   |    child #2   |
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;margin-top: 1em;">
+      <![CDATA[
+<div>
+当使用 with_child 添加元素时，flex 会使用 child 的 width，heigth。此时，flex 会自动计算其长宽，一般与 <code>expand()</code> 结合使用。
+</div>
+<div style="margin-top: 1em;">
+例子：
+</div>
+<div style="margin-top: .325em;">
+布局一个等长宽的 textbox
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+===================
+=     textbox     =
+=                 =
+=                 =
+===================
+=     textbox     =
+=                 =
+=                 =
+===================
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+use druid::lens;
+use druid::WidgetExt;
+use druid::{
+    widget::{Flex, TextBox},
+    AppLauncher, Data, Size, Widget, WindowDesc,
+};
+
+#[derive(Data, Clone)]
+pub struct DataText {
+    pub data: String,
+}
+
+fn buid_root() -> impl Widget<DataText> {
+    let s1 = lens!(DataText, data);
+    let s2 = lens!(DataText, data);
+    let text_box_up= TextBox::multiline().lens(s1);
+    let text_box_down = TextBox::multiline().lens(s2);
+    
+    // 1.0 为比列参数
+    Flex::column()
+    .with_flex_child(text_box_up.expand(), 1.0)
+    .with_flex_child(text_box_down.expand(), 1.0)
+
+    // Flex::column().with_child(text_box_up).with_flex_child(text_box_down.expand(), 1.0)
+}
+
+fn main() {
+    let m = DataText {
+        data: "Hello".to_string(),
+    };
+    let w = WindowDesc::new(buid_root()).window_size(Size::new(400.0, 400.0));
+    AppLauncher::with_window(w).log_to_console().launch(m).unwrap();
+}
+
+## with_flex_chid
+# 然后在右下角添加清空按钮， 注意这时同时用到了flex与non_flex。
+fn buid_root() -> impl Widget<DataText> {
+    let s1 = lens!(DataText, data);
+    let s2 = lens!(DataText, data);
+    let text_box_up= TextBox::multiline().lens(s1);
+    let text_box_down = TextBox::multiline().lens(s2);
+
+    let clear_btn = Button::new("Clear").on_click(|_ctx, data: &mut DataText, _env| data.data = "".to_string());
+
+    Flex::column()
+    .with_flex_child(text_box_up.expand(), 1.0)
+    .with_flex_child(text_box_down.expand(), 1.0)
+    .with_child(Flex::row().with_flex_child(SizedBox::empty().fix_height(20.0).expand_width(), 1.0).with_child(clear_btn))
+}
+
+## with_flex_child + with_child 
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="Flex::row()" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+## 创建一个新的水平堆栈，子元素从左到右水平布局。相当于css：
+{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="Flex::column()" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+## 创建一个新的垂直堆栈，子元素从上到下垂直布局。相当于css：
+{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="add_child" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+添加一个 non-flex 的子组件。
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="with_child" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+## add_child 的变体用法，便于链式调用，源码：
+pub fn with_child(mut self, child: impl Widget<T> + 'static) -> Self {
+  self.add_child(child);
+  self
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="add_flex_child" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<div>
+添加一个 flexible 的子组件。
+</div>
+<div style="margin-top: 1em;">
+注意：即使元素是 flexible，它默认也不会撑满所有空间，如果需要占满空间，可以调用 expand_width 或 expand_height 方法。
+</div>
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="with_flex_child" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+## add_flex_child 的变体用法，便于链式调用，源码：
+pub fn with_flex_child(
+  mut self,
+  child: impl Widget<T> + 'static,
+  params: impl Into<FlexParams>,
+) -> Self {
+  self.add_flex_child(child, params);
+  self
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="fix_width" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+用 SizedBox 包裹组件，并设置宽度
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="fix_height" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+用 SizedBox 包裹组件，并设置高度
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="布局实践" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+实现一个顶部固定高度，底部自适应的效果，同时顶部内实现两边固定宽，中间自适应的三栏布局
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="rust" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;margin-top: 1em;">
+      <![CDATA[
+fn build_app() -> impl Widget<u32> {
+    let mut col = Flex::column().with_child(
+        Flex::row()
+            .with_child(Label::new("left"))
+            .with_flex_child(Label::new("center").center(), 1.0)
+            .with_child(Label::new("right"))
+            .fix_height(100.0)
+            .background(Color::rgb8(0, 0x77, 0x88)),
+    );
+    col.add_flex_child(Label::new("body").center().background(Color::RED), 1.0);
+    col.debug_paint_layout()
+}
+    ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" style="background-color:transparent;"
+                     titleStyle="padding-left:0;color:black;font-size:1.8em;background-color:white;margin-top: 1em;"
+                     bodyStyle="padding:0;font-size:1em;line-height:1.625;font-family:monospace;">
+      <![CDATA[
+<img src="/images/rust/5174773-ca4da1d8cc05df4d.webp" />
     ]]>
     </c:sourceContent>
     <c:comment>
