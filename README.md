@@ -55,5 +55,7 @@ tunnels:
   #   proto: tcp
   #   remote_addr: 1.tcp.ngrok.io:12345
 
+## WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8)
+https://dev.to/docker/run-x86-containers-on-apple-mac-m1-with-rosetta-2-417a
 
 
