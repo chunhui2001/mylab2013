@@ -1,0 +1,2613 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+      Resource File: <a href="/images/android/project53.zip">project53.zip</a><br />
+      Resource File: <a href="/images/android/project107.zip">project107.zip</a><br />
+      Resource File: <a href="/images/android/project39-main.zip">project39-main.zip</a><br />
+      
+https://icon-sets.iconify.design/ic/info/ (Android 图标库) <br />
+https://inloop.github.io/svg2android (在线转换将 svg 转换成 Android Drawable)
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Makefile" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+### 当前 Makefile 文件物理路径
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+
+build:
+  ./gradlew build -x test
+
+tasks:
+  ./gradlew tasks
+
+install:
+  ./gradlew installDebug
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="settings.gradle.kts" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# ./settings.gradle.kts
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
++        maven { url=uri("https://jitpack.io") }
+    }
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="build.gradle.kts" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# ./app/build.gradle.kts
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
++    id("kotlin-kapt")
+}
+
+android {
+
+    ....
+
++   buildFeatures {
++       viewBinding = true
++   }
+}
+
+dependencies {
+
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.11.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+
++    implementation("com.github.ismaeldivita:chip-navigation-bar:1.4.0")
++    implementation("com.github.bumptech.glide:glide:4.16.0")
++    implementation("com.google.code.gson:gson:2.8.7")
++
++    implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
++    implementation("androidx.recyclerview:recyclerview:1.3.2")
++    implementation("androidx.room:room-runtime:2.6.1")
++
++    kapt("androidx.room:room-compiler:2.6.1")
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>修改系统主题</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="colors.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/values/colors.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="grey">#e9e7f2</color>
+
+    <color name="primary">#FF9800</color>
+    <color name="primary_dark">#130041</color>
+    <color name="primary_light">#FFE0B2</color>
+    <color name="accent">#FF5722</color>
+    <color name="primary_text">#212121</color>
+    <color name="secondary_text">#757575</color>
+    <color name="icons">#212121</color>
+    <color name="divider">#BDBDBD</color>
+</resources>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="themes.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/values/themes.xml 
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+-    <style name="Base.Theme.FoodsApp" parent="Theme.Material3.DayNight.NoActionBar">
++    <style name="Base.Theme.FoodsApp" parent="Theme.MaterialComponents.DayNight.NoActionBar">
++        <item name="colorPrimary">@color/primary</item>
++        <item name="colorPrimaryVariant">@color/primary_dark</item>
++        <item name="colorOnPrimary">@color/white</item>
++
++        <item name="colorSecondary">@color/accent</item>
++        <item name="colorSecondaryVariant">@color/accent</item>
++        <item name="colorOnSecondary">@color/white</item>
+
++        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+    </style>
+
+    <style name="Theme.FoodsApp" parent="Base.Theme.FoodsApp" />
+</resources>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="创建背景资源" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/drawable/orange_background.xml
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#ff5e00" />
+            <corners android:radius="50dp" />
+        </shape>
+    </item>
+</selector>
+
+# app/src/main/res/drawable/search_background.xml
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#c8c5c5" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+</selector>
+
+# app/src/main/res/drawable/orange_light_banner.xml
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#ffc5ab" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+</selector>
+
+# app/src/main/res/drawable/cat_background1.xml
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#fef4e5"/>
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+</selector>
+
+# app/src/main/res/drawable/cat_background2.xml
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#f5e5fe"/>
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+</selector>
+
+# app/src/main/res/drawable/cat_background3.xml
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#e5f1fe"/>
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+</selector>
+
+# app/src/main/res/drawable/cat_background4.xml
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#ebfee5"/>
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+</selector>
+
+# app/src/main/res/drawable/cat_background5.xml
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#f9e4e4"/>
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+</selector>
+
+# app/src/main/res/drawable/cart_background.xml
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#ffffff" />
+            <corners android:radius="15dp" />
+        </shape>
+    </item>
+</selector>
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>IntroActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="activity_intro.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_intro.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context=".MainActivity">
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/background_intro" />
+
+    <ImageView
+        android:id="@+id/imageView2"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="150dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/imageView"
+        app:srcCompat="@drawable/burger_large" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Foodator"
+        android:textColor="#3d33a8"
+        android:textSize="60sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/imageView2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0" />
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/imageView2"
+        android:textSize="30sp"
+        android:textStyle="bold"
+        android:textColor="#3d33a8"
+        android:text="Food Delivery App" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="0dp"
+        android:layout_height="55dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:background="@drawable/orange_background"
+        app:layout_constraintBottom_toBottomOf="@+id/imageView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView3">
+
+        <TextView
+            android:id="@+id/textView4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Get Started"
+            android:textColor="#ffffff"
+            android:textSize="25sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Domains</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="CategoryModel.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/foodsapp/CategoryModel.kt
+data class CategoryModel(
+    var title: String,
+    var pic: String
+)
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="PopluarModel.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/foodsapp/PopluarModel.kt
+
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Adapters</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="viewholder_category.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/viewholder_category.xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    android:background="@drawable/cat_background1"
+    android:id="@+id/mainLayout">
+
+    <ImageView
+        android:id="@+id/catePic"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="40dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0"
+        app:srcCompat="@drawable/cat_1" />
+
+    <TextView
+        android:id="@+id/cateTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="name"
+        android:textColor="#000000"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="@+id/catePic"
+        app:layout_constraintStart_toStartOf="@+id/catePic"
+        app:layout_constraintTop_toBottomOf="@+id/catePic" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="CategoryListAdapter.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/foodsapp/CategoryListAdapter.kt
+class CategoryListAdapter(private var list: List<CategoryModel>): RecyclerView.Adapter<CategoryListAdapter.ViewHolder>() {
+
+    inner class ViewHolder(private var view: View): RecyclerView.ViewHolder(view) {
+
+        private var titleTxt: TextView = view.findViewById(R.id.cateTitle)
+        private var picImg: ImageView = view.findViewById(R.id.catePic)
+        private var mainLayout: ConstraintLayout = view.findViewById(R.id.mainLayout)
+
+        fun bind(model: CategoryModel, position: Int) {
+            this.titleTxt.text = model.title
+            setImg(view, model.pic, this.picImg)
+
+            when(position) {
+                0 -> {
+                    this.mainLayout.background = ContextCompat.getDrawable(view.context, R.drawable.cat_background1)
+                }
+                1 -> {
+                    this.mainLayout.background = ContextCompat.getDrawable(view.context, R.drawable.cat_background2)
+                }
+                2 -> {
+                    this.mainLayout.background = ContextCompat.getDrawable(view.context, R.drawable.cat_background3)
+                }
+                3 -> {
+                    this.mainLayout.background = ContextCompat.getDrawable(view.context, R.drawable.cat_background4)
+                }
+                4 -> {
+                    this.mainLayout.background = ContextCompat.getDrawable(view.context, R.drawable.cat_background5)
+                }
+            }
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CategoryListAdapter.ViewHolder {
+        return ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewholder_category, parent, false))
+    }
+
+    override fun getItemCount(): Int {
+        return list.size
+    }
+
+    override fun onBindViewHolder(holder: CategoryListAdapter.ViewHolder, position: Int) {
+        holder.bind(this.list[position], position)
+    }
+
+    private fun getResourceId(view: View, name: String): Int {
+        return view.resources.getIdentifier(name, "drawable", view.context.packageName)
+    }
+
+    private fun setImg(view: View, name: String, img: ImageView) {
+        Glide.with(view.context).load(getResourceId(view, name)).into(img)
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="viewholder_popular.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/viewholder_popular.xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@drawable/cart_background"
+    android:layout_width="wrap_content"
+    android:elevation="3dp"
+    android:layout_height="wrap_content"
+    android:layout_margin="10dp">
+
+    <TextView
+        android:id="@+id/foodTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="4dp"
+        android:text="Title"
+        android:textColor="#373b54"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/foodPic"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/foodTitle"
+        app:srcCompat="@drawable/pizza" />
+
+    <TextView
+        android:id="@+id/feeTxt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="0.0"
+        android:textColor="#373b54"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="@+id/foodPic"
+        app:layout_constraintStart_toStartOf="@+id/foodPic"
+        app:layout_constraintTop_toBottomOf="@+id/foodPic" />
+
+    <TextView
+        android:id="@+id/textView13"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="2dp"
+        android:textColor="#ff3d00"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:text="$"
+        app:layout_constraintBottom_toBottomOf="@+id/feeTxt"
+        app:layout_constraintEnd_toStartOf="@+id/feeTxt"
+        app:layout_constraintTop_toTopOf="@+id/feeTxt"
+        app:layout_constraintVertical_bias="0.73" />
+
+    <TextView
+        android:id="@+id/addToCartBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/orange_background"
+        android:padding="3dp"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:text="+Add"
+        android:textColor="#ffffff"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/foodPic"
+        app:layout_constraintStart_toStartOf="@+id/foodPic"
+        app:layout_constraintTop_toBottomOf="@+id/feeTxt" />
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="PopluarListAdapter.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/foodsapp/PopluarListAdapter.kt
+class PopularListAdapter(private var list: List<FoodModel>, var callbacks: Callbacks?): RecyclerView.Adapter<PopularListAdapter.ViewHolder>(){
+
+    interface Callbacks {
+        fun onFoodSelected(food: FoodModel)
+    }
+
+    inner class ViewHolder(private val view: View): RecyclerView.ViewHolder(view) {
+
+        private val titleTxt = view.findViewById<TextView>(R.id.foodTitle)
+        private val foodPic = view.findViewById<ImageView>(R.id.foodPic)
+        private val feeTxt = view.findViewById<TextView>(R.id.feeTxt)
+        private val addToCartBtn = view.findViewById<TextView>(R.id.addToCartBtn)
+
+        fun bind(model: FoodModel) {
+            this.titleTxt.text = model.title
+            this.feeTxt.text = model.fee.toString()
+
+            setImg(view, model.pic, this.foodPic)
+
+            this.addToCartBtn.setOnClickListener {
+                callbacks?.onFoodSelected(model)
+            }
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        return ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewholder_popular, parent, false))
+    }
+
+    override fun getItemCount(): Int {
+        return list.size
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(this.list[position])
+    }
+
+    private fun getResourceId(view: View, name: String): Int {
+        return view.resources.getIdentifier(name, "drawable", view.context.packageName)
+    }
+
+    private fun setImg(view: View, name: String, img: ImageView) {
+        Glide.with(view.context).load(getResourceId(view, name)).into(img)
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>MainActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="activity_main.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_main.xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    tools:context=".MainActivity">
+
+    <ScrollView
+        android:id="@+id/scrollView2"
+        android:layout_width="400dp"
+        android:layout_height="0dp"
+        android:layout_marginBottom="55dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/textView2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="32dp"
+                    android:layout_marginTop="32dp"
+                    android:text="Hi Rechard"
+                    android:textColor="#dd3d00"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/textView5"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Order &amp; Eat"
+                    android:textColor="#000000"
+                    android:textSize="20sp"
+                    app:layout_constraintBottom_toBottomOf="@+id/imageView3"
+                    app:layout_constraintStart_toStartOf="@+id/textView2" />
+
+                <ImageView
+                    android:id="@+id/imageView3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="32dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/textView2"
+                    app:srcCompat="@drawable/profile" />
+
+                <EditText
+                    android:id="@+id/editTextText"
+                    android:layout_width="0dp"
+                    android:layout_height="50dp"
+                    android:layout_marginStart="32dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginEnd="32dp"
+                    android:background="@drawable/search_background"
+                    android:drawableStart="@drawable/search"
+                    android:drawablePadding="10dp"
+                    android:ems="10"
+                    android:hint="Find your food"
+                    android:inputType="text"
+                    android:paddingStart="15dp"
+                    android:paddingEnd="15dp"
+                    android:textSize="14sp"
+                    android:textStyle="italic"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/textView5"
+                    tools:text="" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/constraintLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="150dp"
+                    android:layout_marginStart="32dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginEnd="32dp"
+                    android:background="@drawable/orange_light_banner"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/editTextText">
+
+                    <ImageView
+                        android:id="@+id/imageView4"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:srcCompat="@drawable/image_banner" />
+
+                    <TextView
+                        android:id="@+id/textView6"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:text="Free Delivery"
+                        android:textColor="#000000"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="@+id/imageView4" />
+
+                    <TextView
+                        android:id="@+id/textView7"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="May 2 - June 10"
+                        android:textColor="#000000"
+                        android:textSize="16sp"
+                        app:layout_constraintEnd_toEndOf="@+id/textView6"
+                        app:layout_constraintStart_toStartOf="@+id/textView6"
+                        app:layout_constraintTop_toBottomOf="@+id/textView6" />
+
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/orange_background"
+                        android:paddingStart="10dp"
+                        android:paddingTop="5dp"
+                        android:paddingEnd="10dp"
+                        android:paddingBottom="5dp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="@+id/textView6"
+                        app:layout_constraintHorizontal_bias="1.0"
+                        app:layout_constraintStart_toStartOf="@+id/textView6"
+                        app:layout_constraintTop_toBottomOf="@+id/textView7">
+
+                        <TextView
+                            android:id="@+id/textView8"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Order Now"
+                            android:textColor="#ffffff"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <TextView
+                    android:id="@+id/textView9"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="32dp"
+                    android:layout_marginTop="16dp"
+                    android:text="Categories"
+                    android:textColor="#000000"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/constraintLayout" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/categoriesListView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="24dp"
+                    android:paddingEnd="24dp"
+                    android:clipToPadding="true"
+                    app:layout_constraintTop_toBottomOf="@+id/textView9" />
+
+                <TextView
+                    android:id="@+id/textView12"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="32dp"
+                    android:layout_marginTop="16dp"
+                    android:text="Popular"
+                    android:textColor="#000000"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/categoriesListView" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/popluarListView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:paddingStart="24dp"
+                    android:paddingEnd="24dp"
+                    android:clipToPadding="true"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/textView12" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:id="@+id/coordinatorLayout"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <com.google.android.material.bottomappbar.BottomAppBar
+            android:id="@+id/appBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:backgroundTint="#f6f6f6"
+            android:paddingEnd="18dp"
+            app:fabCradleMargin="8dp"
+            app:fabCradleRoundedCornerRadius="50dp"
+            app:fabCradleVerticalOffset="6dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:id="@+id/btnHome"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.2"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:srcCompat="@drawable/bottom_btn1" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Home"
+                        android:textAlignment="center"
+                        android:textColor="#676767"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btnProfile"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.2"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:srcCompat="@drawable/bottom_btn2" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Profile"
+                        android:textAlignment="center"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.2"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:visibility="invisible">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:srcCompat="@drawable/bottom_btn1" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Home"
+                        android:textAlignment="center"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btnSupport"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.2"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:srcCompat="@drawable/bottom_btn3" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Support"
+                        android:textAlignment="center"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btnSettings"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.2"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:srcCompat="@drawable/bottom_btn4" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Settings"
+                        android:textAlignment="center"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+        </com.google.android.material.bottomappbar.BottomAppBar>
+
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#ff5e00"
+            android:elevation="0dp"
+            android:src="@drawable/shopping_cart"
+            app:backgroundTint="#ff5e00"
+            app:elevation="0dp"
+            app:layout_anchor="@id/appBar"
+            app:maxImageSize="30dp"
+            android:tint="#ffffff"/>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="MainActivity.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/foodsapp/MainActivity.kt
+class MainActivity : AppCompatActivity(), PopularListAdapter.Callbacks {
+
+    private lateinit var categoriesListView: RecyclerView
+    private lateinit var popluarListView: RecyclerView
+
+    override fun onFoodSelected(food: FoodModel) {
+        startActivity(DetailActivity.newIntent(this@MainActivity, food))
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        this.categoriesListView = findViewById(R.id.categoriesListView)
+        this.popluarListView = findViewById(R.id.popluarListView)
+
+        this.categoriesListView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        this.popluarListView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+
+        this.categoriesListView.adapter = CategoryListAdapter(loadCategories())
+        this.popluarListView.adapter = PopularListAdapter(loadPopulars(), this@MainActivity)
+    }
+
+    private fun loadCategories(): List<CategoryModel> {
+        return mutableListOf(
+            CategoryModel("Pizza", "cat_1"),
+            CategoryModel("Burger", "cat_2"),
+            CategoryModel("Hotdog", "cat_3"),
+            CategoryModel("Drink", "cat_4"),
+            CategoryModel("Donut", "cat_5"),
+        )
+    }
+
+    private fun loadPopulars(): List<FoodModel> {
+        return mutableListOf(
+            FoodModel(
+                "Pepperoni pizza",
+                "pizza1",
+                "slices pepperoni, mozzerella cheese, fresh oregano, ground black pepper, pizza sauce",
+                9.76,
+                0
+            ),
+            FoodModel(
+                "Cheese Burger",
+                "burger",
+                "beef, Gouda Cheese, Special Sauce, Lettcue, tomato",
+                8.97,
+                0
+            ),
+            FoodModel(
+                "Vegetable pizza",
+                "pizza3",
+                "olive oil, Vegetable oil, pitted kalamata, cherry tomatoes, fresh oregano, basil",
+                8.51,
+                0
+            ),
+        )
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>DetailsActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="activity_details.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_details.xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".DetailActivity">
+
+    <ScrollView
+        android:id="@+id/scrollView3"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="80dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/foodNameTxt"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="60dp"
+                android:text="Title"
+                android:textAlignment="center"
+                android:textColor="#373b54"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/foodPriceTxt"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="$"
+                android:textAlignment="center"
+                android:textColor="#ff5e00"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/foodPic"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:srcCompat="@drawable/pizza" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/minBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    app:srcCompat="@drawable/minus" />
+
+                <TextView
+                    android:id="@+id/numberOrderTxt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:gravity="center"
+                    android:text="1"
+                    android:textAlignment="center"
+                    android:textColor="#373b54"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:id="@+id/plusBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:srcCompat="@drawable/plus" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/descriptionTxt"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                android:text="TextView"
+                android:textColor="#686767"
+                android:textSize="20sp" />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <TextView
+        android:id="@+id/addToCartBtn"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:layout_margin="16dp"
+        android:background="@drawable/orange_background"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:gravity="center"
+        android:textSize="22sp"
+        android:textColor="#ffffff"
+        android:text="Add to Cart" />
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="DetailsActivity.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/foodsapp/DetailsActivity.kt
+const val CURRENT_FOOD = "com.android_labs.foodsapp::DetailActivity:FOOD"
+
+class DetailActivity : AppCompatActivity() {
+
+    companion object {
+        fun newIntent(context: Context, food: FoodModel): Intent {
+            // 接收 Intent 参数
+            return Intent(context, DetailActivity::class.java).apply {
+                putExtra(CURRENT_FOOD, food)
+            }
+        }
+    }
+
+    private lateinit var foodNameTxt: TextView
+    private lateinit var foodPriceTxt: TextView
+    private lateinit var foodPic: ImageView
+    private lateinit var numberOrderTxt: TextView
+    private lateinit var descriptionTxt: TextView
+    private lateinit var addToCartBtn: TextView
+
+    private lateinit var minBtn: ImageView
+    private lateinit var plusBtn: ImageView
+
+    private var numberOrder = 1
+
+    private lateinit var managementCart: ManagementCart
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_detail)
+
+        managementCart = ManagementCart(this, TinyDB(this))
+
+        this.foodNameTxt = findViewById(R.id.foodNameTxt)
+        this.foodPriceTxt = findViewById(R.id.foodPriceTxt)
+        this.foodPic = findViewById(R.id.foodPic)
+        this.numberOrderTxt = findViewById(R.id.numberOrderTxt)
+        this.descriptionTxt = findViewById(R.id.descriptionTxt)
+        this.addToCartBtn = findViewById(R.id.addToCartBtn)
+
+        this.minBtn = findViewById(R.id.minBtn)
+        this.plusBtn = findViewById(R.id.plusBtn)
+
+        var food = getSerializable(this, CURRENT_FOOD, FoodModel::class.java)
+
+        this.foodNameTxt.text = food.title
+        this.foodPriceTxt.text = food.fee.toString()
+        this.numberOrderTxt.text = numberOrder.toString()
+        this.descriptionTxt.text = food.description
+
+        setImg(this, food.pic, this.foodPic)
+
+        this.plusBtn.setOnClickListener {
+            numberOrder += 1
+            this.numberOrderTxt.text = numberOrder.toString()
+        }
+
+        this.minBtn.setOnClickListener {
+            if (numberOrder >1) {
+                numberOrder -= 1
+            }
+
+            this.numberOrderTxt.text = numberOrder.toString()
+        }
+
+        this.addToCartBtn.setOnClickListener {
+            food.numberInCart = numberOrder
+
+            managementCart.addFood(food)
+        }
+    }
+
+    private fun <T : Serializable?> getSerializable(
+        activity: Activity,
+        name: String,
+        clazz: Class<T>
+    ): T {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+            activity.intent.getSerializableExtra(name, clazz)!!
+        else
+            activity.intent.getSerializableExtra(name) as T
+    }
+
+    private fun getResourceId(ctx: Context, name: String): Int {
+        return ctx.resources.getIdentifier(name, "drawable", ctx.packageName)
+    }
+
+    private fun setImg(ctx: Context, name: String, img: ImageView) {
+        Glide.with(ctx).load(getResourceId(ctx, name)).into(img)
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="TinyDB.java" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/foodsapp/TinyDB.java
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
+import android.graphics.BitmapFactory;
+import android.os.Environment;
+import android.preference.PreferenceManager;
+import android.text.TextUtils;
+import android.util.Log;
+
+import com.google.gson.Gson;
+
+public class TinyDB {
+
+    private Context context;
+    private SharedPreferences preferences;
+    private String DEFAULT_APP_IMAGEDATA_DIRECTORY;
+    private String lastImagePath = "";
+
+    public TinyDB(Context appContext) {
+        preferences = PreferenceManager.getDefaultSharedPreferences(appContext);
+        context = appContext;
+    }
+
+
+    /**
+     * Decodes the Bitmap from 'path' and returns it
+     * @param path image path
+     * @return the Bitmap from 'path'
+     */
+    public Bitmap getImage(String path) {
+        Bitmap bitmapFromPath = null;
+        try {
+            bitmapFromPath = BitmapFactory.decodeFile(path);
+
+        } catch (Exception e) {
+            // TODO: handle exception
+            e.printStackTrace();
+        }
+
+        return bitmapFromPath;
+    }
+
+
+    /**
+     * Returns the String path of the last saved image
+     * @return string path of the last saved image
+     */
+    public String getSavedImagePath() {
+        return lastImagePath;
+    }
+
+
+    /**
+     * Saves 'theBitmap' into folder 'theFolder' with the name 'theImageName'
+     * @param theFolder the folder path dir you want to save it to e.g "DropBox/WorkImages"
+     * @param theImageName the name you want to assign to the image file e.g "MeAtLunch.png"
+     * @param theBitmap the image you want to save as a Bitmap
+     * @return returns the full path(file system address) of the saved image
+     */
+    public String putImage(String theFolder, String theImageName, Bitmap theBitmap) {
+        if (theFolder == null || theImageName == null || theBitmap == null)
+            return null;
+
+        this.DEFAULT_APP_IMAGEDATA_DIRECTORY = theFolder;
+        String mFullPath = setupFullPath(theImageName);
+
+        if (!mFullPath.equals("")) {
+            lastImagePath = mFullPath;
+            saveBitmap(mFullPath, theBitmap);
+        }
+
+        return mFullPath;
+    }
+
+
+    /**
+     * Saves 'theBitmap' into 'fullPath'
+     * @param fullPath full absolute path of the image file e.g. "..Images/MeAtLunch.png"
+     * @param theBitmap the image you want to save as a Bitmap
+     * @return true if image was saved, false otherwise
+     */
+    public boolean putImageWithFullPath(String fullPath, Bitmap theBitmap) {
+        return !(fullPath == null || theBitmap == null) && saveBitmap(fullPath, theBitmap);
+    }
+
+    /**
+     * Creates the path for the image with name 'imageName' in DEFAULT_APP.. directory
+     * @param imageName name of the image
+     * @return the full path of the image. If it failed to create directory, return empty string
+     */
+    private String setupFullPath(String imageName) {
+        File mFolder = new File(context.getExternalFilesDir(null), DEFAULT_APP_IMAGEDATA_DIRECTORY);
+
+        if (isExternalStorageReadable() && isExternalStorageWritable() && !mFolder.exists()) {
+            if (!mFolder.mkdirs()) {
+                Log.e("ERROR", "Failed to setup folder");
+                return "";
+            }
+        }
+
+        return mFolder.getPath() + '/' + imageName;
+    }
+
+    /**
+     * Saves the Bitmap as a PNG file at path 'fullPath'
+     * @param fullPath path of the image file
+     * @param bitmap the image as a Bitmap
+     * @return true if it successfully saved, false otherwise
+     */
+    private boolean saveBitmap(String fullPath, Bitmap bitmap) {
+        if (fullPath == null || bitmap == null)
+            return false;
+
+        boolean fileCreated = false;
+        boolean bitmapCompressed = false;
+        boolean streamClosed = false;
+
+        File imageFile = new File(fullPath);
+
+        if (imageFile.exists())
+            if (!imageFile.delete())
+                return false;
+
+        try {
+            fileCreated = imageFile.createNewFile();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        FileOutputStream out = null;
+        try {
+            out = new FileOutputStream(imageFile);
+            bitmapCompressed = bitmap.compress(CompressFormat.PNG, 100, out);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            bitmapCompressed = false;
+
+        } finally {
+            if (out != null) {
+                try {
+                    out.flush();
+                    out.close();
+                    streamClosed = true;
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    streamClosed = false;
+                }
+            }
+        }
+
+        return (fileCreated && bitmapCompressed && streamClosed);
+    }
+
+    // Getters
+
+    /**
+     * Get int value from SharedPreferences at 'key'. If key not found, return 0
+     * @param key SharedPreferences key
+     * @return int value at 'key' or 0 if key not found
+     */
+    public int getInt(String key) {
+        return preferences.getInt(key, 0);
+    }
+
+    /**
+     * Get parsed ArrayList of Integers from SharedPreferences at 'key'
+     * @param key SharedPreferences key
+     * @return ArrayList of Integers
+     */
+    public ArrayList<Integer> getListInt(String key) {
+        String[] myList = TextUtils.split(preferences.getString(key, ""), "‚‗‚");
+        ArrayList<String> arrayToList = new ArrayList<String>(Arrays.asList(myList));
+        ArrayList<Integer> newList = new ArrayList<Integer>();
+
+        for (String item : arrayToList)
+            newList.add(Integer.parseInt(item));
+
+        return newList;
+    }
+
+    /**
+     * Get long value from SharedPreferences at 'key'. If key not found, return 0
+     * @param key SharedPreferences key
+     * @return long value at 'key' or 0 if key not found
+     */
+    public long getLong(String key) {
+        return preferences.getLong(key, 0);
+    }
+
+    /**
+     * Get float value from SharedPreferences at 'key'. If key not found, return 0
+     * @param key SharedPreferences key
+     * @return float value at 'key' or 0 if key not found
+     */
+    public float getFloat(String key) {
+        return preferences.getFloat(key, 0);
+    }
+
+    /**
+     * Get double value from SharedPreferences at 'key'. If exception thrown, return 0
+     * @param key SharedPreferences key
+     * @return double value at 'key' or 0 if exception is thrown
+     */
+    public double getDouble(String key) {
+        String number = getString(key);
+
+        try {
+            return Double.parseDouble(number);
+
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Get parsed ArrayList of Double from SharedPreferences at 'key'
+     * @param key SharedPreferences key
+     * @return ArrayList of Double
+     */
+    public ArrayList<Double> getListDouble(String key) {
+        String[] myList = TextUtils.split(preferences.getString(key, ""), "‚‗‚");
+        ArrayList<String> arrayToList = new ArrayList<String>(Arrays.asList(myList));
+        ArrayList<Double> newList = new ArrayList<Double>();
+
+        for (String item : arrayToList)
+            newList.add(Double.parseDouble(item));
+
+        return newList;
+    }
+
+    /**
+     * Get parsed ArrayList of Integers from SharedPreferences at 'key'
+     * @param key SharedPreferences key
+     * @return ArrayList of Longs
+     */
+    public ArrayList<Long> getListLong(String key) {
+        String[] myList = TextUtils.split(preferences.getString(key, ""), "‚‗‚");
+        ArrayList<String> arrayToList = new ArrayList<String>(Arrays.asList(myList));
+        ArrayList<Long> newList = new ArrayList<Long>();
+
+        for (String item : arrayToList)
+            newList.add(Long.parseLong(item));
+
+        return newList;
+    }
+
+    /**
+     * Get String value from SharedPreferences at 'key'. If key not found, return ""
+     * @param key SharedPreferences key
+     * @return String value at 'key' or "" (empty String) if key not found
+     */
+    public String getString(String key) {
+        return preferences.getString(key, "");
+    }
+
+    /**
+     * Get parsed ArrayList of String from SharedPreferences at 'key'
+     * @param key SharedPreferences key
+     * @return ArrayList of String
+     */
+    public ArrayList<String> getListString(String key) {
+        return new ArrayList<String>(Arrays.asList(TextUtils.split(preferences.getString(key, ""), "‚‗‚")));
+    }
+
+    /**
+     * Get boolean value from SharedPreferences at 'key'. If key not found, return false
+     * @param key SharedPreferences key
+     * @return boolean value at 'key' or false if key not found
+     */
+    public boolean getBoolean(String key) {
+        return preferences.getBoolean(key, false);
+    }
+
+    /**
+     * Get parsed ArrayList of Boolean from SharedPreferences at 'key'
+     * @param key SharedPreferences key
+     * @return ArrayList of Boolean
+     */
+    public ArrayList<Boolean> getListBoolean(String key) {
+        ArrayList<String> myList = getListString(key);
+        ArrayList<Boolean> newList = new ArrayList<Boolean>();
+
+        for (String item : myList) {
+            if (item.equals("true")) {
+                newList.add(true);
+            } else {
+                newList.add(false);
+            }
+        }
+
+        return newList;
+    }
+
+    public <T> ArrayList<T> getListObject(String key, Class<T> clazz) {
+        Gson gson = new Gson();
+
+        ArrayList<String> objStrings = getListString(key);
+        ArrayList<T> objects = new ArrayList<>();
+
+        for (String jObjString : objStrings) {
+            T value = gson.fromJson(jObjString, clazz);
+            objects.add(value);
+        }
+
+        return objects;
+    }
+
+    public <T> T getObject(String key, Class<T> classOfT){
+
+        String json = getString(key);
+        Object value = new Gson().fromJson(json, classOfT);
+        if (value == null)
+            throw new NullPointerException();
+        return (T)value;
+    }
+
+
+    // Put methods
+
+    /**
+     * Put int value into SharedPreferences with 'key' and save
+     * @param key SharedPreferences key
+     * @param value int value to be added
+     */
+    public void putInt(String key, int value) {
+        checkForNullKey(key);
+        preferences.edit().putInt(key, value).apply();
+    }
+
+    /**
+     * Put ArrayList of Integer into SharedPreferences with 'key' and save
+     * @param key SharedPreferences key
+     * @param intList ArrayList of Integer to be added
+     */
+    public void putListInt(String key, ArrayList<Integer> intList) {
+        checkForNullKey(key);
+        Integer[] myIntList = intList.toArray(new Integer[intList.size()]);
+        preferences.edit().putString(key, TextUtils.join("‚‗‚", myIntList)).apply();
+    }
+
+    /**
+     * Put long value into SharedPreferences with 'key' and save
+     * @param key SharedPreferences key
+     * @param value long value to be added
+     */
+    public void putLong(String key, long value) {
+        checkForNullKey(key);
+        preferences.edit().putLong(key, value).apply();
+    }
+
+    /**
+     * Put ArrayList of Long into SharedPreferences with 'key' and save
+     * @param key SharedPreferences key
+     * @param longList ArrayList of Long to be added
+     */
+    public void putListLong(String key, ArrayList<Long> longList) {
+        checkForNullKey(key);
+        Long[] myLongList = longList.toArray(new Long[longList.size()]);
+        preferences.edit().putString(key, TextUtils.join("‚‗‚", myLongList)).apply();
+    }
+
+    /**
+     * Put float value into SharedPreferences with 'key' and save
+     * @param key SharedPreferences key
+     * @param value float value to be added
+     */
+    public void putFloat(String key, float value) {
+        checkForNullKey(key);
+        preferences.edit().putFloat(key, value).apply();
+    }
+
+    /**
+     * Put double value into SharedPreferences with 'key' and save
+     * @param key SharedPreferences key
+     * @param value double value to be added
+     */
+    public void putDouble(String key, double value) {
+        checkForNullKey(key);
+        putString(key, String.valueOf(value));
+    }
+
+    /**
+     * Put ArrayList of Double into SharedPreferences with 'key' and save
+     * @param key SharedPreferences key
+     * @param doubleList ArrayList of Double to be added
+     */
+    public void putListDouble(String key, ArrayList<Double> doubleList) {
+        checkForNullKey(key);
+        Double[] myDoubleList = doubleList.toArray(new Double[doubleList.size()]);
+        preferences.edit().putString(key, TextUtils.join("‚‗‚", myDoubleList)).apply();
+    }
+
+    /**
+     * Put String value into SharedPreferences with 'key' and save
+     * @param key SharedPreferences key
+     * @param value String value to be added
+     */
+    public void putString(String key, String value) {
+        checkForNullKey(key); checkForNullValue(value);
+        preferences.edit().putString(key, value).apply();
+    }
+
+    /**
+     * Put ArrayList of String into SharedPreferences with 'key' and save
+     * @param key SharedPreferences key
+     * @param stringList ArrayList of String to be added
+     */
+    public void putListString(String key, ArrayList<String> stringList) {
+        checkForNullKey(key);
+        String[] myStringList = stringList.toArray(new String[stringList.size()]);
+        preferences.edit().putString(key, TextUtils.join("‚‗‚", myStringList)).apply();
+    }
+
+    /**
+     * Put boolean value into SharedPreferences with 'key' and save
+     * @param key SharedPreferences key
+     * @param value boolean value to be added
+     */
+    public void putBoolean(String key, boolean value) {
+        checkForNullKey(key);
+        preferences.edit().putBoolean(key, value).apply();
+    }
+
+    /**
+     * Put ArrayList of Boolean into SharedPreferences with 'key' and save
+     * @param key SharedPreferences key
+     * @param boolList ArrayList of Boolean to be added
+     */
+    public void putListBoolean(String key, ArrayList<Boolean> boolList) {
+        checkForNullKey(key);
+        ArrayList<String> newList = new ArrayList<String>();
+
+        for (Boolean item : boolList) {
+            if (item) {
+                newList.add("true");
+            } else {
+                newList.add("false");
+            }
+        }
+
+        putListString(key, newList);
+    }
+
+//    /**
+//     * Put ObJect any type into SharedPrefrences with 'key' and save
+//     * @param key SharedPreferences key
+//     * @param obj is the Object you want to put
+//     */
+//    public void putObject(String key, Object obj){
+//      checkForNullKey(key);
+//      Gson gson = new Gson();
+//      putString(key, gson.toJson(obj));
+//    }
+
+    public <T> void putListObject(String key, List<T> objArray) {
+        checkForNullKey(key);
+        Gson gson = new Gson();
+        ArrayList<String> objStrings = new ArrayList<>();
+
+        for (T obj : objArray) {
+            objStrings.add(gson.toJson(obj));
+        }
+
+        putListString(key, objStrings);
+    }
+
+    /**
+     * Remove SharedPreferences item with 'key'
+     * @param key SharedPreferences key
+     */
+    public void remove(String key) {
+        preferences.edit().remove(key).apply();
+    }
+
+    /**
+     * Delete image file at 'path'
+     * @param path path of image file
+     * @return true if it successfully deleted, false otherwise
+     */
+    public boolean deleteImage(String path) {
+        return new File(path).delete();
+    }
+
+
+    /**
+     * Clear SharedPreferences (remove everything)
+     */
+    public void clear() {
+        preferences.edit().clear().apply();
+    }
+
+    /**
+     * Retrieve all values from SharedPreferences. Do not modify collection return by method
+     * @return a Map representing a list of key/value pairs from SharedPreferences
+     */
+    public Map<String, ?> getAll() {
+        return preferences.getAll();
+    }
+
+
+    /**
+     * Register SharedPreferences change listener
+     * @param listener listener object of OnSharedPreferenceChangeListener
+     */
+    public void registerOnSharedPreferenceChangeListener(
+            SharedPreferences.OnSharedPreferenceChangeListener listener) {
+
+        preferences.registerOnSharedPreferenceChangeListener(listener);
+    }
+
+    /**
+     * Unregister SharedPreferences change listener
+     * @param listener listener object of OnSharedPreferenceChangeListener to be unregistered
+     */
+    public void unregisterOnSharedPreferenceChangeListener(
+            SharedPreferences.OnSharedPreferenceChangeListener listener) {
+
+        preferences.unregisterOnSharedPreferenceChangeListener(listener);
+    }
+
+
+    /**
+     * Check if external storage is writable or not
+     * @return true if writable, false otherwise
+     */
+    public static boolean isExternalStorageWritable() {
+        return Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState());
+    }
+
+    /**
+     * Check if external storage is readable or not
+     * @return true if readable, false otherwise
+     */
+    public static boolean isExternalStorageReadable() {
+        String state = Environment.getExternalStorageState();
+
+        return Environment.MEDIA_MOUNTED.equals(state) ||
+                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state);
+    }
+
+    /**
+     * Checks if an object exists in Memory
+     * @param key the pref key to check
+     */
+    public boolean objectExists(String key){
+        String gottenString = getString(key);
+        if(gottenString.isEmpty()){
+            return false;
+        }else {
+            return true;
+        }
+
+    }
+
+    /**
+     * null keys would corrupt the shared pref file and make them unreadable this is a preventive measure
+     * @param key the pref key to check
+     */
+    private void checkForNullKey(String key){
+        if (key == null){
+            throw new NullPointerException();
+        }
+    }
+    /**
+     * null keys would corrupt the shared pref file and make them unreadable this is a preventive measure
+     * @param value the pref value to check
+     */
+    private void checkForNullValue(String value){
+        if (value == null){
+            throw new NullPointerException();
+        }
+    }
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="ManagementCart.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/foodsapp/ManagementCart.kt
+class ManagementCart(
+    private var context: Context,
+) {
+    private var tinyDb: TinyDB = TinyDB(context)
+
+    fun totalMoney(): Double {
+
+        var list = getFoodList()
+
+        var bb= BigDecimal(0)
+
+        for (f in list) {
+            bb = bb.add((f.numberInCart * f.fee).toBigDecimal().setScale(2, RoundingMode.DOWN))
+        }
+
+        Log.d("totalMoney: ", "size: ${list.size}, $bb")
+
+        return bb.toDouble()
+    }
+
+    fun addFood(food: FoodModel) {
+        var list = getFoodList()
+        var existsFood: FoodModel? = null
+
+        for (f in list) {
+            if (f.title == food.title) {
+                f.numberInCart += food.numberInCart
+                existsFood = f
+                break
+            }
+        }
+
+        if (existsFood == null) {
+            list.add(food)
+        }
+
+        tinyDb.putListObject("foodList", list.toList())
+
+        var msg = "Added to cart: " + food.title + ", cound=" + food.numberInCart
+
+        if (existsFood != null) {
+            msg = "Added to cart: " + existsFood.title + ", cound=" + existsFood.numberInCart
+        }
+
+        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+    }
+
+    fun getFoodList(): MutableList<FoodModel> {
+        return this.tinyDb.getListObject("foodList", FoodModel::class.java)
+    }
+
+    fun updateFoodCount(foodName: String, count: Int) {
+        var list = getFoodList()
+
+        for (f in list) {
+            if (f.title == foodName) {
+                if (count < 0) {
+                    f.numberInCart = 0
+                } else {
+                    f.numberInCart = count
+                }
+                break
+            }
+        }
+
+        tinyDb.putListObject("foodList", list.toList())
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>CartActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="activity_cart.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_cart.xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".CartActivity">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" >
+
+            <TextView
+                android:id="@+id/textView10"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:textStyle="bold"
+                android:textSize="20sp"
+                android:textColor="#ff3d00"
+                android:textAlignment="center"
+                android:text="My Cart" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="4dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Items Total: "
+                    android:textColor="#373b54"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/totalFeeTxt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="$0"
+                    android:textColor="#373b54"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="4dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Delivery Service:"
+                    android:textColor="#373b54"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/deliveryTxt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="$0"
+                    android:textColor="#373b54"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="4dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Tax:"
+                    android:textColor="#373b54"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/taxTxt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="$0"
+                    android:textColor="#373b54"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="4dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Total:"
+                    android:textColor="#373b54"
+                    android:textSize="30sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/totalTxt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="$0"
+                    android:textColor="#373b54"
+                    android:textSize="30sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/checkOutBtn"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_margin="16dp"
+                android:background="@drawable/orange_background"
+                android:gravity="center"
+                android:text="CheckOut"
+                android:textColor="#ffffff"
+                android:textSize="22sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
+        </LinearLayout>
+    </ScrollView>
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:id="@+id/coordinatorLayout"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <com.google.android.material.bottomappbar.BottomAppBar
+            android:id="@+id/appBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:backgroundTint="#f6f6f6"
+            android:paddingEnd="18dp"
+            app:fabCradleMargin="8dp"
+            app:fabCradleRoundedCornerRadius="50dp"
+            app:fabCradleVerticalOffset="6dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:id="@+id/btnHome"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.2"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:srcCompat="@drawable/bottom_btn1" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Home"
+                        android:textAlignment="center"
+                        android:textColor="#676767"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btnProfile"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.2"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:srcCompat="@drawable/bottom_btn2" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Profile"
+                        android:textAlignment="center"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.2"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:visibility="invisible">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:srcCompat="@drawable/bottom_btn1" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Home"
+                        android:textAlignment="center"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btnSupport"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.2"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:srcCompat="@drawable/bottom_btn3" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Support"
+                        android:textAlignment="center"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btnSettings"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.2"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:srcCompat="@drawable/bottom_btn4" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Settings"
+                        android:textAlignment="center"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+        </com.google.android.material.bottomappbar.BottomAppBar>
+
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#ff5e00"
+            android:elevation="0dp"
+            android:src="@drawable/shopping_cart"
+            app:backgroundTint="#ff5e00"
+            app:elevation="0dp"
+            app:layout_anchor="@id/appBar"
+            app:maxImageSize="30dp"
+            android:tint="#ffffff"/>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="CartActivity.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+#  app/src/main/java/com/android_labs/foodsapp/CartActivity.kt
+class CartActivity : AppCompatActivity(), CartListAdapter.Callbacks {
+
+    private lateinit var cartListView: RecyclerView
+
+    private lateinit var managementCart: ManagementCart
+
+    private lateinit var totalFeeTxt: TextView
+    private lateinit var deliveryTxt: TextView
+    private lateinit var taxTxt: TextView
+    private lateinit var totalTxt: TextView
+    private lateinit var emptyTxt: TextView
+    private lateinit var scrollView4: ScrollView
+    private lateinit var btnHome: LinearLayout
+
+    override fun onCountChanged(foodName: String, currentCount: Int) {
+        Log.d("onCountChanged", "foodName=$foodName, currentCount=$currentCount")
+
+        managementCart.updateFoodCount(foodName, currentCount)
+
+        var list = managementCart.getFoodList();
+
+        this.cartListView.adapter = CartListAdapter(list, this@CartActivity)
+
+        this.totalTxt.text = managementCart.totalMoney().toString()
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_cart)
+
+        managementCart = ManagementCart(this)
+
+        var list = managementCart.getFoodList();
+
+        this.btnHome = findViewById(R.id.btnHome)
+        this.cartListView = findViewById(R.id.cartListView)
+        this.cartListView.layoutManager = LinearLayoutManager(this@CartActivity, LinearLayoutManager.VERTICAL, false)
+        this.cartListView.adapter = CartListAdapter(list, this@CartActivity)
+
+        this.totalFeeTxt = findViewById(R.id.totalFeeTxt)
+        this.deliveryTxt = findViewById(R.id.deliveryTxt)
+        this.taxTxt = findViewById(R.id.taxTxt)
+        this.totalTxt = findViewById(R.id.totalTxt)
+        this.emptyTxt = findViewById(R.id.emptyTxt)
+        this.scrollView4 = findViewById(R.id.scrollView4)
+
+        this.totalTxt.text = managementCart.totalMoney().toString()
+
+        if (list.isEmpty()) {
+            this.emptyTxt.apply {
+                visibility = View.VISIBLE
+            }
+            this.scrollView4.apply {
+                visibility = View.INVISIBLE
+            }
+        }
+
+        this.btnHome.setOnClickListener {
+            startActivity(Intent(this, MainActivity::class.java))
+        }
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="viewholder_cart_item.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/viewholder_cart_item.xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="16dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginTop="10dp"
+    android:layout_marginBottom="10dp"
+    android:background="@drawable/cart_background"
+    android:elevation="3dp">
+
+    <ImageView
+        android:id="@+id/foodPic"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/pop_1" />
+
+    <TextView
+        android:id="@+id/foodName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="12dp"
+        android:text="TextView"
+        android:textColor="#373b54"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toEndOf="@+id/foodPic"
+        app:layout_constraintTop_toTopOf="@+id/foodPic" />
+
+    <ImageView
+        android:id="@+id/minuxCountBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginBottom="12dp"
+        app:layout_constraintBottom_toBottomOf="@+id/foodPic"
+        app:layout_constraintStart_toEndOf="@+id/foodPic"
+        app:srcCompat="@drawable/minus" />
+
+    <TextView
+        android:id="@+id/currCount"
+        android:layout_width="40dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:text="1"
+        android:textAlignment="center"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#373b54"
+        app:layout_constraintBottom_toBottomOf="@+id/minuxCountBtn"
+        app:layout_constraintStart_toEndOf="@+id/minuxCountBtn"
+        app:layout_constraintTop_toTopOf="@+id/minuxCountBtn"
+        app:layout_constraintVertical_bias="0.79" />
+
+    <ImageView
+        android:id="@+id/plusCountBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        app:layout_constraintBottom_toBottomOf="@+id/minuxCountBtn"
+        app:layout_constraintStart_toEndOf="@+id/currCount"
+        app:srcCompat="@drawable/plus" />
+
+    <TextView
+        android:id="@+id/foodPrice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#373b54"
+        android:text="$0"
+        app:layout_constraintBottom_toBottomOf="@+id/foodName"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/foodName" />
+
+    <TextView
+        android:id="@+id/totalMoney"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:textColor="#373b54"
+        android:textStyle="bold"
+        android:text="0"
+        app:layout_constraintBottom_toBottomOf="@+id/plusCountBtn"
+        app:layout_constraintEnd_toEndOf="@+id/foodPrice"
+        app:layout_constraintTop_toTopOf="@+id/plusCountBtn" />
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="CartListAdapter.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+#  app/src/main/java/com/android_labs/foodsapp/CartListAdapter.kt
+class CartListAdapter(private var list: List<FoodModel>, var callbacks: CartListAdapter.Callbacks?): RecyclerView.Adapter<CartListAdapter.ViewHolder>() {
+
+    interface Callbacks {
+        fun onCountChanged(foodName: String, currentCount: Int)
+    }
+
+    inner class ViewHolder(private var view: View): RecyclerView.ViewHolder(view) {
+        private var foodName = view.findViewById<TextView>(R.id.foodName)
+        private var foodPic = view.findViewById<ImageView>(R.id.foodPic)
+
+        private var foodPrice = view.findViewById<TextView>(R.id.foodPrice)
+        private var totalMoney = view.findViewById<TextView>(R.id.totalMoney)
+
+        private var minuxCountBtn = view.findViewById<ImageView>(R.id.minuxCountBtn)
+        private var plusCountBtn = view.findViewById<ImageView>(R.id.plusCountBtn)
+
+        private var currCount = view.findViewById<TextView>(R.id.currCount)
+
+        private lateinit var currFood: FoodModel
+
+        init {
+            this.minuxCountBtn.setOnClickListener {
+                callbacks?.onCountChanged(currFood.title, currFood.numberInCart - 1)
+            }
+
+            this.plusCountBtn.setOnClickListener {
+                callbacks?.onCountChanged(currFood.title, currFood.numberInCart + 1)
+            }
+        }
+
+        fun bind(food: FoodModel) {
+            currFood = food
+
+            this.foodName.text = food.title
+            this.foodPrice.text = "$" + food.fee.toString()
+            this.currCount.text = food.numberInCart.toString()
+            this.totalMoney.text = "$" + (food.numberInCart * food.fee)
+
+            setImg(view, food.pic, this.foodPic)
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        return ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewholder_cart_item, parent, false))
+    }
+
+    override fun getItemCount(): Int {
+        return list.size
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(this.list[position])
+    }
+
+    private fun getResourceId(view: View, name: String): Int {
+        return view.resources.getIdentifier(name, "drawable", view.context.packageName)
+    }
+
+    private fun setImg(view: View, name: String, img: ImageView) {
+        Glide.with(view.context).load(getResourceId(view, name)).into(img)
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+</c:component>

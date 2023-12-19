@@ -1,0 +1,630 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+    
+      
+https://icon-sets.iconify.design/ic/info/ (Android 图标库) <br />
+https://inloop.github.io/svg2android (在线转换将 svg 转换成 Android Drawable)
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Makefile" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+### 当前 Makefile 文件物理路径
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+
+build:
+  ./gradlew build -x test
+
+tasks:
+  ./gradlew tasks
+
+install:
+  ./gradlew installDebug
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="settings.gradle.kts" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# ./settings.gradle.kts
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
++        maven { url=uri("https://jitpack.io") }
+    }
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="build.gradle.kts" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# ./app/build.gradle.kts
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
++    id("kotlin-kapt")
+}
+
+android {
+
+    ....
+
++   buildFeatures {
++       viewBinding = true
++   }
+}
+
+dependencies {
+
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.11.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+
++    implementation("com.github.ismaeldivita:chip-navigation-bar:1.4.0")
++    implementation("com.github.bumptech.glide:glide:4.16.0")
++
++    implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
++    implementation("androidx.recyclerview:recyclerview:1.3.2")
++    implementation("androidx.room:room-runtime:2.6.1")
++
++    kapt("androidx.room:room-compiler:2.6.1")
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>准备图标资源</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;padding: 0;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+## 新增图标资源
+# https://icon-sets.iconify.design/ic/info/ (Android 图标库)
+# https://inloop.github.io/svg2android (在线转换将 svg 转换成 Android Drawable)
+
+## 1. menu
+# app/src/main/res/drawable/baseline_menu_24.xml
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:fillColor="@color/black"
+        android:pathData="M3 18h18v-2H3zm0-5h18v-2H3zm0-7v2h18V6z" />
+</vector>
+
+## 2. cart
+# app/src/main/res/drawable/baseline_cart_24.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:fillColor="@color/black"
+        android:fillType="evenOdd"
+        android:pathData="M9.944 3.25h4.112c1.838 0 3.294 0 4.433 0.153 c1.172 0.158 2.121 0.49 2.87 1.238c0.748 0.749 1.08 1.698 1.238 2.87c0.09 0.673 0.127 1.456 0.142 2.363a0.755 0.755 0 0 1 0.004 0.23 c0.007 0.566 0.007 1.178 0.007 1.84v0.112c0 1.838 0 3.294-0.153 4.433c-0.158 1.172-0.49 2.121-1.238 2.87c-0.749 0.748 -1.698 1.08-2.87 1.238c-1.14 0.153 -2.595 0.153 -4.433 0.153 H9.944c-1.838 0-3.294 0-4.433-0.153c-1.172-0.158-2.121-0.49-2.87-1.238c-0.748-0.749-1.08-1.698-1.238-2.87c-0.153-1.14-0.153-2.595-0.153-4.433v-0.112c0-0.662 0-1.274 0.007 -1.84a0.757 0.757 0 0 1 0.003-0.23c0.016-0.907 0.053 -1.69 0.143 -2.363c0.158-1.172 0.49 -2.121 1.238-2.87c0.749-0.748 1.698-1.08 2.87-1.238c1.14-0.153 2.595-0.153 4.433-0.153m-7.192 7.5c-0.002 0.388 -0.002 0.804 -0.002 1.25c0 1.907 0.002 3.262 0.14 4.29c0.135 1.005 0.389 1.585 0.812 2.008c0.423 0.423 1.003 0.677 2.009 0.812 c1.028 0.138 2.382 0.14 4.289 0.14 h4c1.907 0 3.262-0.002 4.29-0.14c1.005-0.135 1.585-0.389 2.008-0.812c0.423-0.423 0.677 -1.003 0.812 -2.009c0.138-1.028 0.14 -2.382 0.14 -4.289c0-0.446 0-0.862-0.002-1.25zm18.472-1.5H2.776c0.02-0.587 0.054 -1.094 0.114 -1.54c0.135-1.005 0.389 -1.585 0.812 -2.008c0.423-0.423 1.003-0.677 2.009-0.812c1.028-0.138 2.382-0.14 4.289-0.14h4c1.907 0 3.262 0.002 4.29 0.14 c1.005 0.135 1.585 0.389 2.008 0.812 c0.423 0.423 0.677 1.003 0.812 2.009c0.06 0.445 0.094 0.952 0.114 1.539m-5.269 3h0.09c0.433 0 0.83 0 1.152 0.043 c0.356 0.048 0.731 0.16 1.04 0.47 c0.31 0.309 0.422 0.684 0.47 1.04c0.043 0.323 0.043 0.72 0.043 1.152v0.09c0 0.433 0 0.83-0.043 1.152c-0.048 0.356 -0.16 0.731 -0.47 1.04c-0.309 0.31 -0.684 0.422 -1.04 0.47 c-0.323 0.043 -0.72 0.043 -1.152 0.043 h-0.09c-0.433 0-0.83 0-1.152-0.043c-0.356-0.048-0.731-0.16-1.04-0.47c-0.31-0.309-0.422-0.684-0.47-1.04c-0.043-0.323-0.043-0.72-0.043-1.152v-0.09c0-0.433 0-0.83 0.043 -1.152c0.048-0.356 0.16 -0.731 0.47 -1.04c0.309-0.31 0.684 -0.422 1.04-0.47c0.323-0.043 0.72 -0.043 1.152-0.043m-1.13 1.572l-0.002 0.001 l-0.001 0.003 a0.702 0.702 0 0 0-0.042 0.177 c-0.028 0.21 -0.03 0.504 -0.03 0.997 s0.002 0.787 0.03 0.997 a0.702 0.702 0 0 0 0.042 0.177 l0.001 0.003 l0.003 0.001 a0.702 0.702 0 0 0 0.177 0.042 c0.21 0.028 0.504 0.03 0.997 0.03 s0.787-0.002 0.997 -0.03a0.702 0.702 0 0 0 0.177-0.042l0.003-0.001l0.001-0.003a0.702 0.702 0 0 0 0.042-0.177c0.028-0.21 0.03 -0.504 0.03 -0.997s-0.002-0.787-0.03-0.997a0.702 0.702 0 0 0-0.042-0.177l-0.001-0.003l-0.003-0.001a0.702 0.702 0 0 0-0.177-0.042c-0.21-0.028-0.504-0.03-0.997-0.03s-0.787 0.002 -0.997 0.03 a0.702 0.702 0 0 0-0.177 0.042 M5.25 13.5a0.75 0.75 0 0 1 0.75-0.75h2a0.75 0.75 0 0 1 0 1.5H6a0.75 0.75 0 0 1-0.75-0.75m0 3a0.75 0.75 0 0 1 0.75-0.75h4a0.75 0.75 0 0 1 0 1.5H6a0.75 0.75 0 0 1-0.75-0.75" />
+</vector>
+
+## 3. favourite
+# app/src/main/res/drawable/baseline_favourite_24.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:fillColor="@color/black"
+        android:fillType="evenOdd"
+        android:pathData="M17.5 11c-2.121 0-3.182 0-3.841-0.659C13 9.682 13 8.621 13 6.5c0-2.121 0-3.182 0.659 -3.841C14.318 2 15.379 2 17.5 2c2.121 0 3.182 0 3.841 0.659 C22 3.318 22 4.379 22 6.5c0 2.121 0 3.182-0.659 3.841c-0.659 0.659 -1.72 0.659 -3.841 0.659 m-1.455-2.784c-0.765-0.67-1.545-1.564-1.545-2.418c0-1.773 1.65-2.435 3-1.065c1.35-1.37 3-0.708 3 1.065c0 0.854-0.78 1.747-1.545 2.418c-0.596 0.523 -0.894 0.784 -1.455 0.784 c-0.56 0-0.859-0.261-1.455-0.784" />
+    <path
+        android:fillColor="@color/black"
+        android:pathData="M21.904 16.441c0.083-1.024 0.094 -2.274 0.096 -3.743a0.697 0.697 0 1 0-1.396 0c-0.001 1.477-0.012 2.658-0.091 3.63c-0.084 1.032-0.242 1.763-0.507 2.32l-2.633-2.37a2.79 2.79 0 0 0-3.471-0.21l-0.277 0.196 a1.86 1.86 0 0 1-2.386-0.207l-3.99-3.99a2.14 2.14 0 0 0-2.922-0.097l-0.931 0.814 V12c0-2.212 0-3.801 0.163 -5.01c0.16-1.19 0.464 -1.907 0.994 -2.437c0.53-0.53 1.247-0.834 2.436-0.994c1.079-0.145 2.458-0.161 4.313-0.163a0.699 0.699 0 0 0 0-1.396c-1.829 0.002 -3.33 0.02 -4.499 0.177 c-1.343 0.18 -2.404 0.557 -3.236 1.39c-0.833 0.832 -1.21 1.893-1.39 3.236C2 8.116 2 9.8 2 11.947V12c0 0.49 0 0.956 0.002 1.396c0.007 1.729 0.044 3.121 0.243 4.24c0.203 1.14 0.584 2.058 1.322 2.796c0.832 0.833 1.893 1.21 3.236 1.39C8.116 22 9.8 22 11.947 22h0.106c2.148 0 3.83 0 5.144-0.177c1.344-0.18 2.404-0.557 3.236-1.39a4.18 4.18 0 0 0 0.73-0.983c0.445-0.825 0.644 -1.82 0.74 -3.009" />
+</vector>
+
+## 4. orders
+# app/src/main/res/drawable/baseline_orders_24.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:fillColor="@color/black"
+        android:pathData="M12.003 21q-1.866 0-3.51-0.708q-1.643-0.709-2.859-1.924q-1.216-1.214-1.925-2.856Q3 13.87 3 12.003q0-1.866 0.708 -3.51q0.709-1.643 1.924-2.859q1.214-1.216 2.856-1.925Q10.13 3 11.997 3q1.866 0 3.51 0.708 q1.643 0.709 2.859 1.924q1.216 1.214 1.925 2.856Q21 10.13 21 11.997q0 1.866-0.708 3.51q-0.709 1.643-1.924 2.859q-1.214 1.216-2.856 1.925Q13.87 21 12.003 21M12 20q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m-3.385-4.615v-2.21l5.333-5.308q0.148-0.129 0.306 -0.19q0.157-0.062 0.315 -0.062q0.171 0 0.337 0.065 q0.166 0.064 0.302 0.193 l0.925 0.944 q0.123 0.148 0.187 0.308 t0.065 0.32 q0 0.159-0.062 0.321 q-0.061 0.163 -0.19 0.31 l-5.308 5.309zm6.885-5.94l-0.925-0.945zm-6 5.055h0.95l3.467-3.473l-0.45-0.495l-0.475-0.469L9.5 13.55zm3.967-3.968l-0.475-0.469l0.925 0.964 z" />
+</vector>
+
+## 5. history
+# app/src/main/res/drawable/baseline_history_24.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:fillColor="@color/black"
+        android:fillType="evenOdd"
+        android:pathData="M11.25 2a0.75 0.75 0 0 1 0.75-0.75c5.937 0 10.75 4.813 10.75 10.75S17.937 22.75 12 22.75S1.25 17.937 1.25 12a0.75 0.75 0 0 1 1.5 0A9.25 9.25 0 1 0 12 2.75a0.75 0.75 0 0 1-0.75-0.75M12 8.25a0.75 0.75 0 0 1 0.75 0.75 v3.25H16a0.75 0.75 0 0 1 0 1.5h-4a0.75 0.75 0 0 1-0.75-0.75V9a0.75 0.75 0 0 1 0.75-0.75M9.1 2.398a0.75 0.75 0 0 1-0.43 0.97 a9.187 9.187 0 0 0-0.42 0.173 a0.75 0.75 0 1 1-0.608-1.37c0.16-0.072 0.323 -0.14 0.488 -0.203a0.75 0.75 0 0 1 0.97 0.43 M5.648 4.24a0.75 0.75 0 0 1-0.026 1.06a9.31 9.31 0 0 0-0.321 0.322 a0.75 0.75 0 1 1-1.087-1.035c0.122-0.127 0.246 -0.251 0.373 -0.373a0.75 0.75 0 0 1 1.06 0.026 M3.16 7.261a0.75 0.75 0 0 1 0.381 0.99 c-0.061 0.138 -0.12 0.278 -0.174 0.419 a0.75 0.75 0 0 1-1.399-0.54c0.063-0.165 0.13 -0.327 0.202 -0.488a0.75 0.75 0 0 1 0.99-0.381" />
+</vector>
+
+## 6. feedback
+# app/src/main/res/drawable/baseline_feedback_24.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="2048dp"
+    android:height="2048dp"
+    android:viewportWidth="2048"
+    android:viewportHeight="2048">
+
+    <path
+        android:fillColor="@color/black"
+        android:pathData="M958 1328q101 40 184 106t142 153t91 187t33 210v64h-128v-64q0-119-45-224t-124-183t-183-123t-224-46q-119 0-224 45t-183 124t-123 183t-46 224v64H0v-64q0-109 32-210t92-187t142-152t184-107q-45-31-81-72t-61-88t-38-100t-14-108q0-93 35-174t96-142t142-96t175-36q93 0 174 35t142 96t96 142t36 175q0 55-13 107t-39 100t-61 89t-81 72m-254-48q66 0 124-25t101-68t69-102t26-125q0-66-25-124t-69-101t-102-69t-124-26q-66 0-124 25t-102 69t-69 102t-25 124q0 66 25 124t68 102t102 69t125 25M2048 0v1024h-256l-384 384v-384h-128V896h256v203l203-203h181V128H640v230q-32 4-64 10t-64 18V0z" />
+</vector>
+
+## 7. terms
+# app/src/main/res/drawable/baseline_terms_24.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96.17dp"
+    android:height="122.88dp"
+    android:viewportWidth="96.17"
+    android:viewportHeight="122.88">
+
+    <path
+        android:fillColor="#000000"
+        android:pathData="M62.74,110.31,84.22,87.73H62.74v22.58ZM22.57,45.94V26H16V19.86H35.94V26H29.38v20Zm48.59 0.21 a13.82,13.82,0,0,1-4-0.53,6.52,6.52,0,0,1-3-1.93,9.48,9.48,0,0,1-1.93-4,29.06,29.06,0,0,1-0.66-6.85,26.2,26.2,0,0,1,0.7-6.67,9.71,9.71,0,0,1,2-4,6.71,6.71,0,0,1,3-2,13,13,0,0,1,3.86-0.54,27.32,27.32,0,0,1,3.84 0.23 ,23,23,0,0,1,2.84 0.54 ,12.74,12.74,0,0,1,1.88 0.63 v5.3c-0.44-0.09-1-0.19-1.72-0.28s-1.5-0.17-2.4-0.23-1.88-0.09-2.93-0.09a7.27,7.27,0,0,0-2,0.25,2.35,2.35,0,0,0-1.32,1,5.6,5.6,0,0,0-0.72,2.16,25.12,25.12,0,0,0-0.23,3.77,28.25,28.25,0,0,0,0.18,3.51,6.08,6.08,0,0,0,0.63,2.2,2.55,2.55,0,0,0,1.32,1.12,6.28,6.28,0,0,0,2.23 0.33 c1.77,0,3.22,0,4.33-0.09s2-0.13,2.65-0.22V45a12.35,12.35,0,0,1-2,0.59,24.09,24.09,0,0,1-2.76 0.39 c-1,0.09-2.3 0.14 -3.75 0.14 Zm-25.11 0.19 a10.57,10.57,0,0,1-4.72-1,7.29,7.29,0,0,1-3-2.6,6.46,6.46,0,0,1-1.06-3.6,5.58,5.58,0,0,1,0.55-2.54,6.92,6.92,0,0,1,1.53-2,17.25,17.25,0,0,1,2.3-1.82l5.79-3.59a3.23,3.23,0,0,0,1.18-1.14A2.32,2.32,0,0,0,48.89,27a1.57,1.57,0,0,0-0.44-1.08,1.81,1.81,0,0,0-1.4-0.46,2.25,2.25,0,0,0-1,0.21,1.6,1.6,0,0,0-0.65 0.61 ,1.7,1.7,0,0,0-0.24 0.92 ,3,3,0,0,0,0.43,1.5C47.89,32.94,57.14,42,60.76,45.94H53.88L43.51,35c-0.51-0.54-1.07-1.2-1.69-2a12.63,12.63,0,0,1-1.58-2.66,7.69,7.69,0,0,1-0.67-3.23,7,7,0,0,1,0.93-3.55A7.1,7.1,0,0,1,43.12,21a7.92,7.92,0,0,1,3.93-1,7.33,7.33,0,0,1,3.69 0.89 ,6.38,6.38,0,0,1,2.4,2.35A6.45,6.45,0,0,1,54,26.5a6.57,6.57,0,0,1-0.88,3.32,8.68,8.68,0,0,1-2.51,2.71c-1.51,1.06-5.32,3.42-6.34,4.71a2.15,2.15,0,0,0-0.44,1.42,2.2,2.2,0,0,0,0.34,1.24,2.12,2.12,0,0,0,1,0.78,3.57,3.57,0,0,0,1.45 0.27 ,5.63,5.63,0,0,0,2.54-0.62,7.73,7.73,0,0,0,2.34-1.73,8.54,8.54,0,0,0,2.35-6h5.43a19.27,19.27,0,0,1-0.46,4.27,12.73,12.73,0,0,1-1.48,3.77,9.58,9.58,0,0,1-2.69,2.88l-1,0.49-1,0.5a10.38,10.38,0,0,1-3.2,1.39,13.9,13.9,0,0,1-3.28 0.41 ZM18.93,90H38.16v5.53H18.93V90Zm0-14H46.22v5.53H18.93V76Zm0-14h58.3v5.53H18.93V61.94ZM96.17,84.85a3.58,3.58,0,0,1-2.61,3.45L61.93,121.56a3.55,3.55,0,0,1-2.76,1.32H6.43A6.42,6.42,0,0,1,0,116.45V6.43A6.42,6.42,0,0,1,6.43,0H89.74a6.44,6.44,0,0,1,6.43,6.43V84.85ZM89,80.55V7.18H7.18V115.73H55.56V84.16a3.61,3.61,0,0,1,3.61-3.61Z" />
+</vector>
+
+## 8. contact
+# app/src/main/res/drawable/baseline_contact_us_24.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96.17dp"
+    android:height="122.88dp"
+    android:viewportWidth="96.17"
+    android:viewportHeight="122.88">
+
+    <path
+        android:fillColor="#000000"
+        android:pathData="M62.74,110.31,84.22,87.73H62.74v22.58ZM22.57,45.94V26H16V19.86H35.94V26H29.38v20Zm48.59 0.21 a13.82,13.82,0,0,1-4-0.53,6.52,6.52,0,0,1-3-1.93,9.48,9.48,0,0,1-1.93-4,29.06,29.06,0,0,1-0.66-6.85,26.2,26.2,0,0,1,0.7-6.67,9.71,9.71,0,0,1,2-4,6.71,6.71,0,0,1,3-2,13,13,0,0,1,3.86-0.54,27.32,27.32,0,0,1,3.84 0.23 ,23,23,0,0,1,2.84 0.54 ,12.74,12.74,0,0,1,1.88 0.63 v5.3c-0.44-0.09-1-0.19-1.72-0.28s-1.5-0.17-2.4-0.23-1.88-0.09-2.93-0.09a7.27,7.27,0,0,0-2,0.25,2.35,2.35,0,0,0-1.32,1,5.6,5.6,0,0,0-0.72,2.16,25.12,25.12,0,0,0-0.23,3.77,28.25,28.25,0,0,0,0.18,3.51,6.08,6.08,0,0,0,0.63,2.2,2.55,2.55,0,0,0,1.32,1.12,6.28,6.28,0,0,0,2.23 0.33 c1.77,0,3.22,0,4.33-0.09s2-0.13,2.65-0.22V45a12.35,12.35,0,0,1-2,0.59,24.09,24.09,0,0,1-2.76 0.39 c-1,0.09-2.3 0.14 -3.75 0.14 Zm-25.11 0.19 a10.57,10.57,0,0,1-4.72-1,7.29,7.29,0,0,1-3-2.6,6.46,6.46,0,0,1-1.06-3.6,5.58,5.58,0,0,1,0.55-2.54,6.92,6.92,0,0,1,1.53-2,17.25,17.25,0,0,1,2.3-1.82l5.79-3.59a3.23,3.23,0,0,0,1.18-1.14A2.32,2.32,0,0,0,48.89,27a1.57,1.57,0,0,0-0.44-1.08,1.81,1.81,0,0,0-1.4-0.46,2.25,2.25,0,0,0-1,0.21,1.6,1.6,0,0,0-0.65 0.61 ,1.7,1.7,0,0,0-0.24 0.92 ,3,3,0,0,0,0.43,1.5C47.89,32.94,57.14,42,60.76,45.94H53.88L43.51,35c-0.51-0.54-1.07-1.2-1.69-2a12.63,12.63,0,0,1-1.58-2.66,7.69,7.69,0,0,1-0.67-3.23,7,7,0,0,1,0.93-3.55A7.1,7.1,0,0,1,43.12,21a7.92,7.92,0,0,1,3.93-1,7.33,7.33,0,0,1,3.69 0.89 ,6.38,6.38,0,0,1,2.4,2.35A6.45,6.45,0,0,1,54,26.5a6.57,6.57,0,0,1-0.88,3.32,8.68,8.68,0,0,1-2.51,2.71c-1.51,1.06-5.32,3.42-6.34,4.71a2.15,2.15,0,0,0-0.44,1.42,2.2,2.2,0,0,0,0.34,1.24,2.12,2.12,0,0,0,1,0.78,3.57,3.57,0,0,0,1.45 0.27 ,5.63,5.63,0,0,0,2.54-0.62,7.73,7.73,0,0,0,2.34-1.73,8.54,8.54,0,0,0,2.35-6h5.43a19.27,19.27,0,0,1-0.46,4.27,12.73,12.73,0,0,1-1.48,3.77,9.58,9.58,0,0,1-2.69,2.88l-1,0.49-1,0.5a10.38,10.38,0,0,1-3.2,1.39,13.9,13.9,0,0,1-3.28 0.41 ZM18.93,90H38.16v5.53H18.93V90Zm0-14H46.22v5.53H18.93V76Zm0-14h58.3v5.53H18.93V61.94ZM96.17,84.85a3.58,3.58,0,0,1-2.61,3.45L61.93,121.56a3.55,3.55,0,0,1-2.76,1.32H6.43A6.42,6.42,0,0,1,0,116.45V6.43A6.42,6.42,0,0,1,6.43,0H89.74a6.44,6.44,0,0,1,6.43,6.43V84.85ZM89,80.55V7.18H7.18V115.73H55.56V84.16a3.61,3.61,0,0,1,3.61-3.61Z" />
+</vector>
+
+## 8. share
+# app/src/main/res/drawable/baseline_share_24.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96.17dp"
+    android:height="122.88dp"
+    android:viewportWidth="96.17"
+    android:viewportHeight="122.88">
+
+    <path
+        android:fillColor="#000000"
+        android:pathData="M62.74,110.31,84.22,87.73H62.74v22.58ZM22.57,45.94V26H16V19.86H35.94V26H29.38v20Zm48.59 0.21 a13.82,13.82,0,0,1-4-0.53,6.52,6.52,0,0,1-3-1.93,9.48,9.48,0,0,1-1.93-4,29.06,29.06,0,0,1-0.66-6.85,26.2,26.2,0,0,1,0.7-6.67,9.71,9.71,0,0,1,2-4,6.71,6.71,0,0,1,3-2,13,13,0,0,1,3.86-0.54,27.32,27.32,0,0,1,3.84 0.23 ,23,23,0,0,1,2.84 0.54 ,12.74,12.74,0,0,1,1.88 0.63 v5.3c-0.44-0.09-1-0.19-1.72-0.28s-1.5-0.17-2.4-0.23-1.88-0.09-2.93-0.09a7.27,7.27,0,0,0-2,0.25,2.35,2.35,0,0,0-1.32,1,5.6,5.6,0,0,0-0.72,2.16,25.12,25.12,0,0,0-0.23,3.77,28.25,28.25,0,0,0,0.18,3.51,6.08,6.08,0,0,0,0.63,2.2,2.55,2.55,0,0,0,1.32,1.12,6.28,6.28,0,0,0,2.23 0.33 c1.77,0,3.22,0,4.33-0.09s2-0.13,2.65-0.22V45a12.35,12.35,0,0,1-2,0.59,24.09,24.09,0,0,1-2.76 0.39 c-1,0.09-2.3 0.14 -3.75 0.14 Zm-25.11 0.19 a10.57,10.57,0,0,1-4.72-1,7.29,7.29,0,0,1-3-2.6,6.46,6.46,0,0,1-1.06-3.6,5.58,5.58,0,0,1,0.55-2.54,6.92,6.92,0,0,1,1.53-2,17.25,17.25,0,0,1,2.3-1.82l5.79-3.59a3.23,3.23,0,0,0,1.18-1.14A2.32,2.32,0,0,0,48.89,27a1.57,1.57,0,0,0-0.44-1.08,1.81,1.81,0,0,0-1.4-0.46,2.25,2.25,0,0,0-1,0.21,1.6,1.6,0,0,0-0.65 0.61 ,1.7,1.7,0,0,0-0.24 0.92 ,3,3,0,0,0,0.43,1.5C47.89,32.94,57.14,42,60.76,45.94H53.88L43.51,35c-0.51-0.54-1.07-1.2-1.69-2a12.63,12.63,0,0,1-1.58-2.66,7.69,7.69,0,0,1-0.67-3.23,7,7,0,0,1,0.93-3.55A7.1,7.1,0,0,1,43.12,21a7.92,7.92,0,0,1,3.93-1,7.33,7.33,0,0,1,3.69 0.89 ,6.38,6.38,0,0,1,2.4,2.35A6.45,6.45,0,0,1,54,26.5a6.57,6.57,0,0,1-0.88,3.32,8.68,8.68,0,0,1-2.51,2.71c-1.51,1.06-5.32,3.42-6.34,4.71a2.15,2.15,0,0,0-0.44,1.42,2.2,2.2,0,0,0,0.34,1.24,2.12,2.12,0,0,0,1,0.78,3.57,3.57,0,0,0,1.45 0.27 ,5.63,5.63,0,0,0,2.54-0.62,7.73,7.73,0,0,0,2.34-1.73,8.54,8.54,0,0,0,2.35-6h5.43a19.27,19.27,0,0,1-0.46,4.27,12.73,12.73,0,0,1-1.48,3.77,9.58,9.58,0,0,1-2.69,2.88l-1,0.49-1,0.5a10.38,10.38,0,0,1-3.2,1.39,13.9,13.9,0,0,1-3.28 0.41 ZM18.93,90H38.16v5.53H18.93V90Zm0-14H46.22v5.53H18.93V76Zm0-14h58.3v5.53H18.93V61.94ZM96.17,84.85a3.58,3.58,0,0,1-2.61,3.45L61.93,121.56a3.55,3.55,0,0,1-2.76,1.32H6.43A6.42,6.42,0,0,1,0,116.45V6.43A6.42,6.42,0,0,1,6.43,0H89.74a6.44,6.44,0,0,1,6.43,6.43V84.85ZM89,80.55V7.18H7.18V115.73H55.56V84.16a3.61,3.61,0,0,1,3.61-3.61Z" />
+</vector>
+
+## 9. person
+# app/src/main/res/drawable/baseline_person_24.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96.17dp"
+    android:height="122.88dp"
+    android:viewportWidth="96.17"
+    android:viewportHeight="122.88">
+
+    <path
+        android:fillColor="#000000"
+        android:pathData="M62.74,110.31,84.22,87.73H62.74v22.58ZM22.57,45.94V26H16V19.86H35.94V26H29.38v20Zm48.59 0.21 a13.82,13.82,0,0,1-4-0.53,6.52,6.52,0,0,1-3-1.93,9.48,9.48,0,0,1-1.93-4,29.06,29.06,0,0,1-0.66-6.85,26.2,26.2,0,0,1,0.7-6.67,9.71,9.71,0,0,1,2-4,6.71,6.71,0,0,1,3-2,13,13,0,0,1,3.86-0.54,27.32,27.32,0,0,1,3.84 0.23 ,23,23,0,0,1,2.84 0.54 ,12.74,12.74,0,0,1,1.88 0.63 v5.3c-0.44-0.09-1-0.19-1.72-0.28s-1.5-0.17-2.4-0.23-1.88-0.09-2.93-0.09a7.27,7.27,0,0,0-2,0.25,2.35,2.35,0,0,0-1.32,1,5.6,5.6,0,0,0-0.72,2.16,25.12,25.12,0,0,0-0.23,3.77,28.25,28.25,0,0,0,0.18,3.51,6.08,6.08,0,0,0,0.63,2.2,2.55,2.55,0,0,0,1.32,1.12,6.28,6.28,0,0,0,2.23 0.33 c1.77,0,3.22,0,4.33-0.09s2-0.13,2.65-0.22V45a12.35,12.35,0,0,1-2,0.59,24.09,24.09,0,0,1-2.76 0.39 c-1,0.09-2.3 0.14 -3.75 0.14 Zm-25.11 0.19 a10.57,10.57,0,0,1-4.72-1,7.29,7.29,0,0,1-3-2.6,6.46,6.46,0,0,1-1.06-3.6,5.58,5.58,0,0,1,0.55-2.54,6.92,6.92,0,0,1,1.53-2,17.25,17.25,0,0,1,2.3-1.82l5.79-3.59a3.23,3.23,0,0,0,1.18-1.14A2.32,2.32,0,0,0,48.89,27a1.57,1.57,0,0,0-0.44-1.08,1.81,1.81,0,0,0-1.4-0.46,2.25,2.25,0,0,0-1,0.21,1.6,1.6,0,0,0-0.65 0.61 ,1.7,1.7,0,0,0-0.24 0.92 ,3,3,0,0,0,0.43,1.5C47.89,32.94,57.14,42,60.76,45.94H53.88L43.51,35c-0.51-0.54-1.07-1.2-1.69-2a12.63,12.63,0,0,1-1.58-2.66,7.69,7.69,0,0,1-0.67-3.23,7,7,0,0,1,0.93-3.55A7.1,7.1,0,0,1,43.12,21a7.92,7.92,0,0,1,3.93-1,7.33,7.33,0,0,1,3.69 0.89 ,6.38,6.38,0,0,1,2.4,2.35A6.45,6.45,0,0,1,54,26.5a6.57,6.57,0,0,1-0.88,3.32,8.68,8.68,0,0,1-2.51,2.71c-1.51,1.06-5.32,3.42-6.34,4.71a2.15,2.15,0,0,0-0.44,1.42,2.2,2.2,0,0,0,0.34,1.24,2.12,2.12,0,0,0,1,0.78,3.57,3.57,0,0,0,1.45 0.27 ,5.63,5.63,0,0,0,2.54-0.62,7.73,7.73,0,0,0,2.34-1.73,8.54,8.54,0,0,0,2.35-6h5.43a19.27,19.27,0,0,1-0.46,4.27,12.73,12.73,0,0,1-1.48,3.77,9.58,9.58,0,0,1-2.69,2.88l-1,0.49-1,0.5a10.38,10.38,0,0,1-3.2,1.39,13.9,13.9,0,0,1-3.28 0.41 ZM18.93,90H38.16v5.53H18.93V90Zm0-14H46.22v5.53H18.93V76Zm0-14h58.3v5.53H18.93V61.94ZM96.17,84.85a3.58,3.58,0,0,1-2.61,3.45L61.93,121.56a3.55,3.55,0,0,1-2.76,1.32H6.43A6.42,6.42,0,0,1,0,116.45V6.43A6.42,6.42,0,0,1,6.43,0H89.74a6.44,6.44,0,0,1,6.43,6.43V84.85ZM89,80.55V7.18H7.18V115.73H55.56V84.16a3.61,3.61,0,0,1,3.61-3.61Z" />
+</vector>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>新增菜单资源 menu</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<div>
+    <div style="float:left;width:50%;border: dashed 1px red;margin-right:2px;">
+        <img src="/images/android/menu1.png" width="100%" height="270px" style="margin-right:2px;" />
+    </div>
+    <div style="float:left;width:calc(50% - 2px);border: dashed 1px red;">
+        <img src="/images/android/menu2.png" width="100%" height="270px" />
+    </div>
+    <div class="clear"></div>
+</div>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/menu/drawer_items.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:id="@+id/group1">
+        <item
+            android:id="@+id/navMenu"
+            android:icon="@drawable/baseline_menu_24"
+            android:title="Menu" />
+        <item
+            android:id="@+id/navCart"
+            android:icon="@drawable/baseline_cart_24"
+            android:title="Cart" />
+        <item
+            android:id="@+id/navFavourite"
+            android:icon="@drawable/baseline_favourite_24"
+            android:title="Favourite" />
+    </group>
+
+    <group android:id="@+id/group2">
+        <item
+            android:id="@+id/navOrders"
+            android:icon="@drawable/baseline_orders_24"
+            android:title="Ongoing Orders" />
+        <item
+            android:id="@+id/navHistory"
+            android:icon="@drawable/baseline_history_24"
+            android:title="History" />
+        <item
+            android:id="@+id/navFeedback"
+            android:icon="@drawable/baseline_feedback_24"
+            android:title="Feedback" />
+    </group>
+
+    <group android:id="@+id/group3">
+        <item
+            android:id="@+id/navTerms"
+            android:icon="@drawable/baseline_terms_24"
+            android:title="Terms and Conditions" />
+        <item
+            android:id="@+id/navContact"
+            android:icon="@drawable/baseline_contact_us_24"
+            android:title="Contact us" />
+    </group>
+
+    <group android:id="@+id/group4">
+        <item
+            android:id="@+id/navShare"
+            android:icon="@drawable/baseline_share_24"
+            android:title="Share" />
+    </group>
+</menu>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>HeaderLayout</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="drawer_header.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/drawer_header.xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="180dp"
+    android:gravity="bottom"
+    android:padding="20dp"
+    android:background="#e9e7f2">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        app:cardCornerRadius="40dp"
+        app:cardElevation="0dp"
+        android:backgroundTint="@color/material_on_surface_stroke">
+
+        <ImageView
+            android:id="@+id/userimage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/baseline_person_24"/>
+    </androidx.cardview.widget.CardView>
+
+    <TextView
+        android:id="@+id/username"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="5dp"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        android:textSize="15sp"
+        android:text="User Name"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#323232"
+        android:textSize="15sp"
+        android:text="User Email"/>
+    
+</LinearLayout>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+  
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>activity_main_content.xml</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="themes.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_main_content.xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <Toolbar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#8c72ed">
+        <ImageButton
+            android:id="@+id/buttonDrawerToggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/baseline_menu_24"
+            android:background="@android:color/transparent"
+            android:padding="5dp"/>
+    </Toolbar>
+
+</LinearLayout>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>MainActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="activity_main.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_main.xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/drawerLayout"
+    android:fitsSystemWindows="true"
+    tools:openDrawer="start"
+    tools:context=".MainActivity">
+
+    <include layout="@layout/activity_main_content" />
+
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/navigationView"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        app:menu="@menu/drawer_items"
+        app:dividerInsetStart="20dp"
+        app:itemIconPadding="15dp"
+        app:headerLayout="@layout/drawer_header"
+        android:layout_gravity="start">
+
+    </com.google.android.material.navigation.NavigationView>
+
+</androidx.drawerlayout.widget.DrawerLayout>
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="MainActivity.kt" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/navigationdrawermenu/MainActivity.kt 
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var buttonDrawerToggle: ImageButton
+    private lateinit var navigationView: NavigationView
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        this.drawerLayout = findViewById(R.id.drawerLayout)
+        this.buttonDrawerToggle = findViewById(R.id.buttonDrawerToggle)
+        this.navigationView = findViewById(R.id.navigationView)
+
+        this.buttonDrawerToggle.setOnClickListener {
+            drawerLayout.open()
+        }
+
+        var headerView = navigationView.getHeaderView(0)
+        var useriamge = headerView.findViewById<ImageView>(R.id.userimage)
+        var username = headerView.findViewById<TextView>(R.id.username)
+
+        this.navigationView.setNavigationItemSelectedListener {
+            val itemId = it.itemId
+
+            if (itemId == R.id.navMenu) {
+                Toast.makeText(this@MainActivity, "Menu Clicked", Toast.LENGTH_SHORT).show()
+            }
+
+            if (itemId == R.id.navCart) {
+                Toast.makeText(this@MainActivity, "Cart Clicked", Toast.LENGTH_SHORT).show()
+            }
+
+            if (itemId == R.id.navFavourite) {
+                Toast.makeText(this@MainActivity, "Favourite Clicked", Toast.LENGTH_SHORT).show()
+            }
+
+            if (itemId == R.id.navOrders) {
+                Toast.makeText(this@MainActivity, "Orders Clicked", Toast.LENGTH_SHORT).show()
+            }
+
+            if (itemId == R.id.navHistory) {
+                Toast.makeText(this@MainActivity, "History Clicked", Toast.LENGTH_SHORT).show()
+            }
+
+            drawerLayout.close()
+
+            true
+        }
+    }
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>更新主题</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="themes.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/values/themes.xml
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+-    <style name="Base.Theme.NavigationDrawerMenu" parent="Theme.Material3.DayNight.NoActionBar">
++    <style name="Base.Theme.NavigationDrawerMenu" parent="Theme.MaterialComponents.DayNight.NoActionBar">
++        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+
+    <style name="Theme.NavigationDrawerMenu" parent="Base.Theme.NavigationDrawerMenu" />
+</resources>
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding:.5em 0em 0em 0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<img src="/images/android/NavigationDrawerMenu.png" width="100%" />
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+</c:component>

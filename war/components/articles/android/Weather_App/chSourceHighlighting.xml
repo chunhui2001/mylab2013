@@ -1,0 +1,1061 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+    
+      Resource File: <a href="/images/android/project141-main.zip">project141.zip</a><br />
+      
+https://icon-sets.iconify.design/ic/info/ (Android 图标库) <br />
+https://inloop.github.io/svg2android (在线转换将 svg 转换成 Android Drawable)
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Makefile" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+### 当前 Makefile 文件物理路径
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+
+build:
+  ./gradlew build -x test
+
+tasks:
+  ./gradlew tasks
+
+install:
+  ./gradlew installDebug
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="settings.gradle.kts" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# ./settings.gradle.kts
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
++        maven { url=uri("https://jitpack.io") }
+    }
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="build.gradle.kts" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# ./app/build.gradle.kts
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
++    id("kotlin-kapt")
+}
+
+android {
+
+    ....
+
++   buildFeatures {
++       viewBinding = true
++   }
+}
+
+dependencies {
+
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.11.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+
++    implementation("com.github.ismaeldivita:chip-navigation-bar:1.4.0")
++    implementation("com.github.bumptech.glide:glide:4.16.0")
++
++    implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
++    implementation("androidx.recyclerview:recyclerview:1.3.2")
++    implementation("androidx.room:room-runtime:2.6.1")
++
++    kapt("androidx.room:room-compiler:2.6.1")
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>准备背景资源</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/drawable/background.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <!-- 背景渐变颜色 -->
+            <!-- angle 倾斜角度 -->
+            <gradient android:startColor="#59469d" android:endColor="#643d67" android:angle="-45" />
+        </shape>
+    </item>
+</selector>
+
+# app/src/main/res/drawable/background2.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <!-- 背景色 -->
+            <solid android:color="#331866" />
+            <!-- 圆角 -->
+            <corners android:radius="20dp" />
+        </shape>
+    </item>
+</selector>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Domains</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[ ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/weatherapp/Hourly.kt
+data class Hourly(
+    val hour: String,
+    val temp: Int,
+    var picPath: String
+)
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Adapter</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[ ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="hourly_viewholder.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/hourly_viewholder.xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="90dp"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="3dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/background2"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/hourTxt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="8dp"
+            android:textColor="@color/white"
+            android:textAlignment="center"
+            android:textSize="14sp"
+            android:text="TextView" />
+
+        <ImageView
+            android:id="@+id/pic"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_weight="1"
+            app:srcCompat="@drawable/cloudy_sunny" />
+
+        <TextView
+            android:id="@+id/textView8"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="8dp"
+            android:textColor="@color/white"
+            android:textAlignment="center"
+            android:textSize="18sp"
+            android:text="20" />
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="HourlyAdapter.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/weatherapp/HourlyAdapter.kt
+class HourlyAdapter(val list: List<Hourly>): RecyclerView.Adapter<HourlyAdapter.ViewHolder>() {
+
+    inner class ViewHolder(private var view: View): RecyclerView.ViewHolder(view) {
+
+        val hourTxt = view.findViewById<TextView>(R.id.hourTxt)
+        val picImage = view.findViewById<ImageView>(R.id.pic)
+        val tmpTxt = view.findViewById<TextView>(R.id.tmpTxt)
+
+        fun bind(item: Hourly) {
+            this.hourTxt.text = item.hour
+            this.tmpTxt.text = item.temp.toString()
+
+            Glide.with(view.context).load(getResourceId(view, item.picPath)).into(picImage)
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        var inflate = LayoutInflater.from(parent.context).inflate(R.layout.hourly_viewholder, parent, false)
+        return ViewHolder(inflate)
+    }
+
+    override fun getItemCount(): Int {
+        return list.size
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(list[position])
+    }
+
+    fun getResourceId(view: View, name: String): Int {
+        return view.resources.getIdentifier(name, "drawable", view.context.packageName)
+    }
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>MainActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[ ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="activity_main.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_main.xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background"
+    tools:context=".MainActivity">
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" >
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/textView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="32dp"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:textSize="20sp"
+                    android:textAlignment="center"
+                    android:text="Mostly Cloudy" />
+
+                <ImageView
+                    android:id="@+id/imageView"
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="16dp"
+                    app:srcCompat="@drawable/cloudy_sunny" />
+
+                <TextView
+                    android:id="@+id/textView2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@color/white"
+                    android:textAlignment="center"
+                    android:textSize="18sp"
+                    android:text="Mon June 17 | 10:00 AM" />
+
+
+
+            </LinearLayout>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="15dp">
+
+                <TextView
+                    android:id="@+id/textView3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="25"
+                    android:textAlignment="center"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:textSize="62sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="2dp"
+                    android:text="o"
+                    android:textAlignment="center"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:textSize="35sp"
+                    app:layout_constraintBottom_toBottomOf="@+id/textView3"
+                    app:layout_constraintStart_toEndOf="@+id/textView3"
+                    app:layout_constraintTop_toTopOf="@+id/textView3"
+                    app:layout_constraintVertical_bias="0.0" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/textView4"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="H:27 L:18"
+                    android:textAlignment="center"
+                    android:textColor="@color/white"
+                    android:textSize="18sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                android:background="@drawable/background2"
+                android:orientation="horizontal"
+                android:padding="20dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.333"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="34dp"
+                        android:layout_height="34dp"
+                        android:layout_gravity="center"
+                        app:srcCompat="@drawable/rain" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:text="22%"
+                        android:textAlignment="center"
+                        android:textColor="@color/white"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Rain"
+                        android:textAlignment="center"
+                        android:textColor="@color/white"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.333"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="34dp"
+                        android:layout_height="34dp"
+                        android:layout_gravity="center"
+                        app:srcCompat="@drawable/wind" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:text="12 km/h"
+                        android:textAlignment="center"
+                        android:textColor="@color/white"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Wind speed"
+                        android:textAlignment="center"
+                        android:textColor="@color/white"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.333"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="34dp"
+                        android:layout_height="34dp"
+                        android:layout_gravity="center"
+                        app:srcCompat="@drawable/humidity" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:text="18%"
+                        android:textAlignment="center"
+                        android:textColor="@color/white"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Humidity"
+                        android:textAlignment="center"
+                        android:textColor="@color/white"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/textView6"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Today"
+                    android:textColor="#DCA900"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/textView7"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Next 7 days >"
+                    android:textColor="@color/white"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/listView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"/>
+
+        </LinearLayout>
+    </ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="MainActivity.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/weatherapp/MainActivity.kt
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var listView: RecyclerView
+    private lateinit var next7Day: TextView
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        this.next7Day = findViewById(R.id.next7Day)
+        this.listView = findViewById(R.id.listView)
+        this.listView.layoutManager = LinearLayoutManager(this@MainActivity, LinearLayoutManager.HORIZONTAL, false)
+        this.listView.adapter = HourlyAdapter(loadData())
+
+        this.next7Day.setOnClickListener {
+            startActivity(Intent(this@MainActivity, FutureActivity::class.java))
+        }
+    }
+
+    fun loadData(): List<Hourly> {
+        return mutableListOf(
+            Hourly("9 pm", 28, "cloudy"),
+            Hourly("11 pm", 29, "sunny"),
+            Hourly("12 pm", 30, "wind"),
+            Hourly("1 am", 29, "rainy"),
+            Hourly("2 am", 27, "storm"),
+        )
+    }
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>更新主题</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[ ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="activity_main.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_main.xml
+<resources xmlns:tools="http://schemas.android.com/tools">
+-    <style name="Base.Theme.WeatherApp" parent="Theme.Material3.DayNight.NoActionBar">
++    <style name="Base.Theme.WeatherApp" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimaryDark">#59469d</item>
+    </style>
+
+    <style name="Theme.WeatherApp" parent="Base.Theme.WeatherApp" />
+</resources>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<img src="/images/android/weather1.png" width="100%" style="margin-top:1em;" />
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>FutureActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[ ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="future_viewholder.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/future_viewholder.xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="8dp"
+    android:layout_marginEnd="8dp"
+    android:background="@drawable/background">
+
+    <TextView
+        android:id="@+id/dayTxt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="Day"
+        android:textColor="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/pic"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/dayTxt"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/sunny" />
+
+    <TextView
+        android:id="@+id/statusTxt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:text="status"
+        android:textColor="@color/white"
+        app:layout_constraintBottom_toBottomOf="@+id/pic"
+        app:layout_constraintStart_toEndOf="@+id/pic"
+        app:layout_constraintTop_toTopOf="@+id/pic" />
+
+    <TextView
+        android:id="@+id/lowTxt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:text="10"
+        android:textColor="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/higtTxt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="32dp"
+        android:text="20"
+        android:textColor="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/lowTxt"
+        app:layout_constraintTop_toTopOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="FutureAdapter.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/weatherapp/FutureAdapter.kt
+class FutureAdapter(var list: List<Future>): RecyclerView.Adapter<FutureAdapter.ViewHoldder>() {
+
+    inner class ViewHoldder(private var view: View): RecyclerView.ViewHolder(view) {
+
+        private var dayTxt = view.findViewById<TextView>(R.id.dayTxt)
+        private var pic = view.findViewById<ImageView>(R.id.pic)
+        private var statusTxt = view.findViewById<TextView>(R.id.statusTxt)
+        private var lowTxt = view.findViewById<TextView>(R.id.lowTxt)
+        private var higtTxt = view.findViewById<TextView>(R.id.higtTxt)
+
+        fun bind(item: Future) {
+            this.dayTxt.text = item.day
+            this.statusTxt.text = item.status
+            this.lowTxt.text = item.lowTemp.toString()
+            this.higtTxt.text = item.highTemp.toString()
+
+            Glide.with(view.context).load(getResourceId(view, item.picPath)).into(this.pic)
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHoldder {
+        var inflater = LayoutInflater.from(parent.context).inflate(R.layout.future_viewholder, parent, false)
+        return ViewHoldder(inflater)
+    }
+
+    override fun getItemCount(): Int {
+        return list.size
+    }
+
+    override fun onBindViewHolder(holder: ViewHoldder, position: Int) {
+        holder.bind(list[position])
+    }
+
+    fun getResourceId(view: View, name: String): Int {
+        return view.resources.getIdentifier(name, "drawable", view.context.packageName)
+    }
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="activity_future.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_future.xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background"
+    tools:context=".FutureActivity">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/backBtun"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_margin="16dp">
+
+                <ImageView
+                    android:id="@+id/imageView2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:srcCompat="@drawable/back" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/background2"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_margin="16dp"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/imageView3"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="0.5"
+                        app:srcCompat="@drawable/cloudy_sunny" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="26dp"
+                        android:layout_weight="0.5"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/textView5"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Tommorow"
+                            android:textColor="@color/white"
+                            android:textSize="18sp" />
+
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:layout_marginBottom="8dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="2dp"
+                                android:text="o"
+                                android:textColor="@color/white"
+                                android:textSize="26sp"
+                                android:textStyle="bold"
+                                app:layout_constraintBottom_toBottomOf="parent"
+                                app:layout_constraintStart_toEndOf="@+id/textView9"
+                                app:layout_constraintTop_toTopOf="parent"
+                                app:layout_constraintVertical_bias="0.0" />
+
+                            <TextView
+                                android:id="@+id/textView9"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="25"
+                                android:textColor="@color/white"
+                                android:textSize="46sp"
+                                android:textStyle="bold"
+                                app:layout_constraintBottom_toBottomOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
+
+                        </androidx.constraintlayout.widget.ConstraintLayout>
+
+                        <TextView
+                            android:id="@+id/textView8"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Mostly Cloudy"
+                            android:textColor="@color/white"
+                            android:textSize="18sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_margin="16dp"
+                    android:background="@drawable/background2"
+                    android:orientation="horizontal"
+                    android:padding="20dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_weight="0.333"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:layout_width="34dp"
+                            android:layout_height="34dp"
+                            android:layout_gravity="center"
+                            app:srcCompat="@drawable/rain" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:text="22%"
+                            android:textAlignment="center"
+                            android:textColor="@color/white"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Rain"
+                            android:textAlignment="center"
+                            android:textColor="@color/white"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_weight="0.333"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:layout_width="34dp"
+                            android:layout_height="34dp"
+                            android:layout_gravity="center"
+                            app:srcCompat="@drawable/wind" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:text="12 km/h"
+                            android:textAlignment="center"
+                            android:textColor="@color/white"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Wind speed"
+                            android:textAlignment="center"
+                            android:textColor="@color/white"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_weight="0.333"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:layout_width="34dp"
+                            android:layout_height="34dp"
+                            android:layout_gravity="center"
+                            app:srcCompat="@drawable/humidity" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:text="18%"
+                            android:textAlignment="center"
+                            android:textColor="@color/white"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Humidity"
+                            android:textAlignment="center"
+                            android:textColor="@color/white"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/viewList2"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:nestedScrollingEnabled="true"
+                android:layout_weight="1"
+                android:layout_marginTop="24dp"/>
+
+        </LinearLayout>
+    </ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="FutureActivity.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/weatherapp/FutureActivity.kt
+class FutureActivity : AppCompatActivity() {
+
+    private lateinit var futureList: RecyclerView
+    private lateinit var backBtn: ConstraintLayout
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_future)
+
+        this.backBtn = findViewById(R.id.backBtun)
+        this.futureList = findViewById(R.id.viewList2)
+
+        this.futureList.layoutManager = LinearLayoutManager(this@FutureActivity, LinearLayoutManager.VERTICAL, false)
+        this.futureList.adapter = FutureAdapter(loadData())
+
+        this.backBtn.setOnClickListener {
+            startActivity(Intent(this@FutureActivity, MainActivity::class.java))
+        }
+    }
+
+    private fun loadData(): List<Future> {
+        return mutableListOf(
+            Future("Sat", "storm", "Storm", 25, 10),
+            Future("Sun", "cloudy", "Cloudy", 24, 16),
+            Future("Mon", "windy", "Windy", 29, 15),
+            Future("Tue", "cloudy_sunny", "Cloudy_Sunny", 22, 13),
+            Future("Wen", "sunny", "Sunny", 28, 11),
+            Future("Thu", "rainy", "Rainy", 23, 12),
+        )
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<img src="/images/android/weather2.png" width="100%" style="margin-top:1em;" />
+  ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+</c:component>

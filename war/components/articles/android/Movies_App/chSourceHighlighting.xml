@@ -1,0 +1,1981 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+      Resource File: <a href="/images/android/project155-main.zip">project155-main.zip</a> <br />
+      
+https://icon-sets.iconify.design/ic/info/ (Android 图标库) <br />
+https://inloop.github.io/svg2android (在线转换将 svg 转换成 Android Drawable)
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Makefile" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+### 当前 Makefile 文件物理路径
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+
+build:
+  ./gradlew build -x test
+
+tasks:
+  ./gradlew tasks
+
+install:
+  ./gradlew installDebug
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="settings.gradle.kts" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# ./settings.gradle.kts
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
++        maven { url=uri("https://jitpack.io") }
+    }
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="build.gradle.kts" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# ./build.gradle.kts (Project)
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+plugins {
+    id("com.android.application") version "8.3.0" apply false
+    id("org.jetbrains.kotlin.android") version "1.9.22" apply false
+}
+
+# ./app/build.gradle.kts (Module)
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
++    id("kotlin-kapt")
+}
+
+android {
+    namespace = "com.android_labs.moviesapp"
+    compileSdk = 34
+
+    defaultConfig {
+        applicationId = "com.android_labs.moviesapp"
+        minSdk = 24
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
++   buildFeatures {
++       viewBinding = true
++   }
+}
+
+dependencies {
+
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.androidx.activity)
+    implementation(libs.androidx.constraintlayout)
+    
++    implementation("com.github.ismaeldivita:chip-navigation-bar:1.4.0")
++    implementation("com.github.bumptech.glide:glide:4.16.0")
++    implementation("com.google.code.gson:gson:2.8.7")
++
++    implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
++    implementation("androidx.recyclerview:recyclerview:1.3.2")
++    implementation("androidx.room:room-runtime:2.6.1")
++    implementation("androidx.viewpager2:viewpager2:1.0.0")
++    implementation("com.android.volley:volley:1.2.1")
++
++    kapt("androidx.room:room-compiler:2.6.1")
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>修改应用权限</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="colors.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/AndroidManifest.xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
++    <uses-permission android:name="android.permission.INTERNET" />
+
+</manifest>
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>修改系统主题</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="colors.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/values/colors.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="grey">#9f9a9a</color>
+    <color name="orange">#ff7427</color>
+    <color name="yellow">#ffc107</color>
+    <color name="mainColor">#1f1d28</color>
+    <color name="darkBlue">#252836</color>
+
+    <color name="primary">#FF9800</color>
+    <color name="primary_dark">#130041</color>
+    <color name="primary_light">#FFE0B2</color>
+    <color name="accent">#FF5722</color>
+    <color name="primary_text">#212121</color>
+    <color name="secondary_text">#757575</color>
+    <color name="icons">#212121</color>
+    <color name="divider">#BDBDBD</color>
+</resources>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="themes.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/values/themes.xml 
+<resources xmlns:tools="http://schemas.android.com/tools">
+-    <style name="Base.Theme.FoodsApp" parent="Theme.Material3.DayNight.NoActionBar">
++    <style name="Base.Theme.MoviesApp" parent="Theme.MaterialComponents.DayNight.NoActionBar">
++        <item name="colorPrimary">@color/primary</item>
++        <item name="colorPrimaryVariant">@color/primary_dark</item>
++        <item name="colorOnPrimary">@color/white</item>
++
++        <item name="colorSecondary">@color/accent</item>
++        <item name="colorSecondaryVariant">@color/accent</item>
++        <item name="colorOnSecondary">@color/white</item>
+
++        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+    </style>
+
+    <style name="Theme.MoviesApp" parent="Base.Theme.MoviesApp" />
+</resources>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="创建背景资源" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/drawable/orange_background.xml
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/orange" />
+            <corners android:radius="50dp" />
+        </shape>
+    </item>
+</selector>
+
+# app/src/main/res/drawable/gradient_background.xml
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:startColor="@android:color/transparent" android:endColor="@color/mainColor" android:angle="270" />
+        </shape>
+    </item>
+</selector>
+
+# app/src/main/res/drawable/category_background.xml
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/darkBlue" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+</selector>
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>IntroActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="activity_intro.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_intro.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/mainColor"
+    android:fitsSystemWindows="true"
+    tools:context=".IntroActivity">
+
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/intro_pic"
+        app:layout_constraintBottom_toTopOf="@+id/textView4"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageView
+        android:id="@+id/imageView2"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:src="@drawable/gradient_background"
+        app:layout_constraintBottom_toBottomOf="@+id/imageView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/textView4"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="1dp"
+        android:text="Discover Your"
+        android:textColor="#ffffff"
+        android:textSize="27sp"
+        app:layout_constraintBottom_toTopOf="@+id/textView5"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/textView5"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="4dp"
+        android:text="Favorite Show"
+        android:textColor="@color/orange"
+        android:textSize="27sp"
+        app:layout_constraintBottom_toTopOf="@+id/textView6"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:lineHeight="24dp" />
+
+    <TextView
+        android:id="@+id/textView6"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="4dp"
+        android:text="Watch Now or Watch Later"
+        android:textColor="#ffffff"
+        android:textSize="24sp"
+        app:lineHeight="32dp"
+        app:layout_constraintBottom_toTopOf="@+id/textView3"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="24dp"
+        android:textColor="@color/grey"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:text="You can browse movies and shows by genre search or specific title, or check out our recommendation for you."
+        android:textSize="16sp"
+        android:lineHeight="20sp"
+        app:layout_constraintBottom_toTopOf="@+id/startBtn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/startBtn"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="60dp"
+        android:background="@drawable/orange_background"
+        android:gravity="center"
+        android:text="Get Started"
+        android:textColor="@color/white"
+        android:textSize="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="IntroActivity.kt " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+#  app/src/main/java/com/android_labs/moviesapp/IntroActivity.kt
+class IntroActivity : AppCompatActivity() {
+
+    private lateinit var startBtn: TextView
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // 隐藏状态栏
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+        setContentView(R.layout.activity_intro)
+
+        this.startBtn = findViewById(R.id.startBtn)
+
+        this.startBtn.setOnClickListener {
+            startActivity(Intent(this@IntroActivity, LoginActivity::class.java))
+        }
+
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title=" " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;margin-top:1em;">
+                     <![CDATA[
+
+<img src="/images/android/movie_intro.png" width="100%" />
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>LoginActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="activity_login.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_login.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_vertical"
+    android:padding="24dp"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    android:background="@color/mainColor"
+    android:orientation="vertical"
+    tools:context=".LoginActivity">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/white"
+        android:textSize="32sp"
+        android:text="Login" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="60dp"
+        android:background="@drawable/grey_background"
+        android:ems="10"
+        android:inputType="text"
+        android:hint="User name"
+        android:textColorHint="@color/white"
+        android:textSize="18sp"
+        android:padding="10dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:textColor="@color/white"/>
+
+    <EditText
+        android:id="@+id/editTextTextPassword"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/grey_background"
+        android:ems="10"
+        android:inputType="textPassword"
+        android:hint="Password"
+        android:textColorHint="@color/white"
+        android:textSize="18sp"
+        android:padding="10dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:layout_marginTop="20dp"
+        android:textColor="@color/white" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Forget your password?"
+        android:textSize="18sp"
+        android:layout_marginTop="20dp"
+        android:textAlignment="center"
+        android:textColor="@color/white" />
+
+    <TextView
+        android:id="@+id/loginBtn"
+        android:layout_marginTop="100dp"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/orange_background"
+        android:gravity="center"
+        android:text="Login"
+        android:textColor="@color/white"
+        android:textSize="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/white"
+        android:textAlignment="center"
+        android:textSize="18sp"
+        android:text="Don't have an account" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/white"
+        android:textAlignment="center"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:text="Register Now" />
+
+
+</LinearLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="LoginActivity.kt " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+#  app/src/main/java/com/android_labs/moviesapp/LoginActivity.kt
+class LoginActivity : AppCompatActivity() {
+
+    private lateinit var loginBtn: TextView
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_login)
+
+        this.loginBtn = findViewById(R.id.loginBtn)
+
+        this.loginBtn.setOnClickListener {
+            startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+        }
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>MainActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="activity_main.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_main.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/mainColor"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    tools:context=".MainActivity">
+
+    <ScrollView
+        android:id="@+id/scrollView2"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="60dp"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <EditText
+                android:id="@+id/editTextText"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_margin="16dp"
+                android:background="@drawable/edit_text_background"
+                android:drawableStart="@drawable/search"
+                android:drawableEnd="@drawable/microphone"
+                android:drawablePadding="10dp"
+                android:ems="10"
+                android:hint="Search Movies ..."
+                android:inputType="text"
+                android:paddingStart="15dp"
+                android:paddingEnd="12dp"
+                android:textColor="@color/white"
+                android:textColorHint="@color/white" />
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="200dp">
+
+                <androidx.viewpager2.widget.ViewPager2
+                    android:id="@+id/viewPager1"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:paddingStart="60dp"
+                    android:paddingEnd="60dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                </androidx.viewpager2.widget.ViewPager2>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="12dp"
+                android:text="Best Moves"
+                android:textColor="@color/yellow"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewBestMovies"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clipToPadding="false"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <ProgressBar
+                    android:id="@+id/progressBarBestMovies"
+                    style="?android:attr/progressBarStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="12dp"
+                android:text="Categories"
+                android:textColor="@color/yellow"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewCategories"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clipToPadding="true"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <ProgressBar
+                    android:id="@+id/progressBar2"
+                    style="?android:attr/progressBarStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="12dp"
+                android:text="Upcomming Movies"
+                android:textColor="@color/yellow"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewUpcomming"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clipToPadding="false"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <ProgressBar
+                    android:id="@+id/progressBarUpcomming"
+                    style="?android:attr/progressBarStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <com.google.android.material.bottomappbar.BottomAppBar
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_gravity="bottom"
+            android:backgroundTint="@color/darkBlue">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:layout_marginEnd="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="2dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        app:tint="@color/white"
+                        android:src="@drawable/btn_1" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:text="Explorer"
+                        android:layout_weight="1"
+                        android:textAlignment="center"
+                        android:textColor="@color/white"
+                        android:textSize="12dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="2dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        app:tint="@color/white"
+                        android:src="@drawable/btn_2" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:text="Favorite"
+                        android:textAlignment="center"
+                        android:textColor="@color/white"
+                        android:textSize="12dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="2dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        app:tint="@color/white"
+                        android:src="@drawable/btn_3" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:text="Cart"
+                        android:textAlignment="center"
+                        android:textColor="@color/white"
+                        android:textSize="12dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="2dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        app:tint="@color/white"
+                        android:src="@drawable/btn_4" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:text="Profile"
+                        android:textAlignment="center"
+                        android:textColor="@color/white"
+                        android:textSize="12dp" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.bottomappbar.BottomAppBar>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="MainActivity.kt " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+#  app/src/main/java/com/android_labs/moviesapp/MainActivity.kt
+class MainActivity : AppCompatActivity(), BestMovieAdapter.Callbacks {
+
+    private var sliderHandler: Handler = Handler()
+
+    private lateinit var viewPager1: ViewPager2
+
+    private lateinit var recyclerViewBestMovies: RecyclerView
+    private lateinit var recyclerViewCategories: RecyclerView
+    private lateinit var recyclerViewUpcomming: RecyclerView
+
+    private lateinit var progressBarBestMovies: ProgressBar
+    private lateinit var progressBarCategories: ProgressBar
+    private lateinit var progressBarUpcomming: ProgressBar
+
+    private lateinit var requestQueueBestMovies: RequestQueue
+    private lateinit var requestQueueCategories: RequestQueue
+    private lateinit var requestQueueUpcomming: RequestQueue
+
+    private lateinit var stringReuqestBestMovies: StringRequest
+    private lateinit var stringReuqestCategories: StringRequest
+    private lateinit var stringReuqestUpcomming: StringRequest
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        this.viewPager1 = findViewById(R.id.viewPager1)
+        this.viewPager1.adapter = SliderAdapter(loadBanners(), viewPager1)
+        this.viewPager1.clipToPadding = false
+        this.viewPager1.clipChildren = false
+        this.viewPager1.offscreenPageLimit = 3
+        this.viewPager1.getChildAt(0).overScrollMode = RecyclerView.OVER_SCROLL_NEVER
+        this.viewPager1.setPageTransformer(viewPagerTransformer())
+        this.viewPager1.currentItem = 1
+
+        this.viewPager1.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                // 当页面被选中时调用，position 是当前选中的页面的索引
+                // 在这里可以执行相应的操作
+                super.onPageSelected(position)
+                sliderHandler.removeCallbacks(Runnable {
+                    viewPager1.currentItem += 1
+                })
+            }
+        })
+
+        this.recyclerViewBestMovies = findViewById(R.id.recyclerViewBestMovies)
+        this.recyclerViewCategories = findViewById(R.id.recyclerViewCategories)
+        this.recyclerViewUpcomming = findViewById(R.id.recyclerViewUpcomming)
+
+        this.progressBarBestMovies = findViewById(R.id.progressBarBestMovies)
+        this.progressBarCategories = findViewById(R.id.progressBar2)
+        this.progressBarUpcomming = findViewById(R.id.progressBarUpcomming)
+
+        this.recyclerViewBestMovies.layoutManager = LinearLayoutManager(this@MainActivity, LinearLayoutManager.HORIZONTAL, false)
+        this.recyclerViewCategories.layoutManager = LinearLayoutManager(this@MainActivity, LinearLayoutManager.HORIZONTAL, false)
+        this.recyclerViewUpcomming.layoutManager = LinearLayoutManager(this@MainActivity, LinearLayoutManager.HORIZONTAL, false)
+
+        this.sendRequestBestMovies()
+        this.sendRequestCategories()
+        this.sendRequestUpcomming()
+    }
+
+    private fun loadBanners(): MutableList<SliderItemsModel> {
+        return mutableListOf(
+            SliderItemsModel("wide"),
+            SliderItemsModel("wide1"),
+            SliderItemsModel("wide3"),
+        )
+    }
+
+    private fun sendRequestBestMovies() {
+        requestQueueBestMovies = Volley.newRequestQueue(this@MainActivity)
+        this.progressBarBestMovies.visibility = View.VISIBLE
+        this.stringReuqestBestMovies = StringRequest(Request.Method.GET,
+            "https://moviesapi.ir/api/v1/movies?page=1",
+            { response ->
+                var gson = Gson()
+                this.progressBarBestMovies.visibility = View.GONE
+                var listFilm = gson.fromJson(response, ListFilm::class.java)
+
+                this.recyclerViewBestMovies.adapter = BestMovieAdapter(listFilm, this@MainActivity)
+            },
+            { error ->
+                Log.e("MainActivity-sendRequestBestMovies-Error", "responseError: ${error.message}")
+                this.progressBarBestMovies.visibility = View.GONE
+            })
+
+        requestQueueBestMovies.add(this.stringReuqestBestMovies)
+    }
+
+    private fun sendRequestCategories() {
+        requestQueueCategories = Volley.newRequestQueue(this@MainActivity)
+        this.progressBarCategories.visibility = View.VISIBLE
+        this.stringReuqestCategories = StringRequest(Request.Method.GET,
+            "https://moviesapi.ir/api/v1/genres",
+            { response ->
+                var gson = Gson()
+                this.progressBarCategories.visibility = View.GONE
+                var listCate = gson.fromJson(response, Array<GenresModel>::class.java)
+
+                this.recyclerViewCategories.adapter = CategoryAdapter(listCate.asList())
+            },
+            { error ->
+                Log.e("MainActivity-sendRequestCategories-Error", "responseError: ${error.message}")
+                this.progressBarCategories.visibility = View.GONE
+            })
+
+        requestQueueCategories.add(this.stringReuqestCategories)
+    }
+
+    private fun sendRequestUpcomming() {
+        requestQueueUpcomming = Volley.newRequestQueue(this@MainActivity)
+        this.progressBarUpcomming.visibility = View.VISIBLE
+        this.stringReuqestUpcomming = StringRequest(Request.Method.GET,
+            "https://moviesapi.ir/api/v1/movies?page=3",
+            { response ->
+                var gson = Gson()
+                this.progressBarUpcomming.visibility = View.GONE
+                var listFilm = gson.fromJson(response, ListFilm::class.java)
+
+                this.recyclerViewUpcomming.adapter = UpcommingAdapter(listFilm, this@MainActivity)
+            },
+            { error ->
+                Log.e("MainActivity-sendRequestUpcomming-Error", "responseError: ${error.message}")
+                this.progressBarUpcomming.visibility = View.GONE
+            })
+
+        requestQueueUpcomming.add(this.stringReuqestUpcomming)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sliderHandler.removeCallbacks(Runnable {
+            viewPager1.currentItem += 1
+        })
+    }
+
+    override fun onResume() {
+        super.onResume()
+        sliderHandler.postDelayed(Runnable {
+            viewPager1.currentItem += 1
+        }, 2000)
+    }
+
+    private fun viewPagerTransformer(): CompositePageTransformer {
+        var transformer = CompositePageTransformer()
+
+        transformer.addTransformer(MarginPageTransformer(40))
+        transformer.addTransformer { page, position ->
+            var scaleFactor = 0.85f
+            var absPosition = 1 - Math.abs(position)
+            page.scaleY = scaleFactor + absPosition * 0.15f // 缩放
+        }
+
+        return transformer
+    }
+
+    override fun onFilmSelected(film: Datum) {
+        startActivity(DetailsActivity.newIntent(this, film.id))
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>SliderAdapter</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="SliderItemsModel.kt " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+#  app/src/main/java/com/android_labs/moviesapp/SliderItemsModel.kt
+data class SliderItemsModel(
+    var image: String
+)
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="viewholder_slider.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/viewholder_slider.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<ImageView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:minHeight="300dp"
+    android:scaleType="centerCrop"
+    android:adjustViewBounds="false"
+    android:src="@drawable/wide"
+    android:id="@+id/imageSlide">
+
+</ImageView>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="SliderAdapter.kt " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+#  app/src/main/java/com/android_labs/moviesapp/SliderAdapter.kt
+class SliderAdapter(var list: MutableList<SliderItemsModel>, var viewPager: ViewPager2) : RecyclerView.Adapter<SliderAdapter.ViewHolder>() {
+
+    inner class ViewHolder(private var view: View) : RecyclerView.ViewHolder(view) {
+
+        private var imageSlide = view.findViewById<ImageView>(R.id.imageSlide)
+
+        fun bind(model: SliderItemsModel) {
+            setImg(view, model.image, imageSlide)
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        return ViewHolder(
+            LayoutInflater.from(parent.context).inflate(R.layout.viewholder_slider, parent, false)
+        )
+    }
+
+    override fun getItemCount(): Int {
+        return list.size
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(this.list[position])
+
+        if (position == this.list.size - 2) {
+            viewPager.post {
+                // 循环播放
+                list.addAll(list)
+                notifyDataSetChanged()
+            }
+        }
+    }
+
+    private fun getResourceId(view: View, name: String): Int {
+        return view.resources.getIdentifier(name, "drawable", view.context.packageName)
+    }
+
+    private fun setImg(view: View, name: String, img: ImageView) {
+        var requestOptions = RequestOptions()
+        requestOptions = requestOptions.transforms(CenterCrop(), RoundedCorners(60))
+
+        Glide.with(view.context).load(getResourceId(view, name))
+            .apply(requestOptions)
+            .into(img)
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>BestMovieAdapter</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Model.kt " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+// jsonschema2pojo
+// https://www.jsonschema2pojo.org/
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="viewholder_best_movie.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/viewholder_best_movie.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@color/darkBlue"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_margin="6dp">
+
+    <ImageView
+        android:id="@+id/filmPicImg"
+        android:layout_width="140dp"
+        android:layout_height="180dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/filmTitleTxt"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/filmTitleTxt"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="4dp"
+        android:layout_marginBottom="9dp"
+        android:lines="2"
+        android:maxLines="2"
+        android:textSize="12sp"
+        android:textColor="@color/white"
+        android:text="TextView"
+        app:layout_constraintEnd_toEndOf="@+id/filmPicImg"
+        app:layout_constraintHorizontal_bias="0.487"
+        app:layout_constraintStart_toStartOf="@+id/filmPicImg"
+        app:layout_constraintTop_toBottomOf="@+id/filmPicImg" />
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="BestMovieAdapter.kt " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+#  app/src/main/java/com/android_labs/moviesapp/BestMovieAdapter.kt
+// get movies list
+// https://moviesapi.ir/api/v1/movies?page=0
+// movie details
+// https://moviesapi.ir/api/v1/movies/{move_id}
+// get genres list
+// https://moviesapi.ir/api/v1/genres
+
+// jsonschema2pojo
+// https://www.jsonschema2pojo.org/
+class BestMovieAdapter(private var list: ListFilm, var callbacks: Callbacks): RecyclerView.Adapter<BestMovieAdapter.ViewHolder>() {
+
+    interface Callbacks {
+        fun onFilmSelected(film: Datum)
+    }
+
+    inner class ViewHolder(var view: View): RecyclerView.ViewHolder(view) {
+
+        private var filmTitle: TextView = view.findViewById(R.id.filmTitleTxt)
+        private var filmPic: ImageView = view.findViewById(R.id.filmPicImg)
+        private var container: ConstraintLayout = view.findViewById(R.id.container)
+
+        private lateinit var model: Datum;
+
+        init {
+            this.container.setOnClickListener {
+                callbacks.onFilmSelected(this.model)
+            }
+        }
+
+        fun bind(model: Datum){
+            this.filmTitle.text = model.title
+            setImg(view, model.poster, this.filmPic)
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        return ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewholder_best_movie, parent, false))
+    }
+
+    override fun getItemCount(): Int {
+        return list.data.size
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(this.list.data[position])
+    }
+
+    private fun getResourceId(view: View, name: String): Int {
+        return view.resources.getIdentifier(name, "drawable", view.context.packageName)
+    }
+
+    private fun setImg(view: View, url: String, img: ImageView) {
+        var requestOptions = RequestOptions()
+        requestOptions = requestOptions.transforms(CenterCrop(), RoundedCorners(30))
+
+        Glide.with(view.context)
+            .load(url)
+            .apply(requestOptions)
+            .into(img)
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>UpcommingAdapter</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Model.kt " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="viewholder_upcomming.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/viewholder_upcomming.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_margin="6dp">
+
+    <ImageView
+        android:id="@+id/filmPicImg"
+        android:layout_width="140dp"
+        android:layout_height="180dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/filmTitleTxt"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/filmTitleTxt"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="4dp"
+        android:layout_marginBottom="9dp"
+        android:lines="2"
+        android:maxLines="2"
+        android:textSize="14sp"
+        android:textColor="@color/white"
+        android:text="TextView"
+        app:layout_constraintEnd_toEndOf="@+id/filmPicImg"
+        app:layout_constraintHorizontal_bias="0.487"
+        app:layout_constraintStart_toStartOf="@+id/filmPicImg"
+        app:layout_constraintTop_toBottomOf="@+id/filmPicImg" />
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="UpcommingAdapter.kt " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/moviesapp/UpcommingAdapter.kt
+class UpcommingAdapter(private var list: ListFilm, var callbacks: BestMovieAdapter.Callbacks): RecyclerView.Adapter<UpcommingAdapter.ViewHolder>() {
+
+    inner class ViewHolder(var view: View): RecyclerView.ViewHolder(view) {
+
+        private var filmTitle: TextView = view.findViewById(R.id.filmTitleTxt)
+        private var filmPic: ImageView = view.findViewById(R.id.filmPicImg)
+        private var container: ConstraintLayout = view.findViewById(R.id.container)
+
+        private lateinit var model: Datum;
+
+        init {
+            this.container.setOnClickListener {
+                callbacks.onFilmSelected(this.model)
+            }
+        }
+
+        fun bind(model: Datum){
+            this.model = model
+            this.filmTitle.text = model.title
+
+            setImg(view, model.poster, this.filmPic)
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        return ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewholder_best_movie, parent, false))
+    }
+
+    override fun getItemCount(): Int {
+        return list.data.size
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(this.list.data[position])
+    }
+
+    private fun getResourceId(view: View, name: String): Int {
+        return view.resources.getIdentifier(name, "drawable", view.context.packageName)
+    }
+
+    private fun setImg(view: View, url: String, img: ImageView) {
+        var requestOptions = RequestOptions()
+        requestOptions = requestOptions.transforms(CenterCrop(), RoundedCorners(30))
+
+        Glide.with(view.context)
+            .load(url)
+            .apply(requestOptions)
+            .into(img)
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>CategoryAdapter</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="GenresModel.kt " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+class GenresModel {
+    @SerializedName("id")
+    @Expose
+    var id: Int? = null
+
+    @SerializedName("name")
+    @Expose
+    var name: String? = null
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="viewholder_category.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/viewholder_category.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/categoryNameTxt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/category_background"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:padding="10dp"
+        android:paddingStart="15dp"
+        android:paddingEnd="15dp"
+        android:textColor="@color/white"
+        android:textSize="36sp"
+        android:text="TextView" />
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="CategoryAdapter.kt " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+#  app/src/main/java/com/android_labs/moviesapp/CategoryAdapter.kt
+class CategoryAdapter(var list: List<GenresModel>): RecyclerView.Adapter<CategoryAdapter.ViewHolder>() {
+
+    inner class ViewHolder(var view: View): RecyclerView.ViewHolder(view) {
+
+        private var categoryName: TextView = view.findViewById(R.id.categoryNameTxt)
+
+        fun bind(model: GenresModel){
+            this.categoryName.text = model.name
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        return ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewholder_category, parent, false))
+    }
+
+    override fun getItemCount(): Int {
+        return list.size
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(this.list[position])
+    }
+
+    private fun getResourceId(view: View, name: String): Int {
+        return view.resources.getIdentifier(name, "drawable", view.context.packageName)
+    }
+
+    private fun setImg(view: View, url: String, img: ImageView) {
+        var requestOptions = RequestOptions()
+        requestOptions = requestOptions.transforms(CenterCrop(), RoundedCorners(30))
+
+        Glide.with(view.context)
+            .load(url)
+            .apply(requestOptions)
+            .into(img)
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;margin-top:1em;">
+                     <![CDATA[
+<img src="/images/android/movie_main.png" width="100%" />
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>DetailsActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Model.kt " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="activity_details.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_details.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/mainColor"
+    tools:context=".DetailsActivity">
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollViewDetails"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/moviePic"
+                android:layout_width="match_parent"
+                android:layout_height="400dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/constraintLayout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="16dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/moviePic">
+
+                <ImageView
+                    android:id="@+id/backBtn"
+                    android:layout_width="35dp"
+                    android:layout_height="35dp"
+                    android:background="@drawable/oval_btn_background"
+                    android:padding="8dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:srcCompat="@drawable/back" />
+
+                <ImageView
+                    android:id="@+id/imageView4"
+                    android:layout_width="35dp"
+                    android:layout_height="35dp"
+                    android:background="@drawable/oval_btn_background"
+                    android:padding="8dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:srcCompat="@drawable/fav" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/constraintLayout2"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="24dp"
+                android:layout_marginEnd="24dp"
+                android:layout_marginBottom="24dp"
+                app:layout_constraintBottom_toBottomOf="@+id/moviePic"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent">
+
+                <TextView
+                    android:id="@+id/movieStarTxt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawableStart="@drawable/star"
+                    android:drawablePadding="5dp"
+                    android:text="0"
+                    android:textColor="@color/white"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <TextView
+                    android:id="@+id/movieTimeTxt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:drawableStart="@drawable/time"
+                    android:drawablePadding="5dp"
+                    android:text="0"
+                    android:textColor="@color/white"
+                    app:layout_constraintBottom_toBottomOf="@+id/movieStarTxt"
+                    app:layout_constraintStart_toEndOf="@+id/movieStarTxt" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <TextView
+                android:id="@+id/movieNameTxt"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="TextView"
+                android:textColor="@color/white"
+                android:textSize="20sp"
+                app:layout_constraintBottom_toTopOf="@+id/constraintLayout2"
+                app:layout_constraintEnd_toEndOf="@+id/constraintLayout2"
+                app:layout_constraintStart_toStartOf="@+id/constraintLayout2" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/genreView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/moviePic" />
+
+            <TextView
+                android:id="@+id/textView10"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:layout_marginTop="16dp"
+                android:text="Summary"
+                android:textColor="@color/yellow"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/genreView" />
+
+            <TextView
+                android:id="@+id/movieSummaryTxt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="16dp"
+                android:text="TextView"
+                android:textColor="@color/white"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="@+id/textView10"
+                app:layout_constraintTop_toBottomOf="@+id/textView10" />
+
+            <TextView
+                android:id="@+id/textView12"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:layout_marginEnd="16dp"
+                android:text="Actors"
+                android:textColor="@color/yellow"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="@+id/textView10"
+                app:layout_constraintTop_toBottomOf="@+id/movieSummaryTxt" />
+
+            <TextView
+                android:id="@+id/movieActorsTxt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="16dp"
+                android:text="TextView"
+                android:textColor="@color/white"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="@+id/textView10"
+                app:layout_constraintTop_toBottomOf="@+id/textView12" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/actorsListView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="24dp"
+                android:clipToPadding="true"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.52"
+                app:layout_constraintStart_toStartOf="@+id/movieActorsTxt"
+                app:layout_constraintTop_toBottomOf="@+id/movieActorsTxt" />
+
+            <ProgressBar
+                android:id="@+id/progressBarDetails"
+                style="?android:attr/progressBarStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="invisible"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.core.widget.NestedScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="DetailsActivity.kt " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/moviesapp/DetailsActivity.kt
+class DetailsActivity : AppCompatActivity() {
+
+    companion object {
+        fun newIntent(ctx: Context, filmId: Int): Intent {
+            return Intent(ctx, DetailsActivity::class.java).apply {
+                putExtra("filmId", filmId)
+            }
+        }
+    }
+
+    private lateinit var backBtn: ImageView
+    private lateinit var scrollView: NestedScrollView
+
+    private lateinit var requestQueue: RequestQueue
+    private lateinit var stringReuqest: StringRequest
+    private lateinit var progressBar: ProgressBar
+
+    private lateinit var movieNameTxt: TextView
+    private lateinit var movieStarTxt: TextView
+    private lateinit var movieTimeTxt: TextView
+    private lateinit var movieSummaryTxt: TextView
+    private lateinit var movieActorsTxt: TextView
+
+    private lateinit var moviePic: ImageView
+
+    private lateinit var genreView: RecyclerView
+    private lateinit var actorsListView: RecyclerView
+
+    private var filmId: Int? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_details)
+
+        this.scrollView = findViewById(R.id.scrollViewDetails)
+        this.backBtn = findViewById(R.id.backBtn)
+        this.filmId = intent.getIntExtra("filmId", 0)
+
+        this.movieNameTxt = findViewById(R.id.movieNameTxt)
+        this.movieStarTxt = findViewById(R.id.movieStarTxt)
+        this.movieTimeTxt = findViewById(R.id.movieTimeTxt)
+        this.movieSummaryTxt = findViewById(R.id.movieSummaryTxt)
+        this.movieActorsTxt = findViewById(R.id.movieActorsTxt)
+        this.moviePic = findViewById(R.id.moviePic)
+
+        this.genreView = findViewById(R.id.genreView)
+        this.genreView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+
+        this.actorsListView = findViewById(R.id.actorsListView)
+        this.actorsListView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+
+        this.backBtn.setOnClickListener {
+
+            finish()
+        }
+    }
+
+    fun sendRequest() {
+        this.requestQueue = Volley.newRequestQueue(this@DetailsActivity)
+        this.progressBar.visibility = View.VISIBLE
+
+        this.stringReuqest = StringRequest(
+            Request.Method.GET,
+            "https://moviesapi.ir/api/v1/movies/$filmId",
+            { response ->
+                var gson = Gson()
+                this.progressBar.visibility = View.GONE
+                var currFilm = gson.fromJson(response, FilmDetailModel::class.java)
+
+                this.movieNameTxt.text = currFilm.title.orEmpty()
+                this.movieStarTxt.text = currFilm.imdbRating.orEmpty()
+                this.movieTimeTxt.text = currFilm.runtime.orEmpty()
+                this.movieSummaryTxt.text = currFilm.plot.orEmpty()
+                this.movieActorsTxt.text = currFilm.actors.orEmpty()
+
+                if (currFilm.poster != null) {
+                    setImg(this, currFilm.poster.orEmpty(), this.moviePic)
+                }
+
+                this.actorsListView.adapter = ActorListAdapter(currFilm.images.orEmpty())
+                this.genreView.adapter = GenreViewAdapter(currFilm.genres.orEmpty())
+            },
+            { error ->
+                Log.e("DetailsActivity-sendRequest-Error", "responseError: ${error.message}")
+                this.progressBar.visibility = View.GONE
+            })
+
+        requestQueue.add(this.stringReuqest)
+    }
+
+    private fun setImg(ctx: Context, url: String, img: ImageView) {
+        var requestOptions = RequestOptions()
+        requestOptions = requestOptions.transforms(CenterCrop(), RoundedCorners(30))
+
+        Glide.with(ctx)
+            .load(url)
+            .apply(requestOptions)
+            .into(img)
+    }
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="ActorListAdapter.kt " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/moviesapp/ActorListAdapter.kt
+class ActorListAdapter(var list: List<String>): RecyclerView.Adapter<ActorListAdapter.ViewHolder>() {
+
+    inner class ViewHolder(var view: View): RecyclerView.ViewHolder(view) {
+
+        private var img: ImageView = view.findViewById(R.id.imageView3)
+
+        fun bind(model: String){
+            setImg(view.context, model, this.img)
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        return ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewholder_actor, parent, false))
+    }
+
+    override fun getItemCount(): Int {
+        return list.size
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(this.list[position])
+    }
+
+    private fun setImg(ctx: Context, url: String, img: ImageView) {
+        var requestOptions = RequestOptions()
+        requestOptions = requestOptions.transforms(CenterCrop(), RoundedCorners(30))
+
+        Glide.with(ctx)
+            .load(url)
+            .apply(requestOptions)
+            .into(img)
+    }
+}
+  ]]>
+    </c:sourceContent>
+
+
+    <c:sourceContent type="" title="GenreViewAdapter.kt " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/moviesapp/GenreViewAdapter.kt
+class GenreViewAdapter(var list: List<String>): RecyclerView.Adapter<GenreViewAdapter.ViewHolder>() {
+
+    inner class ViewHolder(var view: View): RecyclerView.ViewHolder(view) {
+
+        private var categoryName: TextView = view.findViewById(R.id.categoryNameTxt)
+
+        fun bind(model: String){
+            this.categoryName.text = model
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        return ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewholder_category, parent, false))
+    }
+
+    override fun getItemCount(): Int {
+        return list.size
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(this.list[position])
+    }
+}
+  ]]>
+    </c:sourceContent>
+
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+</c:component>

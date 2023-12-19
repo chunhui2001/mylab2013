@@ -1,0 +1,3568 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+https://icon-sets.iconify.design/ic/info/ (Android 图标库) <br />
+https://inloop.github.io/svg2android (在线转换将 svg 转换成 Android Drawable) <br />
+
+http://localhost:9000/images/android/Video_Player_Icons.zip
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Makefile" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+### 当前 Makefile 文件物理路径
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+
+build:
+  ./gradlew build -x test
+
+tasks:
+  ./gradlew tasks
+
+install:
+  ./gradlew installDebug
+
+lists:
+  @./lists-packages.sh
+
+
+### lists-packages.sh
+#!/bin/sh
+adb -s emulator-5554 shell pm list packages -3 | grep labs --color
+adb -s emulator-5554 shell pm list packages -3 | grep labs | awk -F':' '{cmd="adb -s emulator-5554 uninstall " $2; print cmd; system(cmd)}'
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="settings.gradle.kts" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# ./settings.gradle.kts
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
++        maven { url=uri("https://jitpack.io") }
+    }
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="build.gradle.kts" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# ./build.gradle.kts (Project)
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+plugins {
+    id("com.android.application") version "8.3.0" apply false
+    id("org.jetbrains.kotlin.android") version "1.9.22" apply false
+}
+
+# ./app/build.gradle.kts (Module)
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
++    id("kotlin-kapt")
+}
+
+android {
+    namespace = "com.android_labs.moviesapp"
+    compileSdk = 34
+
+    defaultConfig {
+        applicationId = "com.android_labs.moviesapp"
+        minSdk = 24
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
++   buildFeatures {
++       viewBinding = true
++   }
+}
+
+dependencies {
+
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.androidx.activity)
+    implementation(libs.androidx.constraintlayout)
+    
++    implementation("com.github.ismaeldivita:chip-navigation-bar:1.4.0")
++    implementation("com.github.bumptech.glide:glide:4.16.0")
++    implementation("com.google.code.gson:gson:2.8.7")
++    implementation("com.squareup.picasso:picasso:2.5.2")
++
++    implementation("com.squareup.retrofit2:retrofit:2.5.0")
++    implementation("com.squareup.retrofit2:converter-scalars:2.5.0")
++    implementation("com.android.volley:volley:1.2.1")
++    implementation("com.squareup.picasso:picasso:2.5.2")
++
++    implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
++    implementation("androidx.recyclerview:recyclerview:1.3.2")
++    implementation("de.hdodenhof:circleimageview:3.0.0")
++    implementation("androidx.room:room-runtime:2.6.1")
++    implementation("androidx.viewpager2:viewpager2:1.0.0")
+
++    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
++    implementation("com.google.android.exoplayer:exoplayer:2.14.1")
++
++    kapt("androidx.room:room-compiler:2.6.1")
+
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>修改系统主题</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="colors.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/values/colors.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- primary brand color -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+
+    <!-- secondary brand color -->
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="allow_color">#22354F</color>
+
+    <!-- status bar color -->
+    <color name="design_default_color_primary_dark">#FFBB86FC</color>
+</resources>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="themes.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/values/themes.xml 
+<resources xmlns:tools="http://schemas.android.com/tools">
+-    <style name="Base.Theme.FoodsApp" parent="Theme.Material3.DayNight.NoActionBar">
++    <style name="Base.Theme.VideoPlayer" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
++        <!-- primary brand color -->
++        <item name="colorPrimary">@color/purple_500</item>
++        <item name="colorPrimaryVariant">@color/purple_700</item>
++        <item name="colorOnPrimary">@color/white</item>
++        <!-- secondary brand color -->
++        <item name="colorSecondary">@color/teal_200</item>
++        <item name="colorSecondaryVariant">@color/teal_700</item>
++        <item name="colorOnSecondary">@color/black</item>
+    </style>
+
+    <style name="Theme.VideoPlayer" parent="Base.Theme.MoviesApp" />
+</resources>
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>VideoPlayerApplication</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="VideoPlayerApplication.kt " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+import android.app.Application
+
+class VideoPlayerApplication: Application() {
+
+    override fun onCreate() {
+        super.onCreate()
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>修改系统权限</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="AndroidManifest.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/AndroidManifest.xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
++    <uses-permission android:name="android.permission.INTERNET" />
++    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application
++               android:name=".VideoPlayerApplication"
++ (optional)    android:networkSecurityConfig="@xml/network_security_config"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.TodoApp"
+        tools:targetApi="31">
+        <activity
+            android:name=".activities.SplashActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
+
+# app/src/main/res/xml/network_security_config.xml
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true" usesCleartextTraffic="true">
+        <domain includeSubdomains="true">92c8-13-230-16-197.ngrok-free.app</domain>
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">192.168.1.5</domain>
+    </domain-config>
+</network-security-config>
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Add Splash Screen</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="设置主题" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/drawable/splash_background.xml
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape>
+            <solid android:color="@color/white" />
+        </shape>
+    </item>
+    <item>
+        <bitmap android:src="@mipmap/vpsplash" android:gravity="center" />
+    </item>
+</layer-list>
+
+# app/src/main/res/values/themes.xml
+<resources xmlns:tools="http://schemas.android.com/tools">
+    ...
+
++    <style name="SplashTheme.VideoPlayer" parent="Theme.MaterialComponents.DayNight.NoActionBar">
++        <!-- primary brand color -->
++        <item name="colorPrimary">@color/purple_500</item>
++        <item name="colorPrimaryVariant">@color/purple_700</item>
++        <item name="colorOnPrimary">@color/white</item>
++        <!-- secondary brand color -->
++        <item name="colorSecondary">@color/teal_200</item>
++        <item name="colorSecondaryVariant">@color/teal_700</item>
++        <item name="colorOnSecondary">@color/black</item>
++        <!-- status bar color -->
++        <item name="android:statusBarColor">@android:color/transparent</item>
++        <item name="android:windowBackground">@drawable/splash_background</item>
++        <!-- disable status bar -->
++        <item name="windowActionBar">false</item>
++        <item name="android:windowNoTitle">true</item>
++    </style>
+
+</resources>
+
+# app/src/main/AndroidManifest.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" >
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application
+        android:name=".VideoPlayerApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.VideoPlayer"
+        tools:targetApi="31" >
+
++        <activity
++            android:name=".activities.MainActivity"
++            android:exported="false" />
+
+        <activity
+            android:name=".SplashActivity"
+            android:exported="true"
++            android:theme="@style/SplashTheme.VideoPlayer"
+            >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="activity_splash.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_splash.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
++    android:fitsSystemWindows="true"
+    tools:context=".SplashActivity">
+
+</LinearLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="SplashActivity.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/videoplayer/SplashActivity.kt
+class SplashActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_splash)
+
+        // 修改状态栏颜色
++       // setStatusBarColor(getResources().getColor(R.color.primary_dark))
+
++        Handler(Looper.getMainLooper()).postDelayed({
++             startActivity(Intent(this@SplashActivity, AllowAccessActivity::class.java))
++             finish()
++        }, 1000)
+    }
+    
++    private fun setStatusBarColor(color: Int) {
++        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
++            val window = window
++            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
++            window.statusBarColor = color
++        }
++    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Add AllowAccessActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="activity_allow_access.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/values/strings.xml
+<resources>
+    <string name="app_name">Video Player</string>
+
+    <string name="text1">Thank you for installing our Video Player App</string>
+    <string name="text2">For playing videos in this app, you have to allow for access all the videos in this device.Allow access and we are ready to go.</string>
+</resources>
+
+# app/src/main/res/layout/activity_allow_access.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/allow_color"
+    android:padding="20dp"
+    android:fitsSystemWindows="true"
+    tools:context=".activities.AllowAccessActivity">
+
+    <ImageView
+        android:id="@+id/allowIconImg"
+        android:layout_width="170dp"
+        android:layout_height="170dp"
+        android:src="@drawable/allowaccess"
+        android:layout_marginTop="10dp"
+        android:fitsSystemWindows="true"
+        android:layout_centerHorizontal="true"/>
+
+    <TextView
+        android:id="@+id/text1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/allowIconImg"
+        android:textSize="30sp"
+        android:gravity="center"
+        android:layout_marginTop="10dp"
+        android:text="Text"
+        android:textColor="@color/white"
+        android:layout_centerHorizontal="true"/>
+
+    <TextView
+        android:id="@+id/text2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/text1"
+        android:textSize="20sp"
+        android:gravity="center"
+        android:layout_marginTop="10dp"
+        android:text="Text2"
+        android:padding="10dp"
+        android:textColor="@color/white"
+        android:layout_centerHorizontal="true"/>
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/allowAccessBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="20dp"
+        android:text="Allow Access"
+        android:textStyle="bold"
+        android:textColor="@color/white"
+        android:background="@color/purple_200"
+        android:backgroundTint="@color/purple_200"
+        android:textAllCaps="true"/>
+</RelativeLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="AllowAccessActivity.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/videoplayer/activities/AllowAccessActivity.kt
+class AllowAccessActivity : AppCompatActivity() {
+
++    private lateinit var allowAccessBtn: AppCompatButton
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_allow_access)
+
++        setStatusBarColor(getResources().getColor(R.color.allow_color))
++
++        this.allowAccessBtn = findViewById(R.id.allowAccessBtn)
++
++        this.allowAccessBtn.setOnClickListener {
++            startActivity(Intent(this@AllowAccessActivity, MainActivity::class.java))
++        }
+    }
+
++    private fun setStatusBarColor(color: Int) {
++        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
++            val window = window
++            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
++            window.statusBarColor = color
++        }
++    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="Request Runtime Permission" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/AndroidManifest.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
++    <uses-permission android:name="android.permission.INTERNET" />
++    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
++    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
++    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
++    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    ...
+</manifest>
+
+# app/src/main/java/com/android_labs/videoplayer/activities/AllowAccessActivity.kt
+private const val STORAGE_PERMISSION_REQUEST_CODE = 1
+private const val REQUEST_PERMISSION_SETTINGS_CODE = 12
+
+class AllowAccessActivity : AppCompatActivity() {
+
+    private lateinit var allowAccessBtn: AppCompatButton
+
+    override fun onRestart() {
+        super.onRestart()
+        if (hasStoragePermission()) {
+            goToMainActivity()
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_allow_access)
+
+        setStatusBarColor(getResources().getColor(R.color.allow_color))
+
+        this.allowAccessBtn = findViewById(R.id.allowAccessBtn)
+
+        if (hasStoragePermission()) {
+            goToMainActivity()
+        } else {
+            this.allowAccessBtn.setOnClickListener {
+
+                if (!hasStoragePermission()) {
+                    requestStoragePermission()
+                } else {
+                    goToMainActivity()
+                }
+            }
+        }
+    }
+
+    private fun goToMainActivity() {
+        startActivity(
+            Intent(this@AllowAccessActivity, MainActivity::class.java)
+                .putExtra("rootPath", Environment.getExternalStorageDirectory().path)
+        )
+        finish()
+    }
+
+    private fun hasStoragePermission(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                return false
+            } else {
+                return true
+            }
+        } else {
+            // Permission for sdk between 23 and 29
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                return this.hasPermission(this, WRITE_EXTERNAL_STORAGE)
+            }
+
+            return false
+        }
+    }
+
+    private fun requestStoragePermission() {
+        // Permission storage for sdk 30 or above
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                try {
+                    var intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                    intent.addCategory("android.intent.category.DEFAULT")
+                    intent.setData(Uri.parse(String.format("package:%s", applicationContext.packageName)))
+                    startActivityIfNeeded(intent, 101)
+                } catch (e: Exception) {
+                    var intent = Intent()
+                    intent.setAction(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                    startActivityIfNeeded(intent, 101)
+                }
+            } else {
+                // already have permission
+            }
+        } else {
+            // Permission for sdk between 23 and 29
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (!this.hasPermission(this, WRITE_EXTERNAL_STORAGE)) {
+                    this.requestPermission(this@AllowAccessActivity, WRITE_EXTERNAL_STORAGE)
+                } else {
+                    // already have permission
+                }
+            }
+        }
+    }
+
+    private fun hasPermission(activity: Activity, permission: String): Boolean {
+        return ContextCompat.checkSelfPermission(
+            activity,
+            permission
+        ) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private fun requestPermission(activity: Activity, permission: String) {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(activity, permission)) {
+            Toast.makeText(activity, "Storage permission is requires, please allow form settings", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(activity, "8888", Toast.LENGTH_SHORT).show()
+            ActivityCompat.requestPermissions(
+                activity,
+                arrayOf(permission),
+                100
+            )
+        }
+    }
+
+    private fun setStatusBarColor(color: Int) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            val window = window
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+            window.statusBarColor = color
+        }
+    }
+
+//    override fun onRequestPermissionsResult(
+//        requestCode: Int,
+//        permissions: Array<out String>,
+//        grantResults: IntArray
+//    ) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+//
+//        if (requestCode != STORAGE_PERMISSION_REQUEST_CODE) {
+//            return
+//        }
+//
+//        if (hasPermission(permissions[0])) {
+//            startActivity(Intent(this@AllowAccessActivity, MainActivity::class.java))
+//            finish()
+//            return
+//        }
+//
+//        if (ActivityCompat.shouldShowRequestPermissionRationale(this@AllowAccessActivity, permissions[0])) {
+//            requestPermission(WRITE_EXTERNAL_STORAGE, STORAGE_PERMISSION_REQUEST_CODE)
+//            return
+//        }
+//
+//        // user clicked on never asked again
+//        AlertDialog
+//            .Builder(this@AllowAccessActivity)
+//            .setTitle("App Permission")
+//            .setMessage(R.string.text2)
+//            .setPositiveButton("Open Settings") { _, _ ->
+//                // 在这里处理 "Open Settings" 按钮的点击事件
+//                startActivityForResult(
+//                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(
+//                        Uri.fromParts(
+//                            "package",
+//                            packageName,
+//                            null
+//                        )
+//                    ), REQUEST_PERMISSION_SETTINGS_CODE
+//                )
+//            }
+//            .create()
+//            .show()
+//    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>MainActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="activity_main.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_main.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activities.MainActivity">
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/videoList"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="MediaFiles.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/videoplayer/MediaFiles.kt
+data class MediaFiles(
+    val id: String?,
+    val title: String?,
+    val displayName: String?,
+    val size: String?,
+    val duration: String?,
+    val path: String?,
+    val dateAdded: String?,
+): Parcelable {
+    constructor(parcel: Parcel) : this(
+        parcel.readString(),
+        parcel.readString(),
+        parcel.readString(),
+        parcel.readString(),
+        parcel.readString(),
+        parcel.readString(),
+        parcel.readString()
+    ) {
+    }
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeString(id)
+        parcel.writeString(title)
+        parcel.writeString(displayName)
+        parcel.writeString(size)
+        parcel.writeString(duration)
+        parcel.writeString(path)
+        parcel.writeString(dateAdded)
+    }
+
+    override fun describeContents(): Int {
+        return 0
+    }
+
+    companion object CREATOR : Parcelable.Creator<MediaFiles> {
+        override fun createFromParcel(parcel: Parcel): MediaFiles {
+            return MediaFiles(parcel)
+        }
+
+        override fun newArray(size: Int): Array<MediaFiles?> {
+            return arrayOfNulls(size)
+        }
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="folders_item.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/folders_item.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="5dp"
+    android:padding="10dp"
+    android:background="?attr/selectableItemBackground">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/foldericon"
+            android:layout_marginRight="15dp"
+            android:layout_gravity="center_vertical"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_gravity="center">
+            <TextView
+                android:id="@+id/folderName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                android:textSize="17sp"
+                android:textColor="@color/black"
+                android:text="Folder Name hare"/>
+            <TextView
+                android:id="@+id/folderPath"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textSize="14sp"
+                android:text="Folder Path hare"/>
+            <TextView
+                android:id="@+id/fileCounts"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                android:textSize="17sp"
+                android:text="5 files"/>
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="VideoFolderAdapter.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/videoplayer/VideoFolderAdapter.kt
+class VideoFolderAdapter(private var context: Context, private var folders: List<String>): RecyclerView.Adapter<VideoFolderAdapter.ViewHolder>() {
+
+    inner class ViewHolder(private var view: View): RecyclerView.ViewHolder(view) {
+
+        private var folderName = view.findViewById<TextView>(R.id.folderName)
+        private var folderPath = view.findViewById<TextView>(R.id.folderPath)
+        private var fileCounts = view.findViewById<TextView>(R.id.fileCounts)
+
+        private lateinit var currFolder: String
+
+        init {
+            this.view.setOnClickListener {
+                view.context.startActivity(
+                    Intent(view.context, VideoFilesActivity::class.java)
+                        .putExtra("folderName", this.currFolder)
+                )
+            }
+        }
+
+        fun bind(model: String) {
+
+            this.currFolder = model
+
+            var idx = model.lastIndexOf("/")
+            this.folderName.text = model.substring(idx + 1)
+            this.folderPath.text =model
+            this.fileCounts.text = "${countOfVideos(this.folderName.text.toString())} Videos"
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        var layout = LayoutInflater.from(parent.context).inflate(R.layout.folders_item, parent, false)
+
+        return ViewHolder(layout)
+    }
+
+    override fun getItemCount(): Int {
+        return folders.size
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(this.folders[position])
+    }
+
+    private fun countOfVideos(folderName: String): Int {
+
+        var videoUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        var cursor = context.contentResolver.query(videoUri, null, null, null, null)
+
+        var count = 0
+
+        if (cursor != null && cursor.moveToNext()) {
+
+            do {
+                val path = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DATA).toInt())!!
+
+                var idx = path.lastIndexOf("/")
+                var subString = path.subSequence(0, idx).toString()
+
+                if (subString.endsWith(folderName)) {
+                    count ++
+                }
+
+            } while (cursor.moveToNext())
+        }
+
+        return count
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="MainActivity.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/videoplayer/MainActivity.kt
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var folderListView: RecyclerView
+
+    private var videoFiles: MutableList<MediaFiles> = mutableListOf()
+    private var folderList: MutableList<String> = mutableListOf()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        this.readVidoeList()
+
+        this.folderListView = findViewById(R.id.folderListView)
+        this.folderListView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
+
+        var adapter = VideoFolderAdapter(folderList, videoFiles)
+
+        this.folderListView.adapter = adapter
+
+        // adapter.notifyDataSetChanged()
+    }
+
+    private fun readVidoeList() {
+
+        var videoUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        var cursor = contentResolver.query(videoUri, null, null, null, null)
+
+        if (cursor != null && cursor.moveToNext()) {
+
+            do {
+                val id = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media._ID).toInt())
+                val title = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.TITLE).toInt())
+                val displayName = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DISPLAY_NAME).toInt())
+                val size = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.SIZE).toInt())
+                val duration = "" //cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DURATION).toInt())
+                val path = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DATA).toInt())
+                val dateAdded = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DATE_ADDED).toInt())
+
+                videoFiles.add(
+                    MediaFiles(
+                        id, title, displayName, size, duration, path, dateAdded
+                    )
+                )
+
+                var idx = path.lastIndexOf("/")
+                var subString = path.subSequence(0, idx).toString()
+
+                if (!folderList.contains(subString)) {
+                    folderList.add(subString)
+                }
+
+            } while (cursor.moveToNext())
+        }
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>SwipeRefreshLayout</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="build.gradle.kts" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/build.gradle.kts
+
+dependencies {
+
+    ....
+
++    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="folder_menu.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/menu/folder_menu.xml
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/miRateus" android:title="RateUs" android:icon="@drawable/ic_star_rate24" app:showAsAction="ifRoom" />
+    <item android:id="@+id/miRefresh" android:title="Refresh" android:icon="@drawable/ic_refresh24" app:showAsAction="never" />
+    <item android:id="@+id/miShare" android:title="Share App" android:icon="@drawable/ic_share24" app:showAsAction="never" />
+</menu>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="activity_main.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_main.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activities.MainActivity">
+
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRereshLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/folderListView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="MainActivity.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_main.xml 
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var folderListView: RecyclerView
+    private lateinit var swipeRereshLayout: SwipeRefreshLayout
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        this.swipeRereshLayout = findViewById(R.id.swipeRereshLayout)
+        this.folderListView = findViewById(R.id.folderListView)
+
+        this.folderListView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
+
+        var adapter = VideoFolderAdapter(this, this.readVidoeList())
+
+        this.folderListView.adapter = adapter
+
+        this.swipeRereshLayout.setOnRefreshListener {
+            this.readVidoeList()
+            adapter.notifyDataSetChanged()
+
+            this.swipeRereshLayout.isRefreshing = false
+        }
+    }
+
+    private fun readVidoeList(): List<String> {
+
+        var folderList: MutableList<String> = mutableListOf()
+
+        var videoUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        var cursor = contentResolver.query(videoUri, null, null, null, null)
+
+        if (cursor != null && cursor.moveToNext()) {
+
+            do {
+                val path = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DATA).toInt())
+
+                var idx = path.lastIndexOf("/")
+                var subString = path.subSequence(0, idx).toString()
+
+                if (!folderList.contains(subString)) {
+                    folderList.add(subString)
+                }
+
+            } while (cursor.moveToNext())
+        }
+
+        return folderList
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.folder_menu, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId) {
+            R.id.miRateus -> {
+                var uri = Uri.parse("https://play.google.com/store/apps/details?id=" + applicationContext.packageName)
+                startActivity(Intent(Intent.ACTION_VIEW, uri))
+                return true
+            }
+            R.id.miRefresh -> {
+                finish()
+                startActivity(intent)
+                return true
+            }
+            R.id.miShare -> {
+                startActivity(
+                    Intent.createChooser(
+                        Intent()
+                            .setAction(Intent.ACTION_SEND)
+                            .putExtra(Intent.EXTRA_TEXT, "Check this app via\n\n" +
+                                    "https://play.google.com/store/apps/details?id=" + applicationContext.packageName)
+                            .setType("text/plain")
+                        ,"Share app via"
+                    )
+                )
+                return true
+            } else -> {
+                return false
+            }
+        }
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>VideoFilesActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="video_item.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/video_item.xml
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_margin="5dp"
+    android:padding="10dp"
+    android:orientation="horizontal"
+    android:background="?attr/selectableItemBackground">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/thumbnail_card"
+        android:layout_width="112dp"
+        android:layout_height="62dp"
+        app:cardCornerRadius="3dp">
+
+        <ImageView
+            android:id="@+id/thumbnail"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@mipmap/vpicon"/>
+
+        <TextView
+            android:id="@+id/videoDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:padding="4dp"
+            android:text="04:30"
+            android:textColor="@color/white"
+            android:background="@color/light_dark"
+            android:textSize="12sp">
+
+        </TextView>
+
+    </androidx.cardview.widget.CardView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_toRightOf="@id/thumbnail_card"
+        android:orientation="vertical"
+        android:paddingStart="10dp"
+
+        android:layout_toLeftOf="@id/videoMenuMore"
+        android:layout_toEndOf="@id/thumbnail_card">
+        <TextView
+            android:id="@+id/videoName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="20dp"
+            android:text="Video Name"
+            android:textColor="@color/black"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:layout_marginBottom="5dp"></TextView>
+
+        <TextView
+            android:id="@+id/videoSize"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:gravity="bottom"
+            android:layout_weight="1"
+            android:text="4 MB"
+            android:textColor="@color/light_dark"></TextView>
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/videoMenuMore"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:foregroundTint="@color/light_dark"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:src="@drawable/ic_more"/>
+
+</RelativeLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="VideoFilesAdapter.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/videoplayer/VideoFilesAdapter.kt
+class VideoFilesAdapter(private var context: Context, private var videos: List<MediaFiles>): RecyclerView.Adapter<VideoFilesAdapter.ViewHolder>() {
+
+    inner class ViewHolder(private var view: View): RecyclerView.ViewHolder(view) {
+
+        private var thumbnail = view.findViewById<ImageView>(R.id.thumbnail)
+        private var videoMenuMore = view.findViewById<ImageView>(R.id.videoMenuMore)
+
+        private var videoName = view.findViewById<TextView>(R.id.videoName)
+        private var videoSize = view.findViewById<TextView>(R.id.videoSize)
+        private var videoDuration = view.findViewById<TextView>(R.id.videoDuration)
+
+        init {
+
+            this.videoMenuMore.setOnClickListener {
+                Toast.makeText(view.context, "menu more clicked!", Toast.LENGTH_SHORT).show()
+            }
+
+            this.itemView.setOnClickListener {
+
+            }
+        }
+
+        fun bind(model: MediaFiles, videoIndex: Int) {
+
+            this.videoName.text = model.displayName
+            this.videoSize.text = model.size?.let {
+                Formatter.formatFileSize(view.context, it.toLong())
+            }
+            this.videoDuration.text = model.duration?.let {
+                timeConversion(it.toInt())
+            }
+
+            Glide.with(view.context).load(File(model.path)).into(this.thumbnail)
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        var layout = LayoutInflater.from(parent.context).inflate(R.layout.video_item, parent, false)
+
+        return ViewHolder(layout)
+    }
+
+    override fun getItemCount(): Int {
+        return videos.size
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(this.videos[position], position)
+
+        holder.itemView.setOnClickListener {
+            var intent = Intent(context, VideoPlayerActivity::class.java)
+
+            intent.putExtra("videoPosition", position)
+            intent.putExtra("videoTitle", this.videos[position].displayName)
+            intent.putParcelableArrayListExtra("videoPlayerList", ArrayList(this.videos))
+
+            context.startActivity(intent)
+        }
+    }
+
+    private fun timeConversion(duration: Int): String {
+        var rsult = "";
+
+        var hrs = duration / (3600 * 1000)
+        var mins = (duration / 60000) % 60000
+        var secs = duration % 60000 / 1000
+
+        if (hrs > 0) {
+            rsult = String.format("%02d:%02d:%02d", hrs, mins, secs)
+        } else {
+            rsult = String.format("%02d:%02d", mins, secs)
+        }
+
+        return rsult
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="activity_video_files.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_video_files.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activities.VideoFilesActivity">
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/videoListView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+</RelativeLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="VideoFilesActivity.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/videoplayer/VideoFilesActivity.kt
+class VideoFilesActivity : AppCompatActivity() {
+
+    private lateinit var videoListView: RecyclerView
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        setContentView(R.layout.activity_video_files)
+
+        this.videoListView = findViewById(R.id.videoListView)
+        this.videoListView.layoutManager = LinearLayoutManager(this)
+
+        val folderName = intent.getStringExtra("folderName")!!
+
+        supportActionBar?.title = folderName
+
+        this.videoListView.adapter = VideoFilesAdapter(listVideos(folderName))
+    }
+
+    private fun listVideos(folderName: String): List<MediaFiles> {
+
+        var listVideos = mutableListOf<MediaFiles>()
+
+        var videoUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        val selection = MediaStore.Video.Media.DATA + " like?"
+        var selectionArg = arrayOf("%$folderName%")
+
+        var cursor = contentResolver.query(videoUri, null, selection, selectionArg, null)
+
+        if (cursor != null && cursor.moveToNext()) {
+
+            do {
+                val id = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media._ID).toInt())
+                val title = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.TITLE).toInt())
+                val displayName = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DISPLAY_NAME).toInt())
+                val size = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.SIZE).toInt())
+                val duration = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DURATION).toInt())
+                val path = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DATA).toInt())
+                val dateAdded = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DATE_ADDED).toInt())
+
+                listVideos.add(
+                    MediaFiles(
+                        id,title,
+                        displayName,
+                        size, duration, path, dateAdded
+                    ))
+            } while (cursor.moveToNext())
+        }
+
+        return listVideos
+    }
+
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>VideoPlayerActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="build.gradle.kts" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# ./build.gradle.kts (Project)
+# ./app/build.gradle.kts (Module)
+....
+
+dependencies {
+    ....
++    implementation("com.google.android.exoplayer:exoplayer:2.14.1")
+    ....
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="custom_playback_view.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/custom_playback_view.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/black">
+
+    <RelativeLayout
+        android:id="@+id/root_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:visibility="visible"
+            android:layout_marginTop="10dp">
+            <ImageView
+                android:id="@+id/videoBack"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:padding="10dp"
+                android:src="@drawable/ic_arrow_back24"/>
+
+            <TextView
+                android:id="@+id/videoTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:text="This is view title"
+                android:textColor="@color/white"
+                android:textSize="20sp"/>
+
+            <ImageView
+                android:id="@+id/videoList"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center_vertical"
+                android:src="@drawable/ic_playlist24"/>
+
+            <ImageView
+                android:id="@+id/videoMore"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_gravity="center_vertical"
+                android:padding="2dp"
+                android:layout_marginRight="10dp"
+                app:tint="@color/white"
+                android:src="@drawable/ic_more24_weight"/>
+        </LinearLayout>
+
+        <RelativeLayout
+            android:id="@+id/videoProgress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="visible"
+            android:layout_above="@id/bottomIcons">
+            <TextView
+                android:id="@+id/exoPosition"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="10dp"
+                android:text="44"
+                android:textColor="@color/white"/>
+
+            <TextView
+                android:id="@+id/exoDuration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:layout_marginRight="10dp"
+                android:text="55"
+                android:textColor="@color/white"/>
+
+            <com.google.android.exoplayer2.ui.DefaultTimeBar
+                android:id="@+id/exoProgress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toStartOf="@id/exoDuration"
+                android:layout_toEndOf="@id/exoPosition"
+                android:layout_toLeftOf="@id/exoDuration"
+                android:layout_toRightOf="@id/exoPosition"
+                app:played_color="@color/purple_200"
+                app:scrubber_drawable="@drawable/scrubber"/>
+        </RelativeLayout>
+
+        <LinearLayout
+            android:id="@+id/bottomIcons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="5dp"
+            android:gravity="center_vertical"
+            android:weightSum="8">
+
+            <ImageView
+                android:id="@+id/videoUnLock"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_weight="1"
+                android:src="@drawable/ic_lock_open24"/>
+
+            <ImageView
+                android:id="@+id/exoRewind"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_weight="1"
+                android:src="@drawable/ic_replay_10"/>
+
+            <ImageView
+                android:id="@+id/exoPrev"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_weight="1"
+                android:src="@drawable/ic_prev24"/>
+
+            <ImageView
+                android:id="@+id/exoPlay"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:src="@drawable/ic_play24"/>
+
+            <ImageView
+                android:id="@+id/exoPause"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:src="@drawable/ic_pause24"/>
+
+            <ImageView
+                android:id="@+id/exoNext"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_weight="1"
+                android:src="@drawable/ic_next_fill24"/>
+
+            <ImageView
+                android:id="@+id/exoFastword"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_weight="1"
+                android:src="@drawable/ic_forward_24"/>
+
+            <ImageView
+                android:id="@+id/scaling"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:layout_weight="1"
+                android:src="@drawable/ic_scaling24"/>
+        </LinearLayout>
+    </RelativeLayout>
+</RelativeLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="activity_video_player.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_video_player.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    tools:context=".activities.VideoPlayerActivity">
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="22sp"
+        android:text="VideoPlayerActivity" />
+</LinearLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="VideoPlayerActivity.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/videoplayer/VideoPlayerActivity.kt
+class VideoPlayerActivity : AppCompatActivity() {
+
+    private lateinit var playerView: PlayerView
+    private lateinit var simpleExoVideoPlayer: SimpleExoPlayer
+    private lateinit var videoTitleTxt: TextView
+    private lateinit var concatenatingMediaSource: ConcatenatingMediaSource
+
+    private var videoPosition: Int = -1
+    private lateinit var videoTitle: String
+    private lateinit var videoPlayerList: java.util.ArrayList<MediaFiles>
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_video_player)
+
+        this.playerView = findViewById(R.id.exoplayerView)
+        this.videoTitleTxt = playerView.findViewById(R.id.videoTitleTxt)
+
+        supportActionBar?.hide()
+
+        this.videoPosition = intent.getIntExtra("videoPosition", -1)!!
+        this.videoTitle = intent.getStringExtra("videoTitle")!!
+
+        this.videoTitleTxt.text = this.videoTitle
+        this.videoPlayerList = intent.getParcelableArrayListExtra("videoPlayerList")!!
+
+        this.simpleExoVideoPlayer = SimpleExoPlayer.Builder(this).build()
+
+        this.playerView.player = simpleExoVideoPlayer
+        this.playerView.keepScreenOn = true
+
+        playVideo()
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+
+        if (this.simpleExoVideoPlayer.isPlaying) {
+            this.simpleExoVideoPlayer.stop()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+
+        this.simpleExoVideoPlayer.playWhenReady = false
+        this.simpleExoVideoPlayer.playbackState
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        this.simpleExoVideoPlayer.playWhenReady = true
+        this.simpleExoVideoPlayer.playbackState
+    }
+
+    override fun onRestart() {
+        super.onRestart()
+
+
+        this.simpleExoVideoPlayer.playWhenReady = true
+        this.simpleExoVideoPlayer.playbackState
+    }
+
+    private fun playVideo() {
+        var dataSourceFactory = DefaultDataSourceFactory(this, Util.getUserAgent(this, "app"))
+
+        concatenatingMediaSource = ConcatenatingMediaSource()
+
+        for (i in 0 until videoPlayerList.size) {
+            var currFile = this.videoPlayerList[i].path!!
+
+            var mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
+                .createMediaSource(Uri.parse(currFile))
+
+            concatenatingMediaSource.addMediaSource(mediaSource)
+        }
+
+        this.simpleExoVideoPlayer.prepare(concatenatingMediaSource)
+        this.simpleExoVideoPlayer.seekTo(this.videoPosition, C.TIME_UNSET)
+
+        var uri = Uri.parse(this.videoPlayerList[this.videoPosition].path)
+        var retriever = MediaMetadataRetriever()
+        retriever.setDataSource(this@VideoPlayerActivity, uri)
+        var bitmap = retriever.frameAtTime!!
+
+        if (bitmap.width > bitmap.height) {
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        } else {
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        }
+
+        playError()
+    }
+
+    private fun playError() {
+
+        this.simpleExoVideoPlayer.addListener(object: Player.EventListener{
+            override fun onPlayerError(error: ExoPlaybackException) {
+                 super.onPlayerError(error)
+                Toast.makeText(this@VideoPlayerActivity, "Video Playing Error: ${error.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+
+        this.simpleExoVideoPlayer.playWhenReady = true
+    }
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>切换横竖屏</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="AndroidManifest.xml" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/AndroidManifest.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    ....
+    <application
+        ....
+        >
+        <activity
+            android:name=".activities.VideoPlayerActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|layoutDirection"
+            />
+        ....
+    </application>
+
+</manifest>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="VideoPlayerActivity.kt" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/AndroidManifest.xml 
+class VideoPlayerActivity : AppCompatActivity(), View.OnClickListener {
+
+    ...
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
++        setFullScreen()
+
+        setContentView(R.layout.activity_video_player)
+
+        ....
+    }
+
+    private fun setFullScreen() {
+        requestWindowFeature(Window.FEATURE_NO_TITLE)
+        window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>播放下一个</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="AndroidManifest.xml" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+- class VideoPlayerActivity : AppCompatActivity() {
++ class VideoPlayerActivity : AppCompatActivity(), View.OnClickListener {
+
+    ....
+
++    private lateinit var nextVideoBtn: ImageView
++    private lateinit var prevVideoBtn: ImageView
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        
+        ....
+
++        this.nextVideoBtn = playerView.findViewById(R.id.exoNext)
++        this.prevVideoBtn = playerView.findViewById(R.id.exoPrev)
+
++        this.nextVideoBtn.setOnClickListener(this)
++        this.prevVideoBtn.setOnClickListener(this)
+
+        ....
+    }
+
++    override fun onClick(v: View?) {
++        v?.let {
++            if (it.id == R.id.exoNext) {
++                this.simpleExoVideoPlayer.stop()
++                this.videoPosition++
++                this.playVideo()
++            }
++
++            if (it.id == R.id.exoPrev) {
++                this.simpleExoVideoPlayer.stop()
++                this.videoPosition--
++                this.playVideo()
++            }
++        }
++    }
+
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Create a Bottom Sheet Dialog</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="themes.xml" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/values/themes.xml 
+<resources xmlns:tools="http://schemas.android.com/tools">
+    ....
+    
++    <style name="BottomSheetTheme" parent="Theme.Design.Light.BottomSheetDialog">
++        <item name="bottomSheetStyle">@style/BottomSheetStyle</item>
++    </style>
++
++    <style name="BottomSheetStyle" parent="Widget.Design.BottomSheet.Modal">
++        <item name="android:background">@android:color/transparent</item>
++    </style>
+</resources>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="video_bottom_sheet_layout.xml" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/video_bottom_sheet_layout.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/bottom_sheet_background"
+    android:id="@+id/bottomSheetLayout">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_margin="10dp"
+        android:textSize="22sp"
+        android:text="What do you want?"/>
+
+    <LinearLayout
+        android:id="@+id/bs_play"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:padding="11dp"
+        android:background="?attr/selectableItemBackground"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/ic_play_light"
+            app:tint="@color/black" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginLeft="10sp"
+            android:textSize="18sp"
+            android:text="Play Video"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bs_edit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:padding="11dp"
+        android:background="?attr/selectableItemBackground"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/ic_edit24"
+            app:tint="@color/black" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginLeft="10sp"
+            android:textSize="18sp"
+            android:text="Edit Title"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bs_share"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:padding="11dp"
+        android:background="?attr/selectableItemBackground"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/ic_share24"
+            app:tint="@color/black" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginLeft="10sp"
+            android:textSize="18sp"
+            android:text="Share"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bs_delete"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:padding="11dp"
+        android:background="?attr/selectableItemBackground"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/ic_delete24"
+            app:tint="@color/black" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginLeft="10sp"
+            android:textSize="18sp"
+            android:text="Delete"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bs_prop"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:padding="11dp"
+        android:background="?attr/selectableItemBackground"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/ic_priority_high"
+            app:tint="@color/black" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginLeft="10sp"
+            android:textSize="18sp"
+            android:text="Properties"/>
+    </LinearLayout>
+
+</LinearLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="bottom_sheet_background.xml" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/drawable/bottom_sheet_background.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<shape android:shape="rectangle" xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/white" />
+    <corners android:topRightRadius="15dp" android:topLeftRadius="15dp" />
+</shape>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="VideoFilesAdapter.kt" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/videoplayer/VideoFilesAdapter.kt
+class VideoFilesAdapter(private var context: Context, private var videos: List<MediaFiles>): RecyclerView.Adapter<VideoFilesAdapter.ViewHolder>() {
+
++    private lateinit var bottomSheetDialog: BottomSheetDialog
+
+    inner class ViewHolder(private var view: View): RecyclerView.ViewHolder(view) {
+
+        ....
+
++        private var currIndex: Int = -1
++        private lateinit var currModel: MediaFiles
+
++        
++        init {
++
++            this.videoMenuMore.setOnClickListener {
++                bottomSheetDialog = BottomSheetDialog(context, R.style.BottomSheetTheme)
++
++                var bsView = LayoutInflater.from(context).inflate(
++                    R.layout.video_bottom_sheet_layout, it.findViewById(R.id.bottomSheetLayout)
++                )
++
++                bsView.findViewById<LinearLayout>(R.id.bs_play).setOnClickListener {
++                    itemView.performClick()
++                    bottomSheetDialog.dismiss()
++                }
++
++                bsView.findViewById<LinearLayout>(R.id.bs_edit).setOnClickListener {
++                    var alertDialog = AlertDialog.Builder(context)
++
++                    alertDialog.setTitle("Rename to")
++
++                    var editText = EditText(context)
++                    var file = File(currModel.path)
++                    var videoName = file.name.substring(0 , file.name.lastIndexOf("."))
++
++                    editText.setText(videoName)
++
++                    alertDialog.setView(editText)
++                    editText.requestFocus()
++
++                    alertDialog.setPositiveButton("Ok"
++                    ) { _, _ ->
++                        var onlyPath = file.parentFile.absolutePath
++                        var ext = file.absolutePath.substring(file.absolutePath.lastIndexOf("."))
++                        var newPath = onlyPath + "/" + editText.text.toString() + ext
++                        var newFile = File(newPath)
++
++                        if (file.renameTo(newFile)) {
++                            context.applicationContext.contentResolver.delete(
++                                MediaStore.Files.getContentUri("external"),
++                                MediaStore.MediaColumns.DATA + "=?",
++                                arrayOf(file.absolutePath)
++                            )
++
++                            context.applicationContext.sendBroadcast(
++                                Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).setData(Uri.fromFile(newFile))
++                            )
++
++                            notifyDataSetChanged()
++
++                            Toast.makeText(context, "Video Renamed Success", Toast.LENGTH_SHORT).show()
++
++                            SystemClock.sleep(200)
++
++                            (context as Activity).recreate()
++                        } else {
++
++                            Toast.makeText(context, "Video Renamed Failed", Toast.LENGTH_SHORT).show()
++                        }
++                    }
++
++                    alertDialog.setNegativeButton("Cancel") { dialog, _ ->
++                        dialog.dismiss()
++                    }
++
++                    alertDialog.create().show()
++                    bottomSheetDialog.dismiss()
++                }
++
++                bsView.findViewById<LinearLayout>(R.id.bs_share).setOnClickListener {
++                    var uri = Uri.parse(currModel.path)
++                    var shareIntent = Intent(Intent.ACTION_SEND)
++                    shareIntent.setType("video/*")
++                    shareIntent.putExtra(Intent.EXTRA_STREAM, uri)
++
++                    context.startActivity(Intent.createChooser(shareIntent, "Share Video via "))
++                    bottomSheetDialog.dismiss()
++                }
++
++                bsView.findViewById<LinearLayout>(R.id.bs_delete).setOnClickListener {
++                    var alertDialog = AlertDialog.Builder(context)
++
++                    alertDialog.setTitle("Delete Video")
++                    alertDialog.setMessage("Do you want to delete this video")
++
++                    alertDialog.setPositiveButton("Delete"
++                    ) { dialog, _ ->
++                        var uri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, +currModel.id!!.toLong())
++                        var file = File(currModel.path)
++
++                        if (file.delete()) {
++                            context.contentResolver.delete(uri, null, null)
++                            videos.removeAt(currIndex)
++                            notifyItemRemoved(currIndex)
++                            notifyItemRangeChanged(currIndex, videos.size)
++                            Toast.makeText(context, "Video Delete Success", Toast.LENGTH_SHORT).show()
++                            dialog.dismiss()
++                        } else {
++                            Toast.makeText(context, "Video Delete Failed", Toast.LENGTH_SHORT).show()
++                        }
++                    }
++
++                    alertDialog.setNegativeButton("Cancel") { dialog, _ ->
++                        dialog.dismiss()
++                    }
++
++                    alertDialog.show()
++                    bottomSheetDialog.dismiss()
++                }
++
++                bsView.findViewById<LinearLayout>(R.id.bs_prop).setOnClickListener {
++                    var alertDialog = AlertDialog.Builder(context)
++
++                    alertDialog.setTitle("Video Properties")
++
++                    var p1 = "File Name: " + currModel.displayName
++                    var p2 = "Path: " + currModel.path!!.substring(0, currModel.path!!.lastIndexOf("/"))
++                    var p3 = "Size: " + Formatter.formatFileSize(context, currModel.size!!.toLong())
++                    var p4 = "Duration: " + timeConversion(currModel.duration!!.toInt())
++                    var p5 = "Format: " + currModel.displayName!!.substring(currModel.displayName!!.lastIndexOf("."))
++
++                    var retriver = MediaMetadataRetriever()
++                    retriver.setDataSource(currModel.path!!)
++
++                    var height = retriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
++                    var width = retriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
++
++                    var p6 = "Resolution: " +  width + "x" + height
++
++                    alertDialog.setMessage(p1 + "\n\n" + p2 + "\n\n" + p3 + "\n\n" + p4 + "\n\n" + p5 + "\n\n" + p6 + "\n\n")
++
++                    alertDialog.setPositiveButton("Ok"
++                    ) { dialog, _ ->
++                        dialog.dismiss()
++                    }
++
++                    alertDialog.show()
++                    bottomSheetDialog.dismiss()
++                }
++
++                bottomSheetDialog.setContentView(bsView)
++                bottomSheetDialog.show()
++            }
++        }
+
+        fun bind(model: MediaFiles, videoIndex: Int) {
++            this.currIndex = videoIndex
++            this.currModel = model
+
+            ....
+        }
+        ....
+    }
+    ....
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>刷新视频列表</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="activity_video_files.xml" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_video_files.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activities.VideoFilesActivity">
+
++    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
++        android:id="@+id/reloadVideoList"
++        android:layout_width="match_parent"
++        android:layout_height="match_parent">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/videoListView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
++    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+</RelativeLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="VideoFilesActivity.kt" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/videoplayer/VideoFilesAdapter.kt 
+class VideoFilesActivity : AppCompatActivity() {
+    
+    private lateinit var swipeRereshLayout: SwipeRefreshLayout
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+
++        this.swipeRereshLayout = findViewById(R.id.swipeRereshLayout)
+
+        ....
+
++        this.swipeRereshLayout.setOnRefreshListener {
++            this.readVideoList()
++            adapter.notifyDataSetChanged()
++
++            this.swipeRereshLayout.isRefreshing = false
++        }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId) {
+            ....
+            R.id.miRefresh -> {
++                this.swipeRereshLayout.isRefreshing = true
++                this.readVideoList()
++                this.folderListView.adapter?.notifyDataSetChanged()
++
++                Handler().postDelayed( {
++                    this.swipeRereshLayout.isRefreshing = false
++                }, 1000)
++
++                return true
+            }
+            ....
+        }
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Search View 搜索视频</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="video_menu.xml" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/menu/video_menu.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/miSearchView"
+        android:icon="@drawable/ic_search24"
+        android:title="Search"
+        app:actionViewClass="android.widget.SearchView"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/miRefresh"
+        android:icon="@drawable/ic_reload24"
+        android:title="Refresh"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/miSortBy"
+        android:icon="@drawable/ic_reload24"
+        android:title="Sort By"
+        app:showAsAction="never" />
+
+</menu>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="activity_video_files.xml" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_video_files.xml 
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="VideoFilesActivity.kt" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/videoplayer/activities/VideoFilesActivity.kt
+- class VideoFilesActivity : AppCompatActivity() {
++ class VideoFilesActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
+
+    ....
+
++    private lateinit var folderName: String
++    private var listVideos = mutableListOf<MediaFiles>()
+
+
+    private fun listVideos(folderName: String): List<MediaFiles> {
+
+-        var listVideos = mutableListOf<MediaFiles>()
+        ....
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.video_menu, menu)
+
+        var menuItem = menu?.findItem(R.id.miSearchView)
+        var miRefresh = menu?.findItem(R.id.miRefresh)
+        
+        var searchView = menuItem?.actionView as SearchView
+
+        searchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                return false
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                var input = newText?.lowercase()!!
+
+                this@VideoFilesActivity.videoListView.adapter =
+                    VideoFilesAdapter(this@VideoFilesActivity, listVideos(folderName, input).toMutableList())
+
+                return true
+            }
+        })
+
+
+        miRefresh?.setOnMenuItemClickListener {
+            this@VideoFilesActivity.reloadVideoList.isRefreshing = true
+
+            this@VideoFilesActivity.videoListView.adapter =
+                VideoFilesAdapter(this@VideoFilesActivity, listVideos(folderName, null).toMutableList())
+
+            Handler().postDelayed( {
+                this@VideoFilesActivity.reloadVideoList.isRefreshing = false
+            }, 1000)
+
+            true
+        }
+
+//        val params = searchView.layoutParams as LinearLayout.LayoutParams
+//        val defaultMarginStart = params.marginStart
+//
+//        searchView.setOnQueryTextFocusChangeListener { _, hasFocus ->
+//            supportActionBar?.setDisplayShowTitleEnabled(!hasFocus)
+//
+//            if (hasFocus) {
+//                params.marginStart = 0
+//            } else {
+//                params.marginStart = defaultMarginStart
+//            }
+//        }
+
+        return super.onCreateOptionsMenu(menu)
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>视频排序</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="video_menu.xml" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/menu/video_menu.xml 
+
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="VideoFilesActivity.kt" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/videoplayer/activities/VideoFilesActivity.kt
+class VideoFilesActivity : AppCompatActivity() {
+
+    private fun listVideos(folderName: String, filter: String?): List<MediaFiles> {
+
++        var sharedPreferences = getSharedPreferences("my_pref", MODE_PRIVATE)
++        var sortBy = sharedPreferences.getString("sortBy", "")
+
++        var orderBy = when (sortBy) {
++            "Name" -> {
++                MediaStore.MediaColumns.DISPLAY_NAME + " ASC"
++            }
++            "Size" -> {
++                MediaStore.MediaColumns.SIZE + " DESC"
++            }
++            "Date" -> {
++                MediaStore.MediaColumns.DATE_ADDED + " DESC"
++            }
++            "Duration" -> {
++                MediaStore.MediaColumns.DURATION + " DESC"
++            } else -> {
++                MediaStore.MediaColumns.DATE_ADDED + " DESC"
++            }
++        }
+
+        listVideos.clear()
+
+        var videoUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        val selection = MediaStore.Video.Media.DATA + " like?"
+        var selectionArg = arrayOf("%$folderName%")
+
++        var cursor = contentResolver.query(videoUri, null, selection, selectionArg, orderBy)
+
+        .....
+    }
+
++    override fun onOptionsItemSelected(item: MenuItem): Boolean {
++        var sharedPreferences = getSharedPreferences("my_pref", MODE_PRIVATE)
++        var editor = sharedPreferences.edit()
++
++        when (item.itemId) {
++            R.id.miSortBy -> {
++                var alertDialog = AlertDialog.Builder(this@VideoFilesActivity)
++
++                alertDialog.setTitle("Sort By")
++
++                alertDialog.setSingleChoiceItems(
++                    arrayOf("Name (A to Z)", "Size (Big to Small)", "Date (New to Old)", "Duration (Long to Short)"),
++                    -1
++                ) { _, which ->
++                    when (which) {
++                        0 -> {
++                            editor.putString("sortBy", "Name")
++                        }
++                        1 -> {
++                            editor.putString("sortBy", "Size")
++                        }
++                        2 -> {
++                            editor.putString("sortBy", "Date")
++                        }
++                        3 -> {
++                            editor.putString("sortBy", "Duration")
++                        }
++                    }
++                }
++
++                alertDialog.setNegativeButton("Cancel") { dialog, _ ->
++                    dialog.dismiss()
++                }
++
++                alertDialog.setPositiveButton("Ok"
++                ) { _, _ ->
++                    editor.apply()
++                    this.videoListView.adapter = VideoFilesAdapter(
++                       this@VideoFilesActivity, listVideos(folderName, null).toMutableList()
++                    )
++                }
++
++                alertDialog.create().show()
++            }
++        }
++
++        return super.onOptionsItemSelected(item)
++    }
+}
+
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Lock and Unlock Video</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="custom_playback_view.xml" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/custom_playback_view.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    ....
+
++    <ImageView
++        android:id="@+id/videoLock"
++        android:layout_width="50dp"
++        android:layout_height="50dp"
++        android:layout_centerVertical="true"
++        android:layout_alignParentRight="true"
++        android:layout_margin="10dp"
++        android:scaleType="centerInside"
++        android:background="@drawable/ripple_circle"
++        android:visibility="invisible"
++        android:src="@drawable/ic_lock24"
++        app:tint="@color/white" />
+</RelativeLayout>
+
+# app/src/main/res/drawable/circle.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<shape
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:innerRadius="0dp"
+    android:shape="ring"
+    android:thicknessRatio="2"
+    android:useLevel="false">
+    <solid android:color="@color/light_dark" />
+</shape>
+
+# app/src/main/res/drawable/ripple_circle.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<ripple
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:color="@color/purple_200"
+    tools:ignore="NewApi">
+    <item android:drawable="@drawable/circle" />
+</ripple>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="VideoPlayerActivity.kt" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/videoplayer/activities/VideoPlayerActivity.kt
+class VideoPlayerActivity : AppCompatActivity(), View.OnClickListener {
+
+    ....
+
++    private lateinit var rootLayout: RelativeLayout
++    private lateinit var videoBack: ImageView
++    private lateinit var videoUnLock: ImageView
++    private lateinit var videoLock: ImageView
++    private lateinit var scaling: ImageView
+
++    private var screenMode = 1  // 1(to full(2)) 2(to zoom(3)) 3(to default(1))
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        ....
+
++        this.rootLayout = playerView.findViewById(R.id.root_layout)
++        this.videoBack = playerView.findViewById(R.id.videoBack)
++        this.videoUnLock = playerView.findViewById(R.id.videoUnLock)
++        this.videoLock = playerView.findViewById(R.id.videoLock)
++        this.scaling = playerView.findViewById(R.id.scaling)
+
+        ....
+
+
++        this.videoBack.setOnClickListener {
++            if (this.simpleExoVideoPlayer != null) {
++                this.simpleExoVideoPlayer.release()
++            }
++
++            finish()
++        }
++
++        this.videoLock.setOnClickListener{
++            this.rootLayout.visibility = View.VISIBLE
++            this.videoLock.visibility = View.INVISIBLE
++        }
++
++        this.videoUnLock.setOnClickListener {
++            this.rootLayout.visibility = View.INVISIBLE
++            this.videoLock.visibility = View.VISIBLE
++        }
++
++        this.scaling.setOnClickListener{
++            if (screenMode == 1) {
++                // to full screen
++                this.playerView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FILL
++                this.simpleExoVideoPlayer.videoScalingMode = C.VIDEO_SCALING_MODE_DEFAULT
++                this.scaling.setImageResource(R.drawable.ic_full)
++
++                screenMode = 2
++            } else if (screenMode == 2) {
++                // to zoom screen
++                this.playerView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
++                this.simpleExoVideoPlayer.videoScalingMode = C.VIDEO_SCALING_MODE_DEFAULT
++                this.scaling.setImageResource(R.drawable.ic_zoom_out)
++
++                screenMode = 3
++            } else if (screenMode == 3) {
++                // to default screen
++                this.playerView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
++                this.simpleExoVideoPlayer.videoScalingMode = C.VIDEO_SCALING_MODE_DEFAULT
++                this.scaling.setImageResource(R.drawable.ic_scaling24)
++
++                screenMode = 1
++            }
++        }
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Show List of Icons in Horizontal</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="AndroidManifest.xml" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/AndroidManifest.xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
++    <uses-permission android:name="android.permission.WRITE_SETTINGS" tools:ignore="ProtectedPermissions" />
+
+    ....
+</manifest>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="custom_playback_view.xml" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/custom_playback_view.xml
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <RelativeLayout
+        android:id="@+id/root_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        ....
+
++        <androidx.recyclerview.widget.RecyclerView
++            android:id="@+id/recycleIconView"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:layout_below="@id/toolbar"
++            android:layout_alignParentLeft="true"
++            android:layout_alignParentStart="true"/>
+
+        ....
+    </RelativeLayout>
+
+    ....
+</RelativeLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="IconModel.kt" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/videoplayer/IconModel.kt
+class IconModel(
+    val imageView: Int,
+    val iconTitle: String,
+    var type: Int
+) {
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="video_icon_layout.xml" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/video_icon_layout.xml
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <ImageView
+        android:id="@+id/playbackIcon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:scaleType="centerInside"
+        android:layout_centerHorizontal="true"
+        android:background="@drawable/circle"
+        android:src="@drawable/ic_lock24"/>
+
+    <TextView
+        android:id="@+id/iconTitle"
+        android:layout_width="60dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:gravity="center"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/playbackIcon"
+        android:text="Title"
+        android:textColor="@color/white"
+        android:textSize="10sp"/>
+</RelativeLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="activity_video_player.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_video_player.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    tools:context=".activities.VideoPlayerActivity">
+
+    <com.google.android.exoplayer2.ui.PlayerView
+        android:id="@+id/exoplayerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/black"
+        app:hide_on_touch="true"
+        app:resize_mode="fit"
+        app:player_layout_id="@layout/exo_player_view"
+        app:rewind_increment="10000"
+        app:fastforward_increment="10000"
+        app:shutter_background_color="#000000"
+        app:use_controller="true"
+        app:controller_layout_id="@layout/custom_playback_view" />
+
++    <View
++        android:id="@+id/night_mode"
++        android:layout_width="match_parent"
++        android:layout_height="match_parent"
++        android:background="#74000000"
++        android:visibility="gone"/>
+
+</RelativeLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="volume_dialog_layout.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/volume_dialog_layout.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/red"
+    android:padding="10dp"
+    android:orientation="vertical">
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="18sp"
+            android:textColor="@color/white"
+            android:text="Volume"/>
+
+        <ImageView
+            android:id="@+id/closeDialog"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_close24"
+            app:tint="@color/white" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal"
+        android:gravity="center">
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:tint="@color/white"
+            android:src="@drawable/ic_volume_24"/>
+        <android.widget.SeekBar
+            android:id="@+id/volume_value_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:indeterminate="false"
+            android:layout_weight="1"
+            android:progressTint="@color/red2"
+            android:progressBackgroundTint="@color/red2"
+            android:thumbTint="@color/purple_200"
+            android:max="100"
+            android:progress="10"/>
+        <TextView
+            android:id="@+id/volume_value_number"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:text="100"/>
+    </LinearLayout>
+</LinearLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="VolumeDialog.kt" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/videoplayer/VolumeDialog.kt
+class VolumeDialog: AppCompatDialogFragment() {
+
+    private lateinit var cross: ImageView
+    private lateinit var volumeValue: TextView
+    private lateinit var seekBar: SeekBar
+
+    private lateinit var audioManager: AudioManager
+
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        var dialog = AlertDialog.Builder(activity)
+        var view = activity?.layoutInflater?.inflate(R.layout.volume_dialog_layout, null)
+
+        dialog.setView(view)
+
+        activity?.volumeControlStream = AudioManager.STREAM_MUSIC
+
+        cross = view?.findViewById(R.id.closeDialog)!!
+        volumeValue = view?.findViewById(R.id.volume_value_number)!!
+        seekBar = view?.findViewById(R.id.volume_value_bar)!!
+
+        audioManager = context?.getSystemService(Context.AUDIO_SERVICE)!! as AudioManager
+
+        seekBar.max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        seekBar.progress = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+
+        var mediaVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        var maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+
+        var volPer = ceil((mediaVolume.toDouble() / maxVolume.toDouble()) * 100)
+
+        volumeValue.text = volPer.toString()
+
+        seekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, 0)
+                var mediaVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+                var maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+                var volPer = ceil((mediaVolume.toDouble() / maxVolume.toDouble()) * 100)
+
+                volumeValue.text = volPer.toString()
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+
+            }
+        })
+
+        cross.setOnClickListener {
+            dismiss()
+        }
+
+        return dialog.create()
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="bright_ness_dialog_layout.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/bright_ness_dialog_layout.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/red"
+    android:padding="10dp"
+    android:orientation="vertical">
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="18sp"
+            android:textColor="@color/white"
+            android:text="Brightness"/>
+
+        <ImageView
+            android:id="@+id/closeDialog"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_close24"
+            app:tint="@color/white" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal"
+        android:gravity="center">
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:tint="@color/white"
+            android:src="@drawable/ic_brightness24"/>
+        <android.widget.SeekBar
+            android:id="@+id/volume_value_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:indeterminate="false"
+            android:layout_weight="1"
+            android:progressTint="@color/red2"
+            android:progressBackgroundTint="@color/red2"
+            android:thumbTint="@color/purple_200"
+            android:max="100"
+            android:progress="10"/>
+        <TextView
+            android:id="@+id/brightness_value_number"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:text="100"/>
+    </LinearLayout>
+</LinearLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="BrightnessDialog.kt" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/videoplayer/BrightnessDialog.kt
+class BrightnessDialog: AppCompatDialogFragment() {
+
+    private lateinit var cross: ImageView
+    private lateinit var brightnessValue: TextView
+    private lateinit var seekBar: SeekBar
+
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        var dialog = AlertDialog.Builder(activity)
+        var view = activity?.layoutInflater?.inflate(R.layout.bright_ness_dialog_layout, null)
+
+        dialog.setView(view)
+
+        activity?.volumeControlStream = AudioManager.STREAM_MUSIC
+
+        cross = view?.findViewById(R.id.closeDialog)!!
+        brightnessValue = view?.findViewById(R.id.brightness_value_number)!!
+        seekBar = view?.findViewById(R.id.volume_value_bar)!!
+
+        var brightness = Settings.System.getInt(context?.contentResolver, Settings.System.SCREEN_BRIGHTNESS, 0)
+
+        seekBar.progress = brightness
+
+        brightnessValue.text = brightness.toString()
+
+        seekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                var ctx = context?.applicationContext
+
+                var canWrite = Settings.System.canWrite(ctx)
+
+                if (canWrite) {
+                    var sBrightness = progress * 255 / 255
+                    brightnessValue.text = sBrightness.toString()
+
+                    Settings.System.putInt(ctx?.contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL)
+                    Settings.System.putInt(ctx?.contentResolver, Settings.System.SCREEN_BRIGHTNESS, sBrightness)
+                } else {
+                    Toast.makeText(ctx, "Enable write settings for brightness control: " + context?.applicationContext?.packageName + ".", Toast.LENGTH_SHORT).show()
+                    var intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS)
+                    intent.setData(Uri.parse("package:" + context?.applicationContext?.packageName))
+
+                    startActivityForResult(intent, 0)
+                }
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+
+            }
+        })
+
+        cross.setOnClickListener {
+            dismiss()
+        }
+
+        return dialog.create()
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="PlayIconAdapter.kt" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/videoplayer/PlayIconAdapter.kt
+class PlayIconAdapter(private var list: List<IconModel>, private var cb: Callback): RecyclerView.Adapter<PlayIconAdapter.ViewHolder>() {
+
+    interface Callback {
+        fun onItemClickListener(item: IconModel)
+    }
+
+    inner class ViewHolder(private var view: View): RecyclerView.ViewHolder(view) {
+
+        private var playbackIcon = view.findViewById<ImageView>(R.id.playbackIcon)
+        private var iconTitle = view.findViewById<TextView>(R.id.iconTitle)
+
+        private lateinit var currModel: IconModel
+
+        init {
+            itemView.setOnClickListener {
+                this@PlayIconAdapter.cb.onItemClickListener(this.currModel)
+            }
+        }
+
+        fun bind(model: IconModel) {
+            this.currModel = model
+
+            this.playbackIcon.setImageResource(model.imageView)
+            this.iconTitle.text = model.iconTitle
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        var layout = LayoutInflater.from(parent.context).inflate(R.layout.video_icon_layout, parent, false)
+
+        return ViewHolder(layout)
+    }
+
+    override fun getItemCount(): Int {
+        return list.size
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(list[position])
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="VideoPlayerActivity.kt" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/videoplayer/activities/VideoPlayerActivity.kt
+class VideoPlayerActivity : AppCompatActivity(), View.OnClickListener, PlayIconAdapter.Callback {
+
+    ....
+
+
++    private lateinit var recycleIconView: RecyclerView
+
++    private var expandIcon = false
++
++    private lateinit var nightMode: View
++    private var isDarkMode = false
++    private var isMute = false
+
++    private var playbackParameters: PlaybackParameters = PlaybackParameters(1f)
++    private var speed = 1
+
++    private lateinit var dialogProperties: com.developer.filepicker.model.DialogProperties
++    private lateinit var filePickerDialog: FilePickerDialog
++    private lateinit var uriSubtitle: Uri
+
++    private var iconList: MutableList<IconModel> = mutableListOf(
++        IconModel(R.drawable.ic_arrow_right_24, "", 0),
++        IconModel(R.drawable.ic_night24, "Night", 1),
++        IconModel(R.drawable.ic_volume_24, "Mute", 2),
++        IconModel(R.drawable.ic_rotate24, "Rotate", 3)
++    )
+
+
++    private val playIconAdapter: PlayIconAdapter by lazy {
++        PlayIconAdapter(iconList, this)
++    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        
+        ....
+
++       this.dialogProperties = DialogProperties()
++       this.filePickerDialog = FilePickerDialog(this@VideoPlayerActivity)
++
++       this.filePickerDialog.setTitle("Select a Subtitle File")
++       this.filePickerDialog.setPositiveBtnName("Ok")
++       this.filePickerDialog.setNegativeBtnName("Cancel")
+        ....
+
++        this.recycleIconView = playerView.findViewById(R.id.recycleIconView)
++        this.recycleIconView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, true)
+
+        ....
+        
++        this.recycleIconView.adapter = playIconAdapter
+
+        ....
+    }
+
+    ....
+    private fun playVideo() {
+        ....
+
++        this.simpleExoVideoPlayer.playbackParameters = playbackParameters
+        ....
+
+        playError()
+    }
+
+    ....
+
+
++    private fun playVideoSubtitle(subtitle: String) {
++        var oldPosition = this.simpleExoVideoPlayer.currentPosition
++        this.simpleExoVideoPlayer.stop()
++
++
++        var dataSourceFactory = DefaultDataSourceFactory(this, Util.getUserAgent(this, "app"))
++
++        concatenatingMediaSource = ConcatenatingMediaSource()
++
++        for (i in 0 until videoPlayerList.size) {
++            var currFile = this.videoPlayerList[i].path!!
++
++            var mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
++                .createMediaSource(Uri.parse(currFile))
++
++            var textFormat = Format.createTextSampleFormat(null, MimeTypes.APPLICATION_SUBRIP, Format.NO_VALUE, "app")
++            var subtitleSource = SingleSampleMediaSource.Factory(dataSourceFactory)
++                                            .setTreatLoadErrorsAsEndOfStream(true)
++                                            .createMediaSource(Uri.parse(subtitle), textFormat, C.TIME_UNSET)
++            var mergeMediaSource = MergingMediaSource(mediaSource, subtitleSource)
++
++            concatenatingMediaSource.addMediaSource(mergeMediaSource)
++        }
++
++        this.simpleExoVideoPlayer.playbackParameters = playbackParameters
++        this.simpleExoVideoPlayer.prepare(concatenatingMediaSource)
++        this.simpleExoVideoPlayer.seekTo(this.videoPosition, oldPosition)
++
++        var uri = Uri.parse(this.videoPlayerList[this.videoPosition].path)
++        var retriever = MediaMetadataRetriever()
++        retriever.setDataSource(this@VideoPlayerActivity, uri)
++        var bitmap = retriever.frameAtTime!!
++
++
++        if (bitmap.width > bitmap.height) {
++            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
++        } else {
++            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
++        }
++
++        playError()
++    }
+
+    .....
+
++    override fun onItemClickListener(item: IconModel) {
++        when (item.type) {
++            0 -> {
++                if (expandIcon) {
++                    iconList.clear()
++
++                    iconList.add(IconModel(R.drawable.ic_arrow_right_24, "", 0))
++
++                    if (isDarkMode) {
++                        iconList.add(IconModel(R.drawable.ic_day_sunny24, "Day", 1))
++                    } else {
++                        iconList.add(IconModel(R.drawable.ic_night24, "Night", 1))
++                    }
++
++                    if (isMute) {
++                        iconList.add(IconModel(R.drawable.ic_volume_off, "UnMute", 2))
++                    } else {
++                        iconList.add(IconModel(R.drawable.ic_volume_24, "Mute", 2))
++                    }
++
++                    iconList.add(IconModel(R.drawable.ic_rotate24, "Rotate", 3))
++
++                    expandIcon = false
++                } else {
++                    iconList[0] = IconModel(R.drawable.ic_left_line24, "", 0)
++
++                    iconList.add(IconModel(R.drawable.ic_volume_24, "Volume", 4))
++                    iconList.add(IconModel(R.drawable.ic_brightness24, "Brightness", 5))
++                    iconList.add(IconModel(R.drawable.ic_equalizer24, "Equalizer", 6))
++                    iconList.add(IconModel(R.drawable.ic_fast_forward, "Speed", 7))
++                    iconList.add(IconModel(R.drawable.ic_subtitles24, "Subtitle", 8))
++
++                    expandIcon = true
++                }
++
++                playIconAdapter.notifyDataSetChanged()
++            }
++            1 -> {
++                if (isDarkMode) {
++                    nightMode.visibility = View.GONE
++                    iconList[1] = IconModel(R.drawable.ic_night24, "Night", 1)
++                    isDarkMode = false
++                } else {
++                    nightMode.visibility = View.VISIBLE
++                    iconList[1] = IconModel(R.drawable.ic_day_sunny24, "Day", 1)
++                    isDarkMode = true
++                }
++
++                playIconAdapter.notifyDataSetChanged()
++            }
++            2 -> {
++                if (isMute) {
++                    simpleExoVideoPlayer.volume = 100f
++                    iconList[2] = IconModel(R.drawable.ic_volume_24, "Mute", 2)
++                    isMute = false
++                } else {
++                    simpleExoVideoPlayer.volume = 0.0f
++                    iconList[2] = IconModel(R.drawable.ic_volume_off, "UnMute", 2)
++                    isMute = true
++                }
++
++                playIconAdapter.notifyDataSetChanged()
++            }
++            3 -> {
++                if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
++                    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
++                } else {
++                    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
++                }
++                
++                playIconAdapter.notifyDataSetChanged()
++            }
++            4 -> {
++                VolumeDialog().show(supportFragmentManager, "dialog")
++
++                playIconAdapter.notifyDataSetChanged()
++            }
++            5 -> {
++                BrightnessDialog().show(supportFragmentManager, "dialog")
++
++                playIconAdapter.notifyDataSetChanged()
++            }
++            6 -> {
++                var intent = Intent(AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL)
++
++                if (intent.resolveActivity(packageManager) != null) {
++                    startActivityForResult(intent, 123)
++                } else {
++                    Toast.makeText(this@VideoPlayerActivity, "No Equalizer Found", Toast.LENGTH_SHORT).show()
++                }
++
++                playIconAdapter.notifyDataSetChanged()
++            }
++            7 -> {
++               var alertDialog = AlertDialog.Builder(this@VideoPlayerActivity)
++               alertDialog.setTitle("Select Playback Speed").setPositiveButton("Ok", null)
++
++               var items = arrayOf("0.5x", "1x Normal Speed", "1.25", "1.5x", "2x")
++               alertDialog.setSingleChoiceItems(items, -1) { dialog, which ->
++                   when (which) {
++                       0 -> {
++                           speed = 0
++                           playbackParameters = PlaybackParameters((0.5f))
++                           simpleExoVideoPlayer.playbackParameters = playbackParameters
++                       }
++                       1 -> {
++                           speed = 1
++                           playbackParameters = PlaybackParameters((1f))
++                           simpleExoVideoPlayer.playbackParameters = playbackParameters
++                       }
++                       2 -> {
++                           speed = 2
++                           playbackParameters = PlaybackParameters((1.25f))
++                           simpleExoVideoPlayer.playbackParameters = playbackParameters
++                       }
++                       3 -> {
++                           speed = 3
++                           playbackParameters = PlaybackParameters((1.5f))
++                           simpleExoVideoPlayer.playbackParameters = playbackParameters
++                       }
++                       4 -> {
++                           speed = 3
++                           playbackParameters = PlaybackParameters((2f))
++                           simpleExoVideoPlayer.playbackParameters = playbackParameters
++                       }
++                   }
++               }
++
++                alertDialog.create().show()
++            }            
++            8 -> {
++                this.dialogProperties.selection_mode = DialogConfigs.SINGLE_MODE
++                this.dialogProperties.extensions = arrayOf(".srt")
++                this.dialogProperties.root = File("/storage/emulated/0")
++                this.filePickerDialog.properties = this.dialogProperties
++
++                this.filePickerDialog.setDialogSelectionListener { files ->
++                    files?.let {
++                        for (s in it.iterator()) {
++                            this@VideoPlayerActivity.uriSubtitle = Uri.parse(File(s).absolutePath)
++                        }
++
++                        this@VideoPlayerActivity.playVideoSubtitle(this@VideoPlayerActivity.uriSubtitle.toString())
++                    }
++                }
++
++                this.filePickerDialog.show()
++            }
++        }
++    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+</c:component>

@@ -1,0 +1,632 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+
+      
+https://icon-sets.iconify.design/ic/info/ (Android 图标库) <br />
+https://inloop.github.io/svg2android (在线转换将 svg 转换成 Android Drawable)
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Makefile" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+### 当前 Makefile 文件物理路径
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+
+build:
+  ./gradlew build -x test
+
+tasks:
+  ./gradlew tasks
+
+install:
+  ./gradlew installDebug
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="settings.gradle.kts" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# ./settings.gradle.kts
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
++        maven { url=uri("https://jitpack.io") }
+    }
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="build.gradle.kts" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# ./app/build.gradle.kts
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
++    id("kotlin-kapt")
+}
+
+android {
+
+    ....
+
++   buildFeatures {
++       viewBinding = true
++   }
+}
+
+dependencies {
+
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.11.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+
++    implementation("com.github.ismaeldivita:chip-navigation-bar:1.4.0")
++    implementation("com.github.bumptech.glide:glide:4.16.0")
++
++    implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
++    implementation("androidx.recyclerview:recyclerview:1.3.2")
++    implementation("androidx.room:room-runtime:2.6.1")
++
++    kapt("androidx.room:room-compiler:2.6.1")
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>准备资源</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/values/strings.xml
+<resources>
+    <string name="app_name">Bottom Navigation Drawer Toolbar Fragment</string>
+
++    <string name="close">Close</string>
++    <string name="open">Open</string>
+</resources>
+
+1. menu
+# app/src/main/res/drawable/baseline_menu_24.xml
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:fillColor="@color/black"
+        android:pathData="M3 18h18v-2H3zm0-5h18v-2H3zm0-7v2h18V6z" />
+</vector>
+
+2. home
+# app/src/main/res/drawable/baseline_home_24.xml
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:fillColor="#000000"
+        android:pathData="M10 20v-6h4v6h5v-8h3L12 3L2 12h3v8z" />
+</vector>
+
+3. notification
+# app/src/main/res/drawable/baseline_notification_24.xml
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:fillColor="#000000"
+        android:pathData="M19 17v-5.2c-0.5 0.1 -1 0.2-1.5 0.2 H17v6H7v-7c0-2.8 2.2-5 5-5c0.1-1.3 0.7 -2.4 1.5-3.3c-0.3-0.4-0.9-0.7-1.5-0.7c-1.1 0-2 0.9-2 2v0.3C7 5.2 5 7.9 5 11v6l-2 2v1h18v-1zm-9 4c0 1.1 0.9 2 2 2s2-0.9 2-2zM21 6.5c0 1.9-1.6 3.5-3.5 3.5S14 8.4 14 6.5S15.6 3 17.5 3S21 4.6 21 6.5" />
+</vector>
+
+4. bus
+# app/src/main/res/drawable/baseline_bus_24.xml
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+
+    <path
+        android:fillColor="#000000"
+        android:pathData="M27 11h2v4h-2zM3 11h2v4H3zm17 9h2v2h-2zm-10 0h2v2h-2z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M21 4H11a5.006 5.006 0 0 0-5 5v14a2.002 2.002 0 0 0 2 2v3h2v-3h12v3h2v-3a2.003 2.003 0 0 0 2-2V9a5.006 5.006 0 0 0-5-5m3 6v6H8v-6ZM11 6h10a2.995 2.995 0 0 1 2.816 2H8.184A2.995 2.995 0 0 1 11 6M8 23v-5h16.001l0.001 5Z" />
+</vector>
+
+5. rating
+# app/src/main/res/drawable/baseline_rating_24.xml
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="512dp"
+    android:height="512dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+
+    <path
+        android:fillColor="#000000"
+        android:pathData="M256 52.098c-18.38 16.053-47.185 33.518-77.79 49.72c-31.429 16.64-63.92 31.224-88.325 39.985c1.978 11.276 8.625 32.908 19.18 58.363c12.599 30.386 29.991 66.674 48.845 101.404c18.854 34.731 39.218 67.959 57.514 92.11c9.148 12.075 17.812 21.879 25.164 28.322c7.351 6.443 13.412 8.861 15.412 8.861s8.06-2.418 15.412-8.861c7.352-6.443 16.016-16.247 25.164-28.322c18.296-24.151 38.66-57.379 57.514-92.11c18.854-34.73 36.246-71.018 48.846-101.404c10.554-25.455 17.201-47.087 19.18-58.363c-24.406-8.761-56.897-23.345-88.327-39.985c-30.604-16.202-59.41-33.667-77.789-49.72m-132.025 9.716c-31.98 15.99-64.158 31.922-96.032 48.016L23 112.326v5.537c0 11 4.334 26.468 10.46 44.848c6.127 18.38 14.22 38.641 22.49 55.178l16.1-8.05c-7.73-15.463-15.637-35.2-21.51-52.821c-4.531-13.591-7.698-26.391-8.933-33.895c29.99-15.11 60.25-30.124 90.418-45.209zm264.05 0l-8.05 16.1c30.169 15.085 60.429 30.1 90.418 45.21c-1.234 7.503-4.402 20.303-8.932 33.894c-5.874 17.62-13.78 37.358-21.512 52.822l16.102 8.049c8.268-16.537 16.362-36.799 22.488-55.178C484.666 144.33 489 128.863 489 117.863v-5.537l-4.943-2.496c-31.874-16.094-64.053-32.026-96.032-48.016M256 98.186l6.777 7.755c7.366 8.43 27.707 20.13 49.31 29.832c21.605 9.702 44.603 18.144 59.12 23.682l5.793 2.21v6.198c0 6.305-1.831 12.916-4.621 21.258c-2.79 8.342-6.69 18.085-11.389 28.78c-9.396 21.389-21.982 46.542-35.078 70.706c-13.096 24.165-26.675 47.295-38.152 64.67c-5.739 8.688-10.92 15.916-15.477 21.313c-2.278 2.698-4.372 4.938-6.594 6.808c-2.221 1.87-4.282 3.976-9.265 4.211l-0.424 0.02 l-0.424-0.02c-4.983-0.235-7.044-2.34-9.265-4.21c-2.222-1.87-4.316-4.11-6.594-6.81c-4.556-5.396-9.738-12.624-15.477-21.312c-11.477-17.375-25.056-40.505-38.152-64.67c-13.096-24.164-25.682-49.317-35.078-70.707c-4.698-10.694-8.599-20.437-11.389-28.779c-2.79-8.342-4.621-14.953-4.621-21.258v-6.199l5.793-2.209c14.517-5.538 37.515-13.98 59.12-23.682c21.603-9.702 41.944-21.402 49.31-29.832zm0 26.154c-12.288 10.561-30.065 19.479-48.713 27.853c-19.6 8.803-38.986 16.077-53.34 21.506c0.608 2.68 1.504 6.005 2.744 9.713c2.523 7.542 6.247 16.888 10.8 27.25c9.103 20.724 21.517 45.56 34.421 69.37c12.904 23.809 26.325 46.638 37.348 63.325c5.511 8.344 10.454 15.172 14.21 19.622c1.073 1.27 1.707 1.816 2.53 2.654c0.823-0.838 1.457-1.384 2.53-2.654c3.756-4.45 8.699-11.278 14.21-19.622c11.023-16.687 24.444-39.516 37.348-63.326c12.904-23.81 25.318-48.645 34.422-69.369c4.552-10.362 8.276-19.708 10.799-27.25a102.476 102.476 0 0 0 2.744-9.713c-14.354-5.429-33.74-12.703-53.34-21.506c-18.648-8.374-36.425-17.292-48.713-27.853m-56.896 303.998l-14.208 11.05s9.676 12.468 22.915 25.01c13.238 12.543 29.456 26.465 48.189 26.465s34.95-13.922 48.19-26.465c13.238-12.542 22.914-25.01 22.914-25.01l-14.208-11.05s-8.991 11.534-21.085 22.992c-12.095 11.458-27.878 21.533-35.811 21.533s-23.716-10.075-35.81-21.533c-12.095-11.458-21.086-22.992-21.086-22.992" />
+</vector>
+
+5. login
+# app/src/main/res/drawable/baseline_login_24.xml
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:fillColor="#000000"
+        android:pathData="M12 21v-2h7V5h-7V3h7q0.825 0 1.413 0.588 T21 5v14q0 0.825-0.587 1.413T19 21zm-2-4l-1.375-1.45l2.55-2.55H3v-2h8.175l-2.55-2.55L10 7l5 5z" />
+</vector>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>更新主题</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/values/themes.xml 
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style 
+      name="Base.Theme.BottomNavigationDrawerToolbarFragment" 
+      parent="Theme.MaterialComponents.DayNight.NoActionBar">
+
++      <item name="android:statusBarColor">@android:color/transparent</item>
+
+    </style>
+
+    <style name="Theme.BottomNavigationDrawerToolbarFragment" parent="Base.Theme.BottomNavigationDrawerToolbarFragment" />
+</resources>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>创建菜单</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="appbarmenu.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/menu/appbarmenu.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/biHome"
+        android:title="Home"
+        android:icon="@drawable/baseline_home_24"
+        app:showAsAction="ifRoom"
+        app:iconTint="@color/white"/>
+
+    <item
+        android:id="@+id/biNotification"
+        android:title="Notification"
+        android:icon="@drawable/baseline_notification_24"
+        app:showAsAction="ifRoom"
+        app:iconTint="@color/white"
+        />
+</menu>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>HeaderLayout</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="header_layout.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/header_layout.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="176dp"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:src="@drawable/hero"
+            android:scaleType="centerCrop"/>
+
+        <TextView
+            android:id="@+id/usernameTxt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="20sp"
+            android:text="HeaderLayout" />
+
+    </LinearLayout>
+
+</LinearLayout>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Navigation Item</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="navigation_item.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/menu/navigation_item.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group>
+        <item
+            android:id="@+id/miHome"
+            android:icon="@drawable/baseline_home_24"
+            android:title="Home"
+            android:checkable="true"/>
+        <item
+            android:id="@+id/miBus"
+            android:icon="@drawable/baseline_bus_24"
+            android:title="Bus"
+            android:checkable="true" />
+        <item
+            android:id="@+id/miRating"
+            android:icon="@drawable/baseline_rating_24"
+            android:title="Rating"
+            android:checkable="true" />
+    </group>
+
+    <group android:checkableBehavior="single">
+        <item android:title="Profile">
+            <menu>
+                <item
+                    android:id="@+id/miLogin"
+                    android:icon="@drawable/baseline_login_24"
+                    android:title="Login" />
+            </menu>
+        </item>
+    </group>
+</menu>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>MainActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="activity_main.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# ./app/src/main/res/layout/activity_main.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/drawerLayout"
+    tools:openDrawer="start"
+    tools:context=".MainActivity">
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <com.google.android.material.appbar.AppBarLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/materialToolBar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                app:navigationIcon="@drawable/baseline_menu_24"
+                app:navigationIconTint="#ffffff"
+                app:title="Facebook"
+                app:titleTextColor="#FFEB3B"
+                app:menu="@menu/appbarmenu">
+
+            </com.google.android.material.appbar.MaterialToolbar>
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <FrameLayout
+            android:id="@+id/frameLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="?attr/actionBarSize">
+
+        </FrameLayout>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/navigationView"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        app:headerLayout="@layout/header_layout"
+        app:menu="@menu/navigation_item">
+
+    </com.google.android.material.navigation.NavigationView>
+
+</androidx.drawerlayout.widget.DrawerLayout>
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="MainActivity.kt" id="sourceContent1" 
+                     style="background-color:white;margin-top:0em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# ./app/src/main/java/com/android_labs/bottomnavigationdrawertoolbarfragment/MainActivity.kt
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var materialToolBar: MaterialToolbar
+    private lateinit var frameLayout: FrameLayout
+    private lateinit var navigationView: NavigationView
+    private lateinit var headerView: View
+    private lateinit var usernameTxt: TextView
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        this.drawerLayout = findViewById(R.id.drawerLayout)
+        this.materialToolBar = findViewById(R.id.materialToolBar)
+        this.frameLayout = findViewById(R.id.frameLayout)
+        this.navigationView = findViewById(R.id.navigationView)
+
+        this.headerView = this.navigationView.getHeaderView(0)
+        this.usernameTxt = this.headerView.findViewById(R.id.usernameTxt)
+
+        this.usernameTxt.text = "Facebook"
+
+        var toggle = ActionBarDrawerToggle(
+            this@MainActivity, drawerLayout, materialToolBar, R.string.close, R.string.open
+        )
+
+        drawerLayout.addDrawerListener(toggle)
+
+        navigationView.setNavigationItemSelectedListener {
+
+            if (it.itemId == R.id.miHome) {
+                loadFragment(HomeFragment())
+                drawerLayout.closeDrawer(GravityCompat.START)
+            } else if (it.itemId == R.id.miBus) {
+                loadFragment(BusFragment())
+                drawerLayout.closeDrawer(GravityCompat.START)
+            }
+
+            true
+        }
+
+        materialToolBar.setOnMenuItemClickListener {
+
+            if (it.itemId == R.id.biHome) {
+                loadFragment(HomeFragment())
+            } else if (it.itemId == R.id.biNotification) {
+
+                Toast.makeText(this@MainActivity, "Notification", Toast.LENGTH_SHORT).show()
+            }
+
+            true
+        }
+    }
+
+    fun loadFragment(fragment: Fragment) {
+        if (supportFragmentManager.findFragmentById(R.id.frameLayout) == null) {
+            var ft = supportFragmentManager.beginTransaction()
+            ft.add(R.id.frameLayout, fragment)
+            ft.commit()
+        } else {
+            var ft = supportFragmentManager.beginTransaction()
+            ft.replace(R.id.frameLayout, fragment)
+            ft.commit()
+        }
+    }
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+<img src="/images/android/nav1.png" width="100%" />
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>HomeFragment</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="fragment_home.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# ./app/src/main/res/layout/fragment_home.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".HomeFragment"
+    android:background="#FFC107">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="Home Page"
+        android:textSize="25sp"
+        android:gravity="center"
+        android:textColor="#E91E63"
+        android:textStyle="bold"/>
+
+</FrameLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="BusFragment.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/bottomnavigationdrawertoolbarfragment/HomeFragment.kt
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#CDDC39"
+    tools:context=".BusFragment">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:textStyle="bold"
+        android:textSize="20sp"
+        android:gravity="center"
+        android:text="Bus Page" />
+
+</FrameLayout>
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+</c:component>

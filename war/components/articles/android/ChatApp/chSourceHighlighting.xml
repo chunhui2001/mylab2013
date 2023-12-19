@@ -1,0 +1,891 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+https://icon-sets.iconify.design/ic/info/ (Android 图标库) <br />
+https://inloop.github.io/svg2android (在线转换将 svg 转换成 Android Drawable) <br />
+https://romannurik.github.io/AndroidAssetStudio/icons-launcher.html (应用图标在线生成)
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Makefile" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+### 当前 Makefile 文件物理路径
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+
+build:
+  ./gradlew build -x test
+
+tasks:
+  ./gradlew tasks
+
+install:
+  ./gradlew installDebug
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="settings.gradle.kts" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# ./settings.gradle.kts
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
++        maven { url=uri("https://jitpack.io") }
++        maven { url = uri("https://jcenter.bintray.com")}
+    }
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="build.gradle.kts" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# ./build.gradle.kts (Project)
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+plugins {
+    id("com.android.application") version "8.3.0" apply false
+    id("org.jetbrains.kotlin.android") version "1.9.22" apply false
+}
+
+# ./app/build.gradle.kts (Module)
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
++    id("kotlin-kapt")
+}
+
+android {
+    namespace = "com.android_labs.moviesapp"
+    compileSdk = 34
+
+    defaultConfig {
+        applicationId = "com.android_labs.moviesapp"
+        minSdk = 24
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
++   buildFeatures {
++       viewBinding = true
++   }
+}
+
+dependencies {
+
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.androidx.activity)
+    implementation(libs.androidx.constraintlayout)
+    
++    implementation("com.github.ismaeldivita:chip-navigation-bar:1.4.0")
++    implementation("com.github.bumptech.glide:glide:4.16.0")
++    implementation("com.google.code.gson:gson:2.8.7")
++    implementation("com.squareup.picasso:picasso:2.5.2")
++
++    implementation("com.squareup.retrofit2:retrofit:2.5.0")
++    implementation("com.squareup.retrofit2:converter-scalars:2.5.0")
++    implementation("com.android.volley:volley:1.2.1")
++    implementation("com.squareup.okhttp3:okhttp:3.12.0")
++
++    implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
++    implementation("androidx.recyclerview:recyclerview:1.3.2")
++    implementation("de.hdodenhof:circleimageview:3.0.0")
++    implementation("androidx.room:room-runtime:2.6.1")
++    implementation("androidx.viewpager2:viewpager2:1.0.0")
++
++    kapt("androidx.room:room-compiler:2.6.1")
+
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>ChatApplication</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="ChatApplication.kt " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+import android.app.Application
+
+class ChatApplication: Application() {
+
+    override fun onCreate() {
+        super.onCreate()
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>修改系统权限</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="AndroidManifest.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/AndroidManifest.xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
++    <uses-permission android:name="android.permission.INTERNET" />
++    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
++    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+    <application
++               android:name=".ChatApplication"
++ (optional)    android:networkSecurityConfig="@xml/network_security_config"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
++        android:usesCleartextTraffic="true"
+        android:theme="@style/Theme.TodoApp"
+        tools:targetApi="31">
+        <activity
+            android:name=".activities.SplashActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
+
+# app/src/main/res/xml/network_security_config.xml
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true" usesCleartextTraffic="true">
+        <domain includeSubdomains="true">92c8-13-230-16-197.ngrok-free.app</domain>
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">192.168.1.5</domain>
+    </domain-config>
+</network-security-config>
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>修改系统主题</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="colors.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/values/colors.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="grey">#9f9a9a</color>
+    <color name="orange">#ff7427</color>
+    <color name="yellow">#ffc107</color>
+    <color name="mainColor">#1f1d28</color>
+    <color name="darkBlue">#252836</color>
+
+    <color name="primary">#FF9800</color>
+    <color name="primary_dark">#130041</color>
+    <color name="primary_light">#FFE0B2</color>
+    <color name="accent">#FF5722</color>
+    <color name="primary_text">#212121</color>
+    <color name="secondary_text">#757575</color>
+    <color name="icons">#212121</color>
+    <color name="divider">#BDBDBD</color>
+    
+    <!-- 状态栏颜色 -->
+    <color name="design_default_color_primary_dark">#ff7427</color>
+</resources>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="themes.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/values/themes.xml 
+<resources xmlns:tools="http://schemas.android.com/tools">
+-    <style name="Base.Theme.FoodsApp" parent="Theme.Material3.DayNight.NoActionBar">
++    <style name="Base.Theme.MoviesApp" parent="Theme.MaterialComponents.DayNight.NoActionBar">
++        <item name="colorPrimary">@color/primary</item>
++        <item name="colorPrimaryVariant">@color/primary_dark</item>
++        <item name="colorOnPrimary">@color/white</item>
++
++        <item name="colorSecondary">@color/accent</item>
++        <item name="colorSecondaryVariant">@color/accent</item>
++        <item name="colorOnSecondary">@color/white</item>
+
+-        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+
+    <style name="Theme.MoviesApp" parent="Base.Theme.MoviesApp" />
+</resources>
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>MainActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="activity_main.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_main.xml
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    tools:context=".MainActivity">
+
+    <EditText
+        android:id="@+id/userNameInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/input_background"
+        android:hint="Enter your name"
+        android:padding="10dp"
+        android:layout_margin="16dp"
+        android:textSize="22sp"/>
+
+    <Button
+        android:id="@+id/enterRoomBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/userNameInput"
+        android:layout_margin="16dp"
+        android:padding="10dp"
+        android:text="Enter Room"
+        android:textSize="18sp"
+        android:textAllCaps="false"/>
+
+</RelativeLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="MainActivity.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+#  app/src/main/java/com/android_labs/chatapp/MainActivity.kt
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var userNameInput: EditText
+    private lateinit var enterRoomBtn: Button
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        this.userNameInput = findViewById(R.id.userNameInput)
+        this.enterRoomBtn = findViewById(R.id.enterRoomBtn)
+
+        this.enterRoomBtn.setOnClickListener { _ ->
+            if (this.userNameInput.text.isEmpty()) {
+                Toast.makeText(this@MainActivity, "Please input your name", Toast.LENGTH_SHORT).show()
+            } else {
+                startActivity(ChatActivity.newIntent(this@MainActivity, this.userNameInput.text.toString()))
+            }
+        }
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>ChatActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="activity_chat.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_chat.xml
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ChatActivity">
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/messageListView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/line1"/>
+
+    <LinearLayout
+        android:id="@+id/line1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="8dp"
+        android:orientation="horizontal">
+        <ImageView
+            android:id="@+id/pickImageBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_image24"
+            android:scaleType="fitXY"
+            android:padding="8dp"
+            app:tint="@color/purple_200"/>
+
+        <EditText
+            android:id="@+id/messageBoxInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/input_background"
+            android:padding="8dp"
+            android:layout_weight="1"
+            android:hint="Message ..."
+            android:textSize="16sp"/>
+
+        <TextView
+            android:id="@+id/sendMessageBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="Send"
+            android:textColor="@color/purple_500"/>
+    </LinearLayout>
+</RelativeLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="ChatActivity.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+#  app/src/main/java/com/android_labs/chatapp/ChatActivity.kt
+const val SERVER_URL = "ws://echo.websocket.org"
+private const val TAG = "com.android_labs.chatapp.ChatActivity"
+private const val REQUEST_IMAGE_CODE = 1
+
+class ChatActivity : AppCompatActivity() {
+
+    companion object {
+        fun newIntent(context: Context, userName: String): Intent {
+            return Intent(context, ChatActivity::class.java).putExtra("userName", userName)
+        }
+    }
+
+    private lateinit var webSocket: WebSocket
+
+    private lateinit var currentUserName: String
+    private lateinit var pickImageBtn: ImageView
+    private lateinit var messageBoxInput: EditText
+    private lateinit var sendMessageBtn: TextView
+    private lateinit var messageListView: RecyclerView
+    private var messages = mutableListOf<JSONObject>()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_chat)
+
+        this.currentUserName = intent?.getStringExtra("userName")!!
+
+        this.initWebSocket()
+    }
+
+    private fun initWebSocket() {
+        this.webSocket = OkHttpClient().newWebSocket(
+            Request.Builder().url(SERVER_URL).build(),
+            EchoWebSocketListener()
+        )
+    }
+
+    private fun initView() {
+        this.pickImageBtn = findViewById(R.id.pickImageBtn)
+        this.messageBoxInput = findViewById(R.id.messageBoxInput)
+        this.sendMessageBtn = findViewById(R.id.sendMessageBtn)
+        this.messageListView = findViewById(R.id.messageListView)
+
+        this.messageBoxInput.addTextChangedListener(object: TextWatcher{
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+
+            }
+
+            override fun afterTextChanged(s: Editable?) {
+                var inputMessage = s.toString().trim()
+
+                if (inputMessage.isNotEmpty()) {
+
+                }
+            }
+        })
+
+        this.sendMessageBtn.setOnClickListener {
+            var inputMessage = this.messageBoxInput.text.toString().trim()
+
+            if (inputMessage.isNotEmpty()) {
+                sendText(inputMessage)
+                this.messageBoxInput.setText("")
+            }
+        }
+
+        this.pickImageBtn.setOnClickListener {
+            var intent = Intent(Intent.ACTION_GET_CONTENT)
+            intent.setType("image/*")
+
+            startActivityForResult(Intent.createChooser(intent, "Pick a image"), REQUEST_IMAGE_CODE)
+        }
+
+        this.messageListView.adapter = MessageAdapter(currentUserName, messages)
+        this.messageListView.layoutManager = LinearLayoutManager(this@ChatActivity, LinearLayoutManager.VERTICAL, false)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (REQUEST_IMAGE_CODE == requestCode && resultCode == RESULT_OK) {
+            data?.let { it1 ->
+                it1.data?.let { it2 ->
+                    var inputStream = contentResolver.openInputStream(it2)
+                    BitmapFactory.decodeStream(inputStream)?.let { image ->
+                        sendImage(image)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun sendImage(image: Bitmap) {
+        var outputStream = ByteArrayOutputStream()
+        image.compress(Bitmap.CompressFormat.JPEG, 50, outputStream)
+
+        var base64String = Base64.encodeToString(outputStream.toByteArray(), Base64.DEFAULT)
+
+        var message = JSONObject()
+
+        message.put("name", currentUserName)
+        message.put("image", base64String)
+        message.put("timestamp", System.currentTimeMillis())
+
+        this.webSocket.send(message.toString())
+        this@ChatActivity.messageListView.adapter!!.notifyDataSetChanged()
+    }
+
+    private fun sendText(msg: String) {
+        var message = JSONObject()
+
+        message.put("name", currentUserName)
+        message.put("message", msg)
+        message.put("timestamp", System.currentTimeMillis())
+
+        this.webSocket.send(message.toString())
+        this@ChatActivity.messageListView.adapter!!.notifyDataSetChanged()
+    }
+
+    inner class EchoWebSocketListener() : WebSocketListener() {
+
+        override fun onOpen(webSocket: WebSocket, response: Response) {
+            super.onOpen(webSocket, response)
+
+            runOnUiThread{
+                Toast.makeText(this@ChatActivity, "Socket connection successful", Toast.LENGTH_SHORT).show()
+                initView()
+            }
+        }
+
+        override fun onMessage(webSocket: WebSocket, text: String) {
+            super.onMessage(webSocket, text)
+
+            runOnUiThread {
+                if (text.startsWith("{") && text.endsWith("}")) {
+                    var message = JSONObject(text)
+                    // display message
+                    this@ChatActivity.messages.add(message)
+                    this@ChatActivity.messageListView.adapter!!.notifyDataSetChanged()
+                } else {
+                    Toast.makeText(this@ChatActivity, text, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="MessageAdapter.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+#  app/src/main/java/com/android_labs/chatapp/MessageAdapter.kt
+const val TYPE_MESSAGE_SENT = 0
+const val TYPE_MESSAGE_RECEIVED = 1
+const val TYPE_IMAGE_SENT = 2
+const val TYPE_IMAGE_RECEIVED = 3
+
+class MessageAdapter(private var currentUserName: String, private var messages: List<JSONObject>): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+    inner class SendMessageHolder(view: View): RecyclerView.ViewHolder(view) {
+        private var userNameText = view.findViewById<TextView>(R.id.userNameText)
+        private var messageText = view.findViewById<TextView>(R.id.messageText)
+
+        fun bind(msg: JSONObject) {
+            userNameText.text = msg.getString("name")
+            messageText.text = msg.getString("message")
+        }
+    }
+
+    inner class SendImageHolder(view: View): RecyclerView.ViewHolder(view) {
+        private var userNameText = view.findViewById<TextView>(R.id.userNameText)
+        private var messageImage = view.findViewById<ImageView>(R.id.messageImage)
+
+        fun bind(msg: JSONObject) {
+            userNameText.text = msg.getString("name")
+
+            var bytes = android.util.Base64.decode(msg.getString("image"), android.util.Base64.DEFAULT)
+            var img = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            messageImage.setImageBitmap(img)
+        }
+    }
+
+    inner class ReceiveMessageHolder(view: View): RecyclerView.ViewHolder(view) {
+        private var userNameText = view.findViewById<TextView>(R.id.userNameText)
+        private var messageText = view.findViewById<TextView>(R.id.messageText)
+
+        fun bind(msg: JSONObject) {
+            userNameText.text = msg.getString("name")
+            messageText.text = msg.getString("message")
+        }
+    }
+
+    inner class ReceiveImageHolder(view: View): RecyclerView.ViewHolder(view) {
+        private var userNameText = view.findViewById<TextView>(R.id.userNameText)
+        private var messageImage = view.findViewById<ImageView>(R.id.messageImage)
+
+        fun bind(msg: JSONObject) {
+            userNameText.text = msg.getString("name")
+            var bytes = android.util.Base64.decode(msg.getString("image"), android.util.Base64.DEFAULT)
+            var img = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            messageImage.setImageBitmap(img)
+        }
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        var msg = messages[position]
+        var userName = msg.getString("name")
+
+        if (userName.equals(currentUserName)) {
+            if (msg.has("message")) {
+                return TYPE_MESSAGE_SENT
+            } else {
+                return TYPE_IMAGE_SENT
+            }
+        } else {
+            if (msg.has("message")) {
+                return TYPE_MESSAGE_RECEIVED
+            } else {
+                return TYPE_IMAGE_RECEIVED
+            }
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+
+        when (viewType) {
+            TYPE_MESSAGE_SENT -> {
+                var layout = LayoutInflater.from(parent.context).inflate(R.layout.item_message_layout, parent, false)
+                return SendMessageHolder(layout)
+            }
+            TYPE_IMAGE_SENT -> {
+                var layout = LayoutInflater.from(parent.context).inflate(R.layout.item_image_layout, parent, false)
+                return SendImageHolder(layout)
+            }
+            TYPE_MESSAGE_RECEIVED -> {
+                var layout = LayoutInflater.from(parent.context).inflate(R.layout.item_receive_message, parent, false)
+                return ReceiveMessageHolder(layout)
+            }
+            TYPE_IMAGE_RECEIVED -> {
+                var layout = LayoutInflater.from(parent.context).inflate(R.layout.item_receive_image, parent, false)
+                return ReceiveImageHolder(layout)
+            } else -> {
+                var layout = LayoutInflater.from(parent.context).inflate(R.layout.item_message_layout, parent, false)
+                return SendMessageHolder(layout)
+            }
+        }
+    }
+
+    override fun getItemCount(): Int {
+        return messages.size
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        var userName = messages[position].getString("name")
+
+        if (userName.equals(currentUserName)) {
+            if (messages[position].has("message")) {
+                (holder as SendMessageHolder).bind(messages[position])
+            } else {
+                (holder as SendImageHolder).bind(messages[position])
+            }
+        } else {
+            if (messages[position].has("message")) {
+                (holder as ReceiveMessageHolder).bind(messages[position])
+            } else {
+                (holder as ReceiveImageHolder).bind(messages[position])
+            }
+        }
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="item_message_layout.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/item_message_layout.xml
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/userNameText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_margin="4dp"
+        android:textStyle="bold"
+        android:text="user name"/>
+
+    <TextView
+        android:id="@+id/messageText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_below="@id/userNameText"
+        android:layout_marginEnd="4dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
+        android:layout_marginStart="64dp"
+        android:padding="8dp"
+        android:background="@color/grey"
+        android:text="Hello this is message"/>
+
+</RelativeLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="item_image_layout.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/item_image_layout.xml
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/userNameText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_margin="4dp"
+        android:textStyle="bold"
+        android:text="user name"/>
+
+    <ImageView
+        android:id="@+id/messageImage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_below="@id/userNameText"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
+        android:src="@drawable/ic_launcher_background"/>
+</RelativeLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="item_receive_message.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/item_receive_message.xml
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/userNameText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="4dp"
+        android:textStyle="bold"
+        android:text="user name"/>
+
+    <TextView
+        android:id="@+id/messageText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
+        android:layout_marginStart="4dp"
+        android:padding="8dp"
+        android:background="@color/teal_700"
+        android:textColor="@color/white"
+        android:layout_below="@id/userNameText"
+        android:textSize="16sp"
+        android:text="Hello this is message"/>
+
+</RelativeLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="item_receive_image.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/item_receive_image.xml
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/userNameText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="4dp"
+        android:textStyle="bold"
+        android:text="user name"/>
+
+    <ImageView
+        android:id="@+id/messageImage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="4dp"
+        android:layout_below="@id/userNameText"
+        android:src="@drawable/ic_launcher_background"/>
+</RelativeLayout>
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+</c:component>

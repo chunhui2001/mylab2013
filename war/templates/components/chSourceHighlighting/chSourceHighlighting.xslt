@@ -95,7 +95,7 @@
         <div style="{concat($style,@style)}">
           
           <xsl:if test="current()/@title and normalize-space(current()/@title) != ''">
-            <h6 style="margin:0; background-color:rgb(235, 234, 234);color:rgb(11, 95, 208);padding:.5em 1em;font-weight:bold;font-size:1em;position:relative;{current()/@titleStyle}">
+            <h6 style="margin:0; background-color:white;padding:.5em 1em;font-weight:bold;font-size:1.2em;position:relative;{current()/@titleStyle}">
               <!--<xsl:if test="@expand">
                 <xsl:call-template name="build-expand">
                   <xsl:with-param name="isExpand" select="@expand" />

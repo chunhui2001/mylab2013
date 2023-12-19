@@ -1,0 +1,3254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract>
+    <![CDATA[
+https://icon-sets.iconify.design/ic/info/ (Android 图标库) <br />
+https://inloop.github.io/svg2android (在线转换将 svg 转换成 Android Drawable)
+]]>
+  </c:abstract>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="Makefile" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+### 当前 Makefile 文件物理路径
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+
+build:
+  ./gradlew build -x test
+
+tasks:
+  ./gradlew tasks
+
+install:
+  ./gradlew installDebug
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="settings.gradle.kts" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# ./settings.gradle.kts
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
++        maven { url=uri("https://jitpack.io") }
+    }
+}
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="build.gradle.kts" id="sourceContent1" 
+                     style="background-color:white;margin-top:1em;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# ./build.gradle.kts (Project)
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+plugins {
+    id("com.android.application") version "8.3.0" apply false
+    id("org.jetbrains.kotlin.android") version "1.9.22" apply false
+}
+
+# ./app/build.gradle.kts (Module)
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
++    id("kotlin-kapt")
+}
+
+android {
+    namespace = "com.android_labs.moviesapp"
+    compileSdk = 34
+
+    defaultConfig {
+        applicationId = "com.android_labs.moviesapp"
+        minSdk = 24
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
++   buildFeatures {
++       viewBinding = true
++   }
+}
+
+dependencies {
+
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.androidx.activity)
+    implementation(libs.androidx.constraintlayout)
+    
++    implementation("com.github.ismaeldivita:chip-navigation-bar:1.4.0")
++    implementation("com.github.bumptech.glide:glide:4.16.0")
++    implementation("com.google.code.gson:gson:2.8.7")
++    implementation("com.squareup.picasso:picasso:2.5.2")
++
++    implementation("com.squareup.retrofit2:retrofit:2.5.0")
++    implementation("com.squareup.retrofit2:converter-scalars:2.5.0")
++    implementation("com.android.volley:volley:1.2.1")
++
++    implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
++    implementation("androidx.recyclerview:recyclerview:1.3.2")
++    implementation("de.hdodenhof:circleimageview:3.0.0")
++    implementation("androidx.room:room-runtime:2.6.1")
++    implementation("androidx.viewpager2:viewpager2:1.0.0")
++
++    kapt("androidx.room:room-compiler:2.6.1")
+
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>TodoApplication</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="TodoApplication.kt " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+import android.app.Application
+import com.android_labs.todoapp.utils.HttpsTrustManager
+
+class TodoApplication: Application() {
+
+    override fun onCreate() {
+        super.onCreate()
+
+        HttpsTrustManager.allowAllSSL()
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>修改系统权限</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="AndroidManifest.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/AndroidManifest.xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
++    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
++               android:name=".application.TodoApplication"
++ (optional)    android:networkSecurityConfig="@xml/network_security_config"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.TodoApp"
+        tools:targetApi="31">
+        <activity
+            android:name=".activities.SplashActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
+
+# app/src/main/res/xml/network_security_config.xml
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true" usesCleartextTraffic="true">
+        <domain includeSubdomains="true">92c8-13-230-16-197.ngrok-free.app</domain>
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">192.168.1.5</domain>
+    </domain-config>
+</network-security-config>
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>HttpRequest Client</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="RequestClient.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+const val CONTENT_TYPE_FORM = "application/x-www-form-urlencoded"
+const val CONTENT_TYPE_JSON = "application/json; charset=utf-8"
+
+class RequestClient(private var ctx: Context) {
+
+    private val requestQueue: RequestQueue = Volley.newRequestQueue(ctx)
+    private val defaultRetryPolicy = DefaultRetryPolicy(3000, 3, 1.0f)
+
+    interface RequestCallback {
+        fun onSuccess(response: String);
+    }
+
+    fun sendPostRequest(
+        apiUrl: String,
+        contentType: String,
+        params: Map<String, String>,
+        cb: RequestCallback
+    ) {
+        this.sendPostRequest(apiUrl, contentType, emptyMap(), params, cb)
+    }
+
+    fun sendPostRequest(
+        apiUrl: String,
+        contentType: String,
+        header: Map<String, String>,
+        params: Map<String, String>,
+        cb: RequestCallback
+    ) {
+        sendRequest(1, apiUrl, contentType, header, params, cb)
+    }
+
+    fun sendPutRequest(
+        apiUrl: String,
+        contentType: String,
+        header: Map<String, String>,
+        params: Map<String, String>,
+        cb: RequestCallback
+    ) {
+        sendRequest(2, apiUrl, contentType, header, params, cb)
+    }
+
+    private fun sendRequest(
+        method: Int,
+        apiUrl: String,
+        contentType: String,
+        header: Map<String, String>,
+        params: Map<String, String>,
+        cb: RequestCallback
+    ) {
+        val stringRequest: StringRequest = object : StringRequest(
+            method,
+            apiUrl,
+            { response ->
+                response?.let {
+                    cb.onSuccess(it)
+                }
+
+                Log.d("sendPostRequest: ", "response=$response")
+            },
+            { error ->
+                handleError(error)
+            }) {
+
+            override fun getBody(): ByteArray {
+                if (contentType == null || contentType!!.contains("json", true)) {
+                    return JSONObject(params).toString().toByteArray(Charsets.UTF_8)
+                }
+
+                if (contentType!!.contains("urlencoded", true)) {
+                    return getFormDataString(params).toByteArray(Charsets.UTF_8)
+                }
+
+                return JSONObject(params).toString().toByteArray(Charsets.UTF_8)
+            }
+
+            override fun getHeaders(): Map<String, String> {
+                val params: MutableMap<String, String> = HashMap()
+
+                contentType?.let {
+                    params["Content-Type"] = it
+                }
+
+                for (h in header) {
+                    params[h.key] = h.value
+                }
+
+                return params
+            }
+
+            override fun parseNetworkResponse(response: NetworkResponse): Response<String> {
+                return try {
+                    val utf8String = String(response.data, StandardCharsets.UTF_8)
+                    Response.success(utf8String, HttpHeaderParser.parseCacheHeaders(response))
+                } catch (e: UnsupportedEncodingException) {
+                    Response.error(ParseError(e))
+                }
+            }
+        }
+
+        stringRequest.retryPolicy = defaultRetryPolicy
+
+        logToCurlRequest(stringRequest)
+        requestQueue.add(stringRequest)
+    }
+
+    fun sendGetRequest(
+        apiUrl: String,
+        header: Map<String, String>,
+        cb: RequestCallback
+    ) {
+        val stringRequest: StringRequest = object : StringRequest(
+            Method.GET,
+            apiUrl,
+            { response ->
+                response?.let {
+                    cb.onSuccess(it)
+                }
+            },
+            { error ->
+                handleError(error)
+            }) {
+
+            override fun getHeaders(): Map<String, String> {
+                return header
+            }
+
+            override fun parseNetworkResponse(response: NetworkResponse): Response<String> {
+                return try {
+                    val utf8String = String(response.data, StandardCharsets.UTF_8)
+                    Response.success(utf8String, HttpHeaderParser.parseCacheHeaders(response))
+                } catch (e: UnsupportedEncodingException) {
+                    Response.error(ParseError(e))
+                }
+            }
+        }
+
+        stringRequest.retryPolicy = defaultRetryPolicy
+
+        logToCurlRequest(stringRequest)
+        requestQueue.add(stringRequest)
+    }
+
+    fun sendDeleteRequest(
+        apiUrl: String,
+        header: Map<String, String>,
+        cb: RequestCallback
+    ) {
+        val stringRequest: StringRequest = object : StringRequest(
+            Method.DELETE,
+            apiUrl,
+            { response ->
+                response?.let {
+                    cb.onSuccess(it)
+                }
+            },
+            { error ->
+                handleError(error)
+            }) {
+
+            override fun getHeaders(): Map<String, String> {
+                return header
+            }
+
+            override fun parseNetworkResponse(response: NetworkResponse): Response<String> {
+                return try {
+                    val utf8String = String(response.data, StandardCharsets.UTF_8)
+                    Response.success(utf8String, HttpHeaderParser.parseCacheHeaders(response))
+                } catch (e: UnsupportedEncodingException) {
+                    Response.error(ParseError(e))
+                }
+            }
+        }
+
+        stringRequest.retryPolicy = defaultRetryPolicy
+
+        logToCurlRequest(stringRequest)
+        requestQueue.add(stringRequest)
+    }
+
+    private fun handleError(error: VolleyError) {
+        val errorResponse = error.networkResponse
+        var errorMessage: String
+
+        if (error is ServerError && errorResponse != null) {
+            errorMessage = String(errorResponse.data, Charsets.UTF_8)
+        } else {
+            errorMessage = if (error.message == null) {
+                "N/a"
+            } else {
+                error.message.toString()
+            };
+        }
+
+        Toast.makeText(ctx, errorMessage, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun logToCurlRequest(request: Request<*>) {
+        val builder = StringBuilder()
+
+        builder.append("curl ")
+        builder.append("-vX \"")
+
+        when (request.method) {
+            Request.Method.POST -> builder.append("POST")
+            Request.Method.GET -> builder.append("GET")
+            Request.Method.PUT -> builder.append("PUT")
+            Request.Method.DELETE -> builder.append("DELETE")
+        }
+
+        builder.append("\"")
+
+        try {
+            if (request.body != null) {
+                builder.append(" -d ")
+                builder.append("'")
+                builder.append(String(request.body))
+                builder.append("'")
+            }
+
+            for (key in request.headers.keys) {
+                builder.append(" -H '")
+                builder.append(key)
+                builder.append(": ")
+                builder.append(request.headers[key])
+                builder.append("'")
+            }
+
+            builder.append(" \"")
+            builder.append(request.url)
+            builder.append("\"")
+
+            Log.d("VolleyLog", builder.toString())
+        } catch (e: AuthFailureError) {
+            Log.e(
+                "Unable to get body of response or headers for curl logging",
+                e.message.toString()
+            )
+        }
+    }
+
+    fun getFormDataString(formData: Map<String, String>): String {
+        val postData = StringBuilder()
+
+        for ((key, value) in formData) {
+            if (postData.isNotEmpty()) {
+                postData.append('&')
+            }
+            postData.append(URLEncoder.encode(key, StandardCharsets.UTF_8.toString()))
+            postData.append('=')
+            postData.append(URLEncoder.encode(value, StandardCharsets.UTF_8.toString()))
+        }
+
+        return postData.toString()
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>HttpsTrustManager</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="HttpsTrustManager.java " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+public class HttpsTrustManager implements X509TrustManager {
+
+    private static TrustManager[] trustManagers;
+    private static final X509Certificate[] _AcceptedIssuers = new X509Certificate[]{};
+
+    @Override
+    public void checkClientTrusted(
+            java.security.cert.X509Certificate[] x509Certificates, String s)
+            throws java.security.cert.CertificateException {
+
+    }
+
+    @Override
+    public void checkServerTrusted(
+            java.security.cert.X509Certificate[] x509Certificates, String s)
+            throws java.security.cert.CertificateException {
+
+    }
+
+    public boolean isClientTrusted(X509Certificate[] chain) {
+        return true;
+    }
+
+    public boolean isServerTrusted(X509Certificate[] chain) {
+        return true;
+    }
+
+    @Override
+    public X509Certificate[] getAcceptedIssuers() {
+        return _AcceptedIssuers;
+    }
+
+    public static void allowAllSSL() {
+        HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
+            @Override
+            public boolean verify(String arg0, SSLSession arg1) {
+                return true;
+            }
+        });
+
+        SSLContext context = null;
+
+        if (trustManagers == null) {
+            trustManagers = new TrustManager[]{new HttpsTrustManager()};
+        }
+
+        try {
+            context = SSLContext.getInstance("TLS");
+            context.init(null, trustManagers, new SecureRandom());
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (KeyManagementException e) {
+            e.printStackTrace();
+        }
+
+        HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>修改系统主题</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="colors.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/values/colors.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="grey">#9f9a9a</color>
+    <color name="orange">#ff7427</color>
+    <color name="yellow">#ffc107</color>
+    <color name="mainColor">#1f1d28</color>
+    <color name="darkBlue">#252836</color>
+
+    <color name="primary">#FF9800</color>
+    <color name="primary_dark">#130041</color>
+    <color name="primary_light">#FFE0B2</color>
+    <color name="accent">#FF5722</color>
+    <color name="primary_text">#212121</color>
+    <color name="secondary_text">#757575</color>
+    <color name="icons">#212121</color>
+    <color name="divider">#BDBDBD</color>
+    
+    <!-- 状态栏颜色 -->
+    <color name="design_default_color_primary_dark">#ff7427</color>
+
+    <integer-array name="androidColors">
+        <item>@color/yellow</item>
+        <item>@color/orange</item>
+        <item>@color/darkBlue</item>
+        <item>@color/red</item>
+    </integer-array>
+</resources>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="themes.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/values/themes.xml 
+<resources xmlns:tools="http://schemas.android.com/tools">
+-    <style name="Base.Theme.FoodsApp" parent="Theme.Material3.DayNight.NoActionBar">
++    <style name="Base.Theme.MoviesApp" parent="Theme.MaterialComponents.DayNight.NoActionBar">
++        <item name="colorPrimary">@color/primary</item>
++        <item name="colorPrimaryVariant">@color/primary_dark</item>
++        <item name="colorOnPrimary">@color/white</item>
++
++        <item name="colorSecondary">@color/accent</item>
++        <item name="colorSecondaryVariant">@color/accent</item>
++        <item name="colorOnSecondary">@color/white</item>
+
++        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+    </style>
+
+    <style name="Theme.MoviesApp" parent="Base.Theme.MoviesApp" />
+</resources>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="创建背景资源" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>R</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="R.java" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/todoapp/services/R.java
+public class R<T> implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    private Integer code;
+    private String message;
+    private T data;
+
+    public R() {
+        super();
+    }
+
+    public Integer getCode() {
+        return code;
+    }
+
+    public void setCode(Integer code) {
+        this.code = code;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public T getData() {
+        return data;
+    }
+
+    public void setData(T data) {
+        this.data = data;
+    }
+
+    public boolean isSuccess() {
+        return this.code.equals(200);
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>UserService</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="UserInfo.java" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/todoapp/models/UserInfo.java
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+
+public class UserInfo {
+
+    @SerializedName("user_id")
+    @Expose
+    private String userId;
+    @SerializedName("resource_id")
+    @Expose
+    private String resourceId;
+    @SerializedName("username")
+    @Expose
+    private String username;
+    @SerializedName("user_country")
+    @Expose
+    private Object userCountry;
+    @SerializedName("user_phone")
+    @Expose
+    private Object userPhone;
+    @SerializedName("nick_name")
+    @Expose
+    private String nickName;
+    @SerializedName("user_status")
+    @Expose
+    private Object userStatus;
+    @SerializedName("user_roles")
+    @Expose
+    private String userRoles;
+    @SerializedName("login_type")
+    @Expose
+    private String loginType;
+    @SerializedName("user_bio")
+    @Expose
+    private String userBio;
+    @SerializedName("user_maxim")
+    @Expose
+    private String userMaxim;
+    @SerializedName("real_name")
+    @Expose
+    private Object realName;
+    @SerializedName("gender")
+    @Expose
+    private Object gender;
+    @SerializedName("idno")
+    @Expose
+    private Object idno;
+    @SerializedName("user_phone_secondary")
+    @Expose
+    private Object userPhoneSecondary;
+    @SerializedName("user_email")
+    @Expose
+    private Object userEmail;
+    @SerializedName("user_address")
+    @Expose
+    private Object userAddress;
+    @SerializedName("user_linkman")
+    @Expose
+    private Object userLinkman;
+    @SerializedName("user_linkphone")
+    @Expose
+    private Object userLinkphone;
+    @SerializedName("created_at")
+    @Expose
+    private Long createdAt;
+    @SerializedName("last_updated_at")
+    @Expose
+    private Long lastUpdatedAt;
+    @SerializedName("last_login_at")
+    @Expose
+    private Long lastLoginAt;
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getResourceId() {
+        return resourceId;
+    }
+
+    public void setResourceId(String resourceId) {
+        this.resourceId = resourceId;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public Object getUserCountry() {
+        return userCountry;
+    }
+
+    public void setUserCountry(Object userCountry) {
+        this.userCountry = userCountry;
+    }
+
+    public Object getUserPhone() {
+        return userPhone;
+    }
+
+    public void setUserPhone(Object userPhone) {
+        this.userPhone = userPhone;
+    }
+
+    public String getNickName() {
+        return nickName;
+    }
+
+    public void setNickName(String nickName) {
+        this.nickName = nickName;
+    }
+
+    public Object getUserStatus() {
+        return userStatus;
+    }
+
+    public void setUserStatus(Object userStatus) {
+        this.userStatus = userStatus;
+    }
+
+    public String getUserRoles() {
+        return userRoles;
+    }
+
+    public void setUserRoles(String userRoles) {
+        this.userRoles = userRoles;
+    }
+
+    public String getLoginType() {
+        return loginType;
+    }
+
+    public void setLoginType(String loginType) {
+        this.loginType = loginType;
+    }
+
+    public String getUserBio() {
+        return userBio;
+    }
+
+    public void setUserBio(String userBio) {
+        this.userBio = userBio;
+    }
+
+    public String getUserMaxim() {
+        return userMaxim;
+    }
+
+    public void setUserMaxim(String userMaxim) {
+        this.userMaxim = userMaxim;
+    }
+
+    public Object getRealName() {
+        return realName;
+    }
+
+    public void setRealName(Object realName) {
+        this.realName = realName;
+    }
+
+    public Object getGender() {
+        return gender;
+    }
+
+    public void setGender(Object gender) {
+        this.gender = gender;
+    }
+
+    public Object getIdno() {
+        return idno;
+    }
+
+    public void setIdno(Object idno) {
+        this.idno = idno;
+    }
+
+    public Object getUserPhoneSecondary() {
+        return userPhoneSecondary;
+    }
+
+    public void setUserPhoneSecondary(Object userPhoneSecondary) {
+        this.userPhoneSecondary = userPhoneSecondary;
+    }
+
+    public Object getUserEmail() {
+        return userEmail;
+    }
+
+    public void setUserEmail(Object userEmail) {
+        this.userEmail = userEmail;
+    }
+
+    public Object getUserAddress() {
+        return userAddress;
+    }
+
+    public void setUserAddress(Object userAddress) {
+        this.userAddress = userAddress;
+    }
+
+    public Object getUserLinkman() {
+        return userLinkman;
+    }
+
+    public void setUserLinkman(Object userLinkman) {
+        this.userLinkman = userLinkman;
+    }
+
+    public Object getUserLinkphone() {
+        return userLinkphone;
+    }
+
+    public void setUserLinkphone(Object userLinkphone) {
+        this.userLinkphone = userLinkphone;
+    }
+
+    public Long getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Long createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Long getLastUpdatedAt() {
+        return lastUpdatedAt;
+    }
+
+    public void setLastUpdatedAt(Long lastUpdatedAt) {
+        this.lastUpdatedAt = lastUpdatedAt;
+    }
+
+    public Long getLastLoginAt() {
+        return lastLoginAt;
+    }
+
+    public void setLastLoginAt(Long lastLoginAt) {
+        this.lastLoginAt = lastLoginAt;
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="UserService.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/todoapp/services/UserService.kt
+private const val API_URL_TOKEN = "https://192.168.1.5:9100/access_token"
+private const val API_URL_REGISTER = "https://192.168.1.5:9100/register"
+private const val API_URL_USER_INFO = "https://192.168.1.5:9100/user-info"
+
+private const val USER_TOKEN_KEY = "access_token_2";
+private const val USER_INFO_KEY = "user_info_2";
+
+class UserService(ctx: Context) {
+
+    private var requestClient = RequestClient(ctx)
+    private var sharedPreference = SharedPreference(ctx)
+
+    fun isLogin(): Boolean {
+        return this.sharedPreference.getStringValue(USER_TOKEN_KEY).isNotEmpty()
+    }
+
+    fun logout() {
+        this.sharedPreference.removeKey(USER_TOKEN_KEY)
+        this.sharedPreference.removeKey(USER_INFO_KEY)
+    }
+
+    private fun userToken(): String {
+        return this.sharedPreference.getStringValue(USER_TOKEN_KEY)
+    }
+
+    fun userInfo(onCompleted: (UserInfo?) -> Unit) {
+        val userInfoResultString = this.sharedPreference.getStringValue(USER_INFO_KEY);
+
+        if (userInfoResultString.isNotEmpty()) {
+            val type = object : TypeToken<R<UserInfo>>() {}.type
+            val userInfoResult: R<UserInfo> = Gson().fromJson(userInfoResultString, type)
+
+            if (userInfoResult.isSuccess) {
+                onCompleted(userInfoResult.data)
+                return
+            }
+        }
+
+        val userToken = this.userToken()
+
+        if (userToken.isEmpty()) {
+            onCompleted(null)
+            return
+        }
+
+
+        // 根据 token 查询用户信息
+        requestClient.sendGetRequest(
+            API_URL_USER_INFO,
+            mapOf(
+                Pair("Authorization", "Bearer $userToken"),
+                Pair("Accept", "application/json"),
+            ),
+            object : RequestClient.RequestCallback {
+                override fun onSuccess(userInfoResultString: String) {
+                    sharedPreference.setStringValue(USER_INFO_KEY, userInfoResultString)
+
+                    val type = object : TypeToken<R<UserInfo>>() {}.type
+                    val userInfoResult: R<UserInfo> = Gson().fromJson(userInfoResultString, type)
+
+                    if (userInfoResult.isSuccess) {
+                        onCompleted(userInfoResult.data)
+                        return
+                    }
+                }
+            })
+    }
+
+    fun saveAccessToken(token: String) {
+        this.sharedPreference.setStringValue(USER_TOKEN_KEY, token)
+    }
+
+    fun <T> accessToken(username: String, passwd: String, onCompleted: (R<T>) -> Unit) {
+        requestClient.sendPostRequest(
+            API_URL_TOKEN,
+            CONTENT_TYPE_JSON,
+            mapOf(
+                Pair("username", username),
+                Pair("password", passwd),
+                Pair("csrf_token", "csrf_token"),
+            ),
+            object : RequestClient.RequestCallback {
+                override fun onSuccess(response: String) {
+                    val type = object : TypeToken<R<T>>() {}.type
+                    val result: R<T> = Gson().fromJson(response, type)
+                    onCompleted(result)
+                }
+            })
+    }
+
+    fun signup(username: String, passwd: String, email: String, onCompleted: (R<Boolean>) -> Unit) {
+        requestClient.sendPostRequest(
+            API_URL_REGISTER,
+            CONTENT_TYPE_FORM,
+            mapOf(
+                Pair("username", username),
+                Pair("password", passwd),
+                Pair("useremail", email),
+            ),
+            object : RequestClient.RequestCallback {
+                override fun onSuccess(response: String) {
+                    val type = object : TypeToken<R<Boolean>>() {}.type
+                    val result: R<Boolean> = Gson().fromJson(response, type)
+                    onCompleted(result)
+                }
+            })
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>RegisterActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="RegisterActivity.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/todoapp/activities/RegisterActivity.kt
+class RegisterActivity : AppCompatActivity() {
+
+    private lateinit var goLoginBtn: Button
+    private lateinit var registerBtn: View
+
+    private lateinit var usernameTxt: EditText
+    private lateinit var emailTxt: EditText
+    private lateinit var passwdTxt: EditText
+
+    private val utilService: UtilService = UtilService()
+    private lateinit var userService: UserService
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_register)
+
+        this.userService = UserService(this@RegisterActivity)
+
+        this.registerBtn = findViewById(R.id.registerBtn)
+        this.goLoginBtn = findViewById(R.id.goLoginBtn)
+
+        this.usernameTxt = findViewById(R.id.usernameTxt)
+        this.emailTxt = findViewById(R.id.emailTxt)
+        this.passwdTxt = findViewById(R.id.passwdTxt)
+
+        var loginBtnText = registerBtn.findViewById<TextView>(R.id.textView)
+        loginBtnText.text = "Register now"
+
+        this.goLoginBtn.setOnClickListener {
+            startActivity(Intent(this@RegisterActivity, LoginActivity::class.java))
+            finish()
+        }
+
+        this.registerBtn.setOnClickListener {
+            utilService.hideKeyboard(it, this@RegisterActivity)
+
+            var progressButton = ProgressButton(this@RegisterActivity, registerBtn)
+
+            val username = this.usernameTxt.text.toString().trim();
+            val email = this.emailTxt.text.toString().trim();
+            val passwd = this.passwdTxt.text.toString().trim();
+
+            if (TextUtils.isEmpty(username)) {
+                utilService.showSnackBar(it, "请输入用户名!")
+            } else if (TextUtils.isEmpty(email)) {
+                utilService.showSnackBar(it, "请输入邮箱!")
+            } else if (TextUtils.isEmpty(passwd)) {
+                utilService.showSnackBar(it, "请输入密码!")
+            } else {
+                progressButton.buttonActivited()
+
+                userService.signup(username, passwd, email) { result ->
+                    progressButton.buttonFinished()
+
+                    if (!result.isSuccess) {
+                        Toast.makeText(this, result.message, Toast.LENGTH_SHORT).show()
+                    } else {
+                        startActivity(Intent(this@RegisterActivity, LoginActivity::class.java))
+                    }
+                }
+            }
+        }
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="activity_register.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_register.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/primary_dark"
+    tools:context=".activities.RegisterActivity">
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="160dp"
+        android:layout_height="160dp"
+        android:layout_marginTop="60dp"
+        android:src="@drawable/logo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="220dp"
+        android:text="Welcome to Todo List App"
+        android:textColor="@color/white"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <EditText
+        android:id="@+id/usernameTxt"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="24dp"
+        android:background="@drawable/input_background"
+        android:ems="10"
+        android:inputType="text"
+        android:padding="10dp"
+        android:paddingStart="15dp"
+        android:paddingEnd="15dp"
+        android:hint="Enter username"
+        android:textColorHint="@color/white"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView" />
+
+    <EditText
+        android:id="@+id/emailTxt"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="24dp"
+        android:background="@drawable/input_background"
+        android:hint="Enter email"
+        android:inputType="text"
+        android:padding="10dp"
+        android:paddingStart="15dp"
+        android:paddingEnd="15dp"
+        android:textColor="@color/white"
+        android:textColorHint="@color/white"
+        android:textSize="18sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/usernameTxt" />
+
+    <EditText
+        android:id="@+id/passwdTxt"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="24dp"
+        android:background="@drawable/input_background"
+        android:ems="10"
+        android:hint="Enter password"
+        android:inputType="textPassword"
+        android:padding="10dp"
+        android:paddingStart="15dp"
+        android:paddingEnd="15dp"
+        android:textColor="@color/white"
+        android:textColorHint="@color/white"
+        android:textSize="18sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/emailTxt" />
+
+    <include
+        android:id="@+id/registerBtn"
+        layout="@layout/progress_button_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginTop="48dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/passwdTxt" />
+
+    <View
+        android:id="@+id/view"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginStart="50dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="50dp"
+        android:background="@drawable/input_background"
+        app:layout_constraintBottom_toTopOf="@+id/goLoginBtn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/registerBtn" />
+
+    <Button
+        android:id="@+id/goLoginBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:padding="10dp"
+        android:text="Already have a account? Login!"
+        android:textAllCaps="false"
+        android:textSize="18sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/view" />
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>LoginActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="LoginActivity.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/todoapp/activities/LoginActivity.kt
+class LoginActivity : AppCompatActivity() {
+
+    private val utilService: UtilService = UtilService()
+    private lateinit var userService: UserService
+
+    private lateinit var loginBtn: View
+    private lateinit var goRegisterBtn: Button
+
+    private lateinit var usernameTxt: EditText
+    private lateinit var passwdTxt: EditText
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_login)
+
+        this.userService = UserService(this@LoginActivity)
+
+        this.loginBtn = findViewById(R.id.loginBtn)
+        this.usernameTxt = findViewById(R.id.usernameTxt)
+        this.passwdTxt = findViewById(R.id.passwdTxt)
+        this.goRegisterBtn = findViewById(R.id.goRegisterBtn)
+
+        var loginBtnText = loginBtn.findViewById<TextView>(R.id.textView)
+        loginBtnText.text = "Login"
+
+        this.goRegisterBtn.setOnClickListener {
+            startActivity(Intent(this@LoginActivity, RegisterActivity::class.java))
+            finish()
+        }
+
+        this.loginBtn.setOnClickListener {
+            utilService.hideKeyboard(it, this@LoginActivity)
+
+            var progressButton = ProgressButton(this@LoginActivity, loginBtn)
+
+            val username = this.usernameTxt.text.toString().trim();
+            val passwd = this.passwdTxt.text.toString().trim();
+
+            if (TextUtils.isEmpty(username)) {
+                utilService.showSnackBar(it, "请输入用户名!")
+            } else if (TextUtils.isEmpty(passwd)) {
+                utilService.showSnackBar(it, "请输入密码!")
+            } else {
+                progressButton.buttonActivited()
+
+                userService.accessToken<String>(username, passwd) { result ->
+                    progressButton.buttonFinished()
+
+                    if (!result.isSuccess) {
+                        Toast.makeText(this, result.message, Toast.LENGTH_SHORT).show()
+                    } else {
+                        val token = result.data
+                        Toast.makeText(this, token, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="activity_login.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_login.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/primary_dark"
+    android:orientation="vertical"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    tools:context=".activities.LoginActivity">
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="160dp"
+        android:layout_height="160dp"
+        android:layout_marginTop="60dp"
+        android:layout_gravity="center"
+        android:src="@drawable/logo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="Welcome to Todo List App"
+        android:textColor="@color/white"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <EditText
+        android:id="@+id/usernameTxt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="24dp"
+        android:background="@drawable/input_background"
+        android:ems="10"
+        android:hint="Enter username"
+        android:inputType="text"
+        android:padding="10dp"
+        android:paddingStart="15dp"
+        android:paddingEnd="15dp"
+        android:textColor="@color/white"
+        android:textColorHint="@color/white"
+        android:textSize="18sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView" />
+
+    <EditText
+        android:id="@+id/passwdTxt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="24dp"
+        android:background="@drawable/input_background"
+        android:ems="10"
+        android:hint="Enter password"
+        android:inputType="textPassword"
+        android:padding="10dp"
+        android:paddingStart="15dp"
+        android:paddingEnd="15dp"
+        android:textColor="@color/white"
+        android:textColorHint="@color/white"
+        android:textSize="18sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/emailTxt" />
+
+    <include
+        android:id="@+id/loginBtn"
+        layout="@layout/progress_button_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginTop="48dp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="50dp"
+        android:layout_marginBottom="50dp"
+        android:layout_marginStart="50dp"
+        android:layout_marginEnd="50dp"
+        android:background="@drawable/input_background"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/loginBtn" />
+
+    <Button
+        android:id="@+id/goRegisterBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="15dp"
+        android:layout_marginEnd="15dp"
+        android:padding="10dp"
+        android:textSize="18sp"
+        android:textAllCaps="false"
+        android:text="Create an account"/>
+
+</LinearLayout>
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Store User Data (保存用户信息)</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="SharedPreference.java" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/todoapp/utils/SharedPreference.java
+
+public class SharedPreference {
+
+    private static final String USER_PERFERNCE = "user_data";
+    private SharedPreferences appShared;
+    private SharedPreferences.Editor prefsEditor;
+
+    public SharedPreference(Context ctx) {
+        this.appShared = ctx.getSharedPreferences(USER_PERFERNCE, Activity.MODE_PRIVATE);
+        this.prefsEditor = appShared.edit();
+    }
+
+    public int getIntValue(String key) {
+        return this.appShared.getInt(key, 0);
+    }
+
+    public void setIntValue(String key, int val) {
+        this.prefsEditor.putInt(key, val).commit();
+    }
+
+    public String getStringValue(String key) {
+        return this.appShared.getString(key, "");
+    }
+
+    public void setStringValue(String key, String val) {
+        if (val.trim().isEmpty()) {
+            return;
+        }
+
+        this.prefsEditor.putString(key, val).commit();
+    }
+
+
+    public boolean getBoolValue(String key) {
+        return this.appShared.getBoolean(key, false);
+    }
+
+    public void setBoolValue(String key, boolean val) {
+        this.prefsEditor.putBoolean(key, val).commit();
+    }
+}
+
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>MainActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="MainActivity.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/todoapp/activities/MainActivity.kt
+
+private const val TAG = "MainActivity"
+
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var userService: UserService
+
+    private lateinit var usernameTxt: TextView
+    private lateinit var logoutBtn: Button
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        setContentView(R.layout.activity_main)
+
+        this.userService = UserService(this@MainActivity)
+
+        this.usernameTxt = findViewById(R.id.usernameTxt)
+        this.logoutBtn = findViewById(R.id.logoutBtn)
+
+        this.userService.userInfo { userInfo ->
+            if (userInfo == null) {
+                startActivity(Intent(this@MainActivity, LoginActivity::class.java))
+            } else {
+                this.usernameTxt.text = userInfo.username
+            }
+        }
+
+        this.logoutBtn.setOnClickListener {
+            userService.logout()
+            startActivity(Intent(this@MainActivity, LoginActivity::class.java))
+        }
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="activity_main.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_main.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activities.MainActivity">
+
+    <TextView
+        android:id="@+id/usernameTxt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="35sp"
+        android:textStyle="bold"
+        android:text="Hello World!"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/logoutBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="Logout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/usernameTxt" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>AppBar</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="app_bar_layout.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/app_bar_layout.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<Toolbar xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="?attr/actionBarSize"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:theme="@style/ThemeOverlay.MaterialComponents.Dark"
+    app:layout_collapseMode="pin"
+    app:layout_scrollFlags="scroll|enterAlways"
+    android:elevation="10dp"
+    android:background="#1f1f1f"
+    app:menu="@menu/main_menu">
+
+</Toolbar>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="navigation_header.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/navigation_header.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="176dp"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:src="@drawable/hero"
+            android:scaleType="centerCrop"/>
+
+        <TextView
+            android:id="@+id/usernameTxt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="20sp"
+            android:text="Username" />
+
+    </LinearLayout>
+
+</LinearLayout>
+  ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="main_menu.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/menu/main_menu.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/biHome"
+        android:title="Home"
+        android:icon="@drawable/baseline_home_24"
+        app:showAsAction="ifRoom"
+        app:iconTint="@color/white"/>
+
+    <item
+        android:id="@+id/biNotification"
+        android:title="Notification"
+        android:icon="@drawable/baseline_notification_24"
+        app:showAsAction="ifRoom"
+        app:iconTint="@color/white"
+        />
+</menu>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="navigation_item.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/menu/navigation_item.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group>
+        <item
+            android:id="@+id/miHome"
+            android:icon="@drawable/baseline_home_24"
+            android:title="Home"
+            android:checkable="true"/>
+        <item
+            android:id="@+id/miBus"
+            android:icon="@drawable/baseline_bus_24"
+            android:title="Bus"
+            android:checkable="true"/>
+        <item
+            android:id="@+id/miRating"
+            android:icon="@drawable/baseline_rating_24"
+            android:title="Rating"
+            android:checkable="true" />
+    </group>
+
+    <group android:checkableBehavior="single">
+        <item android:title="Profile">
+            <menu>
+                <item
+                    android:id="@+id/miLogin"
+                    android:icon="@drawable/baseline_login_24"
+                    android:title="Login" />
+                <item
+                    android:id="@+id/miLogout"
+                    android:icon="@drawable/baseline_login_24"
+                    android:title="Logout" />
+            </menu>
+        </item>
+    </group>
+</menu>
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>更新 MainActivity</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="activity_main.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/activity_main.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/drawerLayout"
+    android:fitsSystemWindows="true"
+    tools:openDrawer="start"
+    tools:context=".activities.MainActivity">
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <com.google.android.material.appbar.AppBarLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/materialToolBar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                app:navigationIcon="@drawable/baseline_menu_24"
+                app:navigationIconTint="#ffffff"
+                app:titleTextColor="#FFEB3B"
+                app:menu="@menu/main_menu">
+
+            </com.google.android.material.appbar.MaterialToolbar>
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <FrameLayout
+            android:id="@+id/frameLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="?attr/actionBarSize">
+
+        </FrameLayout>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/navigationView"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        app:headerLayout="@layout/navigation_header"
+        app:menu="@menu/navigation_item">
+
+    </com.google.android.material.navigation.NavigationView>
+
+</androidx.drawerlayout.widget.DrawerLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="MainActivity.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/todoapp/activities/MainActivity.kt
+private const val TAG = "MainActivity"
+
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var materialToolBar: MaterialToolbar
+    private lateinit var navigationView: NavigationView
+    private lateinit var usernameTxt: TextView
+    private lateinit var userHeadImg: ImageView
+
+    private lateinit var userService: UserService
+    private lateinit var navigationMenu: Menu
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        setContentView(R.layout.activity_main)
+
+        val now = Instant.now().toEpochMilli();
+
+        // 设置状态栏颜色
+        setStatusBarColor(getResources().getColor(R.color.orange));
+
+        this.userService = UserService(this@MainActivity)
+
+        this.drawerLayout = findViewById(R.id.drawerLayout)
+        this.materialToolBar = findViewById(R.id.materialToolBar)
+        this.navigationView = findViewById(R.id.navigationView)
+
+        var toggle = ActionBarDrawerToggle(
+            this@MainActivity, drawerLayout, materialToolBar, R.string.close, R.string.open
+        )
+
+        this.usernameTxt = this.navigationView.getHeaderView(0).findViewById(R.id.usernameTxt);
+        this.userHeadImg = this.navigationView.getHeaderView(0).findViewById(R.id.userHeadImg);
+
+        this.navigationMenu = this.navigationView.menu
+        this.navigationMenu.findItem(R.id.miBus).setVisible(false)
+
+        this.materialToolBar.setOnMenuItemClickListener {  menuItem ->
+            when (menuItem.itemId) {
+                R.id.biReloading -> {
+                    loadFragment(HomeFragment())
+                    true
+                }
+                R.id.biHome -> {
+                    loadFragment(HomeFragment())
+                    true
+                }
+                else -> false
+            }
+        }
+
+        val ctx = this;
+
+        drawerLayout.addDrawerListener(object : DrawerListener {
+            override fun onDrawerSlide(drawerView: View, slideOffset: Float) {
+                // 滑动时
+                setStatusBarTransparent()
+
+                // 根据 slideOffset 来调整主内容视图的位置
+                val contentView = findViewById<View>(R.id.contentLayout) // 替换为你的主内容视图的ID
+                contentView.translationX = drawerView.width * slideOffset
+            }
+
+            override fun onDrawerOpened(drawerView: View) {
+                // 打开时设置状态栏透明
+                setStatusBarTransparent()
+
+                userService.userInfo { userInfo ->
+                    if (userInfo == null) {
+                        navigationMenu.findItem(R.id.miLogin).setVisible(true)
+                        navigationMenu.findItem(R.id.miLogout).setVisible(false)
+                        setImg(ctx, API_URL_USER_DEFAULT_IMG, userHeadImg)
+                    } else {
+                        navigationMenu.findItem(R.id.miLogin).setVisible(false)
+                        navigationMenu.findItem(R.id.miLogout).setVisible(true)
+                        usernameTxt.text = userInfo.username
+
+                        userInfo.resourceId?.let {
+
+                            setImg(
+                                ctx,
+                                "$API_URL_USER_HEAD_IMG/$it?v=$now",
+                                userHeadImg
+                            )
+                        }
+                    }
+                }
+            }
+
+            override fun onDrawerClosed(drawerView: View) {
+                // 关闭时恢复状态栏颜色
+                setStatusBarColor(getResources().getColor(R.color.orange))
+            }
+
+            override fun onDrawerStateChanged(newState: Int) {
+                // 状态变化时
+//                setStatusBarTransparent()
+            }
+        })
+
+        drawerLayout.setDrawerListener(toggle)
+
+        navigationView.setNavigationItemSelectedListener {
+
+            if (it.itemId == R.id.miHome) {
+                loadFragment(HomeFragment())
+                drawerLayout.closeDrawer(GravityCompat.START)
+            } else if (it.itemId == R.id.miBus) {
+//                loadFragment(BusFragment())
+                drawerLayout.closeDrawer(GravityCompat.START)
+            } else if (it.itemId == R.id.miRating) {
+                loadFragment(RagintFragment())
+                drawerLayout.closeDrawer(GravityCompat.START)
+//                finish()
+            } else if (it.itemId == R.id.miLogin) {
+                startActivity(Intent(this@MainActivity, LoginActivity::class.java))
+                drawerLayout.closeDrawer(GravityCompat.START)
+            } else if (it.itemId == R.id.miLogout) {
+                userService.logout()
+                startActivity(Intent(this@MainActivity, MainActivity::class.java))
+                drawerLayout.closeDrawer(GravityCompat.START)
+                finish()
+            }
+
+            true
+        }
+
+        loadFragment(HomeFragment())
+    }
+
+    private fun loadFragment(fragment: Fragment) {
+        if (supportFragmentManager.findFragmentById(R.id.frameLayout) == null) {
+            var ft = supportFragmentManager.beginTransaction()
+            ft.add(R.id.frameLayout, fragment)
+            ft.commit()
+        } else {
+            var ft = supportFragmentManager.beginTransaction()
+            ft.replace(R.id.frameLayout, fragment)
+            ft.commit()
+        }
+    }
+
+    private fun setStatusBarTransparent() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            val window = window
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+            window.statusBarColor = getResources().getColor(android.R.color.transparent)
+        }
+    }
+
+    private fun setStatusBarColor(color: Int) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            val window = window
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+            window.statusBarColor = color
+        }
+    }
+
+    private fun setImg(ctx: Context, url: String, img: ImageView) {
+        var requestOptions = RequestOptions()
+        requestOptions = requestOptions.transforms(CenterCrop(), RoundedCorners(300))
+
+        Glide.with(ctx)
+            .load(url)
+            .apply(requestOptions)
+            .into(img)
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>HomeFragment</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="fragment_home.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/fragment_home.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activities.MainActivity">
+
+    <ImageView
+        android:id="@+id/userHeadImg"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginBottom="24dp"
+        android:scaleType="fitCenter"
+        app:layout_constraintBottom_toTopOf="@+id/usernameTxt"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:srcCompat="@tools:sample/backgrounds/scenic" />
+
+    <TextView
+        android:id="@+id/usernameTxt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hello World!"
+        android:textSize="35sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/logoutBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="Logout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/usernameTxt" />
+
+    <Button
+        android:id="@+id/loginBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="Login"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/usernameTxt" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/addTaskBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="20dp"
+        android:src="@drawable/ic_add"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:elevation="0dp"
+        app:maxImageSize="40dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:backgroundTint="@color/orange"/>
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="HomeFragment.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/todoapp/fragments/HomeFragment.kt
+class HomeFragment: Fragment() {
+
+    private lateinit var userService: UserService
+
+    private lateinit var userHeadImg: ImageView
+    private lateinit var usernameTxt: TextView
+    private lateinit var logoutBtn: Button
+    private lateinit var loginBtn: Button
+
+    private lateinit var addTaskFab: FloatingActionButton
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        var view = inflater.inflate(R.layout.fragment_home, container, false)
+
+        this.userService = UserService(this@HomeFragment.requireContext())
+
+        this.userHeadImg = view.findViewById(R.id.userHeadImg)
+        this.usernameTxt = view.findViewById(R.id.usernameTxt)
+        this.loginBtn = view.findViewById(R.id.loginBtn)
+        this.logoutBtn = view.findViewById(R.id.logoutBtn)
+
+        this.addTaskFab = view.findViewById(R.id.addTaskBtn)
+
+        // 修改 fab icon 颜色
+        this.addTaskFab.setImageTintList(ColorStateList.valueOf(getResources().getColor(R.color.white)));
+
+        this.userService.userInfo { userInfo ->
+            if (userInfo == null) {
+                this.logoutBtn.visibility = View.GONE
+                this.loginBtn.visibility = View.VISIBLE
+
+                setImg(requireContext(), API_URL_USER_DEFAULT_IMG, this.userHeadImg)
+            } else {
+                this.usernameTxt.text = userInfo.username
+                this.loginBtn.visibility = View.GONE
+                this.logoutBtn.visibility = View.VISIBLE
+
+                userInfo.resourceId?.let {
+                    setImg(requireContext(), "$API_URL_USER_HEAD_IMG/$it?v=171112", this.userHeadImg)
+                }
+            }
+        }
+
+        this.loginBtn.setOnClickListener {
+            startActivity(Intent(this@HomeFragment.context, LoginActivity::class.java))
+        }
+
+        this.logoutBtn.setOnClickListener {
+            userService.logout()
+            startActivity(Intent(this@HomeFragment.context, MainActivity::class.java))
+        }
+
+        return view
+    }
+
+    private fun setImg(ctx: Context, url: String, img: ImageView) {
+        var requestOptions = RequestOptions()
+        requestOptions = requestOptions.transforms(CenterCrop(), RoundedCorners(30))
+
+        Glide.with(ctx)
+            .load(url)
+            .apply(requestOptions)
+            .into(img)
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Add Todo Task</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="todo_add_dialog.xml " id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/todo_add_dialog.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingLeft="10dp"
+    android:paddingRight="10dp"
+    android:paddingTop="10dp">
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="text"
+        android:hint="Input task Name here"
+        android:padding="15dp"
+        android:singleLine="true"
+        android:text="" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="text"
+        android:hint="Input task Description here"
+        android:padding="15dp"
+        android:singleLine="true"
+        android:layout_marginTop="20dp"
+        android:text="" />
+</LinearLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="HomeFragment.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/todoapp/fragments/HomeFragment.kt
+class HomeFragment : Fragment() {
+
+    private lateinit var userService: UserService
+
+    private lateinit var userHeadImg: ImageView
+    private lateinit var usernameTxt: TextView
+    private lateinit var logoutBtn: Button
+    private lateinit var loginBtn: Button
+
+    private lateinit var addTaskFab: FloatingActionButton
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        var view = inflater.inflate(R.layout.fragment_home, container, false)
+
+        this.userService = UserService(this@HomeFragment.requireContext())
+
+        this.userHeadImg = view.findViewById(R.id.userHeadImg)
+        this.usernameTxt = view.findViewById(R.id.usernameTxt)
+        this.loginBtn = view.findViewById(R.id.loginBtn)
+        this.logoutBtn = view.findViewById(R.id.logoutBtn)
+
+        this.addTaskFab = view.findViewById(R.id.addTaskBtn)
+
+        this.addTaskFab.setImageTintList(ColorStateList.valueOf(getResources().getColor(R.color.white)));
+
+        this.userService.userInfo { userInfo ->
+            if (userInfo == null) {
+                this.logoutBtn.visibility = View.GONE
+                this.loginBtn.visibility = View.VISIBLE
+
+                setImg(requireContext(), API_URL_USER_DEFAULT_IMG, this.userHeadImg)
+            } else {
+                this.usernameTxt.text = userInfo.username
+                this.loginBtn.visibility = View.GONE
+                this.logoutBtn.visibility = View.VISIBLE
+
+                userInfo.resourceId?.let {
+                    setImg(
+                        requireContext(),
+                        "$API_URL_USER_HEAD_IMG/$it?v=" + Instant.now().toEpochMilli(),
+                        this.userHeadImg
+                    )
+                }
+
+                if (userInfo.resourceId == null) {
+                    setImg(requireContext(), API_URL_USER_DEFAULT_IMG, this.userHeadImg)
+                }
+            }
+        }
+
+        this.loginBtn.setOnClickListener {
+            startActivity(Intent(this@HomeFragment.context, LoginActivity::class.java))
+        }
+
+        this.logoutBtn.setOnClickListener {
+            userService.logout()
+            startActivity(Intent(this@HomeFragment.context, MainActivity::class.java))
+        }
+
++        this.addTaskFab.setOnClickListener {
++            showAddTodoTaskDialog();
++        }
+
+        return view
+    }
+
++    private fun showAddTodoTaskDialog() {
++        if (!this.userService.isLogin()) {
++            Toast.makeText(requireContext(), "Please login", Toast.LENGTH_SHORT).show();
++        } else {
++            var inflater = layoutInflater;
++            var view = inflater.inflate(R.layout.todo_add_dialog, null);
++
++            var todoTaskTitle = view.findViewById<EditText>(R.id.todoTaskTitle)
++            var todoTaskDesc = view.findViewById<EditText>(R.id.todoTaskDesc)
++
++            var dialog = androidx.appcompat.app.AlertDialog.Builder(requireContext()).setView(view)
++                .setTitle("Add Todo Task")
++                .setPositiveButton("Add", null)
++                .setNegativeButton("Cancel", null)
++                .create();
++
++            dialog.setOnShowListener {
++                var button = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
++
++                button.setOnClickListener {
++                    var title = todoTaskTitle.text;
++                    var desc = todoTaskDesc.text;
++
++                    if (TextUtils.isEmpty(title)) {
++                        Toast.makeText(requireContext(), "Please input Todo title", Toast.LENGTH_SHORT).show();
++                        // Snackbar.make(requireView(), "Please input Todo title", Snackbar.LENGTH_SHORT).show()
++                    } else {
++                        Toast.makeText(requireContext(), "To be save todo task", Toast.LENGTH_SHORT).show();
++                        dialog.dismiss();
++                    }
++                }
++            }
++
++            dialog.show()
++        }
++    }
+
+    private fun setImg(ctx: Context, url: String, img: ImageView) {
+        var requestOptions = RequestOptions()
+        requestOptions = requestOptions.transforms(CenterCrop(), RoundedCorners(300))
+
+        Glide.with(ctx)
+            .load(url)
+            .apply(requestOptions)
+            .into(img)
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Todo Task List View</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="TodoModel.java" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/todoapp/models/TodoModel.java
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+
+public class TodoModel {
+
+    @SerializedName("id")
+    @Expose
+    private String id;
+    @SerializedName("title")
+    @Expose
+    private String title;
+    @SerializedName("description")
+    @Expose
+    private String description;
+    @SerializedName("user_id")
+    @Expose
+    private String userId;
+    @SerializedName("user_name")
+    @Expose
+    private String userName;
+    @SerializedName("created_at")
+    @Expose
+    private String createdAt;
+    @SerializedName("last_updated_at")
+    @Expose
+    private String lastUpdatedAt;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(String createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getLastUpdatedAt() {
+        return lastUpdatedAt;
+    }
+
+    public void setLastUpdatedAt(String lastUpdatedAt) {
+        this.lastUpdatedAt = lastUpdatedAt;
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="TodoService.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/todoapp/services/TodoService.kt
+private const val API_TODO_LIST = "https://192.168.1.5:9010/todo/list_task?p_index=0&p_size=100"
+private const val API_TODO_DELETE = "https://192.168.1.5:9010/todo/del_task"
+private const val API_TODO_SAVE = "https://192.168.1.5:9010/todo/new_task"
+private const val API_TODO_UPDATE = "https://192.168.1.5:9010/todo/task"
+
+class TodoService(var ctx: Context) {
+
+    private var requestClient = RequestClient(ctx)
+
+    fun list(userToken: String, onCompleted: (List<TodoModel>) -> Unit) {
+        // 查询列表
+        requestClient.sendGetRequest(
+            API_TODO_LIST,
+            mapOf(
+                Pair("Authorization", "Bearer $userToken"),
+                Pair("Accept", "application/json"),
+            ),
+            object : RequestClient.RequestCallback {
+                override fun onSuccess(response: String) {
+                    val type = object : TypeToken<R<List<TodoModel>>>() {}.type
+                    val result: R<List<TodoModel>> = Gson().fromJson(response, type)
+
+                    if (result.isSuccess) {
+                        onCompleted(result.data)
+                    } else {
+                        Toast.makeText(ctx, result.message, Toast.LENGTH_SHORT).show();
+                    }
+                }
+            })
+    }
+
+    fun delete(userToken: String, id: String, onCompleted: (Boolean) -> Unit) {
+        requestClient.sendDeleteRequest(
+            "$API_TODO_DELETE?id=$id",
+            mapOf(
+                Pair("Authorization", "Bearer $userToken"),
+                Pair("Accept", "application/json"),
+            ),
+            object : RequestClient.RequestCallback {
+                override fun onSuccess(response: String) {
+                    val type = object : TypeToken<R<Boolean>>() {}.type
+                    val result: R<Boolean> = Gson().fromJson(response, type)
+
+                    if (result.isSuccess) {
+                        onCompleted(result.data)
+                    } else {
+                        Toast.makeText(ctx, result.message, Toast.LENGTH_SHORT).show();
+                    }
+                }
+            })
+    }
+
+    fun save(userToken: String, title: String, desc: String, onCompleted: (String) -> Unit) {
+        requestClient.sendPostRequest(
+            "$API_TODO_SAVE",
+            CONTENT_TYPE_JSON,
+            mapOf(
+                Pair("Authorization", "Bearer $userToken"),
+                Pair("Accept", "application/json"),
+            ),
+            mapOf(
+                Pair("title", title),
+                Pair("description", desc),
+            ),
+            object : RequestClient.RequestCallback {
+                override fun onSuccess(response: String) {
+                    val type = object : TypeToken<R<String>>() {}.type
+                    val result: R<String> = Gson().fromJson(response, type)
+
+                    if (result.isSuccess) {
+                        onCompleted(result.data)
+                    } else {
+                        Toast.makeText(ctx, result.message, Toast.LENGTH_SHORT).show();
+                    }
+                }
+            })
+    }
+
+    fun update(userToken: String, model: TodoModel, onCompleted: (Boolean) -> Unit) {
+        requestClient.sendPutRequest(
+            "$API_TODO_UPDATE/${model.id}",
+            CONTENT_TYPE_JSON,
+            mapOf(
+                Pair("Authorization", "Bearer $userToken"),
+                Pair("Accept", "application/json"),
+            ),
+            mapOf(
+                Pair("title", model.title),
+                Pair("description", model.description),
+            ),
+            object : RequestClient.RequestCallback {
+                override fun onSuccess(response: String) {
+                    val type = object : TypeToken<R<Boolean>>() {}.type
+                    val result: R<Boolean> = Gson().fromJson(response, type)
+
+                    if (result.isSuccess) {
+                        onCompleted(result.data)
+                    } else {
+                        Toast.makeText(ctx, result.message, Toast.LENGTH_SHORT).show();
+                    }
+                }
+            })
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="fragment_home.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/fragment_home.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activities.MainActivity">
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/listView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:textSize="25sp"
+        android:visibility="invisible"
+        android:text="Empty Todo list!!!"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/listView"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ProgressBar
+        android:id="@+id/progressBar3"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        app:layout_constraintEnd_toEndOf="@+id/listView"
+        app:layout_constraintStart_toStartOf="@+id/listView"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/addTaskBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="20dp"
+        android:backgroundTint="@color/orange"
+        android:src="@drawable/ic_add"
+        app:elevation="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:maxImageSize="40dp" />
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="HomeFragment.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/todoapp/fragments/HomeFragment.kt
+class HomeFragment : Fragment(), TodoAdapter.Callback {
+
+    private lateinit var userService: UserService
+    private lateinit var todoService: TodoService
+
+    private lateinit var addTaskFab: FloatingActionButton
+
+    private lateinit var listView: RecyclerView
+    private lateinit var progressBar3: ProgressBar
+    private lateinit var textView3: TextView
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        var view = inflater.inflate(R.layout.fragment_home, container, false)
+
+        this.userService = UserService(this@HomeFragment.requireContext())
+        this.todoService = TodoService(this@HomeFragment.requireContext())
+
+        this.addTaskFab = view.findViewById(R.id.addTaskBtn)
+        this.progressBar3 = view.findViewById(R.id.progressBar3)
+        this.textView3 = view.findViewById(R.id.textView3)
+
+        this.listView = view.findViewById(R.id.listView)
+        this.listView.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false)
+
+        this.addTaskFab.setImageTintList(ColorStateList.valueOf(getResources().getColor(R.color.white)));
+
+        this.addTaskFab.setOnClickListener {
+            showAddTodoTaskDialog();
+        }
+
+        if (!this.userService.isLogin()) {
+            this.textView3.text = "Please login!!!";
+            this.textView3.visibility = View.VISIBLE
+            this.progressBar3.visibility = View.INVISIBLE
+        } else {
+            loadData();
+        }
+
+        return view
+    }
+
+    private fun loadData() {
+        this.progressBar3.visibility = View.VISIBLE
+        this.textView3.visibility = View.INVISIBLE
+
+        this.todoService.list(this.userService.userToken()) {todoList ->
+            if (todoList.isEmpty()) {
+                this.textView3.visibility = View.VISIBLE
+            } else {
+                this.textView3.visibility = View.INVISIBLE
+            }
+
+            this.progressBar3.visibility = View.INVISIBLE
+            this.listView.adapter = TodoAdapter(todoList, this@HomeFragment);
+        }
+    }
+
+    private fun showAddTodoTaskDialog() {
+        if (!this.userService.isLogin()) {
+            Toast.makeText(requireContext(), "Please login", Toast.LENGTH_SHORT).show();
+        } else {
+            var inflater = layoutInflater;
+            var view = inflater.inflate(R.layout.todo_add_dialog, null);
+
+            var todoTaskTitle = view.findViewById<EditText>(R.id.todoTaskTitle)
+            var todoTaskDesc = view.findViewById<EditText>(R.id.todoTaskDesc)
+
+            var dialog = androidx.appcompat.app.AlertDialog.Builder(requireContext()).setView(view)
+                .setTitle("Add Todo Task")
+                .setPositiveButton("Add", null)
+                .setNegativeButton("Cancel", null)
+                .create();
+
+            dialog.setOnShowListener {
+                var button = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+
+                button.setOnClickListener {
+                    var title = todoTaskTitle.text.toString();
+                    var desc = todoTaskDesc.text.toString();
+
+                    if (TextUtils.isEmpty(title)) {
+                        Toast.makeText(requireContext(), "Please input Todo title", Toast.LENGTH_SHORT).show();
+                    } else {
+                        this@HomeFragment.todoService.save(
+                            this@HomeFragment.userService.userToken(), title, desc
+                        ) {
+                            Log.d("setOnClickListener", "it=$it")
+                            Toast.makeText(requireContext(), "Todo task saved.", Toast.LENGTH_SHORT).show();
+                            dialog.dismiss();
+                            loadData();
+                        }
+                    }
+                }
+            }
+
+            dialog.show()
+        }
+    }
+
+    override fun onUpdate(model: TodoModel, onCompleted: (Boolean) -> Unit) {
+        todoService.update(this.userService.userToken(), model) {
+            onCompleted(it)
+        }
+    }
+
+    override fun onDelete(model: TodoModel, adapterPosition: Int) {
+        todoService.delete(this.userService.userToken(), model.id) {
+            if (it) {
+                Toast.makeText(requireContext(), "Deleted: ${model.title}, position=$adapterPosition", Toast.LENGTH_SHORT).show()
+                loadData();
+            }
+        }
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="todo_item_view.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/todo_item_view.xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="todo_item_bar.xml" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/res/layout/todo_item_bar.xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:cardUseCompatPadding="true"
+    app:cardCornerRadius="5dp"
+    app:cardBackgroundColor="@color/orange"
+    android:layout_marginTop="10dp"
+    android:id="@+id/accordianTitle">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="15dp">
+        <TextView
+            android:id="@+id/todoTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:text="todo title here"
+            android:textColor="@color/white"
+            android:layout_centerVertical="true"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="25dp"/>
+
+        <ImageView
+            android:id="@+id/slideDownBtn"
+            android:src="@drawable/ic_baseline_arrow_downward"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/todoBody"
+        android:background="@color/secondary_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="5dp"
+        android:visibility="gone"
+        android:layout_gravity="bottom"
+        android:layout_marginTop="60dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="right"
+                android:padding="5dp">
+                <ImageView
+                    android:id="@+id/btnDelete"
+                    android:src="@drawable/ic_baseline_delete_forever"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_alignParentRight="true"
+                    android:layout_marginRight="10dp"
+                    android:layout_centerVertical="true"
+                    />
+                <ImageView
+                    android:id="@+id/btnEdit"
+                    android:src="@drawable/bxs_edit"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_centerVertical="true"
+                    android:layout_toLeftOf="@id/btnDelete"
+                    android:layout_marginRight="10dp"
+                    />
+                <ImageView
+                    android:id="@+id/btnDone"
+                    android:src="@drawable/material_symbols_done"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_centerVertical="true"
+                    android:layout_toLeftOf="@id/btnEdit"
+                    />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/todoDesc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="todo title here"
+                android:textColor="@color/white"
+                android:singleLine="false"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textSize="22dp"
+                android:padding="5dp"/>
+
+            <EditText
+                android:id="@+id/todoDescEdit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:ems="10"
+                android:inputType="text"
+                android:imeOptions="actionDone"
+                android:text="Name" />
+        </LinearLayout>
+
+    </RelativeLayout>
+</androidx.cardview.widget.CardView>
+  ]]>
+    </c:sourceContent>
+    <c:sourceContent type="" title="TodoAdapter.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/todoapp/adapters/TodoAdapter.kt
+class TodoAdapter(private var list: List<TodoModel>, private var cb: Callback) : RecyclerView.Adapter<TodoAdapter.ViewHolder>() {
+
+    interface Callback {
+        fun onUpdate(model: TodoModel, onCompleted: (Boolean) -> Unit)
+        fun onDelete(model: TodoModel, adapterPosition: Int)
+    }
+
+    inner class ViewHolder(var view: View) : RecyclerView.ViewHolder(view) {
+
+        private lateinit var currModel: TodoModel
+
+        private var accordianTitle = this.view.findViewById<CardView>(R.id.accordianTitle)
+        private var todoBody = this.view.findViewById<RelativeLayout>(R.id.todoBody)
+
+        private var todoTitle = this.view.findViewById<TextView>(R.id.todoTitle)
+        private var todoDesc = this.view.findViewById<TextView>(R.id.todoDesc)
+        private var todoDescEdit = this.view.findViewById<EditText>(R.id.todoDescEdit)
+
+        private var slideDownBtn = this.view.findViewById<ImageView>(R.id.slideDownBtn)
+        private var btnDelete = this.view.findViewById<ImageView>(R.id.btnDelete)
+        private var btnEdit = this.view.findViewById<ImageView>(R.id.btnEdit)
+        private var btnDone = this.view.findViewById<ImageView>(R.id.btnDone)
+
+        init {
+            var colors = this.view.resources.getIntArray(R.array.androidColors)
+            var color = colors[java.util.Random().nextInt(colors.size)]
+
+            this.accordianTitle.setBackgroundColor(color)
+
+            this.btnDelete.setOnClickListener {
+                cb.onDelete(this.currModel, adapterPosition)
+            }
+
+            this.btnEdit.setOnClickListener {
+                if (todoDescEdit.visibility != View.VISIBLE) {
+                    this.todoDescEdit.visibility = View.VISIBLE
+                    this.todoDesc.visibility = View.GONE
+                    this.todoDescEdit.setText(this.currModel.description)
+                }
+            }
+
+            this.btnDone.setOnClickListener {
+                this.currModel.description = this.todoDescEdit.text.toString()
+
+                cb.onUpdate(this.currModel) {
+                    if (it) {
+                        this.todoDescEdit.visibility = View.GONE
+                        this.todoDesc.visibility = View.VISIBLE
+                        this.todoBody.visibility = View.GONE
+                        notifyDataSetChanged()
+                    }
+                }
+            }
+
+            this.slideDownBtn.setOnClickListener {
+                if (this.todoBody.visibility == View.VISIBLE) {
+                    this.todoBody.visibility = View.GONE
+                } else {
+                    this.todoBody.visibility = View.VISIBLE
+                    this.todoDesc.visibility = View.VISIBLE
+                }
+            }
+        }
+
+        fun bind(model: TodoModel) {
+            this.currModel = model
+            this.todoTitle.text = model.title
+            this.todoDesc.text = model.description
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        var layout = LayoutInflater.from(parent.context).inflate(R.layout.todo_item_bar, parent, false)
+
+        return ViewHolder(layout)
+    }
+
+    override fun getItemCount(): Int {
+        return list.size
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(this.list[position])
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>显示 Todo</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="TodoAdapter.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/todoapp/adapters/TodoAdapter.java
+class TodoAdapter(private var list: MutableList<TodoModel>, private var cb: Callback) : RecyclerView.Adapter<TodoAdapter.ViewHolder>() {
+
+    interface Callback {
+        fun onUpdate(model: TodoModel, onCompleted: (Boolean) -> Unit)
+        fun onDelete(model: TodoModel, adapterPosition: Int)
+    }
+
+    inner class ViewHolder(var view: View) : RecyclerView.ViewHolder(view) {
+
+        private lateinit var currModel: TodoModel
+
+        private var accordianTitle = this.view.findViewById<CardView>(R.id.accordianTitle)
+        private var todoBody = this.view.findViewById<RelativeLayout>(R.id.todoBody)
+
+        private var todoTitle = this.view.findViewById<TextView>(R.id.todoTitle)
+        private var todoDesc = this.view.findViewById<TextView>(R.id.todoDesc)
+        private var todoDescEdit = this.view.findViewById<EditText>(R.id.todoDescEdit)
+
+        private var slideDownBtn = this.view.findViewById<ImageView>(R.id.slideDownBtn)
+        private var btnDelete = this.view.findViewById<ImageView>(R.id.btnDelete)
+        private var btnEdit = this.view.findViewById<ImageView>(R.id.btnEdit)
+        private var btnDone = this.view.findViewById<ImageView>(R.id.btnDone)
+
+        init {
+            var colors = this.view.resources.getIntArray(R.array.androidColors)
+            var color = colors[java.util.Random().nextInt(colors.size)]
+
+            this.accordianTitle.setBackgroundColor(color)
+
+            this.btnDelete.setOnClickListener {
+                cb.onDelete(this.currModel, adapterPosition)
+                list.removeAt(bindingAdapterPosition)
+                notifyDataSetChanged()
+            }
+
+            this.btnEdit.setOnClickListener {
+                if (todoDescEdit.visibility != View.VISIBLE) {
+                    this.todoDescEdit.visibility = View.VISIBLE
+                    this.todoDesc.visibility = View.GONE
+                    this.todoDescEdit.setText(this.currModel.description)
+                }
+            }
+
+            this.btnDone.setOnClickListener {
+                this.currModel.description = this.todoDescEdit.text.toString()
+
+                cb.onUpdate(this.currModel) {
+                    if (it) {
+                        this.todoDescEdit.visibility = View.GONE
+                        this.todoDesc.visibility = View.VISIBLE
+                        this.todoBody.visibility = View.GONE
+                        notifyDataSetChanged()
+                    }
+                }
+            }
+
+            this.slideDownBtn.setOnClickListener {
+                if (this.todoBody.visibility == View.VISIBLE) {
+                    this.todoBody.visibility = View.GONE
+                } else {
+                    this.todoBody.visibility = View.VISIBLE
+                    this.todoDesc.visibility = View.VISIBLE
+                }
+            }
+        }
+
+        fun bind(model: TodoModel) {
+            this.currModel = model
+            this.todoTitle.text = model.title
+            this.todoDesc.text = model.description
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        var layout = LayoutInflater.from(parent.context).inflate(R.layout.todo_item_bar, parent, false)
+
+        return ViewHolder(layout)
+    }
+
+    override fun getItemCount(): Int {
+        return list.size
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(this.list[position])
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+  <c:entry style="margin-top:1em;color:rgb(175, 0, 190);font-size:2.2em;">
+    <c:title>Share Todo</c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+      ]]></c:desc1>
+    </c:desc>
+    <c:sourceContent type="" title="MainActivity.kt" id="sourceContent1" 
+                     style="background-color:white;"
+                     titleStyle="padding:.5em 0em 0em 0em;margin-top:0em;"
+                     bodyStyle="background-color:white;padding:0;font-size:1.2em;line-height:1.3;font-family:monospace;">
+                     <![CDATA[
+# app/src/main/java/com/android_labs/todoapp/activities/MainActivity.kt
+this.materialToolBar.setOnMenuItemClickListener {  menuItem ->
+    when (menuItem.itemId) {
+        R.id.biReloading -> {
+            loadFragment(HomeFragment())
+            true
+        }
+        R.id.biHome -> {
+            loadFragment(HomeFragment())
+            true
+        }
++        R.id.biShare -> {
++            startActivity(
++                Intent.createChooser(Intent(Intent.ACTION_SEND)
++                    .setType("text/plain")
++                    .putExtra(Intent.EXTRA_TEXT, "dddd"), "Share it")
++            )
++            true
++        }
+        else -> false
+    }
+}
+  ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+</c:component>
