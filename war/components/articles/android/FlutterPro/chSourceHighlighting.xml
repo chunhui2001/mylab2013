@@ -88,18 +88,18 @@ $ brew info dart              (/opt/homebrew/opt/dart/libexec)
                      titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
                      bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
       <![CDATA[
-$ flutter create --platforms=android,ios --org com.newcompany project_name
-$ cd project_name && flutter pub add image_picker && flutter pub add flutter_launcher_icons && flutter pub get
 $ flutter create --template=plugin --platforms=android,ios mybatteryplugin --org com.example
-$ dart pub global activate rename
 
-# 设置应用标识符
-$ rename setBundleId --targets android,ios --value dev.flt.projectname
-$ rename getBundleId --targets android,ios
+# 创建第一个应用
+$ flutter create --platforms=android,ios --org com.newcompany project_name
+$ cd project_name 
+$ flutter pub add app_set_id 
+$ flutter pub add flutter_launcher_icons --dev
+$ flutter pub get
 
-# 设置应用名字
-$ rename setAppName --targets ios,android --value "Project Name"
-$ rename getAppName --targets ios,android
+# 重建 ios 文件夹
+$ rm -rf ios && flutter create --platforms=ios . 
+$ cd ios && flutter pub get && cd ios && pod install --repo-update && cd ..
 
 # 设置应用图标
 ## pubspec.yaml
@@ -112,6 +112,16 @@ $ rename getAppName --targets ios,android
 
 # 修改应用图标
 $ flutter pub run flutter_launcher_icons:main
+
+$ dart pub global activate rename
+
+# 设置应用标识符
+$ rename setBundleId --targets android,ios --value dev.flt.projectname
+$ rename getBundleId --targets android,ios
+
+# 设置应用名字
+$ rename setAppName --targets ios,android --value "Project Name"
+$ rename getAppName --targets ios,android
 
 $ flutter run
     ]]>
