@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:component type="chSourceHighlighting" componentId="chSourceHighlighting_1" xmlns:c="http://com.snnmo.website">
+  <c:abstract style="font-size:1em;line-height:1.6em;">
+    <![CDATA[
+<img src="/images/flutter/img4.png" style="max-width:600px;margin:auto;" />
+]]>
+  </c:abstract>
+
+
+
+  <c:entry style="margin-top:0em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">准备项目</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="生成 keystore 文件（storeFile）" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+$ keytool -genkeypair -v \
+          -keystore <your key name here>.jks \
+          -storetype JKS \
+          -keyalg RSA \
+          -keysize 2048 \
+          -validity 100000 \
+          -sigalg SHA256withRSA \
+          -alias ipro4es_app-alias
+
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="创建配置文件 android/key.properties" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+# Keep this file is private
+# and add key.properties to .gitignore
+storePassword=******
+keyPassword=******
+keyAlias=ipro4es_app-alias
+storeFile=<keystore-file-location>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="load android/key.properties" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+# android/app/build.gradle
+
+plugins {
+    id("com.android.application")
+    id("kotlin-android")
+    id("dev.flutter.flutter-gradle-plugin")
+}
+
++ // Load keystore
++ def keystoreProperties = new Properties()
++ def keystorePropertiesFile = rootProject.file('key.properties')
++ 
++ if (keystorePropertiesFile.exists()) {
++     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
++ }
+
+android {
+    namespace = "com.ipro4rs.ipro4rs_app"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_11.toString()
+    }
+
++    signingConfigs {
++        release {
++            keyAlias keystoreProperties['keyAlias']
++            keyPassword keystoreProperties['keyPassword']
++            storeFile keystoreProperties['storeFile']
++            storePassword keystoreProperties['storePassword']
++        }
++    }
+
+    defaultConfig {
+        applicationId "dev.flt.ipro4rs"
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
+
+    buildTypes {
+        release {
+-             signingConfig = signingConfigs.getByName("debug")
++            signingConfig = signingConfigs.getByName("release")
+        }
+    }
+}
+
+flutter {
+    source = "../.."
+}
+
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="Rerun" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+$ flutter clean && flutter run
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="Build release" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+$ flutter build appbundle --release
+> output file *.aab
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">Created a new developer account</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="html" title="" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div style="display:flex;align-items: center;">
+    <img src="/images/android/a1.png" style="max-width:50%;" />
+    <img src="/images/android/a2.png" style="max-width:50%;" />
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="上传文件" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+2
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">登录 Google play console</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="Create App" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+1
+
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="上传文件" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+2
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+
+  <c:entry style="margin-top:1em;">
+    <c:title><![CDATA[<h1 style="font-size:2.1em;color:blue;">LANUCHING IOS APP INCLUDES</h1>]]></c:title>
+    <c:desc>
+      <c:desc1> <![CDATA[
+        ]]></c:desc1>
+    </c:desc>
+
+    <c:sourceContent type="" title="1. Prepare app for deployment" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+1
+
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="html" title="2. Creating developer account" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+<div style="display:flex;align-items: center;">
+    <img src="/images/android/a3.png" style="max-width: 50%" />
+    <img src="/images/android/a4.png" style="max-width: 50%" />
+</div>
+<div style="display:flex;align-items: center;">
+    <img src="/images/android/a5.png" style="max-width: 50%" />
+    <img src="/images/android/a6.png" style="max-width: 50%" />
+</div>
+<div style="display:flex;align-items: center;">
+    <img src="/images/android/a7.png" style="max-width: 50%" />
+    <img src="/images/android/a8.png" style="max-width: 50%" />
+</div>
+<div style="display:flex;align-items: center;">
+    <img src="/images/android/a9.png" style="max-width: 50%" />
+    <img src="/images/android/a10.png" style="max-width: 50%" />
+</div>
+<div style="display:flex;align-items: center;">
+    <img src="/images/android/a11.png" style="max-width: 50%" />
+    <img src="/images/android/a12.png" style="max-width: 50%" />
+</div>
+<div style="display:flex;align-items: center;">
+    <img src="/images/android/a13.png" style="max-width: 50%" />
+    <img src="/images/android/a14.png" style="max-width: 50%" />
+</div>
+<div style="display:flex;align-items: center;">
+    <img src="/images/android/a15.png" style="max-width: 50%" />
+    <img src="/images/android/a16.png" style="max-width: 50%" />
+</div>
+<div style="display:flex;align-items: center;">
+    <img src="/images/android/a17.png" style="max-width: 50%" />
+    <img src="/images/android/a18.png" style="max-width: 50%" />
+</div>
+<div style="display:flex;align-items: center;">
+    <img src="/images/android/a19.png" style="max-width: 50%" />
+    <img src="/images/android/a20.png" style="max-width: 50%" />
+</div>
+<div style="display:flex;align-items: center;">
+    <img src="/images/android/a21.png" style="max-width: 50%" />
+</div>
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="3. Creating app on appstore connect" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+2
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="4. Uploading app on testflight" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+2
+    ]]>
+    </c:sourceContent>
+
+    <c:sourceContent type="" title="5. Uploading app on production" id="sourceContent1"
+                     titleStyle="padding-left:0;color:black;font-size:1.3em;background-color:white;margin-top:1em;"
+                     bodyStyle="background-color:white;padding:0;font-size:.95em;line-height:1.6em;font-family:monospace;">
+      <![CDATA[
+2
+    ]]>
+    </c:sourceContent>
+    <c:comment>
+      <c:comment1>
+        <![CDATA[]]>
+      </c:comment1>
+    </c:comment>
+  </c:entry>
+
+
+
+</c:component>
