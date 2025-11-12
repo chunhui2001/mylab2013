@@ -42,16 +42,16 @@
         <meta property="countryCode" content="{$countryCode}" />
       </xsl:if>
 
-      <link href="//127.0.0.1:9001/gfont/font.css" rel="stylesheet" crossorigin="" />
+      <link href="//cdn.snnmo.com/gfont/font.css" rel="stylesheet" crossorigin="" />
 
-      <link rel="stylesheet" href="//127.0.0.1:9001/codemirror-5.65.2/doc/docs.css" />
-      <link rel="stylesheet" href="//127.0.0.1:9001/codemirror-5.65.2/lib/codemirror.css" />
-      <link rel="stylesheet" href="//127.0.0.1:9001/codemirror-5.65.2/theme/panda-syntax.css" />
-      <link rel="stylesheet" href="//127.0.0.1:9001/codemirror-5.65.2/theme/yonce.css" />
-      <script type="text/javascript" src="//127.0.0.1:9001/codemirror-5.65.2/lib/codemirror.js"></script>
-      <script type="text/javascript" src="//127.0.0.1:9001/codemirror-5.65.2/addon/mode/simple.js"></script>
-      <script type="text/javascript" src="//127.0.0.1:9001/codemirror-5.65.2/mode/rust/rust.js"></script>
-      <script type="text/javascript" src="//127.0.0.1:9001/codemirror-5.65.2/addon/selection/active-line.js"></script>
+      <link rel="stylesheet" href="//cdn.snnmo.com/codemirror-5.65.2/doc/docs.css" />
+      <link rel="stylesheet" href="//cdn.snnmo.com/codemirror-5.65.2/lib/codemirror.css" />
+      <link rel="stylesheet" href="//cdn.snnmo.com/codemirror-5.65.2/theme/panda-syntax.css" />
+      <link rel="stylesheet" href="//cdn.snnmo.com/codemirror-5.65.2/theme/yonce.css" />
+      <script type="text/javascript" src="//cdn.snnmo.com/codemirror-5.65.2/lib/codemirror.js"></script>
+      <script type="text/javascript" src="//cdn.snnmo.com/codemirror-5.65.2/addon/mode/simple.js"></script>
+      <script type="text/javascript" src="//cdn.snnmo.com/codemirror-5.65.2/mode/rust/rust.js"></script>
+      <script type="text/javascript" src="//cdn.snnmo.com/codemirror-5.65.2/addon/selection/active-line.js"></script>
 
       <link rel="stylesheet" type="text/css" href="/RenderingAssets/lib/bootstrap/bootstrap.min.css" />
 	  	<link rel="stylesheet" type="text/css" href="/RenderingAssets/css/reset.css" />
