@@ -42,16 +42,16 @@
         <meta property="countryCode" content="{$countryCode}" />
       </xsl:if>
 
-      <link href="//cdn.snnmo.com/gfont/font.css" rel="stylesheet" crossorigin="" />
+      <link href="/RenderingAssets/gfont/font.css" rel="stylesheet" crossorigin="" />
 
-      <link rel="stylesheet" href="//cdn.snnmo.com/codemirror-5.65.2/doc/docs.css" />
-      <link rel="stylesheet" href="//cdn.snnmo.com/codemirror-5.65.2/lib/codemirror.css" />
-      <link rel="stylesheet" href="//cdn.snnmo.com/codemirror-5.65.2/theme/panda-syntax.css" />
-      <link rel="stylesheet" href="//cdn.snnmo.com/codemirror-5.65.2/theme/yonce.css" />
-      <script type="text/javascript" src="//cdn.snnmo.com/codemirror-5.65.2/lib/codemirror.js"></script>
-      <script type="text/javascript" src="//cdn.snnmo.com/codemirror-5.65.2/addon/mode/simple.js"></script>
-      <script type="text/javascript" src="//cdn.snnmo.com/codemirror-5.65.2/mode/rust/rust.js"></script>
-      <script type="text/javascript" src="//cdn.snnmo.com/codemirror-5.65.2/addon/selection/active-line.js"></script>
+      <link rel="stylesheet" href="/RenderingAssets/codemirror-5.65.2/docs.css" />
+      <link rel="stylesheet" href="/RenderingAssets/codemirror-5.65.2/codemirror.css" />
+      <link rel="stylesheet" href="/RenderingAssets/codemirror-5.65.2/panda-syntax.css" />
+      <link rel="stylesheet" href="/RenderingAssets/codemirror-5.65.2/yonce.css" />
+      <script type="text/javascript" src="/RenderingAssets/codemirror-5.65.2/codemirror.js"></script>
+      <script type="text/javascript" src="/RenderingAssets/codemirror-5.65.2/simple.js"></script>
+      <!-- <script type="text/javascript" src="//cdn.snnmo.com/codemirror-5.65.2/mode/rust/rust.js"></script> -->
+      <script type="text/javascript" src="/RenderingAssets/codemirror-5.65.2/active-line.js"></script>
 
       <link rel="stylesheet" type="text/css" href="/RenderingAssets/lib/bootstrap/bootstrap.min.css" />
 	  	<link rel="stylesheet" type="text/css" href="/RenderingAssets/css/reset.css" />

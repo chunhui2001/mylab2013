@@ -28,7 +28,7 @@
             <xsl:with-param name="cate_name" select="'MVN'" />
           </xsl:call-template-->
           
-          <div style="float:left;">
+          <div style="">
             <h4 style="font-size:1.2em;margin-bottom:.4em;">
               <a target="{c:articleLink/@target}" href="{c:articleLink}">
                 <xsl:value-of disable-output-escaping="yes" select="c:title"/>
