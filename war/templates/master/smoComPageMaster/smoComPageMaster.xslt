@@ -78,6 +78,7 @@
 
       <!-- Add Media helper (this is optional) -->
       <script type="text/javascript" src="/RenderingAssets/lib/fancyBox/jquery.fancybox-media.js?v=1.0.6"></script>
+      <script type="text/javascript" src="/RenderingAssets/lib/marked-v15.0.12.min.js"></script>
       
       
       <xsl:text disable-output-escaping="yes">
@@ -122,7 +123,39 @@
             padding: 5px 8px;
             transition: background-color 0.2s ease 0s;
           }
+          
+          .markdown {
+            margin-top: .5em;
+          }
 
+          .markdown table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            line-height: 1.6;
+          }
+
+          .markdown table th,
+          .markdown table td {
+            padding: 12px 16px;
+            border: 1px solid #e5e7eb;
+            text-align: left;
+            text-decoration: none;
+          }
+
+          .markdown table th {
+            background: #f9fafb;
+            font-weight: 600;
+          }
+
+          .markdown table tr:nth-child(even) {
+            background: #f9fafb;
+          }
+
+          .markdown table tr:hover {
+            background: #f3f4f6;
+            transition: 0.2s;
+          }
       </style>
 
       <!--script src="http://jwpsrv.com/library/02YIiKJ2EeOigiIACi0I_Q.js"></script-->
@@ -205,8 +238,12 @@
             closeEffect : 'none'
           });
 
+          $('.markdown').each(function(i, ele) {
+            const raw = $(this).html();              // 取内容
+            const html = marked.parse(raw);          // 转 Markdown → HTML
+            $(this).html(html);                      // 设置内容
+          });
         })
-
       </script>
 
     </body>

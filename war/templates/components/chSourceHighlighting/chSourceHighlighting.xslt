@@ -138,6 +138,14 @@
                               <xsl:value-of disable-output-escaping="no" select="$content-code"/>
                           </textarea>
                       </xsl:when>
+                      <xsl:when test="current()/@type = 'markdown'">
+                          <pre>
+                              <xsl:attribute name="class">
+                                <xsl:value-of select="'markdown'"/>        
+                              </xsl:attribute>
+                              <xsl:value-of disable-output-escaping="no" select="$content-code"/>
+                          </pre>
+                      </xsl:when>
                       <xsl:otherwise>
                         <div style="font-size:.8em;">
                           <!-- Language hints can be put in XML application directive style comments. -->
