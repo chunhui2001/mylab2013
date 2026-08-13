@@ -9,6 +9,53 @@
     <c:category>Temp</c:category>
     <c:abstract>
       <![CDATA[
+<h3>
+  查看系统已有自动操作脚本
+</h3>
+<pre style="padding:1em;background-color:black;color:white;font-size:.8em;margin-bottom:1em;">
+$ ll ~/Library/Services/
+</pre>
+
+<h3>
+  osascript 调整宽度
+</h3>
+<h4 style="margin-bottom: .5em">重启终端后先测试一个简单命令：</h4>
+<pre style="padding:1em;background-color:black;color:white;font-size:.8em;margin-bottom:1em;">
+osascript -e 'tell application "System Events" to get name of first application process whose frontmost is true'
+</pre>
+<h4 style="margin-bottom: .5em">每次宽度 +300</h4>
+<pre style="padding:1em;background-color:black;color:white;font-size:.8em;margin-bottom:1em;">
+osascript ./widen.applescript: 
+
+tell application "System Events"
+    set frontApp to name of first application process whose frontmost is true
+end tell
+
+set terminalApps to {"Terminal", "iTerm2", "Warp", "kitty", "Alacritty", "Hyper"
+, "WezTerm", "Rio", "Ghostty"}
+
+if terminalApps contains frontApp then
+    tell application "System Events"
+        tell process frontApp
+            set frontWindow to front window
+            set {curWidth, curHeight} to size of frontWindow
+            set size of frontWindow to {curWidth + 300, curHeight}
+        end tell
+    end tell
+end if
+</pre>
+<pre style="padding:1em;background-color:black;color:white;font-size:.8em;margin-bottom:1em;">
+osascript ./widen.applescript: 
+
+tell application "System Events"
+    set frontApp to name of first application process whose frontmost is true
+    tell process frontApp
+        set frontWindow to front window
+        set {curWidth, curHeight} to size of frontWindow
+        set size of frontWindow to {curWidth + 300, curHeight}
+    end tell
+end tell
+</pre>
 
 <h3>
   Terminal Increase Width
